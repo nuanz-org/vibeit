@@ -1,0 +1,6 @@
+[mcp_servers]
+
+[mcp_servers.docqmind]
+command = "dqm"
+args = ["--root", ".", "mcp"]
+cwd = ".."

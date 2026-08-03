@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "docqmind": {
+      "args": [
+        "--root",
+        ".",
+        "mcp"
+      ],
+      "command": "dqm"
+    }
+  }
+}

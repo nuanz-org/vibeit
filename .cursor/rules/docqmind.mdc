@@ -1,0 +1,7 @@
+---
+description: Use docqmind project memory before and after substantive work
+globs:
+alwaysApply: true
+---
+
+docqmind-agent-workflow/v1: Before substantive planning or code changes, search relevant project memories with dqm_search. Treat active and human-approved memories as current guidance, proposed memories as suggestions, needs_verification memories as claims to check, and rejected, outdated, or superseded memories as history that must not silently guide work. Record only durable requirements, decisions, constraints, conventions, verified observations, and useful failures. Use proposed for suggestions and needs_verification for uncertain claims; never invent human approval. Never store secrets, credentials, routine progress, raw chat, temporary reasoning, or transient thoughts. After completed, partial, or failed substantive work, call dqm_record_result. When transferring unfinished work, call dqm_handoff.

@@ -1,0 +1,29 @@
+# docqmind indexing exclusions
+# Sensitive files and local project state remain excluded even if other rules include them.
+.docqmind/
+.git/
+.env
+.env.*
+*.pem
+*.key
+*.p12
+id_rsa
+id_ed25519
+node_modules/
+bower_components/
+vendor/
+.venv/
+venv/
+target/
+dist/
+build/
+coverage/
+.gradle/
+.next/
+.pnpm-store/
+.terraform/
+.yarn/
+Pods/
+DerivedData/
+__pycache__/
+.cache/
