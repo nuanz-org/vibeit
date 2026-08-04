@@ -55,7 +55,7 @@ Same modular spirit as [backend-architecture.md](./backend-architecture.md).
 | Surface | Auth | Notes |
 |---------|------|--------|
 | Landing | Public | Marketing / entry |
-| Login | Public | Provider TBD |
+| Login | Public | Better Auth email/password |
 | Create | Required | Vision text required; inspiration screenshots optional |
 | Studio / Control | Owner | Params, assets, colors, chat refine, view source (no download) |
 | Export / share / embed | Owner + public view | PNG + short client video; share URL; iframe snippet |
@@ -291,7 +291,7 @@ Use **`@tanstack/react-query`** for all client-side server state that talks to F
 
 - Login **required before Create** (route guard + API will 401 create endpoints).
 - Public gallery + share/embed remain anonymous-readable.
-- Provider **not chosen yet** (Clerk / Auth.js / Supabase / …) — isolate behind `lib/auth` and `features/auth`.
+- Provider: **Better Auth** (email/password) — server in `lib/auth.ts`, client in `lib/auth-client.ts`, UI in `features/auth`.
 
 ---
 

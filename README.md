@@ -77,7 +77,26 @@ Useful API URLs:
 
 - Health: http://localhost:8000/health
 - Hello: http://localhost:8000/api/hello
+- Auth me (session cookie): http://localhost:8000/api/v1/auth/me
 - Swagger docs: http://localhost:8000/docs
+
+### Auth (Better Auth · email/password)
+
+Auth lives on `apps/web` (Better Auth) with sessions in shared Postgres. FastAPI validates the same session cookie.
+
+1. Copy `.env.example` → `.env` and set `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+2. Mirror auth env into `apps/web/.env.local` (Next loads env from the app directory).
+3. Start Postgres: `pnpm db:up`
+4. Migrate auth tables: `pnpm auth:migrate`
+5. Run apps: `pnpm dev`
+
+| Route | Purpose |
+|-------|---------|
+| `/login` | Sign in |
+| `/signup` | Sign up |
+| `/forgot-password` | Request reset (link logged to server console in dev) |
+| `/reset-password` | Set new password from email token |
+| `/create` | Auth-gated Create (placeholder until later milestones) |
 
 ### Run apps individually
 

@@ -37,7 +37,7 @@ Milestones below cover **full stack** (frontend + backend + agent + storage), no
 - **Create:** vision text required; inspiration screenshot(s) optional — not brand kit at create
 - **Studio (after ready):** image asset slots + color overrides; schema-driven params; chat refine; view source (no download)
 - **Generation:** freeform multi-target agent codegen (agent picks one target)
-- **Auth:** required before Create (provider **not chosen yet**)
+- **Auth:** required before Create (**Better Auth** · email/password on `apps/web`, sessions in Postgres, FastAPI validates cookie)
 - **Export:** PNG + short client MediaRecorder video + share URL + iframe embed
 - **Publish:** gallery only if valid/usable (system gates)
 - **Deferred:** remix, multiplayer, browse-first discovery, server video farm, source download
@@ -90,7 +90,7 @@ Freeze shared contracts before building product UI or agent quality.
 
 Platform for owned tools and files.
 
-- Auth on web + session validation on API (provider TBD)
+- Auth on web + session validation on API (**Better Auth** email/password)
 - Login required before Create
 - Postgres: users, tools, versions, jobs, assets
 - Object storage + upload APIs (inspiration + studio assets)
@@ -221,7 +221,7 @@ That is **M8 exit**. Detail for each milestone lives in [vibeit-milestones.md](.
 
 | Area | Status |
 |------|--------|
-| Auth provider (Clerk / Auth.js / Supabase / …) | **Not chosen** — pick before or during M1 |
+| Auth provider | **Better Auth** (email/password) — chosen M1 |
 | OpenRouter vision model fallback | Confirm when implementing M4 |
 | Stronger model slot | Config-only until quality needs it |
 

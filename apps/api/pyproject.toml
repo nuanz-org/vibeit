@@ -5,5 +5,6 @@ description = "FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg>=0.31.0",
     "fastapi[standard]>=0.140.13",
 ]

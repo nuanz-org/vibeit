@@ -81,7 +81,7 @@ Define protocols (or thin abstract interfaces) for things that **will change or 
 |------|-----|
 | **LLM client / model router** | OpenRouter + DeepSeek V4 Flash; optional vision model; stronger model slot later |
 | **Object storage** | Inspiration images, studio assets, thumbs, exports |
-| **Auth session validation** | Provider not chosen yet (Clerk / Auth.js / Supabase / …) |
+| **Auth session validation** | **Better Auth** sessions in shared Postgres (`adapters/auth/better_auth.py`) |
 | **DB session / repositories** | Postgres; keep queries out of routers and graphs |
 
 Do **not** invent ports for pure helpers, prompt string builders, or one-off validators unless a second implementation appears.

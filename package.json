@@ -10,7 +10,8 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f db",
-    "db:reset": "docker compose down -v && docker compose up -d"
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "auth:migrate": "pnpm --filter web auth:migrate"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

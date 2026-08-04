@@ -8,12 +8,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings 0",
-    "check-types": "next typegen && tsc --noEmit"
+    "check-types": "next typegen && tsc --noEmit",
+    "auth:migrate": "npx auth@latest migrate --yes",
+    "auth:generate": "npx auth@latest generate"
   },
   "dependencies": {
     "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.4",
+    "better-auth": "^1.6.25",
     "next": "16.2.0",
+    "pg": "^8.22.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -21,6 +25,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
+    "@types/pg": "^8.20.3",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",
