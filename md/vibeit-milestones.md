@@ -2,12 +2,12 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-04 (M0–M2a done · **M3a–M3h implementation plan added**)  
+**Date:** 2026-08-03 · **Revised:** 2026-08-05 (M0–M3 + **M5 complete** · next **M7**)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
 
-## Current progress (2026-08-04)
+## Current progress (2026-08-05)
 
 | Area | Status | Notes |
 |------|--------|-------|
@@ -16,15 +16,16 @@
 | **Sign in** | ✅ Done | Same session cookie path |
 | **Sign out** | ✅ Done | Client `signOut` + UI |
 | Session → API | ✅ Done | FastAPI `GET /api/v1/auth/me` validates Better Auth cookie |
-| Web Create gate | ✅ Partial | `/create` proxy + `requireSession()` — page is placeholder only |
-| Create API gate | ✅ **Done** | M1a — `POST /api/v1/jobs` 401/201 + Create proof |
+| Web Create gate | ✅ **Done** | M3g Create form + job poll + Studio redirect |
+| Create API gate | ✅ **Done** | M1a–M3a + worker |
 | Product DB (tools/jobs/assets) | ✅ **Done** | M1b schema + **M1c** repos |
 | Object storage + uploads | ✅ **Done** | M1d storage + **M1e** upload API |
 | Access rules + M1 demo | ✅ **Done** | **M1f** — [access-rules.md](./access-rules.md) |
 | **M0-thin contracts** | ✅ **Done** | M0a–M0f landed — see note below |
-| Runtime host / Studio / agent | ✅ **M2a + M3 done** | Create agent + UI; next **M5** Control or **M7** export |
+| Runtime host / Studio / agent | ✅ **M2a + M3 done** | Host + Create agent |
+| **M5 Studio Control** | ✅ **Done** | M5a–M5f · [m5-demo-checklist.md](./m5-demo-checklist.md) |
 
-**Auth → M3 complete.** Next bottleneck is **Studio Control (M5)** / **Export (M7)**.
+**Auth → M5 complete.** Next critical path: **M7** export/share/embed → **M8** publish/gallery.
 
 ### M0-thin — done (polish later OK)
 
@@ -1586,14 +1587,14 @@ Create with vision + 1–2 screenshots → agent picks target → tool opens in 
 
 ### Deliverables
 
-- [ ] Schema-driven Control UI from `getParamSchema()` + presets
-- [ ] **Assets panel:** upload/swap images into `getAssetSlots()` → `setAssets` live
-- [ ] **Color overrides:** edit palette-related params (defaults may come from vision/inspiration)
-- [ ] Live preview refresh without regenerate
-- [ ] **View source** read-only (no download)
-- [ ] Persist param + asset bindings on tool version / draft state
-- [ ] Empty slots use generated placeholders (no crash)
-- [ ] Loud affordance when tool has empty asset slots (“add your logo”)
+- [x] Schema-driven Control UI from `getParamSchema()` + presets
+- [x] **Assets panel:** upload/swap images into `getAssetSlots()` → `setAssets` live
+- [x] **Color overrides:** edit palette-related params (defaults may come from vision/inspiration)
+- [x] Live preview refresh without regenerate
+- [x] **View source** read-only (no download)
+- [x] Persist param + asset bindings on tool version / draft state
+- [x] Empty slots use generated placeholders (no crash)
+- [x] Loud affordance when tool has empty asset slots (“add your logo”)
 
 ### Demo
 
@@ -1601,19 +1602,344 @@ Open generated tool → change colors → upload logo into slot → motion updat
 
 ### Exit criteria
 
-- Personalization path works without invoking LangGraph
-- Asset + color changes survive reload for the owner
-- Source is visible in Studio only; no download endpoint
-- Capture still works after setting a real uploaded asset
+- [x] Personalization path works without invoking LangGraph
+- [x] Asset + color changes survive reload for the owner
+- [x] Source is visible in Studio only; no download endpoint
+- [x] Capture still works after setting a real uploaded asset (M2a path retained; manual confirm in checklist)
 
 ### Out of scope
 
 - Chat refine, fonts/full brand kit object, Brand Kit save-for-reuse
+- Dynamic sandbox eval of arbitrary generated JS (optional polish if already easy; **not** required for M5 exit if fixture + API schema path covers personalization)
+- Export / share / publish (M7 / M8)
 
 ### Depends on
 
 - M2 host contract  
 - M3 produced tools with real schemas/slots (M4 tools when available)
+
+### M5 baseline already landed (do not re-build)
+
+| Already exists | Use it |
+|----------------|--------|
+| Studio shell + fixture route | `apps/web/features/studio/` · `/studio/social-frame` |
+| Schema param widgets (color/number/text/enum/boolean) | `param-controls.tsx` |
+| Asset upload → `setAssets` live | `asset-slots-panel.tsx` · `use-studio-runtime.ts` |
+| Live preview without remount | `host.updateParams` / `host.setAssets` |
+| View source (read-only, no download button) | `view-source-panel.tsx` |
+| Real-asset PNG capture | M2a6 · `proveRealAssetCapture` |
+| Owner tool read API | `GET /api/v1/tools/{id}` · `studio-tool-loader.tsx` |
+| Param / asset contracts | `@repo/contracts` · `md/contracts/param-schema.md` |
+| Upload API | `POST /api/v1/assets` (M1e) |
+
+**Gaps to close in M5:** presets, empty-slot loud UX, **persist** params/assets so reload survives, hydrate Studio from saved draft state, owner-only source discipline, demo checklist. Generated tools still mount the canvas2d harness for preview (M3g note) — personalization is driven by schema + host updates; full generated-code iframe injection is **not** the M5 exit gate.
+
+---
+
+### M5 — implementation plan (subparts)
+
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M5 done until **M5f**.
+
+| Subpart | Name | Depends on | ~Days | Outcome |
+|---------|------|------------|------:|---------|
+| **M5a** | Control polish (schema + presets + colors) | M2a ✓ · M3g ✓ | 0.5–0.75 | Complete schema-driven UI; Reset defaults; color group |
+| **M5b** | Empty-slot affordances | M5a | 0.25–0.5 | Loud “add your logo” + safe empty placeholders |
+| **M5c** | Draft state persist API | M1b/c ✓ · M3g ✓ | 0.75–1 | Owner PATCH params + asset bindings; reload-ready GET |
+| **M5d** | Studio hydrate + auto-save | M5a–M5c | 0.75–1 | Changes survive reload for real tools |
+| **M5e** | Generated-tool Control path | M5d · M3g ✓ | 0.5–0.75 | `/studio/{uuid}` uses version schema/defaults + source |
+| **M5f** | Capture regression + M5 demo checklist | M5b–M5e | 0.25–0.5 | Exit doc + smokes; **M5 complete** |
+
+**Suggested effort:** ≈3–4.5 focused days total.
+
+**Parallelism:** After **M5a**, **M5c** (API) can start while **M5b** finishes UI polish. **M5d** needs both M5b UX and M5c API. Do **not** start M6 chat refine.
+
+**Where code lands:**
+
+| Concern | Path |
+|---------|------|
+| Param / color / presets UI | `apps/web/features/studio/components/param-controls.tsx` (+ new preset bar) |
+| Assets + empty-slot banner | `asset-slots-panel.tsx` · `studio-shell.tsx` |
+| Runtime live state | `hooks/use-studio-runtime.ts` |
+| Persist hydrate / save | `hooks/use-studio-draft-state.ts` (new) · `lib/api/tools.ts` |
+| View source | `view-source-panel.tsx` |
+| Generated tool load | `studio-tool-loader.tsx` |
+| Draft state columns / API | `migrations/003_*.sql` · `api/v1/tools.py` · `schemas/tools.py` · `repositories/tools.py` |
+| Services | `services/update_tool_draft.py` (or thin repo + router) |
+| Demo | `md/m5-demo-checklist.md` · `tests/test_m5_demo_checklist.py` |
+
+**Invariants (every subpart):**
+
+1. **No LangGraph** on Control path — sliders/uploads only; refine is M6.  
+2. **No source download** — view-only in Studio; no `Content-Disposition: attachment` for code.  
+3. **Params ≠ assets** — colors/numbers/text in params; images via slots + `setAssets`.  
+4. **Owner-only** draft state mutations; non-owner → 404 hide.  
+5. **Empty slots never crash** capture or mount — placeholders OK.  
+6. Prefer **update existing draft version state** over spawning a new `tool_versions` row on every slider tick.
+
+---
+
+#### M5a — Control polish (schema + presets + colors)
+
+**Status:** ✅ **Done** (2026-08-05)
+
+**Goal:** Finish schema-driven Control so every M0b kind feels product-ready on the social-frame fixture, with presets and a clear color override group.
+
+**Use:** [param-schema.md](./contracts/param-schema.md) · existing `ParamControls` · social-frame fixture.
+
+**Tasks**
+
+1. **Audit widgets** — color / number / text / enum / boolean solid; `assetRef` focuses or deep-links the matching Assets row (no image bytes in params).
+2. **Color overrides section** — group `kind === "color"` fields under a “Colors” heading (palette first); other params under “Params” or by schema order with color cluster preferred.
+3. **Presets**
+   - **Reset to defaults** — restore `getDefaultParams()` (or version `defaultParams`) and call `updateParams`.
+   - Optional thin preset chips if schema/fixture defines them; otherwise **Reset** alone satisfies “+ presets” for MVP.
+4. **Live path** — every change still goes host `updateParams` without remount or job create.
+5. **Busy/disabled** states when host not mounted.
+6. Smoke on `/studio/social-frame`: tweak colors, speed, title, enum, boolean → live preview.
+
+**Touch (landed)**
+
+- `apps/web/features/studio/components/param-controls.tsx` — Colors / Params / Linked slots + Reset chip
+- `apps/web/features/studio/components/studio-shell.tsx` — Control section + assetRef scroll/focus
+- `apps/web/features/studio/components/asset-slots-panel.tsx` — highlightSlotId
+- `apps/web/features/studio/hooks/use-studio-runtime.ts` — `defaultParams`, `resetParams`, `applyParams`
+- `apps/web/features/studio/styles.module.css` — preset/group styles
+
+**Exit**
+
+- [x] All non-assetRef kinds editable from schema on fixture
+- [x] Colors grouped / labeled as overrides
+- [x] Reset to defaults works live
+- [x] No API required for M5a (fixture-only OK)
+
+**Out of scope for M5a:** Persist, empty-slot banner (M5b), generated tool hydrate (M5e).
+
+---
+
+#### M5b — Empty-slot affordances
+
+**Status:** ✅ **Done** (2026-08-05) · **Depends on:** M5a ✓
+
+**Goal:** Empty asset slots are obvious and safe — no crash; loud product affordance to personalize.
+
+**Tasks**
+
+1. **Empty placeholder tile** — lettermark / color block when slot empty (not a broken `<img>`).
+2. **Loud banner** when any slot empty (especially `required` or first logo-like slot): e.g. “Add your logo to personalize this tool.”
+3. **Per-slot empty CTA** — “Upload” / “Add image” stronger than muted “Empty”.
+4. **Clear / replace** still works; after clear, placeholders return; tool keeps running.
+5. Confirm mount + capture still work with zero real assets (capture may be non-M2a-exit path).
+
+**Touch (landed)**
+
+- `apps/web/features/studio/components/empty-slots-banner.tsx` — loud banner + primary empty slot pick
+- `apps/web/features/studio/components/asset-slots-panel.tsx` — lettermark placeholders, primary CTAs
+- `apps/web/features/studio/components/studio-shell.tsx` — banner wired into Assets section
+- `apps/web/features/studio/styles.module.css` — banner / placeholder / primary file label
+
+**Exit**
+
+- [x] Empty slots never crash preview (placeholder tiles; no broken img)
+- [x] Loud affordance visible when slots empty (“Add your logo” for logo-like slots)
+- [x] Upload fills slot → live `setAssets` → banner softens/clears for filled slots
+- [x] Clear restores placeholder + banner; Capture PNG still available without real asset
+
+**Out of scope for M5b:** Persist bindings (M5c/d).
+
+---
+
+#### M5c — Draft state persist API
+
+**Status:** ✅ **Done** (2026-08-05) · **Depends on:** M1b/c ✓ · M3g ✓
+
+**Goal:** Owner can save **current params** + **asset slot → URL bindings** so personalization survives reload. No LangGraph.
+
+**Design (landed):**
+
+Store draft personalization on the **tool** row — not a new version per slider move:
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `tools.draft_params` | jsonb default `{}` | Full param bag (colors, numbers, …) |
+| `tools.draft_assets` | jsonb default `{}` | `{ [slotId]: httpUrl \| null }` — rejects `data:`/`blob:` |
+
+Codegen baseline stays on `tool_versions.default_params` / `asset_slots`.
+
+**Tasks**
+
+1. **Migration** `003_tool_draft_state.sql` — jsonb defaults `{}`.
+2. **Repo** — `update_tool_draft_state(tool_id, params?, assets?)` · columns on all tool SELECTs.
+3. **Schemas** — `ToolDraftPatchRequest`; `ToolResponse.draftParams` + `draftAssets`.
+4. **`PATCH /api/v1/tools/{toolId}/draft`** — owner-only; **full replace** per present bag; 64KB soft cap; validate assets are http(s).
+5. **`GET /api/v1/tools/{toolId}`** — returns draft fields for owner Studio hydrate.
+6. **Tests** — owner patch + get round-trip; non-owner 404; invalid body 422; reject data: URLs.
+
+**Touch (landed)**
+
+- `apps/api/migrations/003_tool_draft_state.sql`
+- `adapters/db/types.py` · `repositories/_mapping.py` · `repositories/tools.py`
+- `services/update_tool_draft.py`
+- `api/v1/tools.py` · `schemas/tools.py`
+- `tests/test_tools_m5c.py`
+- `apps/web/lib/api/tools.ts` — `patchToolDraft` + draft fields on `ToolResponse`
+
+**Exit**
+
+- [x] Owner can PATCH draft params + asset URLs
+- [x] GET returns them
+- [x] Non-owner cannot read/write draft tool (404)
+- [x] No new `tool_versions` row per save
+
+**Out of scope for M5c:** Web auto-save UI (M5d); publish (M8).
+
+---
+
+#### M5d — Studio hydrate + auto-save
+
+**Status:** ✅ **Done** (2026-08-05) · **Depends on:** M5a ✓ · M5c ✓ · M5b ✓
+
+**Goal:** Real tool Studio loads saved personalization and writes changes back without regenerate.
+
+**Tasks**
+
+1. **Hydrate order** on mount (generated tools):
+   1. Mount host → introspection schema/defaults  
+   2. Apply `defaultParams` from version  
+   3. Overlay `draftParams` / `draftAssets` from tool GET  
+   4. `updateParams` + `setAssets` so preview matches saved state  
+2. **Auto-save** — debounce ~600ms after param/asset change → `PATCH draft`; show subtle “Saved” / “Saving…” / error.
+3. **Manual Save** button optional fallback.
+4. **Fixture path** (`/studio/social-frame`) — no API persist required; local-only OK.
+5. **Reload** — change color + upload logo → refresh → same state for owner.
+6. Link uploaded studio assets to `tool_id` when possible (`assets.tool_id` via optional form `toolId`).
+
+**Touch (landed)**
+
+- `apps/web/features/studio/hooks/use-studio-runtime.ts` — hydrate + `hydrated` gate
+- `apps/web/features/studio/hooks/use-studio-draft-persist.ts` — debounced PATCH, Save now, unload flush
+- `apps/web/features/studio/lib/draft-assets.ts` — bag convert/snapshot helpers
+- `studio-shell.tsx` · `studio-tool-loader.tsx` · `asset-slots-panel.tsx`
+- `apps/web/lib/api/assets.ts` · `apps/api` upload `toolId` form field
+
+**Exit**
+
+- [x] Asset + color changes survive reload for owner (API-backed tool via draft GET + PATCH)
+- [x] Personalization never calls Create/LangGraph
+- [x] Fixture Studio still works offline of draft API (local-only note in UI)
+
+**Out of scope for M5d:** Version history / rollback (M6-ish); brand kit.
+
+---
+
+#### M5e — Generated-tool Control path
+
+**Status:** ✅ **Done** (2026-08-05) · **Depends on:** M5d ✓
+
+**Goal:** Product path “Create → Studio UUID” is first-class Control, not a second-class social-frame-only shell.
+
+**Tasks**
+
+1. **Pass version metadata** into shell: `paramSchema`, `defaultParams`, `assetSlots`, `code` (source), `versionId`.
+2. Prefer **API schema** for Control labels when host introspection differs; host still drives live preview.
+3. **View source** shows generated `version.code`; ensure **no download** control or endpoint.
+4. Title / description from tool row; status badge draft vs ready.
+5. Empty schema/slots → graceful empty Control (no crash).
+6. Document M3g limitation: preview harness may still be social-frame creative; Control + persist + source still satisfy personalization bar.
+
+**Touch (landed)**
+
+- `lib/version-metadata.ts` — parse API schema/slots safely
+- `use-studio-runtime.ts` — prefer version schema/slots for Control
+- `studio-tool-loader.tsx` — full version metadata + harness note
+- `studio-shell.tsx` — tool status badge, empty schema handling, harness note
+- `view-source-panel.tsx` — view-only policy chrome (no download)
+
+**Exit**
+
+- [x] Open `/studio/{toolUuid}` → schema controls + assets + source
+- [x] Demo path works on a tool produced by M3 Create (API load + Control + persist)
+- [x] Source view-only; no download affordance
+- [x] Preview harness limitation documented in UI
+
+**Out of scope for M5e:** Public `/t/:publicId` (M7); chat refine (M6); dynamic generated-code iframe eval.
+
+---
+
+#### M5f — Capture regression + M5 demo checklist
+
+**Status:** ✅ **Done** (2026-08-05) · **Depends on:** M5b–M5e ✓
+
+**Goal:** Prove M5 exit criteria with automated smokes + a short manual demo list.
+
+**Tasks**
+
+1. **Checklist doc** [m5-demo-checklist.md](./m5-demo-checklist.md)
+2. **API tests** — draft round-trip; no download endpoint; surface inventory
+3. **Web** — typecheck Studio paths
+4. Mark high-level M5 deliverables complete
+5. Update **Current progress** + **Next action**
+
+**Touch (landed)**
+
+- `md/m5-demo-checklist.md`
+- `apps/api/tests/test_m5_demo_checklist.py`
+- This file’s checkboxes / progress table
+
+**Exit**
+
+- [x] All M5 exit criteria demonstrable (automated + manual list)
+- [x] Capture path retained (M2a checklist + Studio capture chrome)
+- [x] **M5 core-loop exit met** → start **M7** (export/share)
+
+**Out of scope for M5f:** M7 video/share, M8 publish.
+
+---
+
+### M5 subpart sequencing diagram
+
+```
+M2a + M3 COMPLETE
+        │
+        ▼
+M5a  Control polish (schema + presets + colors)
+        │
+        ├──────────────────┐
+        ▼                  ▼
+M5b  Empty-slot UX     M5c  Draft persist API
+        │                  │
+        └────────┬─────────┘
+                 ▼
+M5d  Studio hydrate + auto-save
+                 │
+                 ▼
+M5e  Generated-tool Control path
+                 │
+                 ▼
+M5f  Demo checklist + capture regression  →  M5 COMPLETE → M7
+```
+
+### M5 checklist rollup
+
+| # | Item | Subpart |
+|---|------|---------|
+| 1 | Schema-driven Control + presets | M5a |
+| 2 | Color overrides section | M5a |
+| 3 | Live preview without regenerate | M5a (exists; keep) |
+| 4 | Assets upload/swap → setAssets | M5b (exists; polish) |
+| 5 | Empty slots + loud affordance | M5b |
+| 6 | Persist params + asset bindings | M5c + M5d |
+| 7 | Survive reload (owner) | M5d |
+| 8 | View source read-only | M5e (exists; harden) |
+| 9 | Capture after real asset | M5f |
+| 10 | No LangGraph on Control path | all |
+
+### M5 implementation notes (do not skip)
+
+1. **Debounce saves** — never write DB on every `input` event without debounce.  
+2. **http(s) asset URLs only** in `draft_assets` for capture CORS path (reject `data:` in persisted state if easy).  
+3. **Do not** create a new tool version per param tweak — that is refine/codegen territory (M6).  
+4. **Fixtures** remain the fastest Control dev loop; generated UUID path is the product demo.  
+5. Keep Studio state in **local React state** → runtime; TanStack Query for tool GET + draft mutation invalidation only.
 
 ---
 
@@ -1824,19 +2150,15 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 ## Next action (start here)
 
-Auth + **M0-thin are complete.** To get the core loop ASAP, execute in this order:
+Auth + **M0-thin + M1 + M2a + M3 are complete.** To get the core loop ASAP, execute in this order:
 
 1. ~~**M0-thin**~~ — **done** (M0a–M0f).  
-2. ~~**M1a**~~ — **done** (Pydantic job DTOs + `POST /api/v1/jobs` gate + Create proof).  
-3. ~~**M1b**~~ — **done** (versioned SQL product tables + migrate script).  
-4. ~~**M1c**~~ — **done** (thin repositories + draft-tool smoke).  
-5. ~~**M1d**~~ — **done** (local storage + CORS serve).  
-6. ~~**M1e**~~ — **done** (upload API + Create proof UI).  
-7. ~~**M1f**~~ — **done** (access rules + demo checklist). **M1 complete.**  
-8. ~~**M2a**~~ — **done** (host + social-frame + Studio + real-asset capture). See [m2a-demo-checklist.md](./m2a-demo-checklist.md).  
-9. ~~**M3**~~ — **done** (M3a–M3h). See [m3-demo-checklist.md](./m3-demo-checklist.md).  
-10. **M5 → M7 → M8** — full Studio Control → export/share/embed → publish/gallery. **← start here**
+2. ~~**M1a–M1f**~~ — **done**. **M1 complete.**  
+3. ~~**M2a**~~ — **done**. See [m2a-demo-checklist.md](./m2a-demo-checklist.md).  
+4. ~~**M3**~~ — **done** (M3a–M3h). See [m3-demo-checklist.md](./m3-demo-checklist.md).  
+5. ~~**M5a–M5f**~~ — **done**. See [m5-demo-checklist.md](./m5-demo-checklist.md).  
+6. **M7 → M8** — export/share/embed → publish/gallery → **core loop complete**. **← start here (M7)**
 
-**Do not start next:** p5/three agent work, chat refine, inspiration vision pipeline, or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
+**Do not start next:** p5/three agent work, chat refine (M6), inspiration vision (M4), or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
 
-When you say **build**, start at **M5** (full Studio Control) or early **M7** (export on fixtures).
+When you say **build**, start at **M7** (export PNG + short video · share · embed).

@@ -12,7 +12,8 @@ from adapters.db.types import ToolRow, ToolVersionRow
 
 _TOOL_COLUMNS = """
     id, public_id, owner_user_id, status, title, description,
-    thumbnail_asset_id, published_at, created_at, updated_at
+    thumbnail_asset_id, published_at, created_at, updated_at,
+    draft_params, draft_assets
 """
 
 _VERSION_COLUMNS = """
@@ -136,3 +137,38 @@ class ToolsRepository:
                 str(tool_id),
             )
         return tool_version_from_record(row) if row else None
+
+    async def update_tool_draft_state(
+        self,
+        tool_id: UUID | str,
+        *,
+        draft_params: Any | None = None,
+        draft_assets: Any | None = None,
+    ) -> ToolRow | None:
+        """
+        M5c: replace draft personalization bags on the tool row.
+        Pass only the bags to update; omitted bags keep existing values.
+        Does not insert a tool_versions row.
+        """
+        if draft_params is None and draft_assets is None:
+            return await self.get_tool_by_id(tool_id)
+
+        sets: list[str] = ["updated_at = now()"]
+        args: list[Any] = [str(tool_id)]
+        # $1 = tool_id; subsequent params for bags
+        if draft_params is not None:
+            args.append(json.dumps(draft_params))
+            sets.append(f"draft_params = ${len(args)}::jsonb")
+        if draft_assets is not None:
+            args.append(json.dumps(draft_assets))
+            sets.append(f"draft_assets = ${len(args)}::jsonb")
+
+        sql = f"""
+            UPDATE tools
+            SET {", ".join(sets)}
+            WHERE id = $1::uuid
+            RETURNING {_TOOL_COLUMNS}
+        """
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(sql, *args)
+        return tool_from_record(row) if row else None

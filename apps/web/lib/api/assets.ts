@@ -12,16 +12,25 @@ export type AssetResponse = {
   storageKey?: string | null;
 };
 
+export type UploadAssetOptions = {
+  /** M5d: attach studio upload to a tool when supported. */
+  toolId?: string;
+};
+
 /**
  * POST /api/v1/assets multipart upload with session cookie.
  */
 export async function uploadAsset(
   file: File,
   kind: AssetKind = "inspiration",
+  options?: UploadAssetOptions,
 ): Promise<AssetResponse> {
   const body = new FormData();
   body.append("kind", kind);
   body.append("file", file);
+  if (options?.toolId) {
+    body.append("toolId", options.toolId);
+  }
 
   const res = await fetch(`${getApiBaseUrl()}/api/v1/assets`, {
     method: "POST",

@@ -1,39 +1,118 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
+
+import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
 
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { RuntimeHost, isRealUploadedAssetUrl } from "@/runtime";
 
 import type { StudioFixtureMeta } from "../fixtures";
+import { useStudioDraftPersist } from "../hooks/use-studio-draft-persist";
 import { useStudioRuntime } from "../hooks/use-studio-runtime";
 import styles from "../styles.module.css";
 import { AssetSlotsPanel } from "./asset-slots-panel";
+import { EmptySlotsBanner } from "./empty-slots-banner";
 import { ParamControls } from "./param-controls";
 import { ViewSourcePanel } from "./view-source-panel";
 
 export type StudioShellProps = {
   fixture: StudioFixtureMeta;
-  /** Optional generated source for view-only panel (M3g). */
+  /** Optional generated source for view-only panel (M3g / M5e). */
   sourceCode?: string | null;
   versionId?: string | null;
   publicId?: string | null;
+  /** tools.status — draft | published */
+  toolStatus?: string | null;
   isGenerated?: boolean;
+  /**
+   * M5d: API tool id for draft persist. Omit/null for fixtures (local only).
+   * Usually same as fixture.toolId for generated tools.
+   */
+  persistToolId?: string | null;
+  /** M5d: tool_versions.default_params baseline. */
+  versionDefaultParams?: ToolParams | null;
+  /** M5e: prefer API paramSchema for Control. */
+  versionParamSchema?: ParamSchema | null;
+  /** M5e: prefer API assetSlots for Assets panel. */
+  versionAssetSlots?: AssetSlots | null;
+  /** M5d: tools.draft_params from GET. */
+  initialDraftParams?: ToolParams | null;
+  /** M5d: tools.draft_assets from GET. */
+  initialDraftAssets?: Record<string, string | null> | null;
+  /**
+   * M5e: show note that live preview may use the canvas2d fixture harness
+   * while Control / source come from the generated version.
+   */
+  previewHarnessNote?: boolean;
 };
 
+function saveStatusLabel(
+  status: ReturnType<typeof useStudioDraftPersist>["status"],
+  enabled: boolean,
+): string | null {
+  if (!enabled) return null;
+  switch (status) {
+    case "dirty":
+      return "Unsaved…";
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return "Saved";
+    case "error":
+      return "Save failed";
+    default:
+      return null;
+  }
+}
+
 /**
- * Studio shell (M2a5 + M2a6 capture + M3g generated tools).
+ * Studio shell (M2a5 + M2a6 + M3g + M5a–M5e Control + draft persist).
  */
 export function StudioShell({
   fixture,
   sourceCode,
   versionId,
   publicId,
+  toolStatus,
   isGenerated,
+  persistToolId,
+  versionDefaultParams,
+  versionParamSchema,
+  versionAssetSlots,
+  initialDraftParams,
+  initialDraftAssets,
+  previewHarnessNote,
 }: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
-  const runtime = useStudioRuntime({ runtimeToolId: fixture.runtimeToolId });
+  const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
+  const assetsSectionRef = useRef<HTMLElement | null>(null);
+
+  const runtime = useStudioRuntime({
+    runtimeToolId: fixture.runtimeToolId,
+    versionDefaultParams,
+    versionParamSchema,
+    versionAssetSlots,
+    initialDraftParams,
+    initialDraftAssets,
+  });
+
+  const persist = useStudioDraftPersist({
+    toolId: persistToolId ?? null,
+    params: runtime.params,
+    assets: runtime.assets,
+    assetSlots: runtime.assetSlots,
+    ready: runtime.mounted && runtime.hydrated,
+  });
+
+  const focusAssetSlot = useCallback((slotId: string) => {
+    setFocusSlotId(slotId);
+    assetsSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, []);
 
   const statusClass =
     runtime.status === "ready" || runtime.mounted
@@ -41,6 +120,16 @@ export function StudioShell({
       : runtime.status === "error"
         ? styles.badgeError
         : styles.badgeLoading;
+
+  const saveLabel = saveStatusLabel(persist.status, persist.enabled);
+  const saveBadgeClass =
+    persist.status === "saved"
+      ? styles.badgeReady
+      : persist.status === "error"
+        ? styles.badgeError
+        : persist.status === "saving" || persist.status === "dirty"
+          ? styles.badgeLoading
+          : styles.badge;
 
   return (
     <div className={styles.shell}>
@@ -50,6 +139,18 @@ export function StudioShell({
             Vibeit
           </Link>
           <span className={styles.badge}>Studio</span>
+          {toolStatus ? (
+            <span
+              className={`${styles.badge} ${
+                toolStatus === "published"
+                  ? styles.badgeReady
+                  : styles.badgeLoading
+              }`}
+              title="Tool row status"
+            >
+              {toolStatus}
+            </span>
+          ) : null}
           <span className={`${styles.badge} ${statusClass}`}>
             {runtime.mounted
               ? "live"
@@ -57,6 +158,11 @@ export function StudioShell({
                 ? "ready"
                 : runtime.status}
           </span>
+          {saveLabel ? (
+            <span className={`${styles.badge} ${saveBadgeClass}`}>
+              {saveLabel}
+            </span>
+          ) : null}
           {runtime.m2aCaptureProved ? (
             <span className={`${styles.badge} ${styles.badgeReady}`}>
               M2a capture ✓
@@ -68,6 +174,21 @@ export function StudioShell({
           ) : null}
         </div>
         <div className={styles.headerMeta}>
+          {persist.enabled ? (
+            <button
+              type="button"
+              className={styles.linkButton}
+              disabled={
+                persist.status === "saving" ||
+                persist.status === "idle" ||
+                persist.status === "saved"
+              }
+              onClick={() => persist.saveNow()}
+              title="Save draft params + assets now"
+            >
+              Save now
+            </button>
+          ) : null}
           <Link href="/create" className={styles.linkButton}>
             Create
           </Link>
@@ -91,29 +212,69 @@ export function StudioShell({
                 ) : null}
               </p>
             ) : null}
+            {persist.enabled ? (
+              <p className={styles.muted} style={{ marginTop: 6 }}>
+                Changes auto-save to your draft (no regenerate).
+                {persist.lastSavedAt
+                  ? ` Last saved ${new Date(persist.lastSavedAt).toLocaleTimeString()}.`
+                  : null}
+              </p>
+            ) : (
+              <p className={styles.muted} style={{ marginTop: 6 }}>
+                Fixture mode — personalization is local only (not persisted).
+              </p>
+            )}
+            {previewHarnessNote ? (
+              <p className={styles.harnessNote}>
+                Live preview uses the canvas2d host harness. Control schema and
+                View source come from your generated version — personalize
+                without regenerating.
+              </p>
+            ) : null}
           </div>
 
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Params</h2>
-            <ParamControls
-              schema={runtime.paramSchema}
-              params={runtime.params}
-              onChange={runtime.setParam}
-              disabled={!runtime.mounted || runtime.busy}
-            />
+            <h2 className={styles.sectionTitle}>Control</h2>
+            {runtime.mounted && runtime.paramSchema.length === 0 ? (
+              <p className={styles.muted}>
+                No param schema for this tool — preview still runs.
+              </p>
+            ) : (
+              <ParamControls
+                schema={runtime.paramSchema}
+                params={runtime.params}
+                onChange={runtime.setParam}
+                onResetDefaults={runtime.resetParams}
+                onFocusAssetSlot={focusAssetSlot}
+                disabled={!runtime.mounted || runtime.busy}
+              />
+            )}
           </section>
 
-          <section className={styles.section}>
+          <section
+            className={styles.section}
+            ref={assetsSectionRef}
+            id="studio-assets"
+          >
             <h2 className={styles.sectionTitle}>Assets</h2>
+            {runtime.mounted && runtime.assetSlots.length > 0 ? (
+              <EmptySlotsBanner
+                slots={runtime.assetSlots}
+                assets={runtime.assets}
+                onFocusSlot={focusAssetSlot}
+              />
+            ) : null}
             <p className={styles.muted}>
-              Upload via API (http URL + CORS). Required for M2a exit capture —
-              not a data: fixture.
+              Empty slots use a generated placeholder — preview never crashes.
+              Uploads are http URLs with CORS (needed for capture).
             </p>
             <AssetSlotsPanel
               slots={runtime.assetSlots}
               assets={runtime.assets}
               onAssetUrl={runtime.setAsset}
               disabled={!runtime.mounted || runtime.busy}
+              highlightSlotId={focusSlotId}
+              toolId={persistToolId ?? null}
             />
             {runtime.hasRealAsset ? (
               <p className={styles.okText}>
@@ -129,11 +290,11 @@ export function StudioShell({
                   .map(([id]) => ` · ${id}`)
                   .join("")}
               </p>
-            ) : (
+            ) : runtime.mounted && runtime.assetSlots.length > 0 ? (
               <p className={styles.muted}>
-                No http storage asset yet — upload a logo to prove capture.
+                No http storage asset yet — empty slots stay on placeholders.
               </p>
-            )}
+            ) : null}
           </section>
 
           <section className={styles.section}>
@@ -191,10 +352,14 @@ export function StudioShell({
             onToggle={() => setSourceOpen((v) => !v)}
             sourceCode={sourceCode}
             isGenerated={isGenerated}
+            versionId={versionId}
           />
 
           {runtime.error ? (
             <p className={styles.errorText}>{runtime.error}</p>
+          ) : null}
+          {persist.error ? (
+            <p className={styles.errorText}>Draft save: {persist.error}</p>
           ) : null}
         </aside>
 

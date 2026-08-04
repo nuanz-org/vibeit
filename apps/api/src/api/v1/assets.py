@@ -68,12 +68,17 @@ def _to_response(row, *, api_public_base_url: str) -> AssetResponse:
 async def post_asset(
     kind: str = Form(..., description="inspiration | studio"),
     file: UploadFile = File(...),
+    toolId: str | None = Form(
+        default=None,
+        description="Optional tool to attach (M5d studio uploads)",
+    ),
     user: AuthUser = Depends(get_current_user),
     assets: AssetsRepository = Depends(get_assets_repo),
     storage: ObjectStorage = Depends(get_storage),
     settings: Settings = Depends(get_settings),
 ) -> AssetResponse:
     data = await file.read()
+    tid = (toolId or "").strip() or None
     try:
         row, _url = await upload_asset(
             owner_user_id=user.id,
@@ -84,6 +89,7 @@ async def post_asset(
             storage=storage,
             assets=assets,
             api_public_base_url=settings.api_public_base_url,
+            tool_id=tid,
         )
     except UploadValidationError as exc:
         raise HTTPException(

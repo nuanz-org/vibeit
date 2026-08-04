@@ -21,6 +21,15 @@ def _json_value(value: Any) -> Any:
 
 
 def tool_from_record(row: Any) -> ToolRow:
+    # draft_* added in 003_tool_draft_state; tolerate older test records
+    try:
+        draft_params = _json_value(row["draft_params"])
+    except (KeyError, TypeError):
+        draft_params = {}
+    try:
+        draft_assets = _json_value(row["draft_assets"])
+    except (KeyError, TypeError):
+        draft_assets = {}
     return ToolRow(
         id=row["id"],
         public_id=str(row["public_id"]),
@@ -32,6 +41,8 @@ def tool_from_record(row: Any) -> ToolRow:
         published_at=row["published_at"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        draft_params=draft_params if isinstance(draft_params, dict) else {},
+        draft_assets=draft_assets if isinstance(draft_assets, dict) else {},
     )
 
 

@@ -1,10 +1,10 @@
-"""Tool / version API shapes (M3g)."""
+"""Tool / version API shapes (M3g + M5c draft state)."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CamelModel(BaseModel):
@@ -40,3 +40,28 @@ class ToolResponse(CamelModel):
         default=None,
         alias="latestVersion",
     )
+    # M5c: Studio personalization (owner-only GET)
+    draft_params: dict[str, Any] = Field(
+        default_factory=dict,
+        alias="draftParams",
+    )
+    draft_assets: dict[str, Any] = Field(
+        default_factory=dict,
+        alias="draftAssets",
+    )
+
+
+class ToolDraftPatchRequest(CamelModel):
+    """
+    Full-replace bags for fields that are present.
+    At least one of draftParams / draftAssets required.
+    """
+
+    draft_params: dict[str, Any] | None = Field(default=None, alias="draftParams")
+    draft_assets: dict[str, Any] | None = Field(default=None, alias="draftAssets")
+
+    @model_validator(mode="after")
+    def _require_one_bag(self) -> ToolDraftPatchRequest:
+        if self.draft_params is None and self.draft_assets is None:
+            raise ValueError("Provide draftParams and/or draftAssets")
+        return self

@@ -21,6 +21,8 @@ import {
   type RuntimeHostStatus,
 } from "@/runtime";
 
+import { draftAssetsToToolAssets } from "../lib/draft-assets";
+
 function formatErr(err: unknown): string {
   if (err instanceof RuntimeBridgeError) {
     return `${err.code}: ${err.message}`;
@@ -43,19 +45,45 @@ export type LastCaptureInfo = {
   byteLength?: number;
 };
 
+export type UseStudioRuntimeOptions = {
+  runtimeToolId: string;
+  /**
+   * M5d: generation baseline from tool_versions.default_params.
+   * Merged over host introspection defaults for Reset + hydrate base.
+   */
+  versionDefaultParams?: ToolParams | null;
+  /** M5d: owner draft params from GET tool (overlay). */
+  initialDraftParams?: ToolParams | null;
+  /** M5d: owner draft asset bindings from GET tool. */
+  initialDraftAssets?: Record<string, string | null> | null;
+  /**
+   * M5e: prefer API paramSchema for Control UI when non-empty.
+   * Host still drives live canvas preview (may use fixture harness).
+   */
+  versionParamSchema?: ParamSchema | null;
+  /** M5e: prefer API assetSlots for Assets panel when non-empty. */
+  versionAssetSlots?: AssetSlots | null;
+};
+
 /**
  * Local Studio runtime state + host orchestration (not TanStack Query).
  * Live params/assets stay in React state → RuntimeHost commands.
  */
-export function useStudioRuntime(options: { runtimeToolId: string }) {
+export function useStudioRuntime(options: UseStudioRuntimeOptions) {
   const hostRef = useRef<RuntimeHostHandle>(null);
   const captureUrlRef = useRef<string | null>(null);
   const assetsRef = useRef<ToolAssets>({});
+  const hydrateOptsRef = useRef(options);
+  hydrateOptsRef.current = options;
 
   const [status, setStatus] = useState<RuntimeHostStatus>("idle");
   const [ready, setReady] = useState<ReadyMessage | null>(null);
   const [mounted, setMounted] = useState(false);
+  /** True after first mount + draft overlay applied (M5d persist gate). */
+  const [hydrated, setHydrated] = useState(false);
   const [params, setParams] = useState<ToolParams>({});
+  /** Snapshot of defaults from last mount introspection (M5a Reset). */
+  const [defaultParams, setDefaultParams] = useState<ToolParams>({});
   const [assets, setAssetsState] = useState<ToolAssets>({});
   const [paramSchema, setParamSchema] = useState<ParamSchema>([]);
   const [assetSlots, setAssetSlots] = useState<AssetSlots>([]);
@@ -73,6 +101,7 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
       setReady(message);
       setError(null);
       setBusy(true);
+      setHydrated(false);
       try {
         const host = hostRef.current;
         if (!host) return;
@@ -81,15 +110,64 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
           undefined,
           { toolId: options.runtimeToolId, target: "canvas2d" },
         );
-        setParamSchema(intro.paramSchema);
-        setAssetSlots(intro.assetSlots);
-        setParams({ ...intro.defaultParams });
-        assetsRef.current = {};
-        setAssetsState({});
+
+        const opts = hydrateOptsRef.current;
+        // M5e: prefer version metadata for Control labels when present
+        const controlSchema =
+          opts.versionParamSchema && opts.versionParamSchema.length > 0
+            ? opts.versionParamSchema
+            : intro.paramSchema;
+        const controlSlots =
+          opts.versionAssetSlots && opts.versionAssetSlots.length > 0
+            ? opts.versionAssetSlots
+            : intro.assetSlots;
+        setParamSchema(controlSchema);
+        setAssetSlots(controlSlots);
+
+        const versionDefaults = opts.versionDefaultParams ?? {};
+        // Baseline for Reset: host defaults overlaid by version defaults
+        const baseline: ToolParams = {
+          ...intro.defaultParams,
+          ...versionDefaults,
+        };
+        // Ensure every schema field has a baseline value when possible
+        for (const field of controlSchema) {
+          if (
+            field.kind !== "assetRef" &&
+            baseline[field.name] === undefined &&
+            "default" in field
+          ) {
+            baseline[field.name] = field.default;
+          }
+        }
+        setDefaultParams(baseline);
+
+        const draftParams = opts.initialDraftParams ?? {};
+        const hydratedParams: ToolParams = {
+          ...baseline,
+          ...draftParams,
+        };
+        setParams(hydratedParams);
+
+        const hydratedAssets = draftAssetsToToolAssets(
+          opts.initialDraftAssets ?? undefined,
+        );
+        assetsRef.current = hydratedAssets;
+        setAssetsState(hydratedAssets);
+
+        // Apply overlay without remount when different from empty mount
+        await host.updateParams(hydratedParams);
+        if (Object.keys(hydratedAssets).length > 0) {
+          await host.setAssets(hydratedAssets);
+          await waitForPaintFrames();
+        }
+
         setMounted(true);
+        setHydrated(true);
       } catch (err) {
         setError(formatErr(err));
         setMounted(false);
+        setHydrated(false);
       } finally {
         setBusy(false);
       }
@@ -101,10 +179,21 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
     setError(`${err.code}: ${err.message}`);
   }, []);
 
-  const setParam = useCallback((name: string, value: unknown) => {
+  const applyParams = useCallback((next: ToolParams) => {
     setError(null);
+    setParams(next);
+    const host = hostRef.current;
+    if (host?.isReady()) {
+      void host.updateParams(next).catch((err) => {
+        setError(formatErr(err));
+      });
+    }
+  }, []);
+
+  const setParam = useCallback((name: string, value: unknown) => {
     setParams((prev) => {
       const next = { ...prev, [name]: value };
+      setError(null);
       const host = hostRef.current;
       if (host?.isReady()) {
         void host.updateParams(next).catch((err) => {
@@ -115,11 +204,21 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
     });
   }, []);
 
+  /** M5a: restore getDefaultParams() bag and push to host (live, no remount). */
+  const resetParams = useCallback(() => {
+    applyParams({ ...defaultParams });
+  }, [applyParams, defaultParams]);
+
   const setAsset = useCallback(async (slotId: string, url: string | null) => {
     setError(null);
-    const next: ToolAssets = { ...assetsRef.current, [slotId]: url };
+    const next: ToolAssets = { ...assetsRef.current };
+    if (url == null) {
+      delete next[slotId];
+    } else {
+      next[slotId] = url;
+    }
     assetsRef.current = next;
-    setAssetsState(next);
+    setAssetsState({ ...next });
 
     const host = hostRef.current;
     if (!host?.isReady()) return;
@@ -127,6 +226,7 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
     setBusy(true);
     try {
       // Adapter awaits harness setAssets → images loaded before return (M2a6).
+      // Slot-level update (null clears that slot in the harness).
       await host.setAssets({ [slotId]: url });
       await waitForPaintFrames();
     } catch (err) {
@@ -239,9 +339,24 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
         toolId: options.runtimeToolId,
         target: "canvas2d",
       });
-      setParamSchema(intro.paramSchema);
-      setAssetSlots(intro.assetSlots);
+      const opts = hydrateOptsRef.current;
+      const controlSchema =
+        opts.versionParamSchema && opts.versionParamSchema.length > 0
+          ? opts.versionParamSchema
+          : intro.paramSchema;
+      const controlSlots =
+        opts.versionAssetSlots && opts.versionAssetSlots.length > 0
+          ? opts.versionAssetSlots
+          : intro.assetSlots;
+      setParamSchema(controlSchema);
+      setAssetSlots(controlSlots);
+      const versionDefaults = opts.versionDefaultParams ?? {};
+      setDefaultParams({
+        ...intro.defaultParams,
+        ...versionDefaults,
+      });
       setMounted(true);
+      setHydrated(true);
       await waitForPaintFrames();
     } catch (err) {
       setError(formatErr(err));
@@ -255,7 +370,9 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
     status,
     ready,
     mounted,
+    hydrated,
     params,
+    defaultParams,
     assets,
     paramSchema,
     assetSlots,
@@ -269,6 +386,8 @@ export function useStudioRuntime(options: { runtimeToolId: string }) {
     onReady,
     onBridgeError,
     setParam,
+    applyParams,
+    resetParams,
     setAsset,
     capturePng,
     proveRealAssetCapture,

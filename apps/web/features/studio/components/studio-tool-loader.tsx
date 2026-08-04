@@ -6,12 +6,19 @@ import Link from "next/link";
 import { getTool } from "@/lib/api/tools";
 
 import type { StudioFixtureMeta } from "../fixtures";
+import {
+  asDraftAssets,
+  asParams,
+  parseVersionAssetSlots,
+  parseVersionParamSchema,
+} from "../lib/version-metadata";
 import { StudioShell } from "./studio-shell";
 
 /**
- * Load a generated tool from the API and open Studio shell (M3g).
- * Preview still uses the sandboxed canvas2d host (social-frame harness);
- * generated source is shown in View source.
+ * Load a generated tool from the API and open Studio shell (M3g + M5d + M5e).
+ * Control prefers version paramSchema / assetSlots from API.
+ * Preview may still use the canvas2d fixture harness (M3g limitation);
+ * personalization + source + draft persist satisfy the M5 product bar.
  */
 export function StudioToolLoader({ toolId }: { toolId: string }) {
   const q = useQuery({
@@ -47,13 +54,18 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
 
   const tool = q.data;
   const version = tool.latestVersion;
+  const versionParamSchema = parseVersionParamSchema(version?.paramSchema);
+  const versionAssetSlots = parseVersionAssetSlots(version?.assetSlots);
+  const versionDefaultParams = asParams(version?.defaultParams);
+
   const meta: StudioFixtureMeta = {
     toolId: tool.id,
-    runtimeToolId: `generated:${tool.id}`,
+    // Preview host still mounts canvas2d fixture harness for generated tools.
+    runtimeToolId: "fixture:social-frame",
     label: tool.title || "Generated tool",
     description:
       tool.description ||
-      "Created from your vision. Preview uses the canvas2d sandbox host; full source is available below.",
+      "Created from your vision. Control + assets personalize the live preview; full source is below.",
     target: "canvas2d",
   };
 
@@ -63,7 +75,15 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
       sourceCode={version?.code ?? null}
       versionId={version?.id ?? null}
       publicId={tool.publicId}
+      toolStatus={tool.status}
       isGenerated
+      persistToolId={tool.id}
+      versionDefaultParams={versionDefaultParams}
+      versionParamSchema={versionParamSchema}
+      versionAssetSlots={versionAssetSlots}
+      initialDraftParams={asParams(tool.draftParams)}
+      initialDraftAssets={asDraftAssets(tool.draftAssets)}
+      previewHarnessNote
     />
   );
 }

@@ -64,11 +64,13 @@ async def upload_asset(
     assets: AssetsRepository,
     api_public_base_url: str,
     max_bytes: int = DEFAULT_MAX_BYTES,
+    tool_id: str | None = None,
 ) -> tuple[AssetRow, str]:
     """
     Persist bytes + DB row.
 
     Returns (asset_row, public_url).
+    tool_id (optional, M5d): link studio upload to an owned tool.
     """
     if kind not in UPLOAD_KINDS:
         raise UploadValidationError(
@@ -117,6 +119,7 @@ async def upload_asset(
             content_type=mime,
             byte_size=len(data),
             original_filename=original_filename or filename,
+            tool_id=tool_id,
         )
     except Exception:
         # Best-effort cleanup if DB insert fails

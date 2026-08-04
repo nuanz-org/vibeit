@@ -20,6 +20,9 @@ class ToolRow:
     published_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # M5c: live Studio personalization (overlay; not a new version per save)
+    draft_params: Any
+    draft_assets: Any
 
 
 @dataclass(frozen=True, slots=True)

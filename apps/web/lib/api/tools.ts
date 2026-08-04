@@ -22,6 +22,15 @@ export type ToolResponse = {
   createdAt: string;
   updatedAt: string;
   latestVersion?: ToolVersionResponse | null;
+  /** M5c: owner Studio param overlay */
+  draftParams?: Record<string, unknown>;
+  /** M5c: slotId → http URL | null */
+  draftAssets?: Record<string, string | null>;
+};
+
+export type ToolDraftPatch = {
+  draftParams?: Record<string, unknown>;
+  draftAssets?: Record<string, string | null>;
 };
 
 /** GET /api/v1/tools/{toolId} — owner only. */
@@ -38,6 +47,41 @@ export async function getTool(toolId: string): Promise<ToolResponse> {
     const text = await res.text().catch(() => "");
     throw new Error(
       `Get tool failed (${res.status})${text ? `: ${text}` : ""}`,
+    );
+  }
+
+  return res.json() as Promise<ToolResponse>;
+}
+
+/**
+ * PATCH /api/v1/tools/{toolId}/draft — owner only (M5c).
+ * Full-replace for bags present; at least one bag required.
+ */
+export async function patchToolDraft(
+  toolId: string,
+  patch: ToolDraftPatch,
+): Promise<ToolResponse> {
+  if (patch.draftParams === undefined && patch.draftAssets === undefined) {
+    throw new Error("patchToolDraft requires draftParams and/or draftAssets");
+  }
+
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/tools/${encodeURIComponent(toolId)}/draft`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        draftParams: patch.draftParams,
+        draftAssets: patch.draftAssets,
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Patch tool draft failed (${res.status})${text ? `: ${text}` : ""}`,
     );
   }
 
