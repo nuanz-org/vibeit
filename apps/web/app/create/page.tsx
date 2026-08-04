@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { CreateJobStub } from "@/features/create/components/create-job-stub";
 import { requireSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
 
 /**
  * Create is auth-gated (M1 product rule).
- * Full Create UI lands in later milestones; this proves the gate works.
+ * M1a: stub create-job call proves API session cookie forwarding.
+ * Full Create UI lands in M3.
  */
 export default async function CreatePage() {
   const session = await requireSession("/create");
@@ -42,19 +44,30 @@ export default async function CreatePage() {
         <h1 style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>Create</h1>
         <p style={{ opacity: 0.7, marginBottom: "1.5rem", lineHeight: 1.5 }}>
           Signed in as <strong>{session.user.email}</strong>. Vision → tool
-          generation UI ships in later milestones; auth gating is active now.
+          generation UI ships in later milestones; auth + create-job API gate
+          are active now.
         </p>
         <div
           style={{
             padding: "1.25rem",
             borderRadius: 12,
-            border: "1px solid color-mix(in srgb, var(--foreground) 12%, transparent)",
+            border:
+              "1px solid color-mix(in srgb, var(--foreground) 12%, transparent)",
           }}
         >
-          <p style={{ fontSize: "0.95rem", lineHeight: 1.5, opacity: 0.85 }}>
-            Placeholder Create surface. Next: upload inspiration images and start
-            a generation job (M3+).
+          <p
+            style={{
+              fontSize: "0.9rem",
+              lineHeight: 1.5,
+              opacity: 0.85,
+              marginTop: 0,
+              marginBottom: "1rem",
+            }}
+          >
+            M1a proof: start a stub create job (no worker yet). Cookie is sent
+            with <code>credentials: &quot;include&quot;</code> to the API.
           </p>
+          <CreateJobStub />
         </div>
       </main>
     </div>

@@ -2,7 +2,7 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-04 (M0-thin M0a–M0f **done**)  
+**Date:** 2026-08-03 · **Revised:** 2026-08-04 (M0-thin done · **M1-rest broken into M1a–M1f**)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
@@ -17,13 +17,14 @@
 | **Sign out** | ✅ Done | Client `signOut` + UI |
 | Session → API | ✅ Done | FastAPI `GET /api/v1/auth/me` validates Better Auth cookie |
 | Web Create gate | ✅ Partial | `/create` proxy + `requireSession()` — page is placeholder only |
-| Create API gate | ❌ Open | No protected jobs/create stub yet (M1a) |
-| Product DB (tools/jobs/assets) | ❌ Open | M1b |
-| Object storage + uploads | ❌ Open | M1c–M1d |
+| Create API gate | ✅ **Done** | M1a — `POST /api/v1/jobs` 401/201 + Create proof |
+| Product DB (tools/jobs/assets) | ✅ **Done** | M1b schema + **M1c** repos |
+| Object storage + uploads | ❌ Open | **M1d** storage · **M1e** upload API |
+| Access rules + M1 demo | ❌ Open | **M1f** |
 | **M0-thin contracts** | ✅ **Done** | M0a–M0f landed — see note below |
 | Runtime host / Studio / agent | ❌ Open | M2+ |
 
-**Auth and M0-thin contracts are unblocked.** Next bottleneck is **M1-rest (data/uploads) + canvas2d runtime (M2a)**, not more auth or contract freezes.
+**Auth and M0-thin contracts are unblocked.** Next bottleneck is **M1-rest (M1a→M1f) + canvas2d runtime (M2a)**, not more auth or contract freezes.
 
 ### M0-thin — done (polish later OK)
 
@@ -109,7 +110,7 @@ A real user can: **sign in → describe vision → get a live canvas2d tool → 
 1. **canvas2d-only until M8** — agent never picks p5/three on the ASAP path.  
 2. **M0-thin is enough to start M1/M2a** — provisional CORS/job shapes OK; tighten later.  
 3. **M2a before M3** — if a hand-authored canvas2d tool cannot mount/update/capture, do not start the agent.  
-4. **Parallel after M0-thin:** M1b schema ∥ M1c storage; M5 Studio chrome against M2a fixtures while M3 agent is built.  
+4. **Parallel after M0-thin:** M1b schema ∥ M1d storage (after M1a); M1c repos after M1b; M5 Studio chrome against M2a fixtures while M3 agent is built.  
 5. **M7 early prototype** on M2a fixtures (PNG capture) before agent is perfect.  
 6. **Do not expand scope** into remix, brand kit at create, multiplayer, or source download.
 
@@ -185,7 +186,7 @@ Enough to unlock **M1-rest + M2a**. Mark M0 core-loop exit when **M0a–M0f** ar
 - [x] **canvas2d skeleton template** shape (model fills creative logic inside harness)
 - [x] **Plan JSON** schema (concept, aspect, motion, params, `target` — target fixed to `canvas2d` on ASAP path)
 - [x] **Job API** shapes: create job, status, result version, error codes, quota/budget fields (can use jsonb-friendly loose fields)
-- [x] **Provisional capture/CORS notes** for canvas2d (`crossOrigin`, storage headers) — tighten with M1c/M2a if needed
+- [x] **Provisional capture/CORS notes** for canvas2d (`crossOrigin`, storage headers) — tighten with M1d/M2a if needed
 
 **M0-thin demo:** An engineer can implement a hand-authored canvas2d tool and a create-job API without reopening architecture.
 
@@ -467,7 +468,7 @@ VibeTool {
 
 **Status:** ✅ **Done** (2026-08-04)
 
-**Goal:** Enough policy for M1c storage headers and M2a capture-with-real-asset. Tighten later; do not block on production-perfect CORS.
+**Goal:** Enough policy for M1d storage headers and M2a capture-with-real-asset. Tighten later; do not block on production-perfect CORS.
 
 **Tasks**
 
@@ -476,7 +477,7 @@ VibeTool {
    - Short video later via `getCaptureStream?()` / canvas stream + **client MediaRecorder** (M7)
 2. Provisional asset/CORS rules:
    - User/inspiration images loaded with `crossOrigin = "anonymous"` where drawn to canvas
-   - Object storage must emit CORS headers allowing the web origin to read images (exact header set can be finalized in M1c)
+   - Object storage must emit CORS headers allowing the web origin to read images (exact header set can be finalized in M1d)
    - Same-origin or properly CORS-enabled asset URLs required before claiming export works
 3. Note tainted-canvas failure mode and that **M2a exit** requires capture with a **real uploaded** asset (not only a data URL fixture).
 4. Defer WebGL `preserveDrawingBuffer` detail to full M0 / M2b (three/p5).
@@ -485,7 +486,7 @@ VibeTool {
 
 - `md/contracts/capture-cors.md`
 - `packages/contracts/src/capture-cors.ts` — `ASSET_CROSS_ORIGIN`, `PROVISIONAL_STORAGE_CORS`, capture MIME/duration constants, `CaptureFailureReason`
-- Pointers from `vibe-tool.md`, `skeletons/canvas2d.md`, **M1c** (and M2a when implementing)
+- Pointers from `vibe-tool.md`, `skeletons/canvas2d.md`, **M1d** (and M2a when implementing)
 
 **Exit**
 
@@ -547,7 +548,7 @@ Docs + types only. An engineer can answer “what does a valid tool look like?�
 | Sign up / sign in / sign out (Better Auth API + web UI) | ✅ **Done** |
 | Session validation on FastAPI (`/api/v1/auth/me`) | ✅ **Done** |
 | Web gate on `/create` | ✅ **Done** (placeholder page) |
-| **M1-rest** (API create gate, schema, storage, uploads, access rules) | ❌ **Open — this is the remaining M1 work** |
+| **M1-rest** (M1a→M1f) | 🟡 **In progress** | **M1a–M1c done** · next **M1d** (storage) |
 
 Auth is **not** on the critical path anymore. Treat **M1-rest** as the only M1 work left for the core loop.
 
@@ -562,19 +563,20 @@ Auth is **not** on the critical path anymore. Treat **M1-rest** as the only M1 w
 
 #### M1-rest (required for core loop)
 
-- [ ] **Login required before Create** fully closed (web done; API still open)
+- [x] **Login required before Create** fully closed
   - [x] Web: `/create` proxy cookie gate + `requireSession()` page guard
-  - [ ] API: protected create-stub (or jobs) endpoint returns **401** without session
-- [ ] Postgres schema (minimal):
+  - [x] API: protected create-stub `POST /api/v1/jobs` → **401** without session; **201** with session → **M1a**
+- [x] Postgres schema (minimal) → **M1b**
   - users → **use Better Auth `user` table** (do not duplicate); product tables FK to `user.id`
   - tools (owned, publicId, status draft/published)
   - tool_versions (code, target, param schema, defaults, asset slots, plan metadata)
   - generation_jobs (status, inputs ref, errors, token/cost fields, repair budget)
   - assets / uploads (inspiration + user studio assets)
   - publishes / gallery metadata (can be columns on tools for MVP)
-- [ ] Object storage for inspiration screenshots + user images (+ later exports/thumbs) with **CORS headers** matching M0 policy
-- [ ] Upload API: inspiration images (create) · user assets (studio)
-- [ ] Public vs private access rules documented (gallery/share anonymous-readable)
+- [x] Thin repositories (tools, jobs, assets) → **M1c**
+- [ ] Object storage for inspiration + studio images (+ later exports/thumbs) with **CORS** matching M0f → **M1d**
+- [ ] Upload API: inspiration images (create) · user assets (studio) → **M1e**
+- [ ] Public vs private access rules documented + M1 demo → **M1f**
 
 ### Demo
 
@@ -592,168 +594,295 @@ Sign in → hit a protected “create stub” endpoint → upload an image → s
 
 ### Depends on
 
-- M0 (job/tool shapes at least drafted)
+- M0-thin (job/tool shapes frozen) ✓
+- Auth done ✓
 
 ---
 
-### M1 remaining — implementation plan (subparts)
+### M1-rest — implementation plan (subparts)
 
-Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M1 done until **M1e**.
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M1 done until **M1f**.
 
-| Subpart | Name | Depends on | Outcome |
-|---------|------|------------|---------|
-| **M1a** | Create API gate + identity | Auth done ✓ | Unauth cannot start Create on API; owner id stable |
-| **M1b** | Postgres product schema | M1a (identity) | Tables + migrations + thin repos |
-| **M1c** | Object storage adapter | M0 CORS notes (or provisional) | Upload/delete/signed-read via protocol |
-| **M1d** | Upload API + DB metadata | M1b + M1c | Inspiration + studio asset round-trip |
-| **M1e** | Access rules + M1 demo | M1a–M1d | Doc + verified end-to-end demo |
+| Subpart | Name | Depends on | ~Days | Outcome |
+|---------|------|------------|------:|---------|
+| **M1a** | Job DTOs + Create API gate | Auth ✓ · M0e ✓ | 0.5 | Unauth cannot start Create on API; owner id stable |
+| **M1b** | Migration tooling + product tables | M1a (identity) | 0.75–1 | Tables migrated alongside Better Auth schema |
+| **M1c** | Thin repositories + draft-tool smoke | M1b | 0.5 | Insert/read draft tool by real `user.id` |
+| **M1d** | Object storage adapter + CORS serve | M0f ✓ (∥ M1b after M1a) | 0.75–1 | put/delete/URL; browser can load image |
+| **M1e** | Upload API + Create proof UI | M1c + M1d | 0.75–1 | Inspiration + studio asset round-trip |
+| **M1f** | Access rules + M1 demo | M1a–M1e | 0.5 | Doc + verified end-to-end demo |
 
-**Suggested effort:** M1a ~0.5d · M1b ~1–1.5d · M1c ~1d · M1d ~1d · M1e ~0.5d (≈4–5 focused days).
+**Suggested effort:** ≈4–5 focused days total.
+
+**Parallelism:** After **M1a**, start **M1b** and **M1d** in parallel if two people; otherwise sequential M1b → M1c, and land M1d before **M1e**. **M1e** needs both repos (M1c) and storage (M1d).
+
+**Where code lands (defaults from backend architecture):**
+
+| Concern | Path |
+|---------|------|
+| HTTP routers | `apps/api/src/api/v1/` (`jobs.py`, `assets.py`, …) |
+| Pydantic API shapes | `apps/api/src/schemas/` |
+| Use-cases | `apps/api/src/services/` |
+| DB session / repos | `apps/api/src/adapters/db/` |
+| Storage port | `apps/api/src/adapters/storage/` |
+| Depends wiring | `apps/api/src/core/deps.py` |
+| Migrations | `apps/api/migrations/` (or Alembic package layout — pick in M1b) |
+| Web proof UI | `apps/web/app/create/` · `apps/web/features/create/` |
+
+**Codebase baseline (do not re-build):**
+
+| Already exists | Use it |
+|----------------|--------|
+| `get_current_user` / session cookie | `apps/api/src/core/security.py` |
+| `GET /api/v1/auth/me` | `apps/api/src/api/v1/auth.py` |
+| asyncpg pool on lifespan | `apps/api/src/main.py` · `core/deps.py` |
+| Job DTO contracts (TS) | `packages/contracts/src/job-api.ts` · `md/contracts/job-api.md` |
+| CORS provisional policy | `packages/contracts/src/capture-cors.ts` · `md/contracts/capture-cors.md` |
+| Web `/create` gate | `apps/web/app/create/page.tsx` + proxy/session |
 
 ---
 
-#### M1a — Create API gate + stable identity
+#### M1a — Job DTOs + Create API gate
 
-**Goal:** Finish “login required before Create” on the **API** side (web gate already works).
+**Status:** ✅ **Done** (2026-08-04)
 
-**Use M0e shapes:** Request/response field names from `@repo/contracts` / [job-api.md](./contracts/job-api.md) — `CreateJobRequest` / `CreateJobResponse` (stub may return `status: "queued"` without a worker). Do not invent parallel DTOs.
+**Goal:** Finish “login required before Create” on the **API** side (web gate already works). Land Pydantic mirrors of M0e so later worker/UI do not invent parallel fields.
+
+**Use M0e shapes:** [job-api.md](./contracts/job-api.md) · `@repo/contracts` `CreateJobRequest` / `CreateJobResponse` / status machine. Stub may return `status: "queued"` without a worker or DB row.
+
+**Decision:** Wire JSON is **camelCase** (Pydantic aliases); Python fields are snake_case. Stub response may include `userId` for local debug (not required by TS contract).
 
 **Tasks**
 
-1. Add a protected **create stub** endpoint, e.g. `POST /api/v1/jobs` (stub body) or `POST /api/v1/create/stub`, using `Depends(get_current_user)`.
-2. Return **401** when session cookie missing/invalid; **200/201** with M0e-shaped body (at least `jobId`, `status`, `createdAt`; may include `userId` for stub debugging) when valid.
-3. Keep `/api/v1/auth/me` as the thin “who am I” check; create stub proves product gate.
-4. Optional smoke test: HTTP test without cookie → 401; with valid session → success.
-5. Web: no change required if `/create` already gated; optionally call create stub from Create placeholder to prove cookie forwarding (`credentials: "include"`).
+1. **Pydantic DTOs** under `apps/api/src/schemas/jobs.py` matching M0e (camelCase aliases if web expects TS names — pick one style and document it):
+   - `CreateJobRequest`: `visionText` (required), `inspirationAssetIds?`, `clientMetadata?`
+   - `CreateJobResponse`: `jobId`, `status`, `createdAt`, optional `quota`
+   - Reuse error code strings from M0e (`UNAUTHORIZED`, …) where useful
+2. **Router** `apps/api/src/api/v1/jobs.py`:
+   - `POST /api/v1/jobs` with `Depends(get_current_user)`
+   - No session → **401** (existing dependency behavior)
+   - Valid session → **201** with stub body (`jobId` = uuid, `status` = `"queued"`, `createdAt` = now ISO)
+   - Stub **does not** require DB tables yet (in-memory / uuid only is fine)
+3. Wire into `api/v1/router.py` (`include_router`).
+4. Optional stub field `userId` (or include in response meta) for local debugging — remove or hide before any external beta.
+5. **Smoke check** (curl or pytest):
+   - no cookie → 401
+   - valid Better Auth session cookie → 201 + body shape
+6. **Optional web proof:** from Create placeholder, `fetch` create stub with `credentials: "include"` and show jobId (proves cookie cross-origin to API). Full Create UI is M3.
 
-**Touch (expected)**
+**Touch (landed)**
 
-- `apps/api/src/api/v1/` — new `jobs.py` or extend router
-- `apps/api/src/api/v1/router.py`
-- `apps/web/app/create/page.tsx` (optional client call)
-- Tests under `apps/api` if present
+- `apps/api/src/schemas/jobs.py` — Create/status/result/error Pydantic mirrors
+- `apps/api/src/api/v1/jobs.py` — `POST /api/v1/jobs` stub
+- `apps/api/src/api/v1/router.py` — jobs router included
+- `apps/api/tests/test_jobs_m1a.py` — 401 / 201 / empty-vision 422
+- `apps/web/lib/api/config.ts`, `apps/web/lib/api/jobs.ts`
+- `apps/web/features/create/components/create-job-stub.tsx` + Create page wire-up
 - Contract ref: `md/contracts/job-api.md`, `packages/contracts/src/job-api.ts`
 
 **Exit**
 
-- [ ] Unauthenticated `POST` create-stub → **401**
-- [ ] Authenticated → success payload includes Better Auth `user.id`
-- [ ] Deliverable checkbox “Login required before Create” can be marked complete
+- [x] Unauthenticated `POST /api/v1/jobs` → **401**
+- [x] Authenticated → **201** with M0e-shaped body including stable Better Auth `user.id` available to the handler
+- [x] Pydantic models live in one place (not invented inline in the route forever)
+- [x] High-level checkbox “API: protected create-stub” can be marked complete
 
-**Out of scope for M1a:** Real generation jobs, LangGraph, quotas.
+**Out of scope for M1a:** Persist job to `generation_jobs`, LangGraph, quotas enforcement, status polling worker.
 
 ---
 
-#### M1b — Postgres product schema + repositories
+#### M1b — Migration tooling + product tables
 
-**Goal:** Minimal durable model for tools, versions, jobs, and assets. Auth tables stay owned by Better Auth.
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Minimal durable Postgres model for tools, versions, jobs, and assets. Auth tables stay owned by Better Auth — **no second users table**.
+
+**Decision:** Versioned **raw SQL** under `apps/api/migrations/` + `scripts/migrate.py` (asyncpg). No Alembic/SQLAlchemy for MVP — stack already uses asyncpg for auth; repositories (M1c) will use the same pool. Track applied files in `schema_migrations`.
 
 **Tasks**
 
-1. Choose migration approach (Alembic **or** versioned SQL under `apps/api` — pick one and stick to it).
-2. Create product tables (names can be snake_case in Postgres):
+1. **Pick migration approach** and stick to it:
+   - **Preferred for FastAPI:** Alembic + SQLAlchemy/SQLModel models, **or**
+   - Versioned raw SQL under `apps/api/migrations/` applied by a small script
+   - Document the command in `apps/api/README.md` (e.g. `uv run alembic upgrade head`)
+2. Add `adapters/db/session.py` helpers if useful (pool already on `app.state`; keep queries out of routers).
+3. Create product tables (snake_case in Postgres):
 
 | Table | Key columns (MVP) |
 |-------|-------------------|
-| `tools` | `id`, `public_id` (unique), `owner_user_id` → `user.id`, `status` (`draft` \| `published`), timestamps |
-| `tool_versions` | `id`, `tool_id`, `target` (`canvas2d` \| `p5` \| `three`), `code`, `param_schema` (jsonb), `default_params` (jsonb), `asset_slots` (jsonb), `plan` (jsonb nullable), `created_at` |
-| `generation_jobs` | `id`, `owner_user_id`, `tool_id` nullable, `status`, `vision_text`, `inspiration_asset_ids`, `error_code` / `error_message`, token/cost fields, `repair_budget` / `repairs_used`, timestamps |
+| `tools` | `id` (uuid/text PK), `public_id` (unique, short), `owner_user_id` → `user.id`, `status` (`draft` \| `published`), `title?`, `description?`, `thumbnail_asset_id?`, `published_at?`, timestamps |
+| `tool_versions` | `id`, `tool_id` FK, `target` (`canvas2d` \| `p5` \| `three`), `code` (text), `param_schema` (jsonb), `default_params` (jsonb), `asset_slots` (jsonb), `plan` (jsonb nullable), `created_at` |
+| `generation_jobs` | `id`, `owner_user_id`, `tool_id` nullable, `status` (`queued`/`running`/`succeeded`/`failed`), `vision_text`, `inspiration_asset_ids` (jsonb/array), `error_code`, `error_message`, token/cost fields, `repair_budget`, `repairs_used`, timestamps |
 | `assets` | `id`, `owner_user_id`, `kind` (`inspiration` \| `studio` \| later `export`/`thumb`), `storage_key`, `content_type`, `byte_size`, `original_filename`, optional `tool_id`, timestamps |
-| publish/gallery | Prefer columns on `tools` for MVP: `published_at`, `title`, `description`, `thumbnail_asset_id` — full `publishes` table only if needed |
 
-3. Indexes: `tools.owner_user_id`, `tools.public_id`, `assets.owner_user_id`, `generation_jobs.owner_user_id` + status.
-4. Thin repositories under `apps/api/src/adapters/db/repositories/` (tools, jobs, assets) — no business logic in routers.
-5. Wire pool/session in `adapters/db/session.py` (asyncpg already used for auth).
+4. **Indexes:** `tools.owner_user_id`, `tools.public_id`, `assets.owner_user_id`, `generation_jobs.owner_user_id`, `generation_jobs.status`.
+5. **FK policy:** `owner_user_id` references Better Auth `"user".id` (text). Confirm type matches Better Auth (usually text id).
+6. Publish/gallery: **columns on `tools`** for MVP — no separate `publishes` table unless needed later.
+7. Apply migration on empty DB **and** on DB that already has Better Auth tables (dev reality).
 
-**Touch (expected)**
+**Touch (landed)**
 
-- `apps/api/src/adapters/db/` — models, session, repositories
-- Migrations directory
-- `apps/api/src/core/config.py` if needed
-
-**Exit**
-
-- [ ] Migrations apply cleanly on empty DB **and** existing Better Auth schema
-- [ ] Can insert a draft tool owned by a real `user.id` and read it back
-- [ ] No second `users` table competing with Better Auth
-
-**Out of scope for M1b:** Agent writes to jobs, publish flow, Studio UI.
-
-**Note:** If M0 job/tool JSON shapes are not fully frozen, still land columns as `jsonb` with loose validation; tighten in M3.
-
----
-
-#### M1c — Object storage adapter + CORS
-
-**Goal:** Swappable storage port so uploads work in local dev and later S3-compatible prod.
-
-**Use M0f policy:** [capture-cors.md](./contracts/capture-cors.md) · `PROVISIONAL_STORAGE_CORS` / `provisionalCorsResponseHeaders` in `@repo/contracts`. Images must be readable by the web origin with `crossOrigin="anonymous"` (or via same-origin proxy).
-
-**Tasks**
-
-1. Define `adapters/storage/protocol.py`: `put_object`, `delete_object`, `get_public_or_signed_url` (minimal surface).
-2. Implement **local filesystem** adapter for dev (e.g. `.data/uploads/` or docker volume) **and/or** S3-compatible (MinIO/R2/S3) behind the same protocol.
-3. Config via env: `STORAGE_BACKEND`, bucket/path, credentials, public base URL.
-4. Apply **CORS / cache headers** consistent with **M0f** provisional policy:
-   - Browser must load images with `crossOrigin="anonymous"` without tainting canvas (M2 depends on this).
-   - Prefer same-origin proxy **or** storage CORS allowing web origin + GET.
-5. Key layout convention, e.g. `{user_id}/{asset_id}/{filename}` or `{kind}/{user_id}/{uuid}`.
-
-**Touch (expected)**
-
-- `apps/api/src/adapters/storage/`
-- `apps/api/src/core/config.py`, env template / README
-- Optional: `docker-compose.yml` MinIO service if using S3 locally
+- `apps/api/migrations/001_product_tables.sql`
+- `apps/api/scripts/migrate.py` — `uv run python scripts/migrate.py` / `pnpm db:migrate`
+- `apps/api/src/adapters/db/session.py` — pool helper
+- `apps/api/src/adapters/db/schema_notes.py` — table/status constants
+- `apps/api/tests/test_schema_m1b.py`
+- `apps/api/README.md` — DB setup order (auth migrate → product migrate)
+- `apps/api/package.json` — `db:migrate` script
 
 **Exit**
 
-- [ ] Service can store bytes and return a URL the browser can fetch
-- [ ] CORS (or same-origin proxy) verified with a sample image GET from `apps/web` origin
-- [ ] Backend architecture layout for storage adapter present
+- [x] One documented migrate command applies cleanly with Better Auth present
+- [x] All four product tables exist with indexes
+- [x] No competing `users` / `user` product table
+- [x] High-level “Postgres schema” checkbox can be marked complete (repos still M1c)
 
-**Out of scope for M1c:** Export video blobs, CDN, lifecycle rules (M7/M9).
+**Out of scope for M1b:** Repository methods, agent writes, publish flow, Studio UI.
 
-**Parallelism:** Can start after M1a; merge before M1d.
+**Note:** jsonb columns may stay loosely validated until M3; align names with M0e/M0d where easy.
 
 ---
 
-#### M1d — Upload API (inspiration + studio assets)
+#### M1c — Thin repositories + draft-tool smoke
 
-**Goal:** Authenticated upload round-trip: file → storage → `assets` row → client sees metadata + URL.
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Read/write product rows through repositories — no business logic in routers. Prove ownership FK works with a real Better Auth user.
 
 **Tasks**
 
-1. `POST /api/v1/assets` (multipart) or presigned PUT flow — pick **one** for MVP (multipart to API is simpler for local).
-2. Auth required (`get_current_user`); reject unauthenticated uploads with **401**.
-3. Validate: allowlisted MIME (`image/png`, `image/jpeg`, `image/webp`), max size (e.g. 5–10 MB), kind enum `inspiration` | `studio`.
-4. Service `upload_asset`: write storage → insert `assets` row → return `{ id, kind, url, contentType, byteSize }`.
-5. Optional: `GET /api/v1/assets/{id}` (owner-only) and `DELETE` for cleanup during dev.
-6. Wire minimal UI on Create placeholder: file input → upload → show thumbnail/URL (proves M1 demo; full Create UI is M3/M4).
+1. Create `adapters/db/repositories/`:
+   - `tools.py` — `create_draft_tool`, `get_tool_by_id`, `get_tool_by_public_id` (stubs OK if not all used yet)
+   - `jobs.py` — `create_job`, `get_job`, `update_job_status` (enough for M3 later)
+   - `assets.py` — `create_asset`, `get_asset_for_owner`, `delete_asset`
+2. Keep SQL/ORM **only** inside repositories; services will call these in M1e/M3.
+3. **Smoke path** (script, pytest, or temporary admin-only route removed before merge):
+   - Resolve a real `user.id` from Better Auth (or insert fixture user only if unavoidable — prefer real sign-up id)
+   - Insert draft `tools` row with generated `public_id` (nanoid/ulid)
+   - Optional: insert empty `tool_versions` row with `target='canvas2d'` and placeholder code
+   - Read back by id / public_id
+4. Wire repository factories in `core/deps.py` if useful (pool → repo).
+
+**Touch (landed)**
+
+- `apps/api/src/adapters/db/types.py` — row dataclasses
+- `apps/api/src/adapters/db/ids.py` — `new_public_id`
+- `apps/api/src/adapters/db/repositories/tools.py`
+- `apps/api/src/adapters/db/repositories/jobs.py`
+- `apps/api/src/adapters/db/repositories/assets.py`
+- `apps/api/src/core/deps.py` — `ToolsRepo` / `JobsRepo` / `AssetsRepo`
+- `apps/api/tests/test_repos_m1c.py`
+
+**Exit**
+
+- [x] Can insert a draft tool owned by a real `user.id` and read it back
+- [x] Job + asset repository surfaces exist (even if only create/get)
+- [x] High-level “Thin repositories” checkbox complete
+
+**Out of scope for M1c:** HTTP upload endpoints, storage bytes, agent, publish.
+
+**Depends on:** M1b tables.
+
+---
+
+#### M1d — Object storage adapter + CORS serve
+
+**Status:** ❌ Open
+
+**Goal:** Swappable storage port so uploads work in local dev and later S3-compatible prod. Images must be browser-readable with `crossOrigin="anonymous"` (M0f / M2a).
+
+**Use M0f policy:** [capture-cors.md](./contracts/capture-cors.md) · `PROVISIONAL_STORAGE_CORS` in `@repo/contracts`.
+
+**Tasks**
+
+1. Define `adapters/storage/protocol.py` (Protocol / ABC):
+   - `put_object(key, data, content_type) -> None`
+   - `delete_object(key) -> None`
+   - `get_url(key) -> str` (public or signed; for local, API-served URL is fine)
+2. Implement **local filesystem** adapter for dev:
+   - Root e.g. `.data/uploads/` (gitignored) or docker volume
+   - Key layout: `{kind}/{user_id}/{asset_id}/{safe_filename}` (or `{user_id}/{asset_id}/…`)
+3. Config via env: `STORAGE_BACKEND=local|s3`, `STORAGE_LOCAL_ROOT`, optional S3 bucket/credentials/public base URL (S3 impl can be stubbed or deferred if local works).
+4. **Serve path for local assets** (pick one and document):
+   - **A (recommended for MVP):** `GET /api/v1/assets/raw/{asset_id}` or static mount under API with correct `Access-Control-Allow-Origin` for web origin + `GET`/`HEAD` (credentials **false** for asset GET — matches anonymous)
+   - **B:** Next.js rewrite/proxy same-origin so canvas never goes cross-origin
+5. Align response CORS headers with M0f provisional policy for the asset GET path.
+6. Optional: MinIO in `docker-compose.yml` only if implementing S3 now — **not required** for M1 exit if local FS works.
 
 **Touch (expected)**
 
-- `apps/api/src/api/v1/assets.py`, `schemas/assets.py`, `services/upload_asset.py`
-- `apps/web` Create page or `features/create` upload control
-- `lib/api` fetch helper with credentials if introduced
+- `apps/api/src/adapters/storage/protocol.py`
+- `apps/api/src/adapters/storage/local.py`
+- `apps/api/src/core/config.py`, env notes in `apps/api/README.md`
+- Asset raw route (if A) in `api/v1/assets.py` or dedicated static handler
+- `.gitignore` for `.data/` if used
+
+**Exit**
+
+- [ ] Service can store bytes under a key and return a URL the browser can fetch
+- [ ] CORS (or same-origin proxy) verified: sample image GET from `http://localhost:3000` context does not taint a canvas draw (or at least returns ACAO allowing web origin)
+- [ ] Storage adapter layout matches backend architecture
+
+**Out of scope for M1d:** Export video blobs, CDN, lifecycle rules (M7/M9), upload multipart API (M1e).
+
+**Parallelism:** Can start after M1a in parallel with M1b; **must merge before M1e**.
+
+---
+
+#### M1e — Upload API + Create proof UI
+
+**Status:** ❌ Open
+
+**Goal:** Authenticated upload round-trip: file → storage → `assets` row → client sees metadata + URL. Minimal Create UI proof (not full Create product).
+
+**Tasks**
+
+1. **Schemas** `apps/api/src/schemas/assets.py`: response `{ id, kind, url, contentType, byteSize, originalFilename? }`.
+2. **Service** `services/upload_asset.py`:
+   - Validate MIME allowlist: `image/png`, `image/jpeg`, `image/webp`
+   - Max size (e.g. 5–10 MB)
+   - `kind` ∈ `inspiration` | `studio`
+   - `put_object` → `assets` repo insert → return DTO with `get_url`
+3. **Router** `POST /api/v1/assets` (multipart) — pick multipart-to-API for local MVP (presigned PUT can wait).
+   - Auth required; unauthenticated → **401**
+4. Optional: `GET /api/v1/assets/{id}` (owner-only metadata), `DELETE` for dev cleanup.
+5. **Web proof on Create placeholder:**
+   - File input + kind select (or fixed `inspiration`)
+   - `fetch` with `credentials: "include"` to API
+   - Show thumbnail via returned URL + asset id
+   - Full vision→agent Create UI is **M3** — do not build it here
+6. Optional: after upload works, optionally persist M1a create-stub jobs into `generation_jobs` (nice-to-have; not required if still uuid-only stub).
+
+**Touch (expected)**
+
+- `apps/api/src/api/v1/assets.py`
+- `apps/api/src/schemas/assets.py`
+- `apps/api/src/services/upload_asset.py`
+- `apps/web/features/create/` upload control + Create page wire-up
+- `apps/web/lib/` API fetch helper with credentials if introduced
 
 **Exit**
 
 - [ ] Authenticated upload creates storage object + DB row
 - [ ] Unauthenticated upload → **401**
-- [ ] Returned URL loads the image (CORS-safe for later capture)
-- [ ] Deliverables “Object storage…” and “Upload API…” can be checked
+- [ ] Returned URL loads the image (CORS-safe for later M2a capture)
+- [ ] High-level “Object storage…” and “Upload API…” checkboxes complete
 
-**Out of scope for M1d:** Binding assets to tool slots in Studio (M5), inspiration vision model (M4).
+**Out of scope for M1e:** Binding assets to tool slots in Studio (M5), inspiration vision model (M4), polished Create UX.
+
+**Depends on:** M1c (assets repo) + M1d (storage + serve URL).
 
 ---
 
-#### M1e — Public vs private access rules + M1 demo
+#### M1f — Public vs private access rules + M1 demo
 
-**Goal:** Document access rules early so M7/M8 do not invent ownership later; prove the milestone demo.
+**Status:** ❌ Open
+
+**Goal:** Document access rules early so M7/M8 do not invent ownership later; prove the milestone demo end-to-end.
 
 **Tasks**
 
-1. Write a short **Access rules** subsection (in this file or `md/` one-pager linked from here):
+1. Write short **Access rules** doc — either subsection below or `md/access-rules.md` linked from here:
 
 | Resource | Anonymous | Authenticated owner | Other signed-in users |
 |----------|-----------|---------------------|------------------------|
@@ -761,25 +890,44 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 | Published tool / gallery item | Read (view/embed) | Full | Read |
 | Share page `/t/:publicId` | Read interactive tool | — | Read |
 | Source download | Never (product rule) | View-in-Studio only | No |
-| Assets (inspiration/studio) | No (unless published thumb via public URL) | Full | No |
+| Assets (inspiration/studio) | No (unless published thumb via deliberate public URL) | Full | No |
 | Create / upload / jobs | No (401) | Yes | N/A |
 
-2. Define `public_id` generation (nanoid/ulid) at tool create time even if draft-only for now.
-3. Run **M1 demo checklist** and record pass:
+2. Confirm `public_id` generation strategy at tool create (nanoid/ulid) — implement in tools repo if not already (M1c).
+3. Run **M1 demo checklist** on clean local stack (`docker compose` DB + web + api) and only then mark M1 complete:
 
    - [ ] Sign up / sign in
    - [ ] Open `/create` while logged out → redirected to login
-   - [ ] Hit create-stub without cookie → 401; with session → 200
+   - [ ] `POST /api/v1/jobs` without cookie → 401; with session → 201
    - [ ] Upload image → row in `assets` + file in storage
-   - [ ] Fetch image URL from browser (CORS OK)
+   - [ ] Fetch image URL from browser (CORS OK for canvas later)
 
-4. Mark all M1 deliverables complete only after checklist passes.
+4. Update **Current progress** table at top of this file when done.
 
 **Exit**
 
 - [ ] Access rules written and linked
-- [ ] Demo path works on a clean local stack (`docker compose` DB + web + api)
-- [ ] M1 exit criteria satisfied
+- [ ] Demo checklist passes on local stack
+- [ ] M1 exit criteria satisfied (unauth blocked, stable owner identity, upload round-trip + CORS)
+
+**Out of scope for M1f:** Gallery UI, share page implementation (M7/M8), Studio.
+
+---
+
+### M1-rest checklist rollup
+
+Mark complete only when the matching subpart exit is done:
+
+| High-level item | Subpart | Status |
+|-----------------|---------|--------|
+| API create gate (401 / 201) | **M1a** | ✅ |
+| Postgres product tables + migrations | **M1b** | ✅ |
+| Thin repositories + draft tool smoke | **M1c** | ✅ |
+| Object storage + CORS serve | **M1d** | ❌ |
+| Upload API + Create proof UI | **M1e** | ❌ |
+| Access rules + M1 demo | **M1f** | ❌ |
+
+**M1-rest exit met** when all six are ✅ — then start **M2a**.
 
 ---
 
@@ -789,17 +937,23 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 Auth DONE (sign up / sign in / sign out / session→API)
                  │
                  ▼
-M0-thin (can parallel start of M1a) ──► M1a Create API gate
-                                           │
-                                           ▼
-                                        M1b Schema/repos ────────┐
-                                           │                     │
-                                           │    M1c Storage ─────┤ (parallel with M1b after M1a)
-                                           ▼                     ▼
-                                        M1d Upload API + Create upload UI
-                                           │
-                                           ▼
-                                        M1e Access rules + demo  →  M1 COMPLETE → M2a
+M0-thin DONE ──► M1a  Job DTOs + Create API gate     ✅ DONE
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+       M1b Schema ✅       M1d Storage + CORS        ← START HERE
+       migrations             adapter
+          │                   │
+          ▼                   │
+       M1c Repos ✅           │
+       + draft smoke          │
+          │                   │
+          └─────────┬─────────┘
+                    ▼
+                 M1e Upload API + Create proof UI
+                    │
+                    ▼
+                 M1f Access rules + demo  →  M1 COMPLETE → M2a
 ```
 
 ### M1 core-loop exit vs full exit
@@ -808,22 +962,27 @@ M0-thin (can parallel start of M1a) ──► M1a Create API gate
 |--|-------------------------------------|
 | Auth (sign up/in/out) | ✅ Already done |
 | M1a create API gate | **Yes** |
-| M1b tools/versions/jobs/assets tables | **Yes** (jobs + tools at minimum before M3) |
-| M1c + M1d storage/upload | **Yes** for M2a real-asset capture and M5 assets (local FS adapter OK) |
-| M1e access rules + demo | **Yes** (short doc + checklist) |
+| M1b product tables | **Yes** (jobs + tools at minimum before M3) |
+| M1c repositories | **Yes** |
+| M1d + M1e storage/upload | **Yes** for M2a real-asset capture and M5 assets (local FS adapter OK) |
+| M1f access rules + demo | **Yes** (short doc + checklist) |
 | Inspiration-upload UI polish | No — minimal upload proof is enough |
 | Gallery publish columns polish | Optional until M8 |
+| S3/MinIO production backend | No — local FS adapter OK for core loop |
 
 ### M1 implementation notes (do not skip)
 
 - **Users:** Better Auth owns `user` / `session`; product FKs use that string id. **Do not build a second users table.**
 - **Layout:** Follow `md/backend-architecture.md` — routers thin, services own use-cases, adapters for DB/storage.
-- **Cookies:** Browser → API must send session cookie (`credentials: "include"`); CORS already allows localhost:3000 with credentials.
-- **M0 dependency:** Prefer M0-thin job/tool shapes; if slightly ahead of freeze, use jsonb + provisional CORS and tighten later.
+- **Cookies:** Browser → API must send session cookie (`credentials: "include"`); CORS already allows localhost:3000 with credentials on the API.
+- **Asset CORS ≠ API credential CORS:** session routes use credentials; asset image GETs should work with `crossOrigin="anonymous"` (M0f).
+- **M0 dependency:** Job/tool shapes are frozen (M0-thin done); use them.
 - **Not M1:** LangGraph, OpenRouter, Studio shell, gallery UI, export.
 - **Do not reopen auth** unless session cookie forwarding to API breaks.
+- **Order for a solo builder:** M1a → M1b → M1c → M1d → M1e → M1f (or M1d right after M1a if storage is clearer first).
 
 ---
+
 
 ## M2 — Runtime host + hand-authored tools
 
@@ -845,7 +1004,7 @@ M0-thin (can parallel start of M1a) ──► M1a Create API gate
   - `captureFrame` (and stream if easy) working
 - [ ] Minimal Studio shell: load tool version (fixture or DB) → `update` / `setAssets` → live preview
 - [ ] Smoke tests: mount → update params → set asset → capture frame → dispose
-- [ ] **Capture with a real uploaded asset** on canvas2d (depends on M1d; placeholders OK only for early host bring-up)
+- [ ] **Capture with a real uploaded asset** on canvas2d (depends on M1e upload; placeholders OK only for early host bring-up)
 
 #### Demo
 
@@ -854,7 +1013,7 @@ Open Studio on canvas2d fixture → tweak params → swap logo → live preview 
 #### Core-loop exit criteria (leave M2a → start M3)
 
 - canvas2d reference tool runs under the host
-- Capture path works for PNG-ready frames **with real uploaded asset** (or clear residual only if M1d not merged yet — must close before M5/M7)
+- Capture path works for PNG-ready frames **with real uploaded asset** (or clear residual only if M1e not merged yet — must close before M5/M7)
 - Safety: fixture code cannot reach parent window or arbitrary network
 - Studio shell is good enough for M3 redirect target
 
@@ -878,7 +1037,7 @@ Open Studio on canvas2d fixture → tweak params → swap logo → live preview 
 ### Depends on
 
 - M0-thin contract (full M0 not required)
-- M1d for real-asset capture demo (fixtures can bootstrap host earlier)
+- M1e for real-asset capture demo (fixtures can bootstrap host earlier)
 - Wire tools to DB before or during M3 finalize
 
 ---
@@ -1178,7 +1337,7 @@ Full success criteria path (canvas2d):
 |-------|------------|---------|
 | **Done** | Auth | Sign up · sign in · sign out · session → API |
 | **Freeze (thin)** | M0-thin | canvas2d contract + plan/job shapes — no multi-target polish required |
-| **Platform rest** | M1-rest (M1a→M1e) | Create gate, product DB, uploads, access rules |
+| **Platform rest** | M1-rest (M1a→M1f) | Create gate, product DB, uploads, access rules |
 | **Runtime** | **M2a** | canvas2d host + hand tool + capture (+ Studio shell) |
 | **First magic** | M3 | Vision text → live canvas2d tool + quotas + repair |
 | **Control** | M5 | Params, assets, colors, view source (start on M2a fixtures early) |
@@ -1189,11 +1348,11 @@ Full success criteria path (canvas2d):
 **Parallelism notes (speed):**
 
 - **Auth is done** — do not wait on more auth features.  
-- M0-thin and M1a can start immediately (even same day).  
-- After M1a: M1b schema ∥ M1c storage.  
-- M2a host can start on fixtures as soon as M0-thin lands; wire real uploads when M1d lands.  
+- **M0-thin is done** — start **M1a** immediately.  
+- After M1a: **M1b schema ∥ M1d storage**; M1c repos after M1b; M1e needs M1c + M1d.  
+- M2a host can start on fixtures as soon as M0-thin lands; wire real uploads when **M1e** lands.  
 - M5 Studio UI against M2a fixtures **in parallel** with M3 agent.  
-- M7 PNG capture prototype on M2a fixtures early; public share routes need M1 publicId + access rules.  
+- M7 PNG capture prototype on M2a fixtures early; public share routes need M1 publicId + access rules (M1f).  
 - M2b / M4 / M6 **must not** block M7/M8.
 
 ---
@@ -1212,16 +1371,18 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 ## Next action (start here)
 
-Auth is complete. To get the core loop ASAP, execute in this order:
+Auth + **M0-thin are complete.** To get the core loop ASAP, execute in this order:
 
-1. **M0-thin** — execute **M0a → M0f** (VibeTool → params → registry/skeleton → plan → job API → capture/CORS).  
-2. **M1a** — protected create/jobs stub → **401** without session; **200** with Better Auth user id (use M0e shapes).  
-3. **M1b + M1c in parallel** — product tables/repos + object storage adapter (local FS fine; M0f CORS notes).  
-4. **M1d → M1e** — upload round-trip + access rules + M1 demo checklist.  
-5. **M2a** — sandbox host + canvas2d hand-authored tool (M0c skeleton) + minimal Studio + capture with real asset.  
-6. **M3** — LangGraph Create (vision → canvas2d) + progress UX + quota/repair/salvage.  
-7. **M5 → M7 → M8** — full Studio personalization → export/share/embed → publish/gallery.
+1. ~~**M0-thin**~~ — **done** (M0a–M0f).  
+2. ~~**M1a**~~ — **done** (Pydantic job DTOs + `POST /api/v1/jobs` gate + Create proof).  
+3. ~~**M1b**~~ — **done** (versioned SQL product tables + migrate script).  
+4. ~~**M1c**~~ — **done** (thin repositories + draft-tool smoke).  
+5. **M1d** — object storage adapter + CORS serve. **← start here**  
+6. **M1e → M1f** — upload round-trip + Create proof UI → access rules + M1 demo checklist.  
+7. **M2a** — sandbox host + canvas2d hand-authored tool (M0c skeleton) + minimal Studio + capture with real asset.  
+8. **M3** — LangGraph Create (vision → canvas2d) + progress UX + quota/repair/salvage.  
+9. **M5 → M7 → M8** — full Studio personalization → export/share/embed → publish/gallery.
 
 **Do not start next:** p5/three agent work, chat refine, inspiration vision pipeline, or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
 
-When you say **build**, start at **M0a** (contract home + VibeTool types).
+When you say **build**, start at **M1d** (storage + CORS).
