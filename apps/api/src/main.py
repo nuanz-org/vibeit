@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from adapters.storage import create_storage
 from api.v1.router import api_v1_router
 from core.config import get_settings
 
@@ -20,6 +21,20 @@ async def lifespan(app: FastAPI):
         # API still starts; auth-protected routes fail clearly without a pool.
         print(f"[api] DB pool not available: {exc}")
         app.state.db_pool = None
+
+    try:
+        app.state.storage = create_storage(
+            backend=settings.storage_backend,
+            local_root=settings.storage_local_root,
+            public_base_url=settings.api_public_base_url,
+        )
+        print(
+            f"[api] storage backend={settings.storage_backend!r} "
+            f"root={settings.storage_local_root!r}"
+        )
+    except Exception as exc:  # pragma: no cover
+        print(f"[api] storage not available: {exc}")
+        app.state.storage = None
 
     yield
 

@@ -43,3 +43,7 @@ yarn-error.log*
 .DS_Store
 *.pem
 .docqmind/
+
+# Local object storage (M1d filesystem adapter)
+.data/
+apps/api/.data/

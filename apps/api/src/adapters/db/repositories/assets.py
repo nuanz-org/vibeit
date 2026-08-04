@@ -29,6 +29,7 @@ class AssetsRepository:
         byte_size: int,
         original_filename: str | None = None,
         tool_id: UUID | str | None = None,
+        asset_id: UUID | str | None = None,
     ) -> AssetRow:
         if kind not in ASSET_KINDS:
             raise ValueError(f"invalid asset kind: {kind}")
@@ -36,25 +37,58 @@ class AssetsRepository:
             raise ValueError("byte_size must be >= 0")
 
         async with self._pool.acquire() as conn:
-            row = await conn.fetchrow(
-                f"""
-                INSERT INTO assets (
-                    owner_user_id, kind, storage_key, content_type,
-                    byte_size, original_filename, tool_id
+            if asset_id is not None:
+                row = await conn.fetchrow(
+                    f"""
+                    INSERT INTO assets (
+                        id, owner_user_id, kind, storage_key, content_type,
+                        byte_size, original_filename, tool_id
+                    )
+                    VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8::uuid)
+                    RETURNING {_ASSET_COLUMNS}
+                    """,
+                    str(asset_id),
+                    owner_user_id,
+                    kind,
+                    storage_key,
+                    content_type,
+                    byte_size,
+                    original_filename,
+                    str(tool_id) if tool_id is not None else None,
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7::uuid)
-                RETURNING {_ASSET_COLUMNS}
-                """,
-                owner_user_id,
-                kind,
-                storage_key,
-                content_type,
-                byte_size,
-                original_filename,
-                str(tool_id) if tool_id is not None else None,
-            )
+            else:
+                row = await conn.fetchrow(
+                    f"""
+                    INSERT INTO assets (
+                        owner_user_id, kind, storage_key, content_type,
+                        byte_size, original_filename, tool_id
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7::uuid)
+                    RETURNING {_ASSET_COLUMNS}
+                    """,
+                    owner_user_id,
+                    kind,
+                    storage_key,
+                    content_type,
+                    byte_size,
+                    original_filename,
+                    str(tool_id) if tool_id is not None else None,
+                )
         assert row is not None
         return asset_from_record(row)
+
+    async def get_asset_by_id(self, asset_id: UUID | str) -> AssetRow | None:
+        """Lookup by primary key (used by anonymous raw serve / M1d)."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                SELECT {_ASSET_COLUMNS}
+                FROM assets
+                WHERE id = $1::uuid
+                """,
+                str(asset_id),
+            )
+        return asset_from_record(row) if row else None
 
     async def get_asset_for_owner(
         self,

@@ -47,6 +47,61 @@ Schema smoke:
 cd apps/api && uv run python tests/test_schema_m1b.py
 ```
 
+## Object storage (M1d)
+
+Local filesystem by default — **no S3/R2 required** for the core loop.
+
+| Env | Default | Notes |
+|-----|---------|--------|
+| `STORAGE_BACKEND` | `local` | Only `local` implemented; `s3`/`r2` reserved |
+| `STORAGE_LOCAL_ROOT` | `apps/api/.data/uploads` | Gitignored |
+| `API_PUBLIC_BASE_URL` | `http://localhost:8000` | Used in `get_url()` |
+| `STORAGE_CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Asset GET (anonymous) |
+
+| Method | Path | Auth | Notes |
+|--------|------|------|--------|
+| `GET`/`HEAD` | `/api/v1/storage/objects/{key}` | None | Serve by storage key + CORS |
+| `GET` | `/api/v1/assets/raw/{asset_id}` | None | Serve via DB `storage_key` + CORS |
+
+Protocol: `adapters/storage/protocol.py` · local impl: `adapters/storage/local.py`.
+
+Key layout: `{kind}/{user_id}/{asset_id}/{filename}` (e.g. `inspiration/u1/uuid/logo.png`).
+
+```bash
+cd apps/api && uv run python tests/test_storage_m1d.py
+```
+
+## Upload API (M1e)
+
+Authenticated multipart upload (session cookie required):
+
+| Method | Path | Auth | Notes |
+|--------|------|------|--------|
+| `POST` | `/api/v1/assets` | session | Form: `kind` (`inspiration`\|`studio`) + `file` |
+| `GET` | `/api/v1/assets/{id}` | session (owner) | Metadata + URL |
+| `DELETE` | `/api/v1/assets/{id}` | session (owner) | Storage + DB row |
+| `GET` | `/api/v1/assets/raw/{id}` | none | Image bytes + CORS (canvas) |
+
+Allowlist: `image/png`, `image/jpeg`, `image/webp` · max **10 MB**.
+
+Service: `services/upload_asset.py` · response camelCase via `schemas/assets.py`.
+
+```bash
+cd apps/api && uv run python tests/test_upload_m1e.py
+```
+
+Web Create page includes an upload proof control (`credentials: "include"`).
+
+## Access rules + M1 demo (M1f)
+
+Product access matrix: **[md/access-rules.md](../../md/access-rules.md)**.
+
+Automated M1 exit checklist (jobs gate, schema, repos, storage CORS, upload):
+
+```bash
+cd apps/api && uv run python tests/test_m1_demo_checklist.py
+```
+
 ## Repositories (M1c)
 
 Thin asyncpg repositories under `src/adapters/db/repositories/`:
