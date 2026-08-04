@@ -1,7 +1,7 @@
 """
-Create-job use-case (M3a).
+Create-job use-case (M3a / M3f).
 
-Persist generation_jobs + draft tool. Worker / LangGraph lands in M3c–M3e.
+Persist generation_jobs + draft tool; enforce daily quota on enqueue.
 """
 
 from __future__ import annotations
@@ -12,13 +12,19 @@ from datetime import datetime, timezone
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.db.types import GenerationJobRow, ToolRow, ToolVersionRow
+from core.config import Settings
 from domain.job_status import (
     IllegalJobTransition,
     assert_job_transition,
     job_result_ready,
 )
+from services.quota import (
+    QuotaSnapshot,
+    get_quota_snapshot,
+    quota_to_wire,
+)
 
-# M3f will read from config; M3a defaults match consensus freeze.
+# Defaults match consensus freeze when settings not passed.
 DEFAULT_REPAIR_BUDGET = 3
 
 
@@ -38,10 +44,19 @@ class JobResultMissingVersionError(CreateJobError):
     """Succeeded job without a tool version (map to 404/500)."""
 
 
+class QuotaExceededError(CreateJobError):
+    """Daily create quota exhausted (map to 429 + QUOTA_EXCEEDED)."""
+
+    def __init__(self, message: str, *, snapshot: QuotaSnapshot) -> None:
+        super().__init__(message)
+        self.snapshot = snapshot
+
+
 @dataclass(frozen=True, slots=True)
 class CreateJobResult:
     job: GenerationJobRow
     tool: ToolRow
+    quota: QuotaSnapshot
 
 
 def _utc_iso(dt: datetime) -> str:
@@ -71,15 +86,36 @@ async def enqueue_create_job(
     tools: ToolsRepository,
     jobs: JobsRepository,
     repair_budget: int = DEFAULT_REPAIR_BUDGET,
+    settings: Settings | None = None,
+    skip_quota: bool = False,
 ) -> CreateJobResult:
     """
     Create draft tool + queued generation_jobs row.
 
     Prefer draft tool at enqueue so Studio tool id is stable before worker runs.
+    Counts this enqueue against the daily quota (M3f) unless skip_quota=True.
     """
     vision = vision_text.strip()
     if not vision:
         raise ValueError("vision_text is required")
+
+    quota_after: QuotaSnapshot | None = None
+    token_budget: int | None = None
+    if settings is not None:
+        token_budget = settings.create_token_budget
+        repair_budget = settings.create_repair_max
+        if not skip_quota:
+            snap = await get_quota_snapshot(
+                owner_user_id=owner_user_id,
+                jobs=jobs,
+                settings=settings,
+            )
+            if snap.exceeded:
+                raise QuotaExceededError(
+                    f"Daily create quota exceeded ({snap.creates_used}/"
+                    f"{snap.creates_limit}). Resets at {snap.resets_at.isoformat()}",
+                    snapshot=snap,
+                )
 
     tool = await tools.create_draft_tool(
         owner_user_id=owner_user_id,
@@ -93,8 +129,24 @@ async def enqueue_create_job(
         tool_id=tool.id,
         repair_budget=repair_budget,
         status="queued",
+        token_budget=token_budget,
     )
-    return CreateJobResult(job=job, tool=tool)
+
+    if settings is not None:
+        quota_after = await get_quota_snapshot(
+            owner_user_id=owner_user_id,
+            jobs=jobs,
+            settings=settings,
+        )
+    else:
+        # Minimal snapshot when settings omitted (legacy tests)
+        quota_after = QuotaSnapshot(
+            creates_used=1,
+            creates_limit=10,
+            resets_at=datetime.now(timezone.utc),
+        )
+
+    return CreateJobResult(job=job, tool=tool, quota=quota_after)
 
 
 async def get_owned_job(
@@ -109,7 +161,12 @@ async def get_owned_job(
     return row
 
 
-def job_to_status_fields(job: GenerationJobRow) -> dict:
+def job_to_status_fields(
+    job: GenerationJobRow,
+    *,
+    quota: QuotaSnapshot | None = None,
+    wall_time_ms: int | None = None,
+) -> dict:
     """Map DB row → JobStatusResponse field dict (service layer)."""
     # Map graph phases onto M0e JobPhase where possible
     phase = job.phase
@@ -130,13 +187,13 @@ def job_to_status_fields(job: GenerationJobRow) -> dict:
         "progress": None,
         "error_code": job.error_code,
         "error_message": job.error_message,
-        "quota": None,  # M3f
+        "quota": quota_to_wire(quota) if quota is not None else None,
         "repair": {
             "max_repairs": job.repair_budget,
             "repairs_used": job.repairs_used,
             "token_budget": job.token_budget,
             "tokens_used": job.tokens_used,
-            "wall_time_ms": None,
+            "wall_time_ms": wall_time_ms,
             "wall_time_used_ms": None,
         },
         "updated_at": _utc_iso(job.updated_at),

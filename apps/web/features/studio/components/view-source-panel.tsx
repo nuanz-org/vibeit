@@ -7,17 +7,33 @@ export type ViewSourcePanelProps = {
   target: string;
   open: boolean;
   onToggle: () => void;
+  /** Generated or fixture source (view-only; no download). */
+  sourceCode?: string | null;
+  isGenerated?: boolean;
 };
 
 /**
- * View-only source stub (M2a5). Full source browser is M5; no download.
+ * View-only source (M2a5 / M3g). No download (product rule).
  */
 export function ViewSourcePanel({
   toolId,
   target,
   open,
   onToggle,
+  sourceCode,
+  isGenerated,
 }: ViewSourcePanelProps) {
+  const stub = `// View-only · source is not downloadable (product rule)
+// toolId: ${toolId}
+// target: ${target}
+//
+// ${
+    isGenerated
+      ? "Generated tool version (from API)."
+      : "Fixture: apps/web/runtime/fixtures/social-frame/tool.ts"
+  }
+// Runtime preview uses the sandboxed canvas2d host.`;
+
   return (
     <div className={styles.sourcePanel}>
       <button type="button" className={styles.sourceToggle} onClick={onToggle}>
@@ -25,15 +41,7 @@ export function ViewSourcePanel({
       </button>
       {open ? (
         <pre className={styles.sourcePre}>
-          {`// View-only · fixture source is not downloadable (product rule)
-// toolId: ${toolId}
-// target: ${target}
-//
-// Runtime loads createSocialFrameTool inside a sandboxed iframe.
-// Creative fill: apps/web/runtime/fixtures/social-frame/tool.ts
-// Schema: @repo/contracts/examples/canvas2d-social-frame
-//
-// Full source browser lands in M5.`}
+          {sourceCode?.trim() ? sourceCode : stub}
         </pre>
       ) : null}
     </div>

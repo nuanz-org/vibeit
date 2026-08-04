@@ -102,3 +102,14 @@ class Settings:
         self.create_worker_enabled: bool = os.getenv(
             "CREATE_WORKER_ENABLED", "true"
         ).lower() not in ("0", "false", "no")
+        # Daily create quota (M3f) — counts accepted enqueues per UTC day
+        self.create_quota_per_day: int = int(os.getenv("CREATE_QUOTA_PER_DAY", "10"))
+        # Optional soft token budget stored on the job (not hard-killed mid-stream yet)
+        raw_tok = os.getenv("CREATE_TOKEN_BUDGET", "").strip()
+        self.create_token_budget: int | None = (
+            int(raw_tok) if raw_tok else None
+        )
+        # Rough cost estimate: integer cents per 1M tokens (default 15 ≈ $0.15/M)
+        self.create_cost_cents_per_million_tokens: int = int(
+            os.getenv("CREATE_COST_CENTS_PER_MILLION_TOKENS", "15")
+        )

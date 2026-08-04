@@ -1,0 +1,176 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--foreground) 25%, transparent);
+  outline-offset: 1px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.button {
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--foreground);
+  color: var(--background);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonGhost {
+  background: transparent;
+  color: inherit;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.muted {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.error {
+  font-size: 0.875rem;
+  color: #b91c1c;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ok {
+  font-size: 0.875rem;
+  color: #15803d;
+  margin: 0;
+}
+
+.quota {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.progressCard {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.progressTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.progressStatus {
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.progressStatus[data-status="running"],
+.progressStatus[data-status="queued"] {
+  color: #a16207;
+  background: color-mix(in srgb, #a16207 14%, transparent);
+}
+
+.progressStatus[data-status="succeeded"] {
+  color: #15803d;
+  background: color-mix(in srgb, #15803d 14%, transparent);
+}
+
+.progressStatus[data-status="failed"] {
+  color: #b91c1c;
+  background: color-mix(in srgb, #b91c1c 14%, transparent);
+}
+
+.progressBarTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--foreground);
+  transition: width 0.4s ease;
+}
+
+.code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8em;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.debug {
+  margin-top: 2rem;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  padding-top: 1rem;
+}
+
+.debug summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.debugBody {
+  margin-top: 1rem;
+}

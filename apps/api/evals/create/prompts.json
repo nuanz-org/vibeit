@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "milestone": "M3h",
+  "target": "canvas2d",
+  "gates": {
+    "minFirstPassRate": 0.7,
+    "minAfterRepairRate": 0.9
+  },
+  "prompts": [
+    {
+      "id": "orb-pulse",
+      "vision": "A purple pulsing orb with a bold white title on a dark background",
+      "tags": ["simple", "motion"]
+    },
+    {
+      "id": "social-9-16",
+      "vision": "A kinetic 9:16 social frame with headline, accent color, and logo slot",
+      "tags": ["social", "assets"]
+    },
+    {
+      "id": "gradient-wave",
+      "vision": "Soft gradient waves drifting slowly with a short caption",
+      "tags": ["motion"]
+    },
+    {
+      "id": "type-focus",
+      "vision": "Bold kinetic typography that scales with a number intensity param",
+      "tags": ["type"]
+    },
+    {
+      "id": "logo-badge",
+      "vision": "Circular badge with logo in the center and ring accent animation",
+      "tags": ["assets"]
+    },
+    {
+      "id": "minimal-still",
+      "vision": "Minimal still poster: solid color field, single word title, no motion",
+      "tags": ["simple"]
+    },
+    {
+      "id": "neon-grid",
+      "vision": "Dark neon grid with cyan lines and a floating product title",
+      "tags": ["grid"]
+    },
+    {
+      "id": "soft-particles",
+      "vision": "Soft floating dots orbiting a center point with speed control",
+      "tags": ["motion"]
+    },
+    {
+      "id": "story-slide",
+      "vision": "Vertical story slide 9:16 with background color, subtitle, and logo mark",
+      "tags": ["social"]
+    },
+    {
+      "id": "brand-pulse",
+      "vision": "Brand mark pulse: accent color blob behind a logo slot and short tagline",
+      "tags": ["assets", "brand"]
+    }
+  ]
+}

@@ -176,6 +176,49 @@ cd apps/api && uv run python scripts/migrate.py   # includes 002_job_phase
 cd apps/api && uv run python tests/test_create_m3e.py
 ```
 
+## Create quota (M3f)
+
+| Env | Default | Notes |
+|-----|---------|--------|
+| `CREATE_QUOTA_PER_DAY` | `10` | Accepted enqueues / user / UTC day |
+| `CREATE_TOKEN_BUDGET` | _(empty)_ | Optional soft budget stored on job |
+| `CREATE_COST_CENTS_PER_MILLION_TOKENS` | `15` | Rough cost log only |
+
+- Over limit → **429** `{ errorCode: "QUOTA_EXCEEDED", quota: { createsUsed, createsLimit, resetsAt } }`
+- Create + status responses include current `quota`
+- Finalize writes `tokens_used` + `cost_cents` on the job row
+
+```bash
+cd apps/api && uv run python tests/test_quota_m3f.py
+```
+
+## Tools API (M3g)
+
+| Method | Path | Auth | Notes |
+|--------|------|------|--------|
+| `GET` | `/api/v1/tools/{toolId}` | owner session | Tool metadata + `latestVersion` (code, schema, plan) |
+
+Used by Studio after Create redirects to `/studio/{toolId}`.
+
+```bash
+cd apps/api && uv run python tests/test_tools_m3g.py
+```
+
+## Create eval (M3h)
+
+```bash
+# Offline mock (CI) — 10 prompts, gates ≥70% first-pass OR ≥90% after-repair
+uv run python scripts/eval_create.py
+
+# Live OpenRouter (costs tokens)
+EVAL_LIVE=1 uv run python scripts/eval_create.py
+
+# Automated M3 exit rollup
+uv run python tests/test_m3_demo_checklist.py
+```
+
+Prompts: `evals/create/prompts.json` · Manual: [md/m3-demo-checklist.md](../../md/m3-demo-checklist.md)
+
 ## Access rules + M1 demo (M1f)
 
 Product access matrix: **[md/access-rules.md](../../md/access-rules.md)**.

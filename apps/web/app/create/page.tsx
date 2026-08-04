@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { UserMenu } from "@/features/auth/components/user-menu";
-import { CreateJobStub } from "@/features/create/components/create-job-stub";
+import { CreateForm } from "@/features/create/components/create-form";
 import { UploadAssetStub } from "@/features/create/components/upload-asset-stub";
 import { requireSession } from "@/lib/auth/session";
 
@@ -11,9 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Create is auth-gated (M1 product rule).
- * M1a: stub create-job · M1e: upload proof.
- * Full Create UI lands in M3.
+ * Create is auth-gated. M3g: vision → job poll → Studio.
  */
 export default async function CreatePage() {
   const session = await requireSession("/create");
@@ -52,44 +50,50 @@ export default async function CreatePage() {
       <main>
         <h1 style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>Create</h1>
         <p style={{ opacity: 0.7, marginBottom: "1.5rem", lineHeight: 1.5 }}>
-          Signed in as <strong>{session.user.email}</strong>. Vision → tool
-          generation ships in M3; upload + job stubs prove the platform path.{" "}
-          <Link href="/studio/social-frame" style={{ textDecoration: "underline" }}>
-            Open Studio (social-frame fixture)
-          </Link>
-          .
+          Signed in as <strong>{session.user.email}</strong>. Describe a vision
+          — we generate a canvas2d tool and open Studio when it is ready.
         </p>
 
         <div style={cardStyle}>
-          <p
-            style={{
-              fontSize: "0.9rem",
-              lineHeight: 1.5,
-              opacity: 0.85,
-              marginTop: 0,
-              marginBottom: "1rem",
-            }}
-          >
-            <strong>M1e</strong> — upload inspiration/studio image (session
-            cookie + multipart). Preview uses CORS-safe raw URL.
-          </p>
-          <UploadAssetStub />
+          <CreateForm />
         </div>
 
-        <div style={cardStyle}>
-          <p
+        <details style={{ marginTop: "1.5rem" }}>
+          <summary
             style={{
-              fontSize: "0.9rem",
-              lineHeight: 1.5,
-              opacity: 0.85,
-              marginTop: 0,
-              marginBottom: "1rem",
+              cursor: "pointer",
+              fontSize: "0.85rem",
+              opacity: 0.65,
+              fontWeight: 500,
             }}
           >
-            <strong>M1a</strong> — start a stub create job (no worker yet).
-          </p>
-          <CreateJobStub />
-        </div>
+            Platform debug (upload stub)
+          </summary>
+          <div style={{ ...cardStyle, marginTop: "1rem" }}>
+            <p
+              style={{
+                fontSize: "0.9rem",
+                lineHeight: 1.5,
+                opacity: 0.85,
+                marginTop: 0,
+                marginBottom: "1rem",
+              }}
+            >
+              Optional image upload (M1e). Studio assets can also be uploaded
+              inside Studio.
+            </p>
+            <UploadAssetStub />
+            <p style={{ fontSize: "0.85rem", opacity: 0.6, marginTop: "1rem" }}>
+              Fixture Studio:{" "}
+              <Link
+                href="/studio/social-frame"
+                style={{ textDecoration: "underline" }}
+              >
+                /studio/social-frame
+              </Link>
+            </p>
+          </div>
+        </details>
       </main>
     </div>
   );

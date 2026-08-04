@@ -30,6 +30,7 @@ class JobsRepository:
         tool_id: UUID | str | None = None,
         repair_budget: int = 3,
         status: str = "queued",
+        token_budget: int | None = None,
     ) -> GenerationJobRow:
         if status not in JOB_STATUSES:
             raise ValueError(f"invalid job status: {status}")
@@ -39,10 +40,10 @@ class JobsRepository:
                 f"""
                 INSERT INTO generation_jobs (
                     owner_user_id, tool_id, status, vision_text,
-                    inspiration_asset_ids, repair_budget
+                    inspiration_asset_ids, repair_budget, token_budget
                 )
                 VALUES (
-                    $1, $2::uuid, $3, $4, $5::jsonb, $6
+                    $1, $2::uuid, $3, $4, $5::jsonb, $6, $7
                 )
                 RETURNING {_JOB_COLUMNS}
                 """,
@@ -52,6 +53,7 @@ class JobsRepository:
                 vision_text,
                 json.dumps(ids),
                 repair_budget,
+                token_budget,
             )
         assert row is not None
         return job_from_record(row)
@@ -97,6 +99,7 @@ class JobsRepository:
         repairs_used: int | None = None,
         phase: str | None = None,
         tokens_used: int | None = None,
+        cost_cents: int | None = None,
         clear_errors: bool = False,
     ) -> GenerationJobRow | None:
         if status not in JOB_STATUSES:
@@ -115,6 +118,7 @@ class JobsRepository:
                         repairs_used = COALESCE($6, repairs_used),
                         phase = COALESCE($7, phase),
                         tokens_used = COALESCE($8, tokens_used),
+                        cost_cents = COALESCE($9, cost_cents),
                         updated_at = now()
                     WHERE id = $1::uuid
                     RETURNING {_JOB_COLUMNS}
@@ -127,6 +131,7 @@ class JobsRepository:
                     repairs_used,
                     phase,
                     tokens_used,
+                    cost_cents,
                 )
             else:
                 row = await conn.fetchrow(
@@ -140,6 +145,7 @@ class JobsRepository:
                         repairs_used = COALESCE($6, repairs_used),
                         phase = COALESCE($7, phase),
                         tokens_used = COALESCE($8, tokens_used),
+                        cost_cents = COALESCE($9, cost_cents),
                         updated_at = now()
                     WHERE id = $1::uuid
                     RETURNING {_JOB_COLUMNS}
@@ -152,6 +158,7 @@ class JobsRepository:
                     repairs_used,
                     phase,
                     tokens_used,
+                    cost_cents,
                 )
         return job_from_record(row) if row else None
 
@@ -180,5 +187,60 @@ class JobsRepository:
                 phase,
                 repairs_used,
                 tokens_used,
+            )
+        return job_from_record(row) if row else None
+
+    async def count_jobs_for_owner_since(
+        self,
+        *,
+        owner_user_id: str,
+        since_utc: Any,
+    ) -> int:
+        """
+        Count generation_jobs created by owner at or after `since_utc` (UTC).
+
+        M3f: used for daily create quota (accepted enqueues).
+        """
+        async with self._pool.acquire() as conn:
+            val = await conn.fetchval(
+                """
+                SELECT COUNT(*)::int
+                FROM generation_jobs
+                WHERE owner_user_id = $1
+                  AND created_at >= $2
+                """,
+                owner_user_id,
+                since_utc,
+            )
+        return int(val or 0)
+
+    async def update_job_usage(
+        self,
+        job_id: UUID | str,
+        *,
+        tokens_used: int | None = None,
+        token_budget: int | None = None,
+        cost_cents: int | None = None,
+        repairs_used: int | None = None,
+    ) -> GenerationJobRow | None:
+        """Persist token/cost usage (M3f)."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE generation_jobs
+                SET
+                    tokens_used = COALESCE($2, tokens_used),
+                    token_budget = COALESCE($3, token_budget),
+                    cost_cents = COALESCE($4, cost_cents),
+                    repairs_used = COALESCE($5, repairs_used),
+                    updated_at = now()
+                WHERE id = $1::uuid
+                RETURNING {_JOB_COLUMNS}
+                """,
+                str(job_id),
+                tokens_used,
+                token_budget,
+                cost_cents,
+                repairs_used,
             )
         return job_from_record(row) if row else None

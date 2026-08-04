@@ -10,17 +10,19 @@ export type CreateJobRequest = {
 export type JobStatus = "queued" | "running" | "succeeded" | "failed";
 export type JobPhase = "plan" | "codegen" | "validate" | "repair";
 
+export type QuotaFields = {
+  createsUsed: number;
+  createsLimit: number;
+  resetsAt?: string;
+};
+
 /** M0e CreateJobResponse (+ optional debug userId). */
 export type CreateJobResponse = {
   jobId: string;
   status: JobStatus;
   createdAt: string;
   userId?: string;
-  quota?: {
-    createsUsed: number;
-    createsLimit: number;
-    resetsAt?: string;
-  };
+  quota?: QuotaFields;
 };
 
 export type JobStatusResponse = {
@@ -40,7 +42,7 @@ export type JobStatusResponse = {
     wallTimeMs?: number | null;
     wallTimeUsedMs?: number | null;
   } | null;
-  quota?: CreateJobResponse["quota"] | null;
+  quota?: QuotaFields | null;
 };
 
 export type JobResultResponse = {
@@ -57,9 +59,26 @@ async function readError(res: Response): Promise<string> {
   return text ? `: ${text}` : "";
 }
 
+export class CreateJobApiError extends Error {
+  readonly status: number;
+  readonly errorCode?: string;
+  readonly quota?: QuotaFields;
+
+  constructor(
+    message: string,
+    opts: { status: number; errorCode?: string; quota?: QuotaFields },
+  ) {
+    super(message);
+    this.name = "CreateJobApiError";
+    this.status = opts.status;
+    this.errorCode = opts.errorCode;
+    this.quota = opts.quota;
+  }
+}
+
 /**
  * POST /api/v1/jobs with session cookie (credentials include).
- * M3a: persists job + draft tool (queued until worker).
+ * M3a+: persists job + draft tool; may 429 on quota.
  */
 export async function createJob(
   body: CreateJobRequest,
@@ -72,12 +91,41 @@ export async function createJob(
   });
 
   if (!res.ok) {
-    throw new Error(
-      `Create job failed (${res.status})${await readError(res)}`,
-    );
+    const text = await res.text().catch(() => "");
+    let errorCode: string | undefined;
+    let quota: QuotaFields | undefined;
+    let message = `Create job failed (${res.status})${text ? `: ${text}` : ""}`;
+    try {
+      const parsed = JSON.parse(text) as {
+        errorCode?: string;
+        errorMessage?: string;
+        quota?: QuotaFields;
+      };
+      if (parsed.errorCode) errorCode = parsed.errorCode;
+      if (parsed.quota) quota = parsed.quota;
+      if (parsed.errorMessage) {
+        message = parsed.errorMessage;
+      }
+    } catch {
+      /* plain text body */
+    }
+    throw new CreateJobApiError(message, {
+      status: res.status,
+      errorCode,
+      quota,
+    });
   }
 
   return res.json() as Promise<CreateJobResponse>;
+}
+
+/** Parse salvage tool id from failed job errorMessage (M3e). */
+export function parseSalvageToolId(
+  errorMessage: string | null | undefined,
+): string | null {
+  if (!errorMessage) return null;
+  const m = errorMessage.match(/salvage_draft=true\s+toolId=([0-9a-fA-F-]{36})/);
+  return m?.[1] ?? null;
 }
 
 /** GET /api/v1/jobs/{jobId} — owner poll. */

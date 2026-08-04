@@ -107,6 +107,7 @@ async def run_generation_job(
             state=state,
             jobs=jobs,
             tools=tools,
+            cost_cents_per_million_tokens=settings.create_cost_cents_per_million_tokens,
         )
     except Exception as exc:  # noqa: BLE001 — worker must not crash process
         print(f"[worker] job {job_id} crashed: {exc}")

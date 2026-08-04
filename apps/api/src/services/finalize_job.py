@@ -15,6 +15,7 @@ from adapters.db.types import GenerationJobRow, ToolVersionRow
 from agent.state import CreateGraphState
 from domain.job_status import IllegalJobTransition, assert_job_transition
 from services.create_job import JobNotFoundError
+from services.quota import estimate_cost_cents
 
 
 def _defaults_from_plan(plan: dict[str, Any] | None) -> dict[str, Any]:
@@ -33,6 +34,7 @@ async def finalize_from_agent_state(
     state: CreateGraphState,
     jobs: JobsRepository,
     tools: ToolsRepository,
+    cost_cents_per_million_tokens: int = 15,
 ) -> GenerationJobRow:
     """
     Persist outcome of run_create_with_repairs.
@@ -62,6 +64,12 @@ async def finalize_from_agent_state(
         and code
     )
 
+    token_count = int(tokens or 0)
+    cost = estimate_cost_cents(
+        token_count,
+        cents_per_million=cost_cents_per_million_tokens,
+    )
+
     if success:
         assert_job_transition(job.status, "succeeded")
         version = await tools.create_tool_version(
@@ -80,11 +88,19 @@ async def finalize_from_agent_state(
             error_message=None,
             repairs_used=int(repairs or 0),
             phase="finalize",
-            tokens_used=int(tokens) if tokens is not None else None,
+            tokens_used=token_count if tokens is not None else None,
             clear_errors=True,
         )
         if updated is None:
             raise JobNotFoundError(job_id)
+        if tokens is not None or cost:
+            await jobs.update_job_usage(
+                job_id,
+                tokens_used=token_count if tokens is not None else None,
+                cost_cents=cost if tokens is not None else None,
+                repairs_used=int(repairs or 0),
+            )
+            updated = await jobs.get_job(job_id) or updated
         # attach version id is not on job row — result uses latest version
         _ = version
         return updated
@@ -126,9 +142,17 @@ async def finalize_from_agent_state(
         error_message=err_msg,
         repairs_used=int(repairs or 0),
         phase="finalize",
-        tokens_used=int(tokens) if tokens is not None else None,
+        tokens_used=token_count if tokens is not None else None,
         clear_errors=True,
     )
     if updated is None:
         raise JobNotFoundError(job_id)
+    if tokens is not None:
+        await jobs.update_job_usage(
+            job_id,
+            tokens_used=token_count,
+            cost_cents=cost,
+            repairs_used=int(repairs or 0),
+        )
+        updated = await jobs.get_job(job_id) or updated
     return updated

@@ -1,14 +1,15 @@
 """
-Create-job HTTP surface (M3a + M3e worker enqueue).
+Create-job HTTP surface (M3a + M3e worker + M3f quota).
 
-POST /api/v1/jobs — persist + background generation worker.
-GET  /api/v1/jobs/{jobId} — owner poll status (incl. phase).
+POST /api/v1/jobs — quota check + persist + background worker.
+GET  /api/v1/jobs/{jobId} — owner poll status (incl. phase + quota).
 GET  /api/v1/jobs/{jobId}/result — owner result only when succeeded.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 
 from adapters.auth.types import AuthUser
 from adapters.db.repositories.jobs import JobsRepository
@@ -19,20 +20,24 @@ from core.security import get_current_user
 from schemas.jobs import (
     CreateJobRequest,
     CreateJobResponse,
+    JobErrorBody,
     JobResultResponse,
     JobStatusResponse,
+    QuotaFields,
     RepairBudgetFields,
 )
 from services.create_job import (
     JobNotFoundError,
     JobResultMissingVersionError,
     JobResultNotReadyError,
+    QuotaExceededError,
     _utc_iso,
     enqueue_create_job,
     get_job_result_for_owner,
     get_owned_job,
     job_to_status_fields,
 )
+from services.quota import get_quota_snapshot, quota_to_wire
 from workers.generation import run_generation_job
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -43,6 +48,9 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
     response_model=CreateJobResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Start a Create job",
+    responses={
+        429: {"model": JobErrorBody, "description": "Daily create quota exceeded"},
+    },
 )
 async def create_job(
     body: CreateJobRequest,
@@ -51,12 +59,12 @@ async def create_job(
     user: AuthUser = Depends(get_current_user),
     tools: ToolsRepository = Depends(get_tools_repo),
     jobs: JobsRepository = Depends(get_jobs_repo),
-) -> CreateJobResponse:
+) -> CreateJobResponse | JSONResponse:
     """
     Accept a create job for the authenticated user.
 
-    Persists `generation_jobs` (queued) + draft tool, then enqueues the
-    in-process generation worker (M3e) unless CREATE_WORKER_ENABLED=false.
+    M3f: enforces CREATE_QUOTA_PER_DAY (default 10) per UTC day.
+    Persists job + draft tool; enqueues worker when OpenRouter key is set.
     """
     settings = get_settings()
     try:
@@ -66,7 +74,17 @@ async def create_job(
             inspiration_asset_ids=body.inspiration_asset_ids,
             tools=tools,
             jobs=jobs,
-            repair_budget=settings.create_repair_max,
+            settings=settings,
+        )
+    except QuotaExceededError as exc:
+        body_err = JobErrorBody(
+            error_code="QUOTA_EXCEEDED",
+            error_message=str(exc),
+            quota=QuotaFields(**quota_to_wire(exc.snapshot)),
+        )
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content=body_err.model_dump(by_alias=True),
         )
     except ValueError as exc:
         raise HTTPException(
@@ -81,8 +99,6 @@ async def create_job(
 
     job = result.job
 
-    # Auto-run worker when enabled and OpenRouter key is configured.
-    # Without a key, job stays queued (fixture/manual worker tests call runner directly).
     if settings.create_worker_enabled and settings.openrouter_api_key:
         pool = getattr(request.app.state, "db_pool", None)
         if pool is not None:
@@ -98,6 +114,7 @@ async def create_job(
         status=job.status,  # type: ignore[arg-type]
         created_at=_utc_iso(job.created_at),
         user_id=user.id,
+        quota=QuotaFields(**quota_to_wire(result.quota)),
     )
 
 
@@ -111,6 +128,7 @@ async def get_job_status(
     user: AuthUser = Depends(get_current_user),
     jobs: JobsRepository = Depends(get_jobs_repo),
 ) -> JobStatusResponse:
+    settings = get_settings()
     try:
         job = await get_owned_job(
             job_id=job_id,
@@ -123,11 +141,22 @@ async def get_job_status(
             detail="Job not found",
         ) from exc
 
-    fields = job_to_status_fields(job)
+    quota = await get_quota_snapshot(
+        owner_user_id=user.id,
+        jobs=jobs,
+        settings=settings,
+    )
+    fields = job_to_status_fields(
+        job,
+        quota=quota,
+        wall_time_ms=int(settings.create_wall_time_seconds * 1000),
+    )
     repair_raw = fields.pop("repair")
+    quota_raw = fields.pop("quota")
     return JobStatusResponse(
         **fields,
         repair=RepairBudgetFields(**repair_raw) if repair_raw else None,
+        quota=QuotaFields(**quota_raw) if quota_raw else None,
     )
 
 

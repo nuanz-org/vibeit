@@ -15,12 +15,23 @@ import { ViewSourcePanel } from "./view-source-panel";
 
 export type StudioShellProps = {
   fixture: StudioFixtureMeta;
+  /** Optional generated source for view-only panel (M3g). */
+  sourceCode?: string | null;
+  versionId?: string | null;
+  publicId?: string | null;
+  isGenerated?: boolean;
 };
 
 /**
- * Studio shell (M2a5 + M2a6 real-asset capture exit).
+ * Studio shell (M2a5 + M2a6 capture + M3g generated tools).
  */
-export function StudioShell({ fixture }: StudioShellProps) {
+export function StudioShell({
+  fixture,
+  sourceCode,
+  versionId,
+  publicId,
+  isGenerated,
+}: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
   const runtime = useStudioRuntime({ runtimeToolId: fixture.runtimeToolId });
 
@@ -69,6 +80,17 @@ export function StudioShell({ fixture }: StudioShellProps) {
           <div>
             <h1 className={styles.sidebarTitle}>{fixture.label}</h1>
             <p className={styles.sidebarDesc}>{fixture.description}</p>
+            {publicId ? (
+              <p className={styles.muted} style={{ marginTop: 8 }}>
+                publicId <code>{publicId}</code>
+                {versionId ? (
+                  <>
+                    {" "}
+                    · version <code>{versionId.slice(0, 8)}…</code>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
 
           <section className={styles.section}>
@@ -167,6 +189,8 @@ export function StudioShell({ fixture }: StudioShellProps) {
             target={fixture.target}
             open={sourceOpen}
             onToggle={() => setSourceOpen((v) => !v)}
+            sourceCode={sourceCode}
+            isGenerated={isGenerated}
           />
 
           {runtime.error ? (
