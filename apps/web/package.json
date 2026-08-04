@@ -13,6 +13,7 @@
     "auth:generate": "npx auth@latest generate"
   },
   "dependencies": {
+    "@repo/contracts": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.4",
     "better-auth": "^1.6.25",

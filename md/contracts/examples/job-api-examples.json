@@ -1,0 +1,65 @@
+{
+  "createRequest": {
+    "visionText": "A kinetic 9:16 social frame with bold headline, purple accent pulse, and a logo slot",
+    "inspirationAssetIds": ["asset_insp_01"],
+    "clientMetadata": { "uiSource": "create-page", "locale": "en" }
+  },
+  "createResponse": {
+    "jobId": "job_01HZXEXAMPLE000000000001",
+    "status": "queued",
+    "createdAt": "2026-08-04T12:00:00.000Z",
+    "quota": {
+      "createsUsed": 3,
+      "createsLimit": 20,
+      "resetsAt": "2026-08-05T00:00:00.000Z"
+    }
+  },
+  "statusRunning": {
+    "jobId": "job_01HZXEXAMPLE000000000001",
+    "status": "running",
+    "phase": "codegen",
+    "progress": 0.55,
+    "updatedAt": "2026-08-04T12:00:12.000Z",
+    "resultReady": false,
+    "repair": {
+      "maxRepairs": 2,
+      "repairsUsed": 0,
+      "tokenBudget": 80000,
+      "tokensUsed": 12400,
+      "wallTimeMs": 120000,
+      "wallTimeUsedMs": 8200
+    }
+  },
+  "statusSucceeded": {
+    "jobId": "job_01HZXEXAMPLE000000000001",
+    "status": "succeeded",
+    "progress": 1,
+    "resultReady": true,
+    "updatedAt": "2026-08-04T12:00:28.000Z"
+  },
+  "statusFailed": {
+    "jobId": "job_01HZXEXAMPLE000000000002",
+    "status": "failed",
+    "phase": "repair",
+    "errorCode": "GENERATION_FAILED",
+    "errorMessage": "Tool failed validation after repair budget exhausted",
+    "resultReady": false,
+    "updatedAt": "2026-08-04T12:01:10.000Z"
+  },
+  "result": {
+    "jobId": "job_01HZXEXAMPLE000000000001",
+    "toolId": "tool_01HZXEXAMPLE0000000000A",
+    "versionId": "ver_01HZXEXAMPLE0000000000B",
+    "target": "canvas2d",
+    "completedAt": "2026-08-04T12:00:28.000Z"
+  },
+  "quotaExceeded": {
+    "errorCode": "QUOTA_EXCEEDED",
+    "errorMessage": "Daily create quota reached",
+    "quota": {
+      "createsUsed": 20,
+      "createsLimit": 20,
+      "resetsAt": "2026-08-05T00:00:00.000Z"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-04  
+**Date:** 2026-08-03 · **Revised:** 2026-08-04 (M0-thin M0a–M0f **done**)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
@@ -20,10 +20,27 @@
 | Create API gate | ❌ Open | No protected jobs/create stub yet (M1a) |
 | Product DB (tools/jobs/assets) | ❌ Open | M1b |
 | Object storage + uploads | ❌ Open | M1c–M1d |
-| VibeTool contract / skeletons | ❌ Open | M0 (thin freeze next) |
+| **M0-thin contracts** | ✅ **Done** | M0a–M0f landed — see note below |
 | Runtime host / Studio / agent | ❌ Open | M2+ |
 
-**Auth for the core loop is unblocked.** Next bottleneck is **M0 thin freeze + remaining M1 (data/uploads) + canvas2d runtime**, not more auth work.
+**Auth and M0-thin contracts are unblocked.** Next bottleneck is **M1-rest (data/uploads) + canvas2d runtime (M2a)**, not more auth or contract freezes.
+
+### M0-thin — done (polish later OK)
+
+**Status: complete for the ASAP path.** Treat `@repo/contracts` + `md/contracts/` as the working source of truth and **move on to M1 / M2a**.
+
+| Done (M0a–M0f) | Artifact |
+|----------------|----------|
+| VibeTool lifecycle | `packages/contracts` · `md/contracts/vibe-tool.md` |
+| Param schema + asset slots | `param-schema.ts` · `md/contracts/param-schema.md` |
+| Target registry + canvas2d skeleton | `targets.ts` · `skeletons/canvas2d` · docs |
+| Plan JSON | `plan.ts` · `md/contracts/plan-json.md` |
+| Job API shapes | `job-api.ts` · `md/contracts/job-api.md` |
+| Capture + CORS provisional notes | `capture-cors.ts` · `md/contracts/capture-cors.md` |
+
+**We can polish this again later** — tighten types, add p5/three harnesses, env templates, WebGL capture rules, PRD one-pagers, or richer validators. That is **full M0 / fast-follow polish**, not a blocker. Do **not** reopen architecture just to perfect docs before M1a/M2a.
+
+**Not done (deferred polish — do not block core loop):** full p5/three allowlists & skeletons, WebGL `preserveDrawingBuffer`, Control refine I/O sketch, monorepo env template, optional PRDs (see “Full M0 deliverables” under M0).
 
 ---
 
@@ -147,17 +164,28 @@ M6  Chat refine (Control LangGraph)
 
 **Why first:** Everything hangs on one shared `VibeTool` contract and job shapes. Freeze these before UI chrome or model tuning.
 
+**Progress (2026-08-04):**
+
+| Slice | Status |
+|-------|--------|
+| Consensus frozen v1 | ✅ Done |
+| Auth (does not block M0) | ✅ Done |
+| **M0-thin** (contracts for ASAP path) | ✅ **Done** (M0a–M0f) |
+| Full M0 polish (p5/three, PRDs, env) | ❌ Deferred (not on ASAP critical path) |
+
 ### M0-thin (core-loop exit) — do this first
 
-Enough to unlock **M1-rest + M2a**. Mark M0 core-loop exit when these are checked; do not wait for full M0 polish.
+Enough to unlock **M1-rest + M2a**. Mark M0 core-loop exit when **M0a–M0f** are checked; do not wait for full M0 polish.
 
-- [ ] **VibeTool contract** (TS types + short markdown): `mount`, `update`, `setAssets?`, `getParamSchema`, `getDefaultParams`, `getAssetSlots`, `captureFrame` / `getCaptureStream?`, `dispose`
-- [ ] **Param schema conventions** (colors, numbers, text, enums, asset-slot refs) — canvas2d-focused examples OK
-- [ ] **Target registry IDs** frozen: `canvas2d` | `p5` | `three` (only **canvas2d** required to implement now)
-- [ ] **canvas2d skeleton template** shape (model fills creative logic inside harness)
-- [ ] **Plan JSON** schema (concept, aspect, motion, params, `target` — target fixed to `canvas2d` on ASAP path)
-- [ ] **Job API** shapes: create job, status, result version, error codes, quota/budget fields (can use jsonb-friendly loose fields)
-- [ ] **Provisional capture/CORS notes** for canvas2d (`crossOrigin`, storage headers) — tighten with M1c/M2a if needed
+**High-level checklist** (detail lives in subparts below):
+
+- [x] **VibeTool contract** (TS types + short markdown): `mount`, `update`, `setAssets?`, `getParamSchema`, `getDefaultParams`, `getAssetSlots`, `captureFrame` / `getCaptureStream?`, `dispose`
+- [x] **Param schema conventions** (colors, numbers, text, enums, asset-slot refs) — canvas2d-focused examples OK
+- [x] **Target registry IDs** frozen: `canvas2d` | `p5` | `three` (only **canvas2d** required to implement now)
+- [x] **canvas2d skeleton template** shape (model fills creative logic inside harness)
+- [x] **Plan JSON** schema (concept, aspect, motion, params, `target` — target fixed to `canvas2d` on ASAP path)
+- [x] **Job API** shapes: create job, status, result version, error codes, quota/budget fields (can use jsonb-friendly loose fields)
+- [x] **Provisional capture/CORS notes** for canvas2d (`crossOrigin`, storage headers) — tighten with M1c/M2a if needed
 
 **M0-thin demo:** An engineer can implement a hand-authored canvas2d tool and a create-job API without reopening architecture.
 
@@ -166,13 +194,335 @@ Enough to unlock **M1-rest + M2a**. Mark M0 core-loop exit when these are checke
 - VibeTool + param schema + canvas2d skeleton + plan/job shapes treated as source of truth for M1/M2a/M3
 - p5/three may be named-only in the registry until M2b
 
+### Depends on
+
+- Consensus frozen v1 ✓
+- **Auth already done** — M0 does not depend on finishing M1
+
+### Out of scope (M0-thin)
+
+- Real auth, DB, agent, sandbox implementation beyond contract stubs
+- Product UI, Studio chrome, live LLM calls
+- Full p5/three harnesses (named in registry only)
+
+---
+
+### M0-thin — implementation plan (subparts)
+
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M0-thin done until **M0f**.
+
+| Subpart | Name | Depends on | Outcome |
+|---------|------|------------|---------|
+| **M0a** | Contract home + VibeTool types | Consensus ✓ | ✅ Done — `@repo/contracts` + `md/contracts/vibe-tool.md` |
+| **M0b** | Param schema + asset slots | M0a | ✅ Done — kinds + social-frame example + `param-schema.md` |
+| **M0c** | Target registry + canvas2d skeleton | M0a (+ M0b preferred) | ✅ Done — `TargetId` + `createCanvas2dTool` harness/stub |
+| **M0d** | Plan JSON schema | M0b + M0c | ✅ Done — `ToolPlan` + social-frame plan fixture |
+| **M0e** | Job API shapes | M0d | ✅ Done — job DTOs + status machine + fixtures |
+| **M0f** | Capture + CORS provisional notes | M0a | ✅ Done — `capture-cors.md` + policy constants |
+
+**Suggested effort:** M0a ~0.25d · M0b ~0.25d · M0c ~0.5d · M0d ~0.25d · M0e ~0.5d · M0f ~0.25d (≈1–2 focused days).
+
+**Parallelism:** After **M0a**, M0b and M0c can start in parallel if two people; otherwise stay sequential. **M0f** can draft alongside M0e.
+
+**Where to put artifacts (default):**
+
+| Artifact | Suggested path |
+|----------|----------------|
+| Short contract docs | `md/contracts/` (or `md/m0/`) |
+| TS types (preferred) | `packages/contracts` (new shared package) **or** `apps/web` feature-local until package is worth it |
+| Python mirrors (optional in thin) | `apps/api/src/` pydantic models matching job/plan DTOs — can land with M1a/M3 if TS is source of truth first |
+| canvas2d skeleton | `md/contracts/skeletons/canvas2d.md` + later runtime file under `apps/web` in M2a |
+
+Pick **one** types home in M0a and stick to it. Prefer a small `packages/contracts` if both web and docs will import; otherwise TS under web + markdown is fine for thin freeze.
+
+---
+
+#### M0a — Contract home + VibeTool types
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Freeze the shared runtime interface every target must implement. Types + short markdown only — no sandbox host yet.
+
+**Decision:** Contract home = **`packages/contracts`** (`@repo/contracts`). Human docs = **`md/contracts/`**. Web depends on the workspace package for Studio later.
+
+**Tasks**
+
+1. Choose contract location (`packages/contracts` **or** `apps/web` + `md/contracts/`) and note it in the markdown.
+2. Write short markdown `md/contracts/vibe-tool.md` (or equivalent) describing the contract and lifecycle: mount → update/setAssets → capture → dispose.
+3. Define TypeScript types for:
+
+```text
+VibeTool {
+  mount(el, { params, assets })
+  update(params)
+  setAssets?(assets)
+  getParamSchema()
+  getDefaultParams()
+  getAssetSlots()
+  captureFrame() | getCaptureStream?()
+  dispose()
+}
+```
+
+4. Define supporting types: `ToolParams` (record), `ToolAssets` (slot id → URL/blob ref), `MountOptions`.
+5. Document hard rules (from consensus): no arbitrary npm, no parent `window`, no unrestricted fetch; host loads allowlisted runtime only.
+6. Note: **params + assets** model — no brand kit required at create/mount.
+
+**Touch (landed)**
+
+- `md/contracts/vibe-tool.md`
+- `packages/contracts/` (`@repo/contracts`) — `src/vibe-tool.ts`, `src/index.ts`
+- `apps/web` depends on `@repo/contracts` (workspace)
+
+**Exit**
+
+- [x] Engineer can implement a hand-authored tool against the TS interface without guessing method names
+- [x] Markdown answers “what is a valid VibeTool?” in one page
+- [x] High-level checkbox **VibeTool contract** can be marked complete
+
+**Out of scope for M0a:** iframe host, codegen, validators that execute code.
+
+---
+
+#### M0b — Param schema + asset slot conventions
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Schema-driven Control UI and codegen defaults. canvas2d-focused examples are enough.
+
+**Tasks**
+
+1. Define param field kinds for MVP:
+
+| Kind | Purpose | Example keys |
+|------|---------|--------------|
+| `color` | Palette overrides | `bg`, `fg`, `accent` |
+| `number` | Speed, intensity, scale (min/max/step) | `speed`, `intensity` |
+| `text` | Labels, headlines | `title` |
+| `enum` | Discrete modes | `layout`, `motionPreset` |
+| `boolean` | Simple toggles (optional) | `showGrid` |
+| `assetRef` | Points at a named asset slot | `logoSlot` |
+
+2. Define param schema JSON shape (name, kind, label?, default, min/max/step?, options? for enum).
+3. Define **asset slot** shape: `id`, `label`, `accept` (e.g. `image/*`), `required?`, optional aspect/hint.
+4. Write one **canvas2d example** tool schema: 3–5 params + 1–2 asset slots (e.g. logo, background).
+5. Document Control mapping: schema → UI controls; empty slots use generated placeholders until user uploads (Studio).
+
+**Touch (landed)**
+
+- `md/contracts/param-schema.md`
+- `packages/contracts/src/param-schema.ts` — discriminated `ParamField` kinds + `AssetSlot`
+- `packages/contracts/src/examples/canvas2d-social-frame.ts` (+ package export)
+- `md/contracts/examples/canvas2d-social-frame.json`
+
+**Exit**
+
+- [x] Example schema is valid against the types
+- [x] Asset slots and params are clearly separated (no brand kit object)
+- [x] High-level checkbox **Param schema conventions** can be marked complete
+
+**Out of scope for M0b:** Real Studio UI, upload binding, font/brand kit.
+
+---
+
+#### M0c — Target registry + canvas2d skeleton template
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Closed target set + one skeleton the Create agent (and hand tools) fill. Only **canvas2d** must be fully specified now.
+
+**Tasks**
+
+1. Freeze target registry IDs: `"canvas2d" | "p5" | "three"`.
+2. Document launch status per target:
+
+| Target | ASAP path | Libraries |
+|--------|-----------|-----------|
+| `canvas2d` | **Required** | Browser canvas only |
+| `p5` | Named only until M2b | Allowlisted p5 (full rules later) |
+| `three` | Named only; config-gated later | Allowlisted three (full rules later) |
+
+3. Write **canvas2d skeleton template** markdown + code shape:
+   - Harness owns: mount root, canvas sizing/aspect, rAF/loop hook, param apply, asset apply, capture, dispose
+   - Model (or hand author) fills: draw/update creative logic only
+   - Placeholders / TODO markers where codegen injects logic
+4. Document forbidden patterns in skeleton comments (parent window, remote code, free npm).
+5. Optional thin stub: empty `export function createTool(): VibeTool` skeleton file for M2a to copy (implementation can stay incomplete).
+
+**Touch (landed)**
+
+- `md/contracts/targets.md`
+- `md/contracts/skeletons/canvas2d.md`
+- `packages/contracts/src/targets.ts` — `TargetId`, `TARGET_REGISTRY`, `ASAP_TARGET`, guards
+- `packages/contracts/src/skeletons/canvas2d.ts` — `createCanvas2dTool` harness + `createTool` stub
+- Package export: `@repo/contracts/skeletons/canvas2d`
+
+**Exit**
+
+- [x] Registry IDs frozen and imported from one type
+- [x] canvas2d skeleton clearly separates harness vs creative fill
+- [x] High-level checkboxes **Target registry** + **canvas2d skeleton** can be marked complete
+
+**Out of scope for M0c:** Working iframe host, p5/three skeleton bodies (full M0 / M2b), live preview.
+
+---
+
+#### M0d — Plan JSON schema
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Structured plan the Create agent produces before codegen. ASAP path fixes `target: "canvas2d"`.
+
+**Tasks**
+
+1. Define Plan JSON fields (names can refine; meaning must not):
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| `concept` | yes | Short description of the tool idea |
+| `aspect` | yes | e.g. `1:1`, `9:16`, `16:9` |
+| `motion` | yes | Motion style / energy notes |
+| `params` | yes | Param list aligned with M0b schema (or defaults the tool will expose) |
+| `assetSlots` | yes (may be empty) | Slots the tool will declare |
+| `target` | yes | ASAP: always `"canvas2d"`; union still allows p5/three for later |
+| `palette?` | no | Optional color hints from vision (M4) |
+| `notes?` | no | Freeform agent notes |
+
+2. TS type + example plan JSON for a simple kinetic-type / social-frame canvas2d tool.
+3. Document: agent selects **one** target in Plan; ASAP path never picks p5/three.
+4. Note linkage: Plan → codegen into skeleton (M3); Plan metadata may persist on `tool_versions.plan` (M1b).
+
+**Touch (landed)**
+
+- `md/contracts/plan-json.md`
+- `packages/contracts/src/plan.ts` — `ToolPlan`, `AsapToolPlan`, `createAsapToolPlan`, `isAsapToolPlan`
+- `packages/contracts/src/examples/canvas2d-social-frame-plan.ts`
+- `md/contracts/examples/canvas2d-social-frame-plan.json`
+- Package export: `@repo/contracts/examples/canvas2d-social-frame-plan`
+
+**Exit**
+
+- [x] Example plan validates against the type
+- [x] ASAP rule documented: `target` fixed to `canvas2d` on critical path
+- [x] High-level checkbox **Plan JSON** can be marked complete
+
+**Out of scope for M0d:** LLM prompts, style-extract node, multi-target selection logic.
+
+---
+
+#### M0e — Job API shapes
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Freeze create-job / status / result / error / quota field shapes so M1a stubs and M3 worker do not invent parallel DTOs.
+
+**Tasks**
+
+1. Status machine (minimal): `queued → running → succeeded | failed`. Invariant: **failed never becomes ready/published**.
+2. Define request/response shapes (jsonb-friendly; field names illustrative):
+
+| Shape | Purpose | Key fields |
+|-------|---------|------------|
+| `CreateJobRequest` | Start Create | `visionText`, `inspirationAssetIds?[]`, optional client metadata |
+| `CreateJobResponse` | Accept job | `jobId`, `status`, `createdAt` |
+| `JobStatusResponse` | Poll | `jobId`, `status`, `phase?` (plan/codegen/validate/repair), `progress?`, `errorCode?`, `errorMessage?`, `quota?`, `repair?` |
+| `JobResultResponse` | Success payload | `jobId`, `toolId`, `versionId`, `target`, `publicId?` (if any) |
+| `QuotaFields` | Cost control (live from Create) | e.g. `createsUsed`, `createsLimit`, `resetsAt?` |
+| `RepairBudgetFields` | Per-job budget | e.g. `maxRepairs`, `repairsUsed`, `tokenBudget?`, `wallTimeMs?` |
+
+3. Provisional **error codes** (extend later, do not bikeshed):
+
+| Code | When |
+|------|------|
+| `UNAUTHORIZED` | No/invalid session |
+| `QUOTA_EXCEEDED` | Daily create quota hit |
+| `VALIDATION_FAILED` | Bad input / contract fail |
+| `GENERATION_FAILED` | Agent/runtime failure after repairs |
+| `TIMEOUT` | Wall-time budget exceeded |
+| `INTERNAL` | Unexpected |
+
+4. Document polling as MVP (SSE optional later). Align names with M1b `generation_jobs` columns where possible.
+5. Optional: mirror as Pydantic models in `apps/api` — not required for M0-thin if TS + markdown are source of truth; M1a may use a thin stub body first.
+
+**Touch (landed)**
+
+- `md/contracts/job-api.md`
+- `packages/contracts/src/job-api.ts`
+- `packages/contracts/src/examples/job-api-fixtures.ts`
+- `md/contracts/examples/job-api-examples.json`
+- Package export: `@repo/contracts/examples/job-api-fixtures`
+- M1a cross-link: use these DTOs (see below + job-api.md)
+
+**Exit**
+
+- [x] Create/status/result/error/quota shapes written and typed
+- [x] Status machine + failed≠published invariant documented
+- [x] High-level checkbox **Job API shapes** can be marked complete
+
+**Out of scope for M0e:** Real job worker, LangGraph graph, DB rows, rate-limit middleware.
+
+---
+
+#### M0f — Capture + CORS provisional notes
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Enough policy for M1c storage headers and M2a capture-with-real-asset. Tighten later; do not block on production-perfect CORS.
+
+**Tasks**
+
+1. Document canvas2d capture expectations:
+   - PNG via `captureFrame()` (canvas → image)
+   - Short video later via `getCaptureStream?()` / canvas stream + **client MediaRecorder** (M7)
+2. Provisional asset/CORS rules:
+   - User/inspiration images loaded with `crossOrigin = "anonymous"` where drawn to canvas
+   - Object storage must emit CORS headers allowing the web origin to read images (exact header set can be finalized in M1c)
+   - Same-origin or properly CORS-enabled asset URLs required before claiming export works
+3. Note tainted-canvas failure mode and that **M2a exit** requires capture with a **real uploaded** asset (not only a data URL fixture).
+4. Defer WebGL `preserveDrawingBuffer` detail to full M0 / M2b (three/p5).
+
+**Touch (landed)**
+
+- `md/contracts/capture-cors.md`
+- `packages/contracts/src/capture-cors.ts` — `ASSET_CROSS_ORIGIN`, `PROVISIONAL_STORAGE_CORS`, capture MIME/duration constants, `CaptureFailureReason`
+- Pointers from `vibe-tool.md`, `skeletons/canvas2d.md`, **M1c** (and M2a when implementing)
+
+**Exit**
+
+- [x] Engineer implementing storage or runtime knows default `crossOrigin` + CORS expectation
+- [x] High-level checkbox **Provisional capture/CORS notes** can be marked complete
+
+**Out of scope for M0f:** Live CORS verification, MediaRecorder implementation, server-side video.
+
+---
+
+### M0-thin checklist rollup
+
+**All complete (2026-08-04).** Mark complete only when the matching subpart exit is done:
+
+| High-level item | Subpart | Status |
+|-----------------|---------|--------|
+| VibeTool contract | **M0a** | ✅ |
+| Param schema conventions | **M0b** | ✅ |
+| Target registry IDs | **M0c** | ✅ |
+| canvas2d skeleton template | **M0c** | ✅ |
+| Plan JSON schema | **M0d** | ✅ |
+| Job API shapes | **M0e** | ✅ |
+| Provisional capture/CORS notes | **M0f** | ✅ |
+
+**M0-thin exit met** — contracts are source of truth for M1-rest + M2a + M3.
+
+---
+
 ### Full M0 deliverables (nice-to-have before M4; not blocking core loop)
+
+> **Note:** M0-thin (M0a–M0f) is already **done**. Items below are **optional polish** — pick them up later if useful; they must not delay M1-rest or M2a.
 
 - [ ] Full allowlisted lib rules for p5/three
 - [ ] Per-target capture rules including WebGL `preserveDrawingBuffer`
 - [ ] p5 + three skeleton template stubs
 - [ ] LangGraph node I/O sketch for Control refine (types only)
-- [ ] Monorepo env template (OpenRouter, DB, storage) + shared contract package if useful
+- [ ] Monorepo env template (OpenRouter, DB, storage) — shared contract package already exists (`@repo/contracts`)
 - [ ] Thin PRD one-pagers (optional): Create · Studio · Export · Gallery
 
 ### Demo (full)
@@ -183,15 +533,6 @@ Docs + types only. An engineer can answer “what does a valid tool look like?�
 
 - Contract + param schema + capture/CORS rules + skeletons + plan-JSON + job API reviewed as **source of truth**
 - No product UI required
-
-### Out of scope
-
-- Real auth, DB, agent, sandbox implementation beyond stubs
-
-### Depends on
-
-- Consensus frozen v1 ✓
-- **Auth already done** — M0 does not depend on finishing M1
 
 ---
 
@@ -275,10 +616,12 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 
 **Goal:** Finish “login required before Create” on the **API** side (web gate already works).
 
+**Use M0e shapes:** Request/response field names from `@repo/contracts` / [job-api.md](./contracts/job-api.md) — `CreateJobRequest` / `CreateJobResponse` (stub may return `status: "queued"` without a worker). Do not invent parallel DTOs.
+
 **Tasks**
 
 1. Add a protected **create stub** endpoint, e.g. `POST /api/v1/jobs` (stub body) or `POST /api/v1/create/stub`, using `Depends(get_current_user)`.
-2. Return **401** when session cookie missing/invalid; **200/201** with `{ userId, … }` when valid.
+2. Return **401** when session cookie missing/invalid; **200/201** with M0e-shaped body (at least `jobId`, `status`, `createdAt`; may include `userId` for stub debugging) when valid.
 3. Keep `/api/v1/auth/me` as the thin “who am I” check; create stub proves product gate.
 4. Optional smoke test: HTTP test without cookie → 401; with valid session → success.
 5. Web: no change required if `/create` already gated; optionally call create stub from Create placeholder to prove cookie forwarding (`credentials: "include"`).
@@ -289,6 +632,7 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 - `apps/api/src/api/v1/router.py`
 - `apps/web/app/create/page.tsx` (optional client call)
 - Tests under `apps/api` if present
+- Contract ref: `md/contracts/job-api.md`, `packages/contracts/src/job-api.ts`
 
 **Exit**
 
@@ -343,12 +687,14 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 
 **Goal:** Swappable storage port so uploads work in local dev and later S3-compatible prod.
 
+**Use M0f policy:** [capture-cors.md](./contracts/capture-cors.md) · `PROVISIONAL_STORAGE_CORS` / `provisionalCorsResponseHeaders` in `@repo/contracts`. Images must be readable by the web origin with `crossOrigin="anonymous"` (or via same-origin proxy).
+
 **Tasks**
 
 1. Define `adapters/storage/protocol.py`: `put_object`, `delete_object`, `get_public_or_signed_url` (minimal surface).
 2. Implement **local filesystem** adapter for dev (e.g. `.data/uploads/` or docker volume) **and/or** S3-compatible (MinIO/R2/S3) behind the same protocol.
 3. Config via env: `STORAGE_BACKEND`, bucket/path, credentials, public base URL.
-4. Apply **CORS / cache headers** consistent with M0 asset policy (if M0 not frozen yet, document a provisional policy and match it):
+4. Apply **CORS / cache headers** consistent with **M0f** provisional policy:
    - Browser must load images with `crossOrigin="anonymous"` without tainting canvas (M2 depends on this).
    - Prefer same-origin proxy **or** storage CORS allowing web origin + GET.
 5. Key layout convention, e.g. `{user_id}/{asset_id}/{filename}` or `{kind}/{user_id}/{uuid}`.
@@ -486,6 +832,8 @@ M0-thin (can parallel start of M1a) ──► M1a Create API gate
 **ASAP split:** **M2a = core-loop exit (canvas2d only).** **M2b = p5/three stubs (fast-follow).** Do **not** block M3/M5/M7 on M2b.
 
 ### M2a — canvas2d host (core-loop exit) ✅ required for ASAP
+
+**Capture/CORS contract:** [capture-cors.md](./contracts/capture-cors.md) (M0f) — harness uses `crossOrigin="anonymous"`; **exit requires PNG capture with a real uploaded asset**, not only `data:` fixtures (`M2A_CAPTURE_REQUIRES_REAL_ASSET`).
 
 #### Deliverables
 
@@ -866,14 +1214,14 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 Auth is complete. To get the core loop ASAP, execute in this order:
 
-1. **M0-thin** — freeze VibeTool + param schema + canvas2d skeleton + plan/job JSON (provisional CORS OK).  
-2. **M1a** — protected create/jobs stub → **401** without session; **200** with Better Auth user id.  
-3. **M1b + M1c in parallel** — product tables/repos + object storage adapter (local FS fine).  
+1. **M0-thin** — execute **M0a → M0f** (VibeTool → params → registry/skeleton → plan → job API → capture/CORS).  
+2. **M1a** — protected create/jobs stub → **401** without session; **200** with Better Auth user id (use M0e shapes).  
+3. **M1b + M1c in parallel** — product tables/repos + object storage adapter (local FS fine; M0f CORS notes).  
 4. **M1d → M1e** — upload round-trip + access rules + M1 demo checklist.  
-5. **M2a** — sandbox host + canvas2d hand-authored tool + minimal Studio + capture with real asset.  
+5. **M2a** — sandbox host + canvas2d hand-authored tool (M0c skeleton) + minimal Studio + capture with real asset.  
 6. **M3** — LangGraph Create (vision → canvas2d) + progress UX + quota/repair/salvage.  
 7. **M5 → M7 → M8** — full Studio personalization → export/share/embed → publish/gallery.
 
 **Do not start next:** p5/three agent work, chat refine, inspiration vision pipeline, or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
 
-When you say **build**, start at **M0-thin + M1a**.
+When you say **build**, start at **M0a** (contract home + VibeTool types).

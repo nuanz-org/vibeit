@@ -1,0 +1,87 @@
+{
+  "target": "canvas2d",
+  "name": "social-frame",
+  "description": "Kinetic social frame with headline, palette, motion, logo + background slots",
+  "params": [
+    {
+      "name": "bg",
+      "kind": "color",
+      "label": "Background color",
+      "default": "#0b0b12"
+    },
+    {
+      "name": "accent",
+      "kind": "color",
+      "label": "Accent",
+      "default": "#7c5cff"
+    },
+    {
+      "name": "title",
+      "kind": "text",
+      "label": "Headline",
+      "default": "Your vibe",
+      "maxLength": 48,
+      "placeholder": "Headline text"
+    },
+    {
+      "name": "speed",
+      "kind": "number",
+      "label": "Motion speed",
+      "default": 1,
+      "min": 0,
+      "max": 3,
+      "step": 0.05
+    },
+    {
+      "name": "motionPreset",
+      "kind": "enum",
+      "label": "Motion",
+      "default": "pulse",
+      "options": [
+        { "value": "pulse", "label": "Pulse" },
+        { "value": "drift", "label": "Drift" },
+        { "value": "none", "label": "Still" }
+      ]
+    },
+    {
+      "name": "showGrid",
+      "kind": "boolean",
+      "label": "Show grid",
+      "default": false
+    },
+    {
+      "name": "logoSlot",
+      "kind": "assetRef",
+      "label": "Logo",
+      "assetSlotId": "logo",
+      "default": "logo"
+    }
+  ],
+  "assetSlots": [
+    {
+      "id": "logo",
+      "label": "Logo",
+      "description": "Brand mark overlaid on the frame",
+      "accept": "image/*",
+      "required": false,
+      "aspectHint": "1:1"
+    },
+    {
+      "id": "background",
+      "label": "Background",
+      "description": "Optional photo or texture behind motion",
+      "accept": "image/*",
+      "required": false,
+      "aspectHint": "9:16"
+    }
+  ],
+  "defaultParams": {
+    "bg": "#0b0b12",
+    "accent": "#7c5cff",
+    "title": "Your vibe",
+    "speed": 1,
+    "motionPreset": "pulse",
+    "showGrid": false,
+    "logoSlot": "logo"
+  }
+}

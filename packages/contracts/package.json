@@ -1,0 +1,39 @@
+{
+  "name": "@repo/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./examples/canvas2d-social-frame": {
+      "types": "./src/examples/canvas2d-social-frame.ts",
+      "default": "./src/examples/canvas2d-social-frame.ts"
+    },
+    "./examples/canvas2d-social-frame-plan": {
+      "types": "./src/examples/canvas2d-social-frame-plan.ts",
+      "default": "./src/examples/canvas2d-social-frame-plan.ts"
+    },
+    "./examples/job-api-fixtures": {
+      "types": "./src/examples/job-api-fixtures.ts",
+      "default": "./src/examples/job-api-fixtures.ts"
+    },
+    "./skeletons/canvas2d": {
+      "types": "./src/skeletons/canvas2d.ts",
+      "default": "./src/skeletons/canvas2d.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.39.1",
+    "typescript": "5.9.2"
+  }
+}
