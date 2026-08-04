@@ -92,6 +92,90 @@ cd apps/api && uv run python tests/test_upload_m1e.py
 
 Web Create page includes an upload proof control (`credentials: "include"`).
 
+## LLM / OpenRouter (M3b)
+
+Create agent calls OpenRouter from the **API only** (never from Next).
+
+### Env loading
+
+`core/config.py` loads dotenv on import (via `python-dotenv`):
+
+1. **Repo root** `.env` (preferred for monorepo secrets)
+2. **`apps/api/.env`** (optional local override)
+
+Shell / process env vars still win (`override=False`). See root `.env.example`.
+
+| Env | Default | Notes |
+|-----|---------|--------|
+| `OPENROUTER_API_KEY` | _(empty)_ | **Required** for Create graph (M3c+) |
+| `LLM_DEFAULT_MODEL` | `deepseek/deepseek-v4-flash` | ASAP **only** allowed model |
+| `LLM_CODEGEN_MODEL` | same as default | Forced to Flash on ASAP path |
+| `LLM_TIMEOUT_SECONDS` | `60` | Per completion |
+| `LLM_HTTP_REFERER` | `http://localhost:3000` | Optional OpenRouter header |
+| `LLM_APP_TITLE` | `Vibeit` | Optional OpenRouter `X-Title` |
+
+| Path | Role |
+|------|------|
+| `adapters/llm/protocol.py` | `LLMClient` port + usage types |
+| `adapters/llm/openrouter.py` | HTTP adapter |
+| `adapters/llm/router.py` | Role → model (all → Flash) |
+| `core/deps.py` → `get_llm_client` | FastAPI Depends |
+
+```bash
+# set OPENROUTER_API_KEY in repo root .env, then:
+cd apps/api && uv run python tests/test_llm_m3b.py
+```
+
+## Create agent scaffold (M3c)
+
+LangGraph Create pipeline:
+
+```text
+# Fixture (M3c, no LLM)
+ingest → plan(noop) → load_fixture → validate → smoke → END
+
+# Live (M3d, deepseek/deepseek-v4-flash)
+ingest → plan(LLM) → codegen(LLM) → validate → smoke → END
+```
+
+| Path | Role |
+|------|------|
+| `agent/graphs/create.py` | Compiled `StateGraph` + `run_create_llm_pipeline` |
+| `agent/nodes/plan.py` · `codegen.py` | OpenRouter via `LLMClient` |
+| `agent/validators/` | Static hard rules + structural smoke |
+| `agent/fixtures.py` | Loads monorepo social-frame `tool.ts` |
+
+```bash
+cd apps/api && uv run python tests/test_agent_m3c.py
+cd apps/api && uv run python tests/test_agent_m3d.py
+```
+
+Smoke mode today: **structural** (Python). Host/Playwright smoke can replace `run_sandbox_smoke` later.
+
+## Create worker + repair (M3e)
+
+After `POST /api/v1/jobs`, if `OPENROUTER_API_KEY` is set and `CREATE_WORKER_ENABLED` is not false, a **background task** runs:
+
+```text
+running → plan → codegen → validate ⇄ repair (≤ N) → smoke → finalize
+```
+
+| Env | Default | Notes |
+|-----|---------|--------|
+| `CREATE_REPAIR_MAX` | `3` | Repair attempts |
+| `CREATE_WALL_TIME_SECONDS` | `60` | Job wall clock |
+| `CREATE_WORKER_ENABLED` | `true` | Set `false` to only enqueue |
+
+| Outcome | Job status | Tool |
+|---------|------------|------|
+| Smoke pass | `succeeded` | draft + `tool_versions` row |
+| Exhausted | `failed` | optional salvage version on same draft tool |
+
+```bash
+cd apps/api && uv run python scripts/migrate.py   # includes 002_job_phase
+cd apps/api && uv run python tests/test_create_m3e.py
+```
+
 ## Access rules + M1 demo (M1f)
 
 Product access matrix: **[md/access-rules.md](../../md/access-rules.md)**.

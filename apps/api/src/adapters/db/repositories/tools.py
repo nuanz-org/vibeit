@@ -118,3 +118,21 @@ class ToolsRepository:
                 str(version_id),
             )
         return tool_version_from_record(row) if row else None
+
+    async def get_latest_tool_version(
+        self,
+        tool_id: UUID | str,
+    ) -> ToolVersionRow | None:
+        """Most recent version for a tool (finalize / job result)."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                SELECT {_VERSION_COLUMNS}
+                FROM tool_versions
+                WHERE tool_id = $1::uuid
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                str(tool_id),
+            )
+        return tool_version_from_record(row) if row else None

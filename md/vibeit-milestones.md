@@ -2,7 +2,7 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-04 (M0-thin done · **M1-rest M1a–M1f complete**)  
+**Date:** 2026-08-03 · **Revised:** 2026-08-04 (M0–M2a done · **M3a–M3h implementation plan added**)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
@@ -1070,21 +1070,30 @@ Open Studio on canvas2d fixture → tweak params → swap logo → live preview 
 
 **Why:** First AI path. Constrain to **vision text + `canvas2d` only** so repair/validation can be tuned without multi-target variance.
 
-### Deliverables
+**Progress (start here after M2a):**
 
-- [ ] `LLMClient` / model router abstraction (config model id; default DeepSeek V4 Flash via OpenRouter)
-- [ ] LangGraph **Create** graph (linear):
+| Slice | Status |
+|-------|--------|
+| M0e job shapes + M1a create stub | ✅ Done (stub only — no worker) |
+| M1b–M1c jobs/tools repos + tables | ✅ Done |
+| M2a sandbox + Studio redirect target | ✅ Done |
+| **M3-rest** (M3a→M3h) | 🔄 In progress — **M3a–M3e done** |
+
+### Deliverables (high-level)
+
+- [ ] `LLMClient` / model router abstraction (config model id; default DeepSeek V4 Flash via OpenRouter) — **M3b**
+- [ ] LangGraph **Create** graph (linear) — **M3c–M3e**:
   1. Ingest (text)
-  2. Plan (structured JSON; target forced/preferred `canvas2d`)
+  2. Plan (structured JSON; target forced `canvas2d`)
   3. Codegen into **canvas2d skeleton template**
   4. Static validate (contract, schema, safety)
   5. Sandbox preview smoke + frame grab
   6. Repair loop ≤ N (token + wall-time budget)
   7. Finalize → tool version → open Studio; **salvage best-valid** on exhaustion
-- [ ] Create UI: vision textarea (required), submit, **streamed job progress**, redirect to Studio on success
-- [ ] Job status API (polling or SSE)
-- [ ] **Per-user generation quota** (default 10/day) + token/cost logging + timeouts + repair budget
-- [ ] Small **eval set** (~10 prompts) with numeric gates (default: ≥70% first-pass or ≥90% after-repair)
+- [ ] Create UI: vision textarea (required), submit, **streamed job progress**, redirect to Studio on success — **M3g**
+- [ ] Job status API (polling; SSE optional later) — **M3a**
+- [ ] **Per-user generation quota** (default 10/day) + token/cost logging + timeouts + repair budget — **M3f**
+- [ ] Small **eval set** (~10 prompts) with numeric gates (default: ≥70% first-pass or ≥90% after-repair) — **M3h**
 
 ### Demo
 
@@ -1109,6 +1118,413 @@ Sign in → describe a vision in text → see progress stream → get a live can
 ### ASAP note
 
 Force/prefer `target: canvas2d` in Plan. Do not spend M3 calendar time on multi-target selection or inspiration images (M4).
+
+### Defaults (consensus freeze)
+
+| Knob | MVP default |
+|------|-------------|
+| Codegen model | DeepSeek V4 Flash via OpenRouter (`LLM_DEFAULT_MODEL`) |
+| Daily create quota | **10** / user / UTC day |
+| Repair attempts | **N = 3** |
+| Wall-time budget | **~60s** per job (config) |
+| Eval gate | ≥70% first-pass **or** ≥90% after-repair on ~10 prompts |
+| Target | Always `canvas2d` on ASAP path |
+| Transport | Client **polls** `GET /api/v1/jobs/{id}` (SSE later) |
+
+---
+
+### M3 — implementation plan (subparts)
+
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M3 done until **M3h**.
+
+| Subpart | Name | Depends on | ~Days | Outcome |
+|---------|------|------------|------:|---------|
+| **M3a** | Job persist + status/result API | M1a–M1c ✓ · M0e ✓ | 0.75–1 | Create writes `generation_jobs`; client can poll full lifecycle |
+| **M3b** | LLM port + OpenRouter adapter | Config secrets | 0.5–0.75 | Services can call models without hardcoding HTTP in routers |
+| **M3c** | Agent scaffold + validate + sandbox smoke | M3a · M2a ✓ | 1–1.5 | Fixture code path: validate + host smoke without LLM |
+| **M3d** | Plan + codegen nodes (canvas2d) | M3b · M3c · M0c/M0d ✓ | 1–1.5 | Vision text → plan JSON → creative fill source |
+| **M3e** | Repair loop + finalize / salvage | M3d | 1–1.5 | Bounded repair; ready version only if smoke passes; salvage = draft |
+| **M3f** | Quota + budgets + token/cost logging | M3a · M3e | 0.5–0.75 | 10/day + N + wall-time enforced; costs logged |
+| **M3g** | Create UI + progress + Studio redirect | M3a · M3e–M3f | 1–1.5 | End-to-end product path for a human |
+| **M3h** | Eval set + M3 demo checklist | M3e–M3g | 0.5–1 | Numeric gates + exit doc |
+
+**Suggested effort:** ≈5–8 focused days total (matches ASAP table).
+
+**Parallelism:** After **M3a**, **M3b** can start while **M3c** uses fixtures (no live LLM). **M3g** UI chrome can start on stub job status once M3a lands (progress phases fake until worker is real). Do **not** start M4/M6.
+
+**Where code lands (backend architecture):**
+
+| Concern | Path |
+|---------|------|
+| Job HTTP | `apps/api/src/api/v1/jobs.py` |
+| Job/tool Pydantic | `apps/api/src/schemas/jobs.py` (+ tools if needed) |
+| Create use-case | `apps/api/src/services/create_job.py` |
+| LangGraph Create | `apps/api/src/agent/graphs/create.py` |
+| Nodes / prompts / validators | `apps/api/src/agent/nodes/` · `prompts/` · `validators/` |
+| LLM port | `apps/api/src/adapters/llm/` (`protocol.py`, `openrouter.py`) |
+| Worker / background | `apps/api/src/workers/generation.py` (or asyncio task early) |
+| Domain invariants | `apps/api/src/domain/job_status.py` (failed ≠ ready) |
+| Web Create | `apps/web/app/create/` · `apps/web/features/create/` · `features/jobs/` |
+| Studio redirect | `/studio/{toolId}` (M2a5) — load **real** tool version when API ready |
+
+**Codebase baseline (do not re-build):**
+
+| Already exists | Use it |
+|----------------|--------|
+| `POST /api/v1/jobs` stub (auth + DTO) | `apps/api/src/api/v1/jobs.py` · `schemas/jobs.py` |
+| Jobs / tools / assets repos | `adapters/db/repositories/` |
+| Product tables | `migrations/001_product_tables.sql` |
+| Job TS contracts | `packages/contracts` · `md/contracts/job-api.md` |
+| Plan JSON | `packages/contracts` · `md/contracts/plan-json.md` |
+| canvas2d skeleton + social-frame | `@repo/contracts/skeletons/canvas2d` · `runtime/fixtures/social-frame` |
+| Runtime host (sandbox smoke target) | `apps/web/runtime/` |
+| Create page + job client stub | `apps/web/app/create/` · `lib/api/jobs.ts` |
+| Studio shell | `apps/web/features/studio/` |
+
+**Invariants (every subpart):**
+
+1. **`failed` never becomes ready/published** — only `succeeded` + validated version is Studio-ready.  
+2. **Salvage** produces an explicit **draft** (not `ready` / not publishable).  
+3. **Target forced `canvas2d`** in Plan and codegen.  
+4. **No OpenRouter keys in web** — server-only.  
+5. Graph runs in **service/worker**, never fat logic in the router.
+
+---
+
+#### M3a — Job persist + status/result API
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Replace the M1a in-memory create stub with durable `generation_jobs` rows and pollable status/result so the worker and Create UI share one machine.
+
+**Use:** [job-api.md](./contracts/job-api.md) · existing `JobsRepository` · M0e phases (`plan` | `codegen` | `validate` | `repair`).
+
+**Tasks**
+
+1. **Service** `services/create_job.py` (or expand jobs service):
+   - Auth user required
+   - Validate `visionText` non-empty
+   - Insert `generation_jobs` with `status=queued`, store vision + optional metadata
+   - Optionally create draft `tools` row up-front or only on finalize (pick one; document — **prefer draft tool at enqueue** so Studio id is stable)
+2. **Upgrade** `POST /api/v1/jobs` to call the service (still 401 without session; 201 with real `jobId`).
+3. **`GET /api/v1/jobs/{jobId}`** — owner-only status body: `status`, optional `phase`, `error`, `quota?`, `resultReady`, progress fields from M0e.
+4. **`GET /api/v1/jobs/{jobId}/result`** — only when `succeeded` (or document salvage draft path separately); return tool/version ids for Studio redirect.
+5. **Status transitions** helpers: `queued → running → succeeded | failed` only; refuse illegal jumps.
+6. **Smoke tests:** create → row exists; get status; unauth 401; non-owner 404/403.
+
+**Touch (landed)**
+
+- `apps/api/src/services/create_job.py` — enqueue draft tool + job; status/result helpers
+- `apps/api/src/domain/job_status.py` — status machine transitions
+- `apps/api/src/api/v1/jobs.py` — POST persist + GET status + GET result
+- `apps/api/src/adapters/db/repositories/jobs.py` — `get_job_for_owner`, default repair_budget=3
+- `apps/api/src/adapters/db/repositories/tools.py` — `get_latest_tool_version`
+- `apps/api/tests/test_jobs_m3a.py`
+- `apps/web/lib/api/jobs.ts` — `getJobStatus` / `getJobResult`
+
+**Exit**
+
+- [x] Authenticated create persists job and returns M0e-shaped 201
+- [x] Poll status reflects DB (`queued` until worker exists)
+- [x] Result endpoint does not leak publishable payloads for `failed` (409 until succeeded)
+- [x] High-level checkbox “Job status API” can be marked complete (worker still stub OK)
+
+**Out of scope for M3a:** LLM calls, graph, quota enforcement (return stub quota fields OK).
+
+---
+
+#### M3b — LLM port + OpenRouter adapter
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** One swappable LLM client so Create graph nodes do not call raw OpenRouter HTTP.
+
+**Decision:** ASAP uses **only** OpenRouter model id `deepseek/deepseek-v4-flash`. Any other model id is rejected at the adapter.
+
+**Tasks**
+
+1. **Protocol** `adapters/llm/protocol.py`: `complete(messages, *, model, response_format?, temperature?) → text + usage`.
+2. **OpenRouter adapter** `adapters/llm/openrouter.py` using `OPENROUTER_API_KEY`.
+3. **Model router** `adapters/llm/router.py`: all roles → `deepseek/deepseek-v4-flash`.
+4. **Config** in `core/config.py`: `openrouter_api_key`, `llm_default_model`, `llm_codegen_model`, timeouts.
+5. **Depends** wiring in `core/deps.py` → `get_llm_client` / `LLM`.
+6. **Smoke:** unit test with httpx mock — no live key required in CI.
+
+**Touch (landed)**
+
+- `apps/api/src/adapters/llm/protocol.py` · `openrouter.py` · `router.py`
+- `apps/api/src/core/config.py` · `deps.py`
+- `apps/api/tests/test_llm_m3b.py`
+- `apps/api/README.md` — env table
+
+**Exit**
+
+- [x] Services/nodes can obtain an `LLMClient` via Depends
+- [x] Default / only model is `deepseek/deepseek-v4-flash`
+- [x] Missing API key fails clearly (`LLMConfigError`)
+- [x] Mocked completion returns text + usage
+
+**Out of scope for M3b:** Full Create graph, streaming tokens to browser (optional later).
+
+---
+
+#### M3c — Agent scaffold + static validate + sandbox smoke
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Stand up `agent/graphs/create` skeleton and **prove the non-LLM gates** with the hand-authored social-frame so validate + sandbox work before model noise.
+
+**Decision (smoke):** M3c uses **structural contract smoke** in Python (export factory + harness/VibeTool surface + non-trivial draw + no network). Fail closed. Real Playwright/iframe host smoke can replace `run_sandbox_smoke` later without changing graph wiring.
+
+**Tasks**
+
+1. **Package layout:** `agent/graphs/create.py`, `agent/nodes/`, `agent/validators/`, `agent/prompts/`.
+2. **Graph state** typed (`CreateGraphState`).
+3. **Static validate** — forbid parent/top/eval/fetch/require/non-@repo imports; require factory + draw/mount.
+4. **Sandbox smoke** — structural gate (see decision above).
+5. **Ingest** — normalize vision; reject empty.
+6. **Fixture run** — load `apps/web/runtime/fixtures/social-frame/tool.ts` → validate + smoke.
+7. **LangGraph** linear: `ingest → load_fixture → validate → smoke → END`.
+
+**Touch (landed)**
+
+- `apps/api/src/agent/**` (state, nodes, validators, fixtures, graphs/create.py)
+- `apps/api/tests/test_agent_m3c.py`
+- `langgraph` dependency in `apps/api`
+
+**Exit**
+
+- [x] Fixture social-frame passes validate + smoke via LangGraph
+- [x] Intentionally broken code fails validate or smoke
+- [x] Graph skeleton is the single place Create stages will plug into (M3d plan/codegen next)
+
+**Out of scope for M3c:** Live OpenRouter calls, repair loop, Create UI.
+
+---
+
+#### M3d — Plan + codegen nodes (canvas2d only)
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Vision text → structured Plan JSON → creative fill / tool source for canvas2d skeleton.
+
+**Use:** [plan-json.md](./contracts/plan-json.md) · [skeletons/canvas2d.md](./contracts/skeletons/canvas2d.md) · M0b param examples.  
+**Model:** `deepseek/deepseek-v4-flash` only (M3b adapter).
+
+**Tasks**
+
+1. **Plan node:** LLM → ToolPlan JSON; **force `target: "canvas2d"`**.
+2. **Codegen node:** LLM → `export const createTool` + `createCanvas2dTool` module.
+3. **Prompts** in `agent/prompts/create_plan.py` · `create_codegen.py`.
+4. **Parse** plan JSON (fences + one retry) · extract TS module from fences.
+5. **Graph:** live `ingest → plan → codegen → validate → smoke`; fixture still `… → load_fixture → …`.
+6. Mocked end-to-end graph test (no live key required).
+
+**Touch (landed)**
+
+- `agent/nodes/plan.py`, `codegen.py`
+- `agent/plan_parse.py`, `codegen_parse.py`
+- `agent/prompts/create_plan.py`, `create_codegen.py`
+- `agent/graphs/create.py` — dual fixture/live routes + `run_create_llm_pipeline`
+- `apps/api/tests/test_agent_m3d.py`
+
+**Exit**
+
+- [x] Mocked LLM path produces plan with `target: canvas2d` only (even if model says p5)
+- [x] Mocked codegen passes validate + structural smoke
+- [x] No p5/three branches on ASAP path
+
+**Out of scope for M3d:** Multi-target, inspiration images (M4), chat refine (M6), repair loop (M3e).
+
+---
+
+#### M3e — Repair loop + finalize / salvage
+
+**Status:** ✅ **Done** (2026-08-04)
+
+**Goal:** Bounded repair on validate/smoke failure; finalize ready tool version only on full pass; salvage best-valid as draft on exhaustion.
+
+**Decisions:**
+- Repair budget **N=3** (`CREATE_REPAIR_MAX`), wall **~60s** (`CREATE_WALL_TIME_SECONDS`).
+- On exhaust: job **`failed`** + optional **salvage** `tool_versions` from `best_valid_code`; `error_message` includes `salvage_draft=true toolId=… versionId=…`. Tool stays **draft** (never published).
+- Worker: in-process `BackgroundTasks` when `OPENROUTER_API_KEY` set; fixture tests call worker with `use_fixture_code=True`.
+- Phase column on `generation_jobs` (migration `002_job_phase.sql`) for status poll.
+
+**Tasks**
+
+1. **Repair node** + prompt — LLM fixes code; increments `repair_count`.
+2. **Runner** `agent/runner.py` — plan → codegen → validate/smoke/repair loop.
+3. **Finalize** — success version + `succeeded`; fail + optional salvage version.
+4. **Worker** — phase updates while running; finalize at end.
+5. **POST /jobs** enqueues background worker when API key present.
+
+**Touch (landed)**
+
+- `agent/nodes/repair.py` · `agent/runner.py` · `agent/prompts/create_repair.py`
+- `services/finalize_job.py` · `workers/generation.py`
+- `migrations/002_job_phase.sql` · jobs repo phase helpers
+- `api/v1/jobs.py` — BackgroundTasks enqueue
+- `tests/test_create_m3e.py`
+
+**Exit**
+
+- [x] Happy path: fixture worker → `succeeded` + draft tool version
+- [x] Validate failure → repair then success (mocked LLM)
+- [x] Salvage: failed job + draft version; tool not published
+- [x] Phases written during worker run (poll `phase`)
+
+**Out of scope for M3e:** Quota (M3f), polished Create UI (M3g).
+
+---
+
+#### M3f — Quota + budgets + token/cost logging
+
+**Status:** ❌ Open  
+
+**Goal:** Enforce product defaults so free OpenRouter spend and abuse stay bounded.
+
+**Tasks**
+
+1. **Quota:** default **10 creates / user / UTC day**; on exceed → `403`/`429` with `QUOTA_EXCEEDED` (match job-api).
+2. Count **successful enqueues** (or completed runs — **prefer count accepted creates** so spam still burns quota).
+3. **Repair budget** N and **wall-time** from config; log when hit.
+4. **Token/cost logging:** store usage on job row or side table (`prompt_tokens`, `completion_tokens`, `model`, rough cost if available).
+5. Surface remaining quota on create response / status (`quota` fields from M0e).
+6. Tests: 11th create same day blocked (clock mocked or DB fixture).
+
+**Touch (expected)**
+
+- `services/create_job.py` quota check
+- Config: `CREATE_QUOTA_PER_DAY`, `CREATE_REPAIR_MAX`, `CREATE_WALL_TIME_SECONDS`
+- Migration only if new columns needed for usage counters
+
+**Exit**
+
+- [ ] Quota enforced server-side (not only UI)
+- [ ] Status/create can show remaining
+- [ ] Usage logged for at least one successful job path
+
+**Out of scope for M3f:** Billing, paid tiers, soft-throttle UX polish.
+
+---
+
+#### M3g — Create UI + progress + Studio redirect
+
+**Status:** ❌ Open  
+
+**Goal:** Replace Create stubs with the real vision → job → Studio path.
+
+**Tasks**
+
+1. **Create form:** required vision textarea; submit → `POST /api/v1/jobs` with credentials.
+2. **Progress:** TanStack Query (or equivalent) poll `GET /api/v1/jobs/{id}` with `refetchInterval` while non-terminal; show `status` + `phase`.
+3. **Success:** redirect to `/studio/{toolId}` (or `/studio/{toolId}?version=` if needed) using result payload.
+4. **Failure / salvage:** clear error; if salvage draft id present, offer “Open draft in Studio”.
+5. **Quota UI:** disable submit + message when `QUOTA_EXCEEDED`.
+6. **Auth:** keep requireSession + proxy (already on `/create`).
+7. Remove or demote M1a/M1e proof stubs to a collapsible “platform debug” section (do not delete upload — still useful).
+
+**Touch (expected)**
+
+- `apps/web/features/create/` — form, progress
+- `apps/web/features/jobs/` — `useJob` query hook
+- `apps/web/app/create/page.tsx`
+- `apps/web/lib/api/jobs.ts`
+- Studio: load tool version from API when id is not a fixture (minimal GET tool endpoint if missing — add thin **M3g companion** `GET /api/v1/tools/{id}` owner read)
+
+**Exit**
+
+- [ ] Human path: sign in → vision → progress → Studio live tool (or salvage/error)
+- [ ] No reliance on `/studio/social-frame` fixture for the happy AI path
+- [ ] High-level Create UI checkbox complete
+
+**Out of scope for M3g:** Inspiration screenshots (M4), chat refine (M6), full Control chrome (M5).
+
+---
+
+#### M3h — Eval set + M3 demo checklist
+
+**Status:** ❌ Open  
+
+**Goal:** Numeric gate + documented exit so M3 is not “vibes only.”
+
+**Tasks**
+
+1. **Eval set** ~10 prompts in repo (`apps/api/evals/create/` or `md/evals/create-m3.md` + JSON).
+2. **Runner** script (mocked optional + live optional behind env flag) measuring first-pass vs after-repair success.
+3. **Gates:** default ≥70% first-pass **or** ≥90% after-repair (config thresholds).
+4. **Checklist doc** `md/m3-demo-checklist.md` (mirror M1f/M2a style): automated + manual browser steps.
+5. Mark M3 high-level deliverables complete when gates met or explicitly waived with recorded reason.
+
+**Touch (expected)**
+
+- `apps/api/evals/` or `scripts/eval_create.py`
+- `md/m3-demo-checklist.md`
+- Update this file’s M3 progress table when done
+
+**Exit**
+
+- [ ] Eval set committed and runnable
+- [ ] At least one documented happy-path demo (manual)
+- [ ] Quota + fail-closed ready + salvage behavior verified
+- [ ] **M3 core-loop exit met** → start M5 (or M7 prototype in parallel)
+
+**Out of scope for M3h:** Production SLOs, multi-target evals (M4).
+
+---
+
+### M3 subpart sequencing diagram
+
+```
+M2a COMPLETE
+    │
+    ▼
+M3a  Job persist + GET status/result
+    │
+    ├──────────────────┐
+    ▼                  ▼
+M3b  LLM adapter    M3c  Validate + sandbox smoke (fixtures)
+    │                  │
+    └────────┬─────────┘
+             ▼
+M3d  Plan + codegen (canvas2d)
+             │
+             ▼
+M3e  Repair + finalize / salvage + worker
+             │
+             ▼
+M3f  Quota + budgets + usage logs
+             │
+             ▼
+M3g  Create UI → poll → Studio redirect
+             │
+             ▼
+M3h  Eval set + demo checklist  →  M3 COMPLETE → M5 / M7
+```
+
+### M3 checklist rollup
+
+| Subpart | Name | Done |
+|---------|------|------|
+| M3a | Job persist + status/result API | ✅ |
+| M3b | LLM port + OpenRouter (`deepseek/deepseek-v4-flash` only) | ✅ |
+| M3c | Agent scaffold + validate + sandbox (LangGraph) | ✅ |
+| M3d | Plan + codegen canvas2d (Flash) | ✅ |
+| M3e | Repair + finalize / salvage + worker | ✅ |
+| M3f | Quota + budgets + logging | ❌ |
+| M3g | Create UI + progress + redirect | ❌ |
+| M3h | Eval set + demo checklist | ❌ |
+
+**Do not claim M3 done until M3h exit is met.**
+
+### M3 implementation notes (do not skip)
+
+- **Poll first, SSE later** — M0e transport MVP is polling; do not block M3g on EventSource.
+- **In-process worker OK for early M3** — dedicated worker process when jobs are slow/flaky.
+- **Sandbox smoke is the quality gate** — static validate alone is not enough to mark ready.
+- **Studio must load generated code** — fixture-only Studio is insufficient for M3 demo; plan thin owner tool GET in M3g if missing.
+- **Secrets:** `OPENROUTER_API_KEY` only in API env; never `NEXT_PUBLIC_*`.
+- **Do not open M4/M6** while M3 is red unless for learning spikes.
 
 ---
 

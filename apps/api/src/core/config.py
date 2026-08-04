@@ -2,6 +2,29 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# apps/api/src/core/config.py →
+#   parents[2] = apps/api
+#   parents[4] = monorepo root (vibeit/)
+_API_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
+def _load_env_files() -> None:
+    """
+    Load .env into process env before Settings reads os.environ.
+
+    Order: repo root first, then apps/api/.env (api file overrides).
+    Does not override variables already set in the shell/process.
+    """
+    # override=False: existing process env wins (Docker/K8s secrets, CI).
+    load_dotenv(_REPO_ROOT / ".env", override=False)
+    load_dotenv(_API_ROOT / ".env", override=False)
+
+
+_load_env_files()
+
 
 @lru_cache
 def get_settings() -> "Settings":
@@ -47,3 +70,35 @@ class Settings:
         self.storage_cors_origins: tuple[str, ...] = tuple(
             o.strip() for o in raw_origins.split(",") if o.strip()
         )
+
+        # --- LLM / OpenRouter (M3b) ---
+        # ASAP: only deepseek/deepseek-v4-flash (enforced in adapters/llm).
+        self.openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "").strip()
+        self.llm_default_model: str = os.getenv(
+            "LLM_DEFAULT_MODEL",
+            "deepseek/deepseek-v4-flash",
+        ).strip()
+        # Alias kept for clarity; must match llm_default_model on ASAP path.
+        self.llm_codegen_model: str = os.getenv(
+            "LLM_CODEGEN_MODEL",
+            self.llm_default_model,
+        ).strip()
+        self.llm_timeout_seconds: float = float(
+            os.getenv("LLM_TIMEOUT_SECONDS", "60")
+        )
+        # Optional OpenRouter rankings headers
+        self.llm_http_referer: str = os.getenv(
+            "LLM_HTTP_REFERER",
+            "http://localhost:3000",
+        ).strip()
+        self.llm_app_title: str = os.getenv("LLM_APP_TITLE", "Vibeit").strip()
+
+        # --- Create agent budgets (M3e / M3f) ---
+        self.create_repair_max: int = int(os.getenv("CREATE_REPAIR_MAX", "3"))
+        self.create_wall_time_seconds: float = float(
+            os.getenv("CREATE_WALL_TIME_SECONDS", "60")
+        )
+        # When true, POST /jobs runs agent via BackgroundTasks (M3e default).
+        self.create_worker_enabled: bool = os.getenv(
+            "CREATE_WORKER_ENABLED", "true"
+        ).lower() not in ("0", "false", "no")

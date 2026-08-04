@@ -13,7 +13,7 @@ from adapters.db.types import GenerationJobRow
 _JOB_COLUMNS = """
     id, owner_user_id, tool_id, status, vision_text, inspiration_asset_ids,
     error_code, error_message, tokens_used, token_budget, cost_cents,
-    repair_budget, repairs_used, created_at, updated_at
+    repair_budget, repairs_used, phase, created_at, updated_at
 """
 
 
@@ -28,7 +28,7 @@ class JobsRepository:
         vision_text: str,
         inspiration_asset_ids: list[str] | None = None,
         tool_id: UUID | str | None = None,
-        repair_budget: int = 2,
+        repair_budget: int = 3,
         status: str = "queued",
     ) -> GenerationJobRow:
         if status not in JOB_STATUSES:
@@ -68,6 +68,24 @@ class JobsRepository:
             )
         return job_from_record(row) if row else None
 
+    async def get_job_for_owner(
+        self,
+        job_id: UUID | str,
+        *,
+        owner_user_id: str,
+    ) -> GenerationJobRow | None:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                SELECT {_JOB_COLUMNS}
+                FROM generation_jobs
+                WHERE id = $1::uuid AND owner_user_id = $2
+                """,
+                str(job_id),
+                owner_user_id,
+            )
+        return job_from_record(row) if row else None
+
     async def update_job_status(
         self,
         job_id: UUID | str,
@@ -77,29 +95,90 @@ class JobsRepository:
         error_message: str | None = None,
         tool_id: UUID | str | None = None,
         repairs_used: int | None = None,
+        phase: str | None = None,
+        tokens_used: int | None = None,
+        clear_errors: bool = False,
     ) -> GenerationJobRow | None:
         if status not in JOB_STATUSES:
             raise ValueError(f"invalid job status: {status}")
 
         async with self._pool.acquire() as conn:
+            if clear_errors:
+                row = await conn.fetchrow(
+                    f"""
+                    UPDATE generation_jobs
+                    SET
+                        status = $2,
+                        error_code = $3,
+                        error_message = $4,
+                        tool_id = COALESCE($5::uuid, tool_id),
+                        repairs_used = COALESCE($6, repairs_used),
+                        phase = COALESCE($7, phase),
+                        tokens_used = COALESCE($8, tokens_used),
+                        updated_at = now()
+                    WHERE id = $1::uuid
+                    RETURNING {_JOB_COLUMNS}
+                    """,
+                    str(job_id),
+                    status,
+                    error_code,
+                    error_message,
+                    str(tool_id) if tool_id is not None else None,
+                    repairs_used,
+                    phase,
+                    tokens_used,
+                )
+            else:
+                row = await conn.fetchrow(
+                    f"""
+                    UPDATE generation_jobs
+                    SET
+                        status = $2,
+                        error_code = COALESCE($3, error_code),
+                        error_message = COALESCE($4, error_message),
+                        tool_id = COALESCE($5::uuid, tool_id),
+                        repairs_used = COALESCE($6, repairs_used),
+                        phase = COALESCE($7, phase),
+                        tokens_used = COALESCE($8, tokens_used),
+                        updated_at = now()
+                    WHERE id = $1::uuid
+                    RETURNING {_JOB_COLUMNS}
+                    """,
+                    str(job_id),
+                    status,
+                    error_code,
+                    error_message,
+                    str(tool_id) if tool_id is not None else None,
+                    repairs_used,
+                    phase,
+                    tokens_used,
+                )
+        return job_from_record(row) if row else None
+
+    async def update_job_phase(
+        self,
+        job_id: UUID | str,
+        *,
+        phase: str,
+        repairs_used: int | None = None,
+        tokens_used: int | None = None,
+    ) -> GenerationJobRow | None:
+        """Update phase while status stays running (status poll UX)."""
+        async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 UPDATE generation_jobs
                 SET
-                    status = $2,
-                    error_code = COALESCE($3, error_code),
-                    error_message = COALESCE($4, error_message),
-                    tool_id = COALESCE($5::uuid, tool_id),
-                    repairs_used = COALESCE($6, repairs_used),
+                    phase = $2,
+                    repairs_used = COALESCE($3, repairs_used),
+                    tokens_used = COALESCE($4, tokens_used),
                     updated_at = now()
                 WHERE id = $1::uuid
                 RETURNING {_JOB_COLUMNS}
                 """,
                 str(job_id),
-                status,
-                error_code,
-                error_message,
-                str(tool_id) if tool_id is not None else None,
+                phase,
                 repairs_used,
+                tokens_used,
             )
         return job_from_record(row) if row else None

@@ -50,6 +50,12 @@ def tool_version_from_record(row: Any) -> ToolVersionRow:
 
 
 def job_from_record(row: Any) -> GenerationJobRow:
+    # phase column added in 002_job_phase; tolerate older rows/tests
+    phase = None
+    try:
+        phase = row["phase"]
+    except (KeyError, TypeError):
+        phase = None
     return GenerationJobRow(
         id=row["id"],
         owner_user_id=str(row["owner_user_id"]),
@@ -64,6 +70,7 @@ def job_from_record(row: Any) -> GenerationJobRow:
         cost_cents=row["cost_cents"],
         repair_budget=int(row["repair_budget"]),
         repairs_used=int(row["repairs_used"]),
+        phase=str(phase) if phase is not None else None,
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

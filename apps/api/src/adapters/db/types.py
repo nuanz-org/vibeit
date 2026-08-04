@@ -50,6 +50,7 @@ class GenerationJobRow:
     cost_cents: int | None
     repair_budget: int
     repairs_used: int
+    phase: str | None
     created_at: datetime
     updated_at: datetime
 
