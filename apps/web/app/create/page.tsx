@@ -53,7 +53,11 @@ export default async function CreatePage() {
         <h1 style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>Create</h1>
         <p style={{ opacity: 0.7, marginBottom: "1.5rem", lineHeight: 1.5 }}>
           Signed in as <strong>{session.user.email}</strong>. Vision → tool
-          generation ships in M3; upload + job stubs prove the platform path.
+          generation ships in M3; upload + job stubs prove the platform path.{" "}
+          <Link href="/studio/social-frame" style={{ textDecoration: "underline" }}>
+            Open Studio (social-frame fixture)
+          </Link>
+          .
         </p>
 
         <div style={cardStyle}>

@@ -22,9 +22,9 @@
 | Object storage + uploads | ✅ **Done** | M1d storage + **M1e** upload API |
 | Access rules + M1 demo | ✅ **Done** | **M1f** — [access-rules.md](./access-rules.md) |
 | **M0-thin contracts** | ✅ **Done** | M0a–M0f landed — see note below |
-| Runtime host / Studio / agent | ❌ Open | M2+ |
+| Runtime host / Studio / agent | ✅ **M2a done** | Host + social-frame + Studio + real-asset capture; **M3** next |
 
-**Auth, M0-thin, and M1-rest are unblocked.** Next bottleneck is **canvas2d runtime (M2a)**, not more platform foundation.
+**Auth, M0-thin, M1-rest, and M2a are unblocked.** Next bottleneck is **Create agent (M3)**.
 
 ### M0-thin — done (polish later OK)
 
@@ -1021,15 +1021,12 @@ M0-thin DONE ──► M1a  Job DTOs + Create API gate     ✅ DONE
 
 #### Deliverables
 
-- [ ] Sandboxed iframe host (CSP, no parent access, allowlisted libs only)
-- [ ] **canvas2d** target loader + host adapter calling `VibeTool` methods uniformly
-- [ ] **1 hand-authored canvas2d reference tool** implementing the full contract:
-  - param schema + defaults
-  - at least one asset slot (e.g. logo)
-  - `captureFrame` (and stream if easy) working
-- [ ] Minimal Studio shell: load tool version (fixture or DB) → `update` / `setAssets` → live preview
-- [ ] Smoke tests: mount → update params → set asset → capture frame → dispose
-- [ ] **Capture with a real uploaded asset** on canvas2d (depends on M1e upload; placeholders OK only for early host bring-up)
+- [x] Sandboxed iframe host (CSP, no parent access, allowlisted libs only) — M2a2
+- [x] **canvas2d** target loader + host adapter calling `VibeTool` methods uniformly — M2a3
+- [x] **1 hand-authored canvas2d reference tool** implementing the full contract — M2a4 social-frame
+- [x] Minimal Studio shell: load fixture → `update` / `setAssets` → live preview — M2a5
+- [x] Smoke tests: mount → update params → set asset → capture frame → dispose
+- [x] **Capture with a real uploaded asset** on canvas2d — **M2a6** ([m2a-demo-checklist.md](./m2a-demo-checklist.md))
 
 #### Demo
 
@@ -1037,10 +1034,12 @@ Open Studio on canvas2d fixture → tweak params → swap logo → live preview 
 
 #### Core-loop exit criteria (leave M2a → start M3)
 
-- canvas2d reference tool runs under the host
-- Capture path works for PNG-ready frames **with real uploaded asset** (or clear residual only if M1e not merged yet — must close before M5/M7)
-- Safety: fixture code cannot reach parent window or arbitrary network
-- Studio shell is good enough for M3 redirect target
+- [x] canvas2d reference tool runs under the host
+- [x] Capture path works for PNG-ready frames **with real uploaded asset**
+- [x] Safety: fixture code cannot reach parent window or arbitrary network
+- [x] Studio shell is good enough for M3 redirect target (`/studio/:toolId`)
+
+**M2a exit met (2026-08-04).** Start **M3**.
 
 ### M2b — p5 + three stubs *(fast-follow; not on ASAP critical path)*
 
@@ -1405,10 +1404,10 @@ Auth + **M0-thin are complete.** To get the core loop ASAP, execute in this orde
 5. ~~**M1d**~~ — **done** (local storage + CORS serve).  
 6. ~~**M1e**~~ — **done** (upload API + Create proof UI).  
 7. ~~**M1f**~~ — **done** (access rules + demo checklist). **M1 complete.**  
-8. **M2a** — sandbox host + canvas2d hand-authored tool (M0c skeleton) + minimal Studio + capture with real asset. **← start here**  
-9. **M3** — LangGraph Create (vision → canvas2d) + progress UX + quota/repair/salvage.  
+8. ~~**M2a**~~ — **done** (host + social-frame + Studio + real-asset capture). See [m2a-demo-checklist.md](./m2a-demo-checklist.md).  
+9. **M3** — LangGraph Create (vision → canvas2d) + progress UX + quota/repair/salvage. **← start here**  
 10. **M5 → M7 → M8** — full Studio personalization → export/share/embed → publish/gallery.
 
 **Do not start next:** p5/three agent work, chat refine, inspiration vision pipeline, or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
 
-When you say **build**, start at **M2a** (canvas2d runtime host + hand-authored tool).
+When you say **build**, start at **M3** (Create agent).

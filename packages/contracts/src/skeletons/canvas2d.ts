@@ -270,7 +270,7 @@ export function createCanvas2dTool(
   }
 
   return {
-    mount(el, mountOptions) {
+    async mount(el, mountOptions) {
       // HARD RULES: do not access parent window / top; do not inject remote scripts.
       root = el;
       root.replaceChildren();
@@ -300,7 +300,8 @@ export function createCanvas2dTool(
       lastMs = 0;
 
       layout();
-      void reloadImages(assets);
+      // Await asset loads so capture after mount can include real uploaded logos (M2a6).
+      await reloadImages(assets);
 
       if (typeof ResizeObserver !== "undefined") {
         resizeObserver = new ResizeObserver(() => layout());
@@ -317,9 +318,10 @@ export function createCanvas2dTool(
       creative.onParams?.(params, draw);
     },
 
-    setAssets(nextAssets) {
+    async setAssets(nextAssets) {
       assets = { ...assets, ...nextAssets };
-      void reloadImages(assets);
+      // Resolve when images are loaded (or failed) so host capture is not raced (M2a6).
+      await reloadImages(assets);
     },
 
     getParamSchema: () => creative.getParamSchema(),

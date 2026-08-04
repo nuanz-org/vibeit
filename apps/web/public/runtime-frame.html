@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Frame CSP — keep in sync with RUNTIME_FRAME_CSP in
+      apps/web/runtime/host/sandbox.ts
+      Script is generated: pnpm --filter web build:runtime-frame
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src http: https: blob: data:; media-src blob:; font-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+    />
+    <title>Vibeit runtime frame</title>
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0a0a0c;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-vibeit-runtime-root></div>
+    <script src="/runtime-frame.js"></script>
+  </body>
+</html>

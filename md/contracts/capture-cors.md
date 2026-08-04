@@ -13,7 +13,7 @@
 1. **PNG export works** via `VibeTool.captureFrame()` on canvas2d.  
 2. **Short video path is defined** (implement in M7): `getCaptureStream` + client **MediaRecorder**.  
 3. **Asset loads do not taint the canvas** — `crossOrigin = "anonymous"` + storage CORS (or same-origin proxy).  
-4. **M2a bar:** capture with a **real uploaded** asset, not only `data:` URL fixtures.
+4. **M2a bar (closed M2a6):** capture with a **real uploaded** asset, not only `data:` URL fixtures — see [m2a-demo-checklist.md](../m2a-demo-checklist.md).
 
 ---
 

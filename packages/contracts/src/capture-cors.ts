@@ -156,6 +156,63 @@ export const CAPTURE_FAILURE_MEANING: Record<CaptureFailureReason, string> = {
 export const M2A_CAPTURE_REQUIRES_REAL_ASSET = true as const;
 
 /**
+ * Path markers for Vibeit upload/serve URLs (M1e raw + M1d storage).
+ * Used by isRealUploadedAssetUrl for the M2a6 capture bar.
+ */
+export const REAL_UPLOADED_ASSET_PATH_MARKERS = [
+  "/api/v1/assets/raw/",
+  "/api/v1/storage/objects/",
+] as const;
+
+/**
+ * True if `url` is an http(s) asset URL suitable for canvas capture.
+ * Rejects data: / blob: / file: fixtures that do not satisfy M2a exit.
+ */
+export function isRealUploadedAssetUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return false;
+  }
+
+  return true;
+}
+
+/** True if the URL is a local fixture that does not satisfy M2a exit. */
+export function isFixtureAssetUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const t = url.trim().toLowerCase();
+  return (
+    t.startsWith("data:") ||
+    t.startsWith("blob:") ||
+    t.startsWith("about:") ||
+    t.startsWith("file:")
+  );
+}
+
+/**
+ * True when URL is a Vibeit storage/raw serve path (stronger than generic http).
+ */
+export function isVibeitServedAssetUrl(url: string | null | undefined): boolean {
+  if (!isRealUploadedAssetUrl(url) || isFixtureAssetUrl(url)) return false;
+  try {
+    const path = new URL(url!.trim()).pathname;
+    return REAL_UPLOADED_ASSET_PATH_MARKERS.some((m) => path.includes(m));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * WebGL preserveDrawingBuffer — deferred to M2b / full M0 for p5/three.
  * canvas2d does not need this flag.
  */

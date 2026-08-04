@@ -85,7 +85,11 @@ export {
   CAPTURE_VIDEO_MIME_PREFERRED,
   M2A_CAPTURE_REQUIRES_REAL_ASSET,
   PROVISIONAL_STORAGE_CORS,
+  REAL_UPLOADED_ASSET_PATH_MARKERS,
   WEBGL_PRESERVE_DRAWING_BUFFER_DEFERRED,
+  isFixtureAssetUrl,
+  isRealUploadedAssetUrl,
+  isVibeitServedAssetUrl,
   provisionalCorsResponseHeaders,
 } from "./capture-cors.js";
 export type {
