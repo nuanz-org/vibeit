@@ -1,9 +1,29 @@
 # Vibeit — MVP milestones
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
-**Status:** **Aligned to consensus frozen v1** (2026-08-04)  
+**Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
 **Date:** 2026-08-03 · **Revised:** 2026-08-04  
-**Goal:** Complete loop on canvas2d — Auth → Create → Studio → Export/share/embed → Publish gallery  
+**Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
+
+---
+
+## Current progress (2026-08-04)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Product architecture | ✅ Frozen v1 | Consensus + plan + BE/FE architecture docs |
+| **Sign up** | ✅ Done | Better Auth email/password (`apps/web` `/api/auth/*`) |
+| **Sign in** | ✅ Done | Same session cookie path |
+| **Sign out** | ✅ Done | Client `signOut` + UI |
+| Session → API | ✅ Done | FastAPI `GET /api/v1/auth/me` validates Better Auth cookie |
+| Web Create gate | ✅ Partial | `/create` proxy + `requireSession()` — page is placeholder only |
+| Create API gate | ❌ Open | No protected jobs/create stub yet (M1a) |
+| Product DB (tools/jobs/assets) | ❌ Open | M1b |
+| Object storage + uploads | ❌ Open | M1c–M1d |
+| VibeTool contract / skeletons | ❌ Open | M0 (thin freeze next) |
+| Runtime host / Studio / agent | ❌ Open | M2+ |
+
+**Auth for the core loop is unblocked.** Next bottleneck is **M0 thin freeze + remaining M1 (data/uploads) + canvas2d runtime**, not more auth work.
 
 ---
 
@@ -11,50 +31,115 @@
 
 | Term | Meaning |
 |------|---------|
-| **Milestone** | A vertical or foundation slice with a hard **exit criteria** — do not start the next until exit is met |
+| **Milestone** | A vertical or foundation slice with a hard **exit criteria** — do not start the next until its **core-loop exit** is met |
+| **Core-loop exit** | Minimum needed to keep moving toward Auth → Create → Studio → Export → Publish on **canvas2d** |
+| **Full exit** | Complete milestone quality bar (may include p5/three stubs, polish) — do **not** block the core loop on full exit when a core-loop exit exists |
 | **Demo** | What you can show end-to-end when the milestone is done |
 | **Depends on** | Hard prerequisites |
 | **Out of scope** | Explicitly deferred (even if tempting) |
 | **Critical path** | Required for “flow is complete” |
 | **Fast-follow** | Valuable, not required to claim complete loop |
 
-**Principle:** Prefer a thin complete path early (hand-authored tool + one target) before expanding multi-target and agent quality. Multi-target is a **v1 product direction**, but the **complete loop ships on canvas2d** first. Registry + contract still cover all three targets from M0/M2.
+**Principle (ASAP):** Prefer a **thin complete path** on **canvas2d only**. Freeze contracts just enough to code. Defer p5/three agent work, chat refine, inspiration screenshots, and production polish. Hand-authored canvas2d tool before LLM. Multi-target remains a v1 direction but is **not** on the ASAP critical path.
 
 **Stack (from consensus):** Next.js `apps/web` · FastAPI `apps/api` · LangGraph in API · OpenRouter/DeepSeek · Postgres + object storage · sandboxed iframe runtime.
 
 ---
 
-## Milestone map
+## ASAP critical path (core loop)
+
+Do **not** wait for full multi-target or chat refine. Sequence:
+
+```
+DONE     Auth: sign up · sign in · sign out · session → API
+   ↓
+M0-thin  Contracts: VibeTool + param schema + canvas2d skeleton + plan/job JSON
+   ↓
+M1-rest  Product schema · storage · uploads · create API gate · access rules
+   ↓
+M2a      Runtime host + **canvas2d only** hand-authored tool + capture w/ real asset
+         (p5/three stubs = M2b, parallel/later — not required for core loop)
+   ↓
+M3       Create agent: vision text → canvas2d + quota + repair + salvage
+   ↓
+M5       Studio Control (params, assets, colors, view source)
+   ↓
+M7       Export PNG + short video · share · embed
+   ↓
+M8       Publish + gallery + quality gates   ← “core loop complete”
+   ↓
+M9       Hardening / launch polish
+```
+
+```
+FAST-FOLLOWS (off critical path — do not block M8):
+
+M2b  p5 + three host stubs + reference tools
+M4   Multi-target agent + inspiration screenshots
+M6   Chat refine (Control LangGraph)
+```
+
+**Complete-loop MVP = M0-thin → M1-rest → M2a → M3 → M5 → M7 → M8** (canvas2d).  
+**M2b, M4, M6** = fast-follows.  
+**M9** = launch readiness (not required to claim “flow is complete” in dev).
+
+### What “core loop complete” means (unchanged product bar)
+
+A real user can: **sign in → describe vision → get a live canvas2d tool → tweak params/assets/colors → export PNG + short video → share/embed → publish to gallery**, and failed generations never appear as published tools.
+
+### Speed rules (builders)
+
+1. **canvas2d-only until M8** — agent never picks p5/three on the ASAP path.  
+2. **M0-thin is enough to start M1/M2a** — provisional CORS/job shapes OK; tighten later.  
+3. **M2a before M3** — if a hand-authored canvas2d tool cannot mount/update/capture, do not start the agent.  
+4. **Parallel after M0-thin:** M1b schema ∥ M1c storage; M5 Studio chrome against M2a fixtures while M3 agent is built.  
+5. **M7 early prototype** on M2a fixtures (PNG capture) before agent is perfect.  
+6. **Do not expand scope** into remix, brand kit at create, multiplayer, or source download.
+
+### Suggested effort (order-of-magnitude, focused days)
+
+| Slice | Focus | ~Days |
+|-------|--------|------:|
+| M0-thin | Contract types + canvas2d skeleton + plan/job shapes | 1–2 |
+| M1-rest | Gate + schema + storage + upload + access rules | 3–5 |
+| M2a | iframe host + one canvas2d ref tool + Studio shell + capture | 3–5 |
+| M3 | LangGraph Create canvas2d + Create UI + jobs + quota | 5–8 |
+| M5 | Full Control UI (may start earlier on fixtures) | 3–5 |
+| M7 | PNG/video/share/embed | 2–4 |
+| M8 | Publish gates + gallery | 2–3 |
+| **Sum to core loop** | | **~19–32** |
+
+Numbers are planning aids, not commitments. Cut polish, not the path.
+
+---
+
+## Full milestone map (reference)
 
 ```
 CRITICAL PATH (complete loop, canvas2d):
 
-M0  Contracts & platform skeleton
+M0  Contracts & platform skeleton          [use M0-thin for ASAP]
  ↓
-M1  Auth + data model + uploads
+M1  Auth + data model + uploads            [auth DONE; finish M1-rest]
  ↓
-M2  Runtime host + hand-authored tools (all 3 targets stubbed; capture w/ real asset)
+M2a Runtime host + canvas2d hand tool      [core-loop exit]
+M2b p5/three stubs                         [fast-follow]
  ↓
-M3  Create agent (vision text → canvas2d) + quota + repair budget + salvage UX
+M3  Create agent (vision text → canvas2d)
  ↓
-M5  Studio Control (params, assets, colors, view source)
+M5  Studio Control
  ↓
-M7  Export · share · embed (WebM + PNG-sequence fallback)
+M7  Export · share · embed
  ↓
 M8  Publish + gallery + quality gates
  ↓
 M9  Hardening, ops, launch polish
 
-FAST-FOLLOWS (parallel after M5 / after M3 as noted):
+FAST-FOLLOWS:
 
 M4  Multi-target codegen + inspiration screenshots
-    M4a p5 · M4b three (config-gated until eval ≥ threshold)
 M6  Chat refine (Control LangGraph)
 ```
-
-**Complete-loop MVP = M0–M3, M5, M7, M8** (canvas2d).  
-**M4, M6** = fast-follows (not launch blockers).  
-**M9** = launch readiness (not required to claim “flow is complete” in dev).
 
 ---
 
@@ -62,27 +147,41 @@ M6  Chat refine (Control LangGraph)
 
 **Why first:** Everything hangs on one shared `VibeTool` contract and job shapes. Freeze these before UI chrome or model tuning.
 
-### Deliverables
+### M0-thin (core-loop exit) — do this first
 
-- [ ] Freeze **VibeTool contract** (TS types + short markdown spec)
-  - `mount`, `update`, `setAssets?`, `getParamSchema`, `getDefaultParams`, `getAssetSlots`, `getCaptureStream` / `captureFrame`, `dispose`
-- [ ] Freeze **param schema conventions** (colors, numbers, text, enums, asset-slot refs)
-- [ ] Freeze **target registry** IDs: `canvas2d` | `p5` | `three` + allowlisted lib rules
-- [ ] Freeze **asset CORS / crossOrigin / storage headers** and per-target **capture rules** (`preserveDrawingBuffer`, etc.)
-- [ ] Freeze **per-target skeleton template** shape (model fills creative logic inside harness)
-- [ ] Freeze **structured plan JSON** schema (concept, aspect, motion, params, target)
-- [ ] Freeze **LangGraph node I/O** sketch (Create + Repair + Control refine) — types only; linear graph
-- [ ] Freeze **job API** shapes: create job, status, result version, error codes, quota/budget fields
-- [ ] Monorepo wiring: env template (OpenRouter, DB, storage), API package layout, shared types package or `packages/` contract module if useful
-- [ ] Thin PRD one-pagers (optional but recommended): Create · Studio · Export · Gallery
+Enough to unlock **M1-rest + M2a**. Mark M0 core-loop exit when these are checked; do not wait for full M0 polish.
 
-### Demo
+- [ ] **VibeTool contract** (TS types + short markdown): `mount`, `update`, `setAssets?`, `getParamSchema`, `getDefaultParams`, `getAssetSlots`, `captureFrame` / `getCaptureStream?`, `dispose`
+- [ ] **Param schema conventions** (colors, numbers, text, enums, asset-slot refs) — canvas2d-focused examples OK
+- [ ] **Target registry IDs** frozen: `canvas2d` | `p5` | `three` (only **canvas2d** required to implement now)
+- [ ] **canvas2d skeleton template** shape (model fills creative logic inside harness)
+- [ ] **Plan JSON** schema (concept, aspect, motion, params, `target` — target fixed to `canvas2d` on ASAP path)
+- [ ] **Job API** shapes: create job, status, result version, error codes, quota/budget fields (can use jsonb-friendly loose fields)
+- [ ] **Provisional capture/CORS notes** for canvas2d (`crossOrigin`, storage headers) — tighten with M1c/M2a if needed
 
-Docs + types only. An engineer can answer “what does a valid tool look like?” without reading the brainstorm.
+**M0-thin demo:** An engineer can implement a hand-authored canvas2d tool and a create-job API without reopening architecture.
 
-### Exit criteria
+**M0-thin exit (unblocks ASAP path):**
 
-- Contract + param schema + capture/CORS rules + skeleton + plan-JSON + job API reviewed and treated as **source of truth**
+- VibeTool + param schema + canvas2d skeleton + plan/job shapes treated as source of truth for M1/M2a/M3
+- p5/three may be named-only in the registry until M2b
+
+### Full M0 deliverables (nice-to-have before M4; not blocking core loop)
+
+- [ ] Full allowlisted lib rules for p5/three
+- [ ] Per-target capture rules including WebGL `preserveDrawingBuffer`
+- [ ] p5 + three skeleton template stubs
+- [ ] LangGraph node I/O sketch for Control refine (types only)
+- [ ] Monorepo env template (OpenRouter, DB, storage) + shared contract package if useful
+- [ ] Thin PRD one-pagers (optional): Create · Studio · Export · Gallery
+
+### Demo (full)
+
+Docs + types only. An engineer can answer “what does a valid tool look like?” for all three targets without reading the brainstorm.
+
+### Full exit criteria
+
+- Contract + param schema + capture/CORS rules + skeletons + plan-JSON + job API reviewed as **source of truth**
 - No product UI required
 
 ### Out of scope
@@ -92,6 +191,7 @@ Docs + types only. An engineer can answer “what does a valid tool look like?�
 ### Depends on
 
 - Consensus frozen v1 ✓
+- **Auth already done** — M0 does not depend on finishing M1
 
 ---
 
@@ -99,12 +199,33 @@ Docs + types only. An engineer can answer “what does a valid tool look like?�
 
 **Why:** Create is auth-gated; tools, versions, assets, and inspiration images need persistence before generation.
 
+**Progress (2026-08-04):**
+
+| Slice | Status |
+|-------|--------|
+| Sign up / sign in / sign out (Better Auth API + web UI) | ✅ **Done** |
+| Session validation on FastAPI (`/api/v1/auth/me`) | ✅ **Done** |
+| Web gate on `/create` | ✅ **Done** (placeholder page) |
+| **M1-rest** (API create gate, schema, storage, uploads, access rules) | ❌ **Open — this is the remaining M1 work** |
+
+Auth is **not** on the critical path anymore. Treat **M1-rest** as the only M1 work left for the core loop.
+
 ### Deliverables
 
-- [ ] Auth provider integrated on `apps/web` + session validation on `apps/api`
-- [ ] **Login required before Create** (route guard + API 401 on create endpoints)
+#### Auth (done — do not re-plan)
+
+- [x] Create account (sign up) — Better Auth email/password API
+- [x] Sign in — Better Auth API
+- [x] Sign out — Better Auth API + UI
+- [x] Auth provider on `apps/web` + session validation on `apps/api` (`GET /api/v1/auth/me`)
+
+#### M1-rest (required for core loop)
+
+- [ ] **Login required before Create** fully closed (web done; API still open)
+  - [x] Web: `/create` proxy cookie gate + `requireSession()` page guard
+  - [ ] API: protected create-stub (or jobs) endpoint returns **401** without session
 - [ ] Postgres schema (minimal):
-  - users
+  - users → **use Better Auth `user` table** (do not duplicate); product tables FK to `user.id`
   - tools (owned, publicId, status draft/published)
   - tool_versions (code, target, param schema, defaults, asset slots, plan metadata)
   - generation_jobs (status, inputs ref, errors, token/cost fields, repair budget)
@@ -134,41 +255,283 @@ Sign in → hit a protected “create stub” endpoint → upload an image → s
 
 ---
 
+### M1 remaining — implementation plan (subparts)
+
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M1 done until **M1e**.
+
+| Subpart | Name | Depends on | Outcome |
+|---------|------|------------|---------|
+| **M1a** | Create API gate + identity | Auth done ✓ | Unauth cannot start Create on API; owner id stable |
+| **M1b** | Postgres product schema | M1a (identity) | Tables + migrations + thin repos |
+| **M1c** | Object storage adapter | M0 CORS notes (or provisional) | Upload/delete/signed-read via protocol |
+| **M1d** | Upload API + DB metadata | M1b + M1c | Inspiration + studio asset round-trip |
+| **M1e** | Access rules + M1 demo | M1a–M1d | Doc + verified end-to-end demo |
+
+**Suggested effort:** M1a ~0.5d · M1b ~1–1.5d · M1c ~1d · M1d ~1d · M1e ~0.5d (≈4–5 focused days).
+
+---
+
+#### M1a — Create API gate + stable identity
+
+**Goal:** Finish “login required before Create” on the **API** side (web gate already works).
+
+**Tasks**
+
+1. Add a protected **create stub** endpoint, e.g. `POST /api/v1/jobs` (stub body) or `POST /api/v1/create/stub`, using `Depends(get_current_user)`.
+2. Return **401** when session cookie missing/invalid; **200/201** with `{ userId, … }` when valid.
+3. Keep `/api/v1/auth/me` as the thin “who am I” check; create stub proves product gate.
+4. Optional smoke test: HTTP test without cookie → 401; with valid session → success.
+5. Web: no change required if `/create` already gated; optionally call create stub from Create placeholder to prove cookie forwarding (`credentials: "include"`).
+
+**Touch (expected)**
+
+- `apps/api/src/api/v1/` — new `jobs.py` or extend router
+- `apps/api/src/api/v1/router.py`
+- `apps/web/app/create/page.tsx` (optional client call)
+- Tests under `apps/api` if present
+
+**Exit**
+
+- [ ] Unauthenticated `POST` create-stub → **401**
+- [ ] Authenticated → success payload includes Better Auth `user.id`
+- [ ] Deliverable checkbox “Login required before Create” can be marked complete
+
+**Out of scope for M1a:** Real generation jobs, LangGraph, quotas.
+
+---
+
+#### M1b — Postgres product schema + repositories
+
+**Goal:** Minimal durable model for tools, versions, jobs, and assets. Auth tables stay owned by Better Auth.
+
+**Tasks**
+
+1. Choose migration approach (Alembic **or** versioned SQL under `apps/api` — pick one and stick to it).
+2. Create product tables (names can be snake_case in Postgres):
+
+| Table | Key columns (MVP) |
+|-------|-------------------|
+| `tools` | `id`, `public_id` (unique), `owner_user_id` → `user.id`, `status` (`draft` \| `published`), timestamps |
+| `tool_versions` | `id`, `tool_id`, `target` (`canvas2d` \| `p5` \| `three`), `code`, `param_schema` (jsonb), `default_params` (jsonb), `asset_slots` (jsonb), `plan` (jsonb nullable), `created_at` |
+| `generation_jobs` | `id`, `owner_user_id`, `tool_id` nullable, `status`, `vision_text`, `inspiration_asset_ids`, `error_code` / `error_message`, token/cost fields, `repair_budget` / `repairs_used`, timestamps |
+| `assets` | `id`, `owner_user_id`, `kind` (`inspiration` \| `studio` \| later `export`/`thumb`), `storage_key`, `content_type`, `byte_size`, `original_filename`, optional `tool_id`, timestamps |
+| publish/gallery | Prefer columns on `tools` for MVP: `published_at`, `title`, `description`, `thumbnail_asset_id` — full `publishes` table only if needed |
+
+3. Indexes: `tools.owner_user_id`, `tools.public_id`, `assets.owner_user_id`, `generation_jobs.owner_user_id` + status.
+4. Thin repositories under `apps/api/src/adapters/db/repositories/` (tools, jobs, assets) — no business logic in routers.
+5. Wire pool/session in `adapters/db/session.py` (asyncpg already used for auth).
+
+**Touch (expected)**
+
+- `apps/api/src/adapters/db/` — models, session, repositories
+- Migrations directory
+- `apps/api/src/core/config.py` if needed
+
+**Exit**
+
+- [ ] Migrations apply cleanly on empty DB **and** existing Better Auth schema
+- [ ] Can insert a draft tool owned by a real `user.id` and read it back
+- [ ] No second `users` table competing with Better Auth
+
+**Out of scope for M1b:** Agent writes to jobs, publish flow, Studio UI.
+
+**Note:** If M0 job/tool JSON shapes are not fully frozen, still land columns as `jsonb` with loose validation; tighten in M3.
+
+---
+
+#### M1c — Object storage adapter + CORS
+
+**Goal:** Swappable storage port so uploads work in local dev and later S3-compatible prod.
+
+**Tasks**
+
+1. Define `adapters/storage/protocol.py`: `put_object`, `delete_object`, `get_public_or_signed_url` (minimal surface).
+2. Implement **local filesystem** adapter for dev (e.g. `.data/uploads/` or docker volume) **and/or** S3-compatible (MinIO/R2/S3) behind the same protocol.
+3. Config via env: `STORAGE_BACKEND`, bucket/path, credentials, public base URL.
+4. Apply **CORS / cache headers** consistent with M0 asset policy (if M0 not frozen yet, document a provisional policy and match it):
+   - Browser must load images with `crossOrigin="anonymous"` without tainting canvas (M2 depends on this).
+   - Prefer same-origin proxy **or** storage CORS allowing web origin + GET.
+5. Key layout convention, e.g. `{user_id}/{asset_id}/{filename}` or `{kind}/{user_id}/{uuid}`.
+
+**Touch (expected)**
+
+- `apps/api/src/adapters/storage/`
+- `apps/api/src/core/config.py`, env template / README
+- Optional: `docker-compose.yml` MinIO service if using S3 locally
+
+**Exit**
+
+- [ ] Service can store bytes and return a URL the browser can fetch
+- [ ] CORS (or same-origin proxy) verified with a sample image GET from `apps/web` origin
+- [ ] Backend architecture layout for storage adapter present
+
+**Out of scope for M1c:** Export video blobs, CDN, lifecycle rules (M7/M9).
+
+**Parallelism:** Can start after M1a; merge before M1d.
+
+---
+
+#### M1d — Upload API (inspiration + studio assets)
+
+**Goal:** Authenticated upload round-trip: file → storage → `assets` row → client sees metadata + URL.
+
+**Tasks**
+
+1. `POST /api/v1/assets` (multipart) or presigned PUT flow — pick **one** for MVP (multipart to API is simpler for local).
+2. Auth required (`get_current_user`); reject unauthenticated uploads with **401**.
+3. Validate: allowlisted MIME (`image/png`, `image/jpeg`, `image/webp`), max size (e.g. 5–10 MB), kind enum `inspiration` | `studio`.
+4. Service `upload_asset`: write storage → insert `assets` row → return `{ id, kind, url, contentType, byteSize }`.
+5. Optional: `GET /api/v1/assets/{id}` (owner-only) and `DELETE` for cleanup during dev.
+6. Wire minimal UI on Create placeholder: file input → upload → show thumbnail/URL (proves M1 demo; full Create UI is M3/M4).
+
+**Touch (expected)**
+
+- `apps/api/src/api/v1/assets.py`, `schemas/assets.py`, `services/upload_asset.py`
+- `apps/web` Create page or `features/create` upload control
+- `lib/api` fetch helper with credentials if introduced
+
+**Exit**
+
+- [ ] Authenticated upload creates storage object + DB row
+- [ ] Unauthenticated upload → **401**
+- [ ] Returned URL loads the image (CORS-safe for later capture)
+- [ ] Deliverables “Object storage…” and “Upload API…” can be checked
+
+**Out of scope for M1d:** Binding assets to tool slots in Studio (M5), inspiration vision model (M4).
+
+---
+
+#### M1e — Public vs private access rules + M1 demo
+
+**Goal:** Document access rules early so M7/M8 do not invent ownership later; prove the milestone demo.
+
+**Tasks**
+
+1. Write a short **Access rules** subsection (in this file or `md/` one-pager linked from here):
+
+| Resource | Anonymous | Authenticated owner | Other signed-in users |
+|----------|-----------|---------------------|------------------------|
+| Draft tool / private version | No | Full | No |
+| Published tool / gallery item | Read (view/embed) | Full | Read |
+| Share page `/t/:publicId` | Read interactive tool | — | Read |
+| Source download | Never (product rule) | View-in-Studio only | No |
+| Assets (inspiration/studio) | No (unless published thumb via public URL) | Full | No |
+| Create / upload / jobs | No (401) | Yes | N/A |
+
+2. Define `public_id` generation (nanoid/ulid) at tool create time even if draft-only for now.
+3. Run **M1 demo checklist** and record pass:
+
+   - [ ] Sign up / sign in
+   - [ ] Open `/create` while logged out → redirected to login
+   - [ ] Hit create-stub without cookie → 401; with session → 200
+   - [ ] Upload image → row in `assets` + file in storage
+   - [ ] Fetch image URL from browser (CORS OK)
+
+4. Mark all M1 deliverables complete only after checklist passes.
+
+**Exit**
+
+- [ ] Access rules written and linked
+- [ ] Demo path works on a clean local stack (`docker compose` DB + web + api)
+- [ ] M1 exit criteria satisfied
+
+---
+
+### M1 subpart sequencing diagram
+
+```
+Auth DONE (sign up / sign in / sign out / session→API)
+                 │
+                 ▼
+M0-thin (can parallel start of M1a) ──► M1a Create API gate
+                                           │
+                                           ▼
+                                        M1b Schema/repos ────────┐
+                                           │                     │
+                                           │    M1c Storage ─────┤ (parallel with M1b after M1a)
+                                           ▼                     ▼
+                                        M1d Upload API + Create upload UI
+                                           │
+                                           ▼
+                                        M1e Access rules + demo  →  M1 COMPLETE → M2a
+```
+
+### M1 core-loop exit vs full exit
+
+| | Required to leave M1 for ASAP path? |
+|--|-------------------------------------|
+| Auth (sign up/in/out) | ✅ Already done |
+| M1a create API gate | **Yes** |
+| M1b tools/versions/jobs/assets tables | **Yes** (jobs + tools at minimum before M3) |
+| M1c + M1d storage/upload | **Yes** for M2a real-asset capture and M5 assets (local FS adapter OK) |
+| M1e access rules + demo | **Yes** (short doc + checklist) |
+| Inspiration-upload UI polish | No — minimal upload proof is enough |
+| Gallery publish columns polish | Optional until M8 |
+
+### M1 implementation notes (do not skip)
+
+- **Users:** Better Auth owns `user` / `session`; product FKs use that string id. **Do not build a second users table.**
+- **Layout:** Follow `md/backend-architecture.md` — routers thin, services own use-cases, adapters for DB/storage.
+- **Cookies:** Browser → API must send session cookie (`credentials: "include"`); CORS already allows localhost:3000 with credentials.
+- **M0 dependency:** Prefer M0-thin job/tool shapes; if slightly ahead of freeze, use jsonb + provisional CORS and tighten later.
+- **Not M1:** LangGraph, OpenRouter, Studio shell, gallery UI, export.
+- **Do not reopen auth** unless session cookie forwarding to API breaks.
+
+---
+
 ## M2 — Runtime host + hand-authored tools
 
 **Why:** Prove the contract, sandbox, and Control surface **without** LLM noise. If hand-authored tools cannot mount/update/capture, freeform codegen will fail.
 
-### Deliverables
+**ASAP split:** **M2a = core-loop exit (canvas2d only).** **M2b = p5/three stubs (fast-follow).** Do **not** block M3/M5/M7 on M2b.
+
+### M2a — canvas2d host (core-loop exit) ✅ required for ASAP
+
+#### Deliverables
 
 - [ ] Sandboxed iframe host (CSP, no parent access, allowlisted libs only)
-- [ ] Target loaders for `canvas2d`, `p5`, `three` (bundles/CDN allowlist)
-- [ ] Host adapter that calls `VibeTool` methods uniformly
-- [ ] **3 hand-authored reference tools** (one per target) implementing the full contract:
+- [ ] **canvas2d** target loader + host adapter calling `VibeTool` methods uniformly
+- [ ] **1 hand-authored canvas2d reference tool** implementing the full contract:
   - param schema + defaults
   - at least one asset slot (e.g. logo)
-  - `captureFrame` / `getCaptureStream` working
-- [ ] Minimal Studio shell that loads a tool version by id and drives `update` / `setAssets`
+  - `captureFrame` (and stream if easy) working
+- [ ] Minimal Studio shell: load tool version (fixture or DB) → `update` / `setAssets` → live preview
 - [ ] Smoke tests: mount → update params → set asset → capture frame → dispose
-- [ ] **Capture with a real uploaded asset** (not only placeholders) on each target
+- [ ] **Capture with a real uploaded asset** on canvas2d (depends on M1d; placeholders OK only for early host bring-up)
 
-### Demo
+#### Demo
 
-Open Studio on a fixture tool → tweak params → swap logo → see live preview update (no AI) → export PNG of scene with uploaded logo.
+Open Studio on canvas2d fixture → tweak params → swap logo → live preview → PNG frame with uploaded logo.
 
-### Exit criteria
+#### Core-loop exit criteria (leave M2a → start M3)
+
+- canvas2d reference tool runs under the host
+- Capture path works for PNG-ready frames **with real uploaded asset** (or clear residual only if M1d not merged yet — must close before M5/M7)
+- Safety: fixture code cannot reach parent window or arbitrary network
+- Studio shell is good enough for M3 redirect target
+
+### M2b — p5 + three stubs *(fast-follow; not on ASAP critical path)*
+
+#### Deliverables
+
+- [ ] Target loaders for `p5` and `three` (allowlisted bundles/CDN)
+- [ ] Hand-authored reference tool per target (full contract + capture notes)
+- [ ] Capture with real uploaded asset on each target (`preserveDrawingBuffer` for three)
+
+#### Exit criteria
 
 - All three targets run a reference tool under the same host
-- Capture path works for PNG-ready frames on each target **with real user-uploaded asset** (note Three.js `preserveDrawingBuffer` / canvas pitfalls)
-- Safety: generated/fixture code cannot reach parent window or arbitrary network
+- Capture proven per target
 
-### Out of scope
+### Out of scope (M2)
 
-- LangGraph, OpenRouter, publish, export video UI polish
+- LangGraph, OpenRouter, publish, export video UI polish, chat refine
 
 ### Depends on
 
-- M0 contract  
-- M1 optional for fixtures (can use local fixtures first; wire to DB before M3)
+- M0-thin contract (full M0 not required)
+- M1d for real-asset capture demo (fixtures can bootstrap host earlier)
+- Wire tools to DB before or during M3 finalize
 
 ---
 
@@ -209,8 +572,12 @@ Sign in → describe a vision in text → see progress stream → get a live can
 
 ### Depends on
 
-- M1 auth + jobs + storage  
-- M2 sandbox + canvas2d host
+- M1-rest (auth already done; need jobs + tools + storage)  
+- **M2a** sandbox + canvas2d host (not M2b)
+
+### ASAP note
+
+Force/prefer `target: canvas2d` in Plan. Do not spend M3 calendar time on multi-target selection or inspiration images (M4).
 
 ---
 
@@ -438,13 +805,13 @@ Full success criteria path (canvas2d):
 
 | Consensus area | Milestone(s) |
 |----------------|--------------|
-| Auth before Create | M1 |
+| Auth before Create | M1 (**auth done**; finish API gate + data) |
 | Create: vision text | M3 |
 | Create: optional screenshots | M4 (fast-follow) |
 | LangGraph Create + repair + salvage | M3 |
 | Skeleton templates + plan JSON | M0 (freeze), M3 (use) |
-| Multi-target registry | M0 (freeze), M2 (host), M4 (agent, fast-follow) |
-| VibeTool contract / sandbox / CORS capture | M0, M2 |
+| Multi-target registry | M0 (IDs), **M2a canvas2d host**, M2b p5/three, M4 (agent, fast-follow) |
+| VibeTool contract / sandbox / CORS capture | M0-thin, M2a |
 | Own assets + color overrides | M5 |
 | Chat refine | M6 (fast-follow) |
 | PNG + MediaRecorder WebM + PNG-sequence fallback | M7 |
@@ -457,25 +824,29 @@ Full success criteria path (canvas2d):
 
 ---
 
-## Suggested sequencing for builders
+## Suggested sequencing for builders (ASAP core loop)
 
 | Phase | Milestones | Outcome |
 |-------|------------|---------|
-| **Freeze** | M0 | No ambiguous contracts |
-| **Platform** | M1 → M2 | Auth, data, runnable tools without AI; real-asset capture proven |
-| **First magic** | M3 | Text → live canvas2d tool + quotas |
-| **Control** | M5 | Personalize without agent |
-| **Distribute** | M7 → M8 | Export, share, publish → **flow complete** |
-| **Expand** | M4, M6 | Multi-target + screenshots; chat refine |
+| **Done** | Auth | Sign up · sign in · sign out · session → API |
+| **Freeze (thin)** | M0-thin | canvas2d contract + plan/job shapes — no multi-target polish required |
+| **Platform rest** | M1-rest (M1a→M1e) | Create gate, product DB, uploads, access rules |
+| **Runtime** | **M2a** | canvas2d host + hand tool + capture (+ Studio shell) |
+| **First magic** | M3 | Vision text → live canvas2d tool + quotas + repair |
+| **Control** | M5 | Params, assets, colors, view source (start on M2a fixtures early) |
+| **Distribute** | M7 → M8 | Export, share, publish → **core loop complete** |
+| **Expand later** | M2b, M4, M6 | p5/three host · multi-target agent · chat refine |
 | **Ship** | M9 | Beta-ready |
 
-**Parallelism notes:**
+**Parallelism notes (speed):**
 
-- After M0: contract docs and M1 schema can start together.  
-- M2 reference tools can be built while M1 auth lands (merge before M3).  
-- M5 Studio UI can start against M2 fixtures in parallel with M3 agent work.  
-- M7 capture/export can be prototyped on M2 fixtures early; public routes need M1.  
-- M4 and M6 can start after M5 without blocking M7/M8.
+- **Auth is done** — do not wait on more auth features.  
+- M0-thin and M1a can start immediately (even same day).  
+- After M1a: M1b schema ∥ M1c storage.  
+- M2a host can start on fixtures as soon as M0-thin lands; wire real uploads when M1d lands.  
+- M5 Studio UI against M2a fixtures **in parallel** with M3 agent.  
+- M7 PNG capture prototype on M2a fixtures early; public share routes need M1 publicId + access rules.  
+- M2b / M4 / M6 **must not** block M7/M8.
 
 ---
 
@@ -491,10 +862,18 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 ---
 
-## Next action
+## Next action (start here)
 
-When leaving planning:
+Auth is complete. To get the core loop ASAP, execute in this order:
 
-1. Owner accepts defaults in consensus (eval gates, quota, launch targets, WebM, auto-publish) or overrides them.  
-2. Optionally write thin PRDs per M3/M5/M7/M8.  
-3. Start **M0** only when you explicitly say build.
+1. **M0-thin** — freeze VibeTool + param schema + canvas2d skeleton + plan/job JSON (provisional CORS OK).  
+2. **M1a** — protected create/jobs stub → **401** without session; **200** with Better Auth user id.  
+3. **M1b + M1c in parallel** — product tables/repos + object storage adapter (local FS fine).  
+4. **M1d → M1e** — upload round-trip + access rules + M1 demo checklist.  
+5. **M2a** — sandbox host + canvas2d hand-authored tool + minimal Studio + capture with real asset.  
+6. **M3** — LangGraph Create (vision → canvas2d) + progress UX + quota/repair/salvage.  
+7. **M5 → M7 → M8** — full Studio personalization → export/share/embed → publish/gallery.
+
+**Do not start next:** p5/three agent work, chat refine, inspiration vision pipeline, or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
+
+When you say **build**, start at **M0-thin + M1a**.
