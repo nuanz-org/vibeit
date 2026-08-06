@@ -37,7 +37,7 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
     ]
 
     try:
-        completion = await llm.complete(messages, temperature=0.4, max_tokens=4096)
+        completion = await llm.complete(messages, temperature=0.4, max_tokens=80_000)
         code = extract_typescript_module(completion.text)
     except (CodegenParseError, LLMError) as exc:
         return {

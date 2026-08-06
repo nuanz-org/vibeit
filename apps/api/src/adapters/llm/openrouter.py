@@ -6,6 +6,7 @@ Only model allowed on ASAP path: deepseek/deepseek-v4-flash.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import httpx
@@ -22,6 +23,107 @@ OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Sole codegen model for M3 ASAP (user freeze).
 ASAP_CODEGEN_MODEL = "deepseek/deepseek-v4-flash"
+
+# DeepSeek V4 Flash is a reasoning model. Without this, it often spends the
+# entire max_tokens budget on message.reasoning and returns content=null with
+# finish_reason=length (see empty codegen failures). "none" forces answer tokens.
+DEFAULT_REASONING: dict[str, Any] = {"effort": "none"}
+
+# Debug prints (request/response) — set False to silence.
+_DEBUG_LLM_IO = True
+# Truncate long message bodies in debug dumps (full length still logged).
+_DEBUG_MSG_PREVIEW_CHARS = 800
+
+
+def _preview_text(text: str | None, limit: int = _DEBUG_MSG_PREVIEW_CHARS) -> str:
+    if text is None:
+        return "null"
+    if not isinstance(text, str):
+        text = str(text)
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}… [truncated, total={len(text)} chars]"
+
+
+def _debug_print_request(url: str, payload: dict[str, Any], timeout: float) -> None:
+    if not _DEBUG_LLM_IO:
+        return
+    msgs = payload.get("messages") or []
+    slim_msgs = []
+    for m in msgs:
+        content = m.get("content") if isinstance(m, dict) else None
+        slim_msgs.append(
+            {
+                "role": m.get("role") if isinstance(m, dict) else None,
+                "content_len": len(content) if isinstance(content, str) else None,
+                "content_preview": _preview_text(
+                    content if isinstance(content, str) else None
+                ),
+            }
+        )
+    dump = {
+        "url": url,
+        "timeout_s": timeout,
+        "model": payload.get("model"),
+        "temperature": payload.get("temperature"),
+        "max_tokens": payload.get("max_tokens"),
+        "reasoning": payload.get("reasoning"),
+        "stream": payload.get("stream"),
+        "response_format": payload.get("response_format"),
+        "message_count": len(msgs),
+        "messages": slim_msgs,
+    }
+    print("[openrouter] >>> REQUEST (what we send)")
+    print(json.dumps(dump, indent=2, default=str))
+
+
+def _debug_print_response(status: int, data: dict[str, Any] | None, raw_text: str) -> None:
+    if not _DEBUG_LLM_IO:
+        return
+    print(f"[openrouter] <<< RESPONSE status={status}")
+    if data is None:
+        print(f"[openrouter] non-JSON body: {_preview_text(raw_text, 2000)}")
+        return
+    choice0 = None
+    choices = data.get("choices")
+    if isinstance(choices, list) and choices:
+        choice0 = choices[0] if isinstance(choices[0], dict) else None
+    message = (choice0 or {}).get("message") if isinstance(choice0, dict) else None
+    if not isinstance(message, dict):
+        message = {}
+    content = message.get("content")
+    reasoning = message.get("reasoning")
+    usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+    ctd = (
+        usage.get("completion_tokens_details")
+        if isinstance(usage.get("completion_tokens_details"), dict)
+        else {}
+    )
+    dump = {
+        "id": data.get("id"),
+        "model": data.get("model"),
+        "error": data.get("error"),
+        "finish_reason": (choice0 or {}).get("finish_reason") if choice0 else None,
+        "native_finish_reason": (choice0 or {}).get("native_finish_reason")
+        if choice0
+        else None,
+        "content_is_null": content is None,
+        "content_len": len(content) if isinstance(content, str) else None,
+        "content_preview": _preview_text(content if isinstance(content, str) else None),
+        "reasoning_len": len(reasoning) if isinstance(reasoning, str) else None,
+        "reasoning_preview": _preview_text(
+            reasoning if isinstance(reasoning, str) else None, 400
+        ),
+        "has_reasoning_details": bool(message.get("reasoning_details")),
+        "usage": {
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": usage.get("completion_tokens"),
+            "total_tokens": usage.get("total_tokens"),
+            "reasoning_tokens": ctd.get("reasoning_tokens"),
+            "cost": usage.get("cost"),
+        },
+    }
+    print(json.dumps(dump, indent=2, default=str))
 
 
 def normalize_messages(
@@ -120,6 +222,8 @@ class OpenRouterLLMClient:
             "model": model_id,
             "messages": normalize_messages(messages),
             "stream": False,
+            # Prevent reasoning-only completions that leave content empty.
+            "reasoning": dict(DEFAULT_REASONING),
         }
         if temperature is not None:
             payload["temperature"] = temperature
@@ -131,6 +235,8 @@ class OpenRouterLLMClient:
         client = await self._get_client()
         timeout = timeout_seconds if timeout_seconds is not None else self._timeout
 
+        _debug_print_request(self._base_url, payload, timeout)
+
         try:
             res = await client.post(
                 self._base_url,
@@ -139,15 +245,18 @@ class OpenRouterLLMClient:
                 timeout=timeout,
             )
         except httpx.TimeoutException as exc:
+            print(f"[openrouter] !!! TIMEOUT after {timeout}s")
             raise LLMRequestError(
                 f"OpenRouter request timed out after {timeout}s",
                 status_code=None,
             ) from exc
         except httpx.HTTPError as exc:
+            print(f"[openrouter] !!! TRANSPORT ERROR: {exc}")
             raise LLMRequestError(f"OpenRouter transport error: {exc}") from exc
 
         if res.status_code >= 400:
             detail = res.text[:500] if res.text else res.reason_phrase
+            print(f"[openrouter] !!! HTTP {res.status_code}: {detail}")
             raise LLMRequestError(
                 f"OpenRouter error {res.status_code}: {detail}",
                 status_code=res.status_code,
@@ -156,7 +265,10 @@ class OpenRouterLLMClient:
         try:
             data = res.json()
         except ValueError as exc:
+            _debug_print_response(res.status_code, None, res.text)
             raise LLMRequestError("OpenRouter returned non-JSON body") from exc
+
+        _debug_print_response(res.status_code, data if isinstance(data, dict) else None, res.text)
 
         try:
             choice0 = data["choices"][0]
@@ -171,9 +283,46 @@ class OpenRouterLLMClient:
                 f"OpenRouter response missing choices[0].message: {data!r}"[:400]
             ) from exc
 
-        usage = TokenUsage.from_api(
+        usage_raw = (
             data.get("usage") if isinstance(data.get("usage"), dict) else None
         )
+        usage = TokenUsage.from_api(usage_raw)
+        reasoning = message.get("reasoning") if isinstance(message, dict) else None
+        reasoning_len = len(reasoning) if isinstance(reasoning, str) else 0
+        ctd = (
+            usage_raw.get("completion_tokens_details")
+            if isinstance(usage_raw, dict)
+            and isinstance(usage_raw.get("completion_tokens_details"), dict)
+            else {}
+        )
+        reasoning_tokens = ctd.get("reasoning_tokens")
+
+        if not (text or "").strip():
+            print(
+                "[openrouter] !!! EMPTY content after parse "
+                f"(finish_reason={finish!r}, content_type={type(message.get('content')).__name__}, "
+                f"reasoning_len={reasoning_len}, reasoning_tokens={reasoning_tokens})"
+            )
+            # Fail loud so Create surfaces a useful error instead of
+            # "empty codegen response" with no cause.
+            if finish == "length" or (
+                reasoning_tokens is not None
+                and max_tokens is not None
+                and int(reasoning_tokens) >= int(max_tokens)
+            ):
+                raise LLMRequestError(
+                    "OpenRouter returned empty content: entire max_tokens budget "
+                    f"spent on reasoning (finish_reason={finish!r}, "
+                    f"reasoning_tokens={reasoning_tokens}, max_tokens={max_tokens}). "
+                    "Increase max_tokens or disable reasoning.",
+                    status_code=res.status_code,
+                )
+            raise LLMRequestError(
+                f"OpenRouter returned empty content "
+                f"(finish_reason={finish!r}, reasoning_len={reasoning_len})",
+                status_code=res.status_code,
+            )
+
         return LLMCompletion(
             text=text,
             model=str(data.get("model") or model_id),

@@ -36,7 +36,7 @@ export const RUNTIME_FRAME_ORIGINS = ["null"] as const;
 export const RUNTIME_POST_MESSAGE_TARGET_ORIGIN = "*" as const;
 
 /** Default wait for `ready` after iframe loads. */
-export const RUNTIME_READY_TIMEOUT_MS = 10_000;
+export const RUNTIME_READY_TIMEOUT_MS = 10_0000;
 
 /** Default wait for a command `result` / `error`. */
 export const RUNTIME_COMMAND_TIMEOUT_MS = 15_000;

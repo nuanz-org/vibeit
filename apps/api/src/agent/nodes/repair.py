@@ -47,7 +47,7 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
 
     tokens = int(state.get("llm_tokens_used") or 0)
     try:
-        completion = await llm.complete(messages, temperature=0.25, max_tokens=4096)
+        completion = await llm.complete(messages, temperature=0.25, max_tokens=80_000)
         fixed = extract_typescript_module(completion.text)
         tokens += completion.usage.total_tokens
     except (CodegenParseError, LLMError) as exc:

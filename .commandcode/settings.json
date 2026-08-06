@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__docqmind__dqm_search",
+      "Shell(curl -s -o /dev/null -w runtime-frame.html: %{http_code} (%{size_download}B)\\n http://localhost:3000/runtime-frame.html)",
+      "Shell(curl -s -o /dev/null -w runtime-frame.js: %{http_code} (%{size_download}B)\\n http://localhost:3000/runtime-frame.js)",
+      "Shell(agent-browser:*)",
+      "Shell(agent-browser wait 3000 >/dev/null 2>&1; agent-browser eval \"JSON.stringify({ count: (window.__rtMsgs||[]).length, msgs: (window.__rtMsgs||[]).slice(0,5) })\" 2>&1 | tail -2)",
+      "Shell(agent-browser console --clear >/dev/null 2>&1; agent-browser eval \"(() => { document.querySelectorAll('iframe').forEach(f => f.remove()); const f = document.createElement('iframe'); f.setAttribute('sandbox', 'allow-scripts'); f.src = '/runtime-frame.html?fresh=1'; document.body.appendChild(f); return 'fresh sandboxed probe injected'; })()\" 2>&1 | tail -1 && agent-browser wait 2500 >/dev/null 2>&1 && agent-browser console 2>&1 | grep -iv \"update depth\" | head -20)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}
