@@ -25,9 +25,15 @@ import {
   isHostToFrameMessage,
   type HostToFrameMessage,
   type MountCommand,
+  type RecordVideoCommand,
   type RuntimeResultPayload,
   type ToolIntrospection,
 } from "../../contract";
+import {
+  clampRecordDurationSeconds,
+  isMediaRecorderSupported,
+  recordMediaStreamToBlob,
+} from "../../capture/record-video";
 import { loadCreateToolFromModuleSource } from "../../frame/load-module";
 
 export type Canvas2dFrameAdapterOptions = {
@@ -132,6 +138,7 @@ export class Canvas2dFrameAdapter {
           captureFrame: true,
           setAssets: true,
           getCaptureStream: true,
+          recordVideo: true,
         },
       }),
     );
@@ -207,6 +214,8 @@ export class Canvas2dFrameAdapter {
         return this.setAssets(command.assets);
       case "captureFrame":
         return this.captureFrame();
+      case "recordVideo":
+        return this.recordVideo(command);
       case "dispose":
         return this.dispose();
       case "getIntrospection":
@@ -371,6 +380,60 @@ export class Canvas2dFrameAdapter {
       throw new FrameAdapterError(
         RUNTIME_ERROR_CODES.CAPTURE_FAILED,
         `captureFrame failed: ${errorMessage(err)}`,
+        { cause: err },
+      );
+    }
+  }
+
+  /**
+   * M7b — short WebM via tool getCaptureStream + MediaRecorder (in-frame).
+   * Host cannot receive MediaStream over postMessage; wire returns base64 blob.
+   */
+  private async recordVideo(
+    command: RecordVideoCommand,
+  ): Promise<RuntimeResultPayload> {
+    const tool = this.requireMounted();
+    if (!isMediaRecorderSupported()) {
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.RECORD_FAILED,
+        "MediaRecorder is not available in this browser — PNG-sequence fallback is M7c",
+      );
+    }
+    if (typeof tool.getCaptureStream !== "function") {
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.UNSUPPORTED,
+        "Tool does not implement getCaptureStream",
+      );
+    }
+
+    const durationSeconds = clampRecordDurationSeconds(command.durationSeconds);
+
+    try {
+      const stream = await Promise.resolve(tool.getCaptureStream());
+      if (!(stream instanceof MediaStream)) {
+        throw new FrameAdapterError(
+          RUNTIME_ERROR_CODES.RECORD_FAILED,
+          "getCaptureStream did not return a MediaStream",
+        );
+      }
+      if (stream.getTracks().length === 0) {
+        throw new FrameAdapterError(
+          RUNTIME_ERROR_CODES.RECORD_FAILED,
+          "getCaptureStream returned a stream with no tracks",
+        );
+      }
+
+      const blob = await recordMediaStreamToBlob({
+        stream,
+        durationSeconds,
+      });
+      const video = await blobToCaptureFrameWire(blob);
+      return { kind: "recordVideo", video };
+    } catch (err) {
+      if (err instanceof FrameAdapterError) throw err;
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.RECORD_FAILED,
+        `recordVideo failed: ${errorMessage(err)}`,
         { cause: err },
       );
     }

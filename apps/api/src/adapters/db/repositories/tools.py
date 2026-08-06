@@ -74,6 +74,49 @@ class ToolsRepository:
             )
         return tool_from_record(row) if row else None
 
+    async def get_published_tool_by_public_id(
+        self,
+        public_id: str,
+    ) -> ToolRow | None:
+        """M7d: anonymous public lookup — only `status = published`."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                SELECT {_TOOL_COLUMNS}
+                FROM tools
+                WHERE public_id = $1 AND status = 'published'
+                """,
+                public_id,
+            )
+        return tool_from_record(row) if row else None
+
+    async def set_tool_published(
+        self,
+        tool_id: UUID | str,
+        *,
+        owner_user_id: str,
+    ) -> ToolRow | None:
+        """
+        M7d thin make-public: owner sets status=published.
+        Idempotent if already published (keeps first published_at).
+        Returns None if tool missing or not owned by owner_user_id.
+        """
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE tools
+                SET
+                    status = 'published',
+                    published_at = COALESCE(published_at, now()),
+                    updated_at = now()
+                WHERE id = $1::uuid AND owner_user_id = $2
+                RETURNING {_TOOL_COLUMNS}
+                """,
+                str(tool_id),
+                owner_user_id,
+            )
+        return tool_from_record(row) if row else None
+
     async def create_tool_version(
         self,
         *,

@@ -33,6 +33,25 @@ export type ToolDraftPatch = {
   draftAssets?: Record<string, string | null>;
 };
 
+/** M7d — anonymous public tool payload (no owner / draft fields). */
+export type PublicToolVersionResponse = {
+  id: string;
+  target: string;
+  code: string;
+  paramSchema: unknown;
+  defaultParams: unknown;
+  assetSlots: unknown;
+};
+
+export type PublicToolResponse = {
+  publicId: string;
+  status: string;
+  title?: string | null;
+  description?: string | null;
+  publishedAt?: string | null;
+  version: PublicToolVersionResponse;
+};
+
 /** GET /api/v1/tools/{toolId} — owner only. */
 export async function getTool(toolId: string): Promise<ToolResponse> {
   const res = await fetch(
@@ -82,6 +101,54 @@ export async function patchToolDraft(
     const text = await res.text().catch(() => "");
     throw new Error(
       `Patch tool draft failed (${res.status})${text ? `: ${text}` : ""}`,
+    );
+  }
+
+  return res.json() as Promise<ToolResponse>;
+}
+
+/**
+ * GET /api/v1/public/tools/{publicId} — no auth (M7d).
+ * 404 when missing or still draft.
+ */
+export async function getPublicTool(
+  publicId: string,
+): Promise<PublicToolResponse> {
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/public/tools/${encodeURIComponent(publicId)}`,
+    {
+      method: "GET",
+      credentials: "omit",
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Get public tool failed (${res.status})${text ? `: ${text}` : ""}`,
+    );
+  }
+
+  return res.json() as Promise<PublicToolResponse>;
+}
+
+/**
+ * POST /api/v1/tools/{toolId}/publish — owner thin make-public (M7d).
+ * Sets status=published so the public GET works. No gallery (M8).
+ */
+export async function publishTool(toolId: string): Promise<ToolResponse> {
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/tools/${encodeURIComponent(toolId)}/publish`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Publish tool failed (${res.status})${text ? `: ${text}` : ""}`,
     );
   }
 

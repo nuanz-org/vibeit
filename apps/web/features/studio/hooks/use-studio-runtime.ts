@@ -15,10 +15,13 @@ import {
 } from "@/lib/api/runtime-compile";
 import {
   RuntimeBridgeError,
+  RECORD_VIDEO_DEFAULT_SECONDS,
   assertCaptureFrameLooksLikePng,
   captureFrameWireToBlob,
+  clampRecordDurationSeconds,
   gateRealAssetCapture,
   hasRealUploadedAsset,
+  isMediaRecorderSupported,
   waitForPaintFrames,
   type ReadyMessage,
   type RuntimeHostHandle,
@@ -26,6 +29,17 @@ import {
 } from "@/runtime";
 
 import { draftAssetsToToolAssets } from "../lib/draft-assets";
+import {
+  buildPngExportFilename,
+  buildPngSequenceZipFilename,
+  buildWebmExportFilename,
+  downloadBlob,
+} from "../lib/export-download";
+import {
+  PNG_SEQUENCE_FPS,
+  capturePngSequence,
+  packPngSequenceZip,
+} from "../lib/export-png-sequence";
 
 function formatErr(err: unknown): string {
   if (err instanceof RuntimeBridgeError) {
@@ -119,6 +133,27 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
   const [lastCapture, setLastCapture] = useState<LastCaptureInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [m2aCaptureProved, setM2aCaptureProved] = useState(false);
+  /** M7b — seconds remaining while recording video (null when idle). */
+  const [recordSecondsLeft, setRecordSecondsLeft] = useState<number | null>(
+    null,
+  );
+  const [lastVideoExport, setLastVideoExport] = useState<{
+    at: string;
+    byteLength: number;
+    durationSeconds: number;
+    mimeType: string;
+  } | null>(null);
+  /** M7c — PNG sequence progress (null when idle). */
+  const [sequenceProgress, setSequenceProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const [lastSequenceExport, setLastSequenceExport] = useState<{
+    at: string;
+    frameCount: number;
+    byteLength: number;
+    usedAsVideoFallback: boolean;
+  } | null>(null);
 
   const resolveModuleSource = useCallback(async (): Promise<
     string | undefined
@@ -318,6 +353,228 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     }
   }, [applyCaptureResult]);
 
+  /**
+   * M7a — product PNG export: captureFrame → PNG blob → browser download.
+   * Also updates the in-Studio capture preview (same path as capturePng).
+   *
+   * @param filenameBase slug source (tool id, publicId, or fixture id)
+   */
+  const downloadPng = useCallback(
+    async (filenameBase: string) => {
+      setError(null);
+      setBusy(true);
+      try {
+        const host = hostRef.current;
+        if (!host?.isReady()) {
+          throw new Error("Host not ready — wait until the tool is live");
+        }
+        await waitForPaintFrames();
+        const frame = await host.captureFrame();
+        assertCaptureFrameLooksLikePng(frame);
+        const blob = captureFrameWireToBlob(frame);
+        if (blob.size < 32) {
+          throw new Error("PNG blob empty — possible tainted canvas");
+        }
+
+        const at = new Date();
+        const real = gateRealAssetCapture(assetsRef.current);
+        applyCaptureResult(blob, {
+          usedRealAsset: real.ok,
+          realAssetSlotId: real.ok ? real.slotId : undefined,
+          realAssetUrl: real.ok ? real.url : undefined,
+          at: at.toISOString(),
+          byteLength: frame.byteLength ?? blob.size,
+        });
+        if (real.ok) {
+          setM2aCaptureProved(true);
+        }
+
+        const filename = buildPngExportFilename(filenameBase, at);
+        downloadBlob(blob, filename);
+      } catch (err) {
+        const msg = formatErr(err);
+        if (/taint|security|cross-origin|CAPTURE_FAILED/i.test(msg)) {
+          setError(
+            `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
+          );
+        } else {
+          setError(msg);
+        }
+      } finally {
+        setBusy(false);
+      }
+    },
+    [applyCaptureResult],
+  );
+
+  const captureOnePngBlob = useCallback(async (): Promise<Blob> => {
+    const host = hostRef.current;
+    if (!host?.isReady()) {
+      throw new Error("Host not ready — wait until the tool is live");
+    }
+    await waitForPaintFrames();
+    const frame = await host.captureFrame();
+    assertCaptureFrameLooksLikePng(frame);
+    const blob = captureFrameWireToBlob(frame);
+    if (blob.size < 32) {
+      throw new Error("PNG blob empty — possible tainted canvas");
+    }
+    return blob;
+  }, []);
+
+  /**
+   * M7c — sample PNG frames over ~durationSeconds, download as ZIP.
+   * Also used as automatic fallback when WebM/MediaRecorder fails.
+   */
+  const downloadPngSequence = useCallback(
+    async (
+      filenameBase: string,
+      durationSeconds: number = RECORD_VIDEO_DEFAULT_SECONDS,
+      opts?: { usedAsVideoFallback?: boolean },
+    ) => {
+      setError(null);
+      setBusy(true);
+      setSequenceProgress({ done: 0, total: 0 });
+      try {
+        const seconds = clampRecordDurationSeconds(durationSeconds);
+        const frames = await capturePngSequence({
+          captureFrame: captureOnePngBlob,
+          durationSeconds: seconds,
+          fps: PNG_SEQUENCE_FPS,
+          onProgress: (done, total) => setSequenceProgress({ done, total }),
+        });
+
+        // Preview last frame
+        const last = frames[frames.length - 1]!;
+        const real = gateRealAssetCapture(assetsRef.current);
+        applyCaptureResult(last, {
+          usedRealAsset: real.ok,
+          realAssetSlotId: real.ok ? real.slotId : undefined,
+          realAssetUrl: real.ok ? real.url : undefined,
+          at: new Date().toISOString(),
+          byteLength: last.size,
+        });
+
+        const zip = await packPngSequenceZip(frames);
+        const at = new Date();
+        setLastSequenceExport({
+          at: at.toISOString(),
+          frameCount: frames.length,
+          byteLength: zip.size,
+          usedAsVideoFallback: Boolean(opts?.usedAsVideoFallback),
+        });
+        downloadBlob(zip, buildPngSequenceZipFilename(filenameBase, at));
+
+        if (opts?.usedAsVideoFallback) {
+          setError(
+            `WebM unavailable — downloaded PNG sequence (${frames.length} frames) instead. See export browser notes.`,
+          );
+        }
+      } catch (err) {
+        const msg = formatErr(err);
+        if (/taint|security|cross-origin|CAPTURE_FAILED/i.test(msg)) {
+          setError(
+            `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
+          );
+        } else {
+          setError(msg);
+        }
+      } finally {
+        setSequenceProgress(null);
+        setBusy(false);
+      }
+    },
+    [applyCaptureResult, captureOnePngBlob],
+  );
+
+  /**
+   * M7b — short WebM via frame recordVideo (getCaptureStream + MediaRecorder).
+   * M7c — auto PNG-sequence fallback when MediaRecorder missing or record fails.
+   */
+  const downloadVideo = useCallback(
+    async (
+      filenameBase: string,
+      durationSeconds: number = RECORD_VIDEO_DEFAULT_SECONDS,
+    ) => {
+      setError(null);
+      const seconds = clampRecordDurationSeconds(durationSeconds);
+
+      // Host-side precheck → go straight to sequence fallback
+      if (!isMediaRecorderSupported()) {
+        await downloadPngSequence(filenameBase, seconds, {
+          usedAsVideoFallback: true,
+        });
+        return;
+      }
+
+      setBusy(true);
+      setRecordSecondsLeft(seconds);
+
+      const tick = window.setInterval(() => {
+        setRecordSecondsLeft((prev) => {
+          if (prev == null || prev <= 1) return 0;
+          return prev - 1;
+        });
+      }, 1000);
+
+      let fellBackToSequence = false;
+      try {
+        const host = hostRef.current;
+        if (!host?.isReady()) {
+          throw new Error("Host not ready — wait until the tool is live");
+        }
+        await waitForPaintFrames();
+        const wire = await host.recordVideo(seconds);
+        const blob = captureFrameWireToBlob(wire);
+        if (blob.size < 32) {
+          throw new Error("Recorded video empty");
+        }
+
+        const at = new Date();
+        setLastVideoExport({
+          at: at.toISOString(),
+          byteLength: wire.byteLength ?? blob.size,
+          durationSeconds: seconds,
+          mimeType: wire.mimeType || blob.type || "video/webm",
+        });
+        downloadBlob(blob, buildWebmExportFilename(filenameBase, at));
+      } catch (err) {
+        const msg = formatErr(err);
+
+        // M7c: try PNG sequence when video path fails
+        if (
+          /MediaRecorder|RECORD_FAILED|not available|empty|UNSUPPORTED|timeout/i.test(
+            msg,
+          )
+        ) {
+          fellBackToSequence = true;
+          window.clearInterval(tick);
+          setRecordSecondsLeft(null);
+          setBusy(false);
+          await downloadPngSequence(filenameBase, seconds, {
+            usedAsVideoFallback: true,
+          });
+          return;
+        }
+        if (/taint|security|cross-origin/i.test(msg)) {
+          setError(
+            `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
+          );
+        } else {
+          setError(msg);
+        }
+      } finally {
+        window.clearInterval(tick);
+        setRecordSecondsLeft(null);
+        // downloadPngSequence owns busy when we fell back
+        if (!fellBackToSequence) {
+          setBusy(false);
+        }
+      }
+    },
+    [downloadPngSequence],
+  );
+
   const proveRealAssetCapture = useCallback(async () => {
     setError(null);
     const gate = gateRealAssetCapture(assetsRef.current);
@@ -416,9 +673,16 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     error,
     lastCapture,
     capturePreviewUrl: lastCapture?.previewUrl ?? null,
+    lastVideoExport,
+    lastSequenceExport,
+    recordSecondsLeft,
+    sequenceProgress,
+    recordingVideo: recordSecondsLeft != null,
+    capturingSequence: sequenceProgress != null,
     busy,
     m2aCaptureProved,
     hasRealAsset: hasRealUploadedAsset(assets),
+    mediaRecorderSupported: isMediaRecorderSupported(),
     onStatusChange,
     onReady,
     onBridgeError,
@@ -427,6 +691,9 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     resetParams,
     setAsset,
     capturePng,
+    downloadPng,
+    downloadVideo,
+    downloadPngSequence,
     proveRealAssetCapture,
     remount,
   };

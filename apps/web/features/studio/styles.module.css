@@ -455,6 +455,47 @@
   cursor: not-allowed;
 }
 
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* M7f share */
+.shareField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shareRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.shareRow .textInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.embedTextarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.75rem;
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  line-height: 1.4;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  color: inherit;
+  resize: vertical;
+  min-height: 5rem;
+}
+
 .preview {
   display: flex;
   flex-direction: column;

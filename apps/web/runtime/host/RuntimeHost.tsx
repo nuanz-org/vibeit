@@ -58,6 +58,11 @@ export type RuntimeHostHandle = {
   updateParams: (params: ToolParams, timeoutMs?: number) => Promise<void>;
   setAssets: (assets: ToolAssets, timeoutMs?: number) => Promise<void>;
   captureFrame: (timeoutMs?: number) => Promise<CaptureFrameWire>;
+  /** M7b — in-frame MediaRecorder WebM; returns wire for download. */
+  recordVideo: (
+    durationSeconds: number,
+    timeoutMs?: number,
+  ) => Promise<CaptureFrameWire>;
   getIntrospection: (timeoutMs?: number) => Promise<ToolIntrospection>;
   /** dispose command convenience. */
   disposeTool: (timeoutMs?: number) => Promise<void>;
@@ -191,6 +196,8 @@ export const RuntimeHost = forwardRef<RuntimeHostHandle, RuntimeHostProps>(
         setAssets: (assets, timeoutMs) =>
           requireBridge().setAssets(assets, timeoutMs),
         captureFrame: (timeoutMs) => requireBridge().captureFrame(timeoutMs),
+        recordVideo: (durationSeconds, timeoutMs) =>
+          requireBridge().recordVideo(durationSeconds, timeoutMs),
         getIntrospection: (timeoutMs) =>
           requireBridge().getIntrospection(timeoutMs),
         disposeTool: (timeoutMs) => requireBridge().disposeTool(timeoutMs),

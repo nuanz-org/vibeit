@@ -14,7 +14,9 @@ import { useStudioRuntime } from "../hooks/use-studio-runtime";
 import styles from "../styles.module.css";
 import { AssetSlotsPanel } from "./asset-slots-panel";
 import { EmptySlotsBanner } from "./empty-slots-banner";
+import { ExportPanel } from "./export-panel";
 import { ParamControls } from "./param-controls";
+import { SharePanel } from "./share-panel";
 import { ViewSourcePanel } from "./view-source-panel";
 
 export type StudioShellProps = {
@@ -63,7 +65,7 @@ function saveStatusLabel(
 }
 
 /**
- * Studio shell (M2a5 + M2a6 + M3g + M5a–M5e Control + draft persist).
+ * Studio shell (M2a5–M5e Control + M7a–M7c export + M7f share).
  */
 export function StudioShell({
   fixture,
@@ -81,6 +83,10 @@ export function StudioShell({
 }: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
+  /** M7f: update badge after thin publish without full reload. */
+  const [liveToolStatus, setLiveToolStatus] = useState<string | null>(
+    toolStatus ?? null,
+  );
   const assetsSectionRef = useRef<HTMLElement | null>(null);
 
   const runtime = useStudioRuntime({
@@ -101,12 +107,26 @@ export function StudioShell({
     ready: runtime.mounted && runtime.hydrated,
   });
 
+  /** Filename base: publicId → tool id → fixture id (M7a). */
+  const exportFilenameBase =
+    publicId?.trim() ||
+    persistToolId?.trim() ||
+    fixture.toolId ||
+    "tool";
+
+  const displayStatus = liveToolStatus ?? toolStatus ?? null;
+  const isFixtureOnly = !persistToolId || !publicId;
+
   const focusAssetSlot = useCallback((slotId: string) => {
     setFocusSlotId(slotId);
     assetsSectionRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "nearest",
     });
+  }, []);
+
+  const onPublished = useCallback((next: string) => {
+    setLiveToolStatus(next);
   }, []);
 
   const statusClass =
@@ -134,16 +154,16 @@ export function StudioShell({
             Vibeit
           </Link>
           <span className={styles.badge}>Studio</span>
-          {toolStatus ? (
+          {displayStatus ? (
             <span
               className={`${styles.badge} ${
-                toolStatus === "published"
+                displayStatus === "published"
                   ? styles.badgeReady
                   : styles.badgeLoading
               }`}
               title="Tool row status"
             >
-              {toolStatus}
+              {displayStatus}
             </span>
           ) : null}
           <span className={`${styles.badge} ${statusClass}`}>
@@ -169,6 +189,19 @@ export function StudioShell({
           ) : null}
         </div>
         <div className={styles.headerMeta}>
+          <button
+            type="button"
+            className={styles.linkButton}
+            disabled={!runtime.mounted || runtime.busy}
+            onClick={() => void runtime.downloadPng(exportFilenameBase)}
+            title={
+              runtime.mounted
+                ? "Download PNG of the current preview"
+                : "Wait until the tool is live"
+            }
+          >
+            Download PNG
+          </button>
           {persist.enabled ? (
             <button
               type="button"
@@ -285,8 +318,43 @@ export function StudioShell({
             ) : null}
           </section>
 
+          <ExportPanel
+            mounted={runtime.mounted}
+            busy={runtime.busy}
+            filenameBase={exportFilenameBase}
+            onDownloadPng={runtime.downloadPng}
+            onDownloadVideo={runtime.downloadVideo}
+            onDownloadPngSequence={runtime.downloadPngSequence}
+            mediaRecorderSupported={runtime.mediaRecorderSupported}
+            recordSecondsLeft={runtime.recordSecondsLeft}
+            sequenceProgress={runtime.sequenceProgress}
+            lastByteLength={runtime.lastCapture?.byteLength}
+            lastAt={runtime.lastCapture?.at}
+            lastVideoAt={runtime.lastVideoExport?.at}
+            lastVideoByteLength={runtime.lastVideoExport?.byteLength}
+            lastVideoDurationSeconds={runtime.lastVideoExport?.durationSeconds}
+            lastSequenceAt={runtime.lastSequenceExport?.at}
+            lastSequenceFrameCount={runtime.lastSequenceExport?.frameCount}
+            lastSequenceAsFallback={
+              runtime.lastSequenceExport?.usedAsVideoFallback
+            }
+          />
+
+          <SharePanel
+            publicId={publicId}
+            toolId={persistToolId}
+            status={displayStatus}
+            title={fixture.label}
+            onPublished={onPublished}
+            fixtureMode={isFixtureOnly}
+          />
+
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Capture (M2a6)</h2>
+            <p className={styles.muted}>
+              Dev / exit gates — prefer{" "}
+              <strong>Download PNG</strong> above for product export.
+            </p>
             <div className={styles.actions}>
               <button
                 type="button"

@@ -65,6 +65,8 @@ function isRuntimeResultPayload(value: unknown): value is RuntimeResultPayload {
       return true;
     case "captureFrame":
       return isCaptureFrameWire(value.frame);
+    case "recordVideo":
+      return isCaptureFrameWire(value.video);
     default:
       return false;
   }
@@ -108,6 +110,12 @@ export function isHostToFrameMessage(
     case "dispose":
     case "getIntrospection":
       return true;
+    case "recordVideo":
+      return (
+        typeof value.durationSeconds === "number" &&
+        Number.isFinite(value.durationSeconds) &&
+        value.durationSeconds > 0
+      );
     default:
       return false;
   }
@@ -179,6 +187,12 @@ export function isCaptureFrameResult(
   payload: RuntimeResultPayload,
 ): payload is { kind: "captureFrame"; frame: CaptureFrameWire } {
   return payload.kind === "captureFrame";
+}
+
+export function isRecordVideoResult(
+  payload: RuntimeResultPayload,
+): payload is { kind: "recordVideo"; video: CaptureFrameWire } {
+  return payload.kind === "recordVideo";
 }
 
 export function isIntrospectionResult(

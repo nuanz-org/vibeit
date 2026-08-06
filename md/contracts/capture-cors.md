@@ -2,7 +2,7 @@
 
 **Milestone:** M0f  
 **TS helpers:** `@repo/contracts` → `packages/contracts/src/capture-cors.ts`  
-**Related:** [vibe-tool.md](./vibe-tool.md) · [skeletons/canvas2d.md](./skeletons/canvas2d.md) · M1c storage · M2a runtime · M7 export
+**Related:** [vibe-tool.md](./vibe-tool.md) · [skeletons/canvas2d.md](./skeletons/canvas2d.md) · M1c storage · M2a runtime · M7 export · [export-browser-support.md](../export-browser-support.md) (M7c)
 
 **Status:** Provisional freeze for ASAP path — tighten headers/env in **M1c**; verify with real assets in **M2a**. Do not block on production-perfect CORS.
 
@@ -22,7 +22,8 @@
 | Output | Method | Notes |
 |--------|--------|--------|
 | **PNG** | `captureFrame()` | Prefer `image/png` `Blob` (`CAPTURE_PNG_MIME`) via `canvas.toBlob` |
-| **Short video** | `getCaptureStream?()` + **client MediaRecorder** | M7; typically 3–6s WebM (`CAPTURE_VIDEO_DURATION_SECONDS`) |
+| **Short video** | `getCaptureStream?()` + **client MediaRecorder** | M7b; typically 3–6s WebM (`CAPTURE_VIDEO_DURATION_SECONDS`) |
+| **PNG sequence fallback** | Repeated `captureFrame` → ZIP | M7c when MediaRecorder fails; see [export-browser-support.md](../export-browser-support.md) |
 | Stream FPS hint | `canvas.captureStream(30)` | `CAPTURE_STREAM_FPS` |
 
 ### Lifecycle

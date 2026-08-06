@@ -42,6 +42,12 @@ export const RUNTIME_READY_TIMEOUT_MS = 10_000;
 export const RUNTIME_COMMAND_TIMEOUT_MS = 15_000;
 
 /**
+ * Extra host wait after video duration for MediaRecorder flush + base64 wire (M7b).
+ * Total timeout ≈ durationMs + this buffer.
+ */
+export const RUNTIME_RECORD_VIDEO_TIMEOUT_BUFFER_MS = 12_000;
+
+/**
  * CSP applied inside the frame document (meta tag).
  * Intentionally tight: scripts only self; no connect/fetch; images for assets.
  */

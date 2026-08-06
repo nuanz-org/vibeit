@@ -13,6 +13,7 @@ import {
   createDisposeCommand,
   createGetIntrospectionCommand,
   createMountCommand,
+  createRecordVideoCommand,
   createSetAssetsCommand,
   createUpdateCommand,
   isErrorMessage,
@@ -27,12 +28,14 @@ import {
   type RuntimeResultPayload,
   type ToolIntrospection,
 } from "../contract";
+import { clampRecordDurationSeconds } from "../capture/record-video";
 import { RuntimeBridgeError } from "./bridge-error";
 import {
   RUNTIME_COMMAND_TIMEOUT_MS,
   RUNTIME_FRAME_ORIGINS,
   RUNTIME_POST_MESSAGE_TARGET_ORIGIN,
   RUNTIME_READY_TIMEOUT_MS,
+  RUNTIME_RECORD_VIDEO_TIMEOUT_BUFFER_MS,
 } from "./sandbox";
 
 export type RuntimeHostBridgeOptions = {
@@ -258,6 +261,31 @@ export class RuntimeHostBridge {
       );
     }
     return payload.frame;
+  }
+
+  /**
+   * M7b — record short WebM inside the frame; returns wire for host download.
+   * Default timeout = clamped duration + buffer (recording is wall-clock).
+   */
+  async recordVideo(
+    durationSeconds: number,
+    timeoutMs?: number,
+  ): Promise<CaptureFrameWire> {
+    const seconds = clampRecordDurationSeconds(durationSeconds);
+    const waitMs =
+      timeoutMs ??
+      Math.round(seconds * 1000) + RUNTIME_RECORD_VIDEO_TIMEOUT_BUFFER_MS;
+    const payload = await this.send(
+      createRecordVideoCommand({ durationSeconds: seconds }),
+      waitMs,
+    );
+    if (payload.kind !== "recordVideo") {
+      throw new RuntimeBridgeError(
+        RUNTIME_ERROR_CODES.INVALID_MESSAGE,
+        `Expected recordVideo result, got kind=${payload.kind}`,
+      );
+    }
+    return payload.video;
   }
 
   async getIntrospection(timeoutMs?: number): Promise<ToolIntrospection> {

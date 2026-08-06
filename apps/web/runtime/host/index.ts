@@ -19,5 +19,6 @@ export {
   RUNTIME_IFRAME_SANDBOX,
   RUNTIME_POST_MESSAGE_TARGET_ORIGIN,
   RUNTIME_READY_TIMEOUT_MS,
+  RUNTIME_RECORD_VIDEO_TIMEOUT_BUFFER_MS,
 } from "./sandbox";
 export type { RuntimeHostStatus } from "./sandbox";

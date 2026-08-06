@@ -495,6 +495,12 @@ var TARGET_DEFINITIONS = TARGET_IDS.map(
 
 // ../../packages/contracts/src/capture-cors.ts
 var CAPTURE_PNG_MIME = "image/png";
+var CAPTURE_VIDEO_MIME_PREFERRED = "video/webm";
+var CAPTURE_VIDEO_DURATION_SECONDS = {
+  min: 3,
+  max: 6,
+  default: 4
+};
 
 // runtime/contract/capture-wire.ts
 var CAPTURE_FRAME_WIRE_DEFAULT_MIME = CAPTURE_PNG_MIME;
@@ -527,6 +533,8 @@ var RUNTIME_ERROR_CODES = {
   TOOL_THROW: "TOOL_THROW",
   /** captureFrame failed (tainted canvas, empty blob, etc.). */
   CAPTURE_FAILED: "CAPTURE_FAILED",
+  /** recordVideo / MediaRecorder failed or unsupported (M7b). */
+  RECORD_FAILED: "RECORD_FAILED",
   /** Command or target not supported by this frame. */
   UNSUPPORTED: "UNSUPPORTED",
   /** Tool factory / target loader failed. */
@@ -541,6 +549,8 @@ var HOST_TO_FRAME_TYPES = [
   "update",
   "setAssets",
   "captureFrame",
+  /** M7b — record short WebM via tool getCaptureStream + MediaRecorder in-frame. */
+  "recordVideo",
   "dispose",
   "getIntrospection"
 ];
@@ -559,7 +569,8 @@ function createReadyMessage(input) {
     capabilities: input.capabilities ?? {
       captureFrame: true,
       setAssets: true,
-      getCaptureStream: false
+      getCaptureStream: false,
+      recordVideo: false
     }
   };
 }
@@ -619,10 +630,143 @@ function isHostToFrameMessage(value) {
     case "dispose":
     case "getIntrospection":
       return true;
+    case "recordVideo":
+      return typeof value.durationSeconds === "number" && Number.isFinite(value.durationSeconds) && value.durationSeconds > 0;
     default:
       return false;
   }
 }
+
+// runtime/capture/record-video.ts
+var RECORD_VIDEO_MIME_CANDIDATES = [
+  CAPTURE_VIDEO_MIME_PREFERRED,
+  "video/webm;codecs=vp9",
+  "video/webm;codecs=vp8",
+  "video/webm"
+];
+function isMediaRecorderSupported() {
+  return typeof MediaRecorder !== "undefined";
+}
+function pickRecordVideoMimeType() {
+  if (!isMediaRecorderSupported()) return "";
+  for (const mime of RECORD_VIDEO_MIME_CANDIDATES) {
+    try {
+      if (MediaRecorder.isTypeSupported(mime)) return mime;
+    } catch {
+    }
+  }
+  return "";
+}
+function clampRecordDurationSeconds(seconds) {
+  const n = Number.isFinite(seconds) ? seconds : CAPTURE_VIDEO_DURATION_SECONDS.default;
+  return Math.min(
+    CAPTURE_VIDEO_DURATION_SECONDS.max,
+    Math.max(CAPTURE_VIDEO_DURATION_SECONDS.min, n)
+  );
+}
+async function recordMediaStreamToBlob(options) {
+  const { stream, signal } = options;
+  const durationSeconds = clampRecordDurationSeconds(options.durationSeconds);
+  const durationMs = Math.round(durationSeconds * 1e3);
+  if (!isMediaRecorderSupported()) {
+    throw new Error(
+      "MediaRecorder is not available in this browser \u2014 use PNG-sequence fallback (M7c)"
+    );
+  }
+  if (signal?.aborted) {
+    stopStreamTracks(stream);
+    throw new Error("Video recording aborted");
+  }
+  const mimeType = pickRecordVideoMimeType();
+  let recorder;
+  try {
+    recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+  } catch (err) {
+    stopStreamTracks(stream);
+    throw new Error(
+      `MediaRecorder failed to start: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+  const chunks = [];
+  const recordedType = recorder.mimeType || mimeType || CAPTURE_VIDEO_MIME_PREFERRED;
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let stopTimer = null;
+    const cleanup = () => {
+      if (stopTimer != null) {
+        clearTimeout(stopTimer);
+        stopTimer = null;
+      }
+      signal?.removeEventListener("abort", onAbort);
+      stopStreamTracks(stream);
+    };
+    const fail = (message) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      try {
+        if (recorder.state !== "inactive") recorder.stop();
+      } catch {
+      }
+      reject(new Error(message));
+    };
+    const succeed = (blob) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(blob);
+    };
+    const onAbort = () => {
+      fail("Video recording aborted");
+    };
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+    recorder.onerror = () => {
+      fail("MediaRecorder error while recording");
+    };
+    recorder.onstop = () => {
+      if (settled) return;
+      const blob = new Blob(chunks, { type: recordedType });
+      if (blob.size < 32) {
+        fail("Recorded video empty \u2014 MediaRecorder produced no data");
+        return;
+      }
+      succeed(blob);
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+    try {
+      recorder.start(250);
+    } catch (err) {
+      fail(
+        `MediaRecorder.start failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return;
+    }
+    stopTimer = setTimeout(() => {
+      try {
+        if (recorder.state !== "inactive") {
+          recorder.stop();
+        }
+      } catch (err) {
+        fail(
+          `MediaRecorder.stop failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    }, durationMs);
+  });
+}
+function stopStreamTracks(stream) {
+  try {
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  } catch {
+  }
+}
+var RECORD_VIDEO_DEFAULT_SECONDS = CAPTURE_VIDEO_DURATION_SECONDS.default;
 
 // runtime/frame/load-module.ts
 function isCreateVibeTool(value) {
@@ -735,7 +879,8 @@ var Canvas2dFrameAdapter = class {
         capabilities: {
           captureFrame: true,
           setAssets: true,
-          getCaptureStream: true
+          getCaptureStream: true,
+          recordVideo: true
         }
       })
     );
@@ -797,6 +942,8 @@ var Canvas2dFrameAdapter = class {
         return this.setAssets(command.assets);
       case "captureFrame":
         return this.captureFrame();
+      case "recordVideo":
+        return this.recordVideo(command);
       case "dispose":
         return this.dispose();
       case "getIntrospection":
@@ -946,6 +1093,54 @@ var Canvas2dFrameAdapter = class {
       throw new FrameAdapterError(
         RUNTIME_ERROR_CODES.CAPTURE_FAILED,
         `captureFrame failed: ${errorMessage(err)}`,
+        { cause: err }
+      );
+    }
+  }
+  /**
+   * M7b — short WebM via tool getCaptureStream + MediaRecorder (in-frame).
+   * Host cannot receive MediaStream over postMessage; wire returns base64 blob.
+   */
+  async recordVideo(command) {
+    const tool = this.requireMounted();
+    if (!isMediaRecorderSupported()) {
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.RECORD_FAILED,
+        "MediaRecorder is not available in this browser \u2014 PNG-sequence fallback is M7c"
+      );
+    }
+    if (typeof tool.getCaptureStream !== "function") {
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.UNSUPPORTED,
+        "Tool does not implement getCaptureStream"
+      );
+    }
+    const durationSeconds = clampRecordDurationSeconds(command.durationSeconds);
+    try {
+      const stream = await Promise.resolve(tool.getCaptureStream());
+      if (!(stream instanceof MediaStream)) {
+        throw new FrameAdapterError(
+          RUNTIME_ERROR_CODES.RECORD_FAILED,
+          "getCaptureStream did not return a MediaStream"
+        );
+      }
+      if (stream.getTracks().length === 0) {
+        throw new FrameAdapterError(
+          RUNTIME_ERROR_CODES.RECORD_FAILED,
+          "getCaptureStream returned a stream with no tracks"
+        );
+      }
+      const blob = await recordMediaStreamToBlob({
+        stream,
+        durationSeconds
+      });
+      const video = await blobToCaptureFrameWire(blob);
+      return { kind: "recordVideo", video };
+    } catch (err) {
+      if (err instanceof FrameAdapterError) throw err;
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.RECORD_FAILED,
+        `recordVideo failed: ${errorMessage(err)}`,
         { cause: err }
       );
     }

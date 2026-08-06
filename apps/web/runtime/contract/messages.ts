@@ -34,6 +34,8 @@ export const HOST_TO_FRAME_TYPES = [
   "update",
   "setAssets",
   "captureFrame",
+  /** M7b — record short WebM via tool getCaptureStream + MediaRecorder in-frame. */
+  "recordVideo",
   "dispose",
   "getIntrospection",
 ] as const;
@@ -118,6 +120,17 @@ export interface CaptureFrameCommand extends RuntimeMessageBase {
   requestId: RuntimeRequestId;
 }
 
+/**
+ * M7b — record a short clip inside the frame (MediaStream cannot cross postMessage).
+ * Frame uses VibeTool.getCaptureStream() + MediaRecorder → wire blob back to host.
+ */
+export interface RecordVideoCommand extends RuntimeMessageBase {
+  type: "recordVideo";
+  requestId: RuntimeRequestId;
+  /** Clip length in seconds (clamped in frame to product range). */
+  durationSeconds: number;
+}
+
 export interface DisposeCommand extends RuntimeMessageBase {
   type: "dispose";
   requestId: RuntimeRequestId;
@@ -133,6 +146,7 @@ export type HostToFrameMessage =
   | UpdateCommand
   | SetAssetsCommand
   | CaptureFrameCommand
+  | RecordVideoCommand
   | DisposeCommand
   | GetIntrospectionCommand;
 
@@ -145,6 +159,8 @@ export type RuntimeResultPayload =
   | { kind: "update" }
   | { kind: "setAssets" }
   | { kind: "captureFrame"; frame: CaptureFrameWire }
+  /** M7b — WebM (or browser-chosen) video; same wire shape as PNG frames. */
+  | { kind: "recordVideo"; video: CaptureFrameWire }
   | { kind: "dispose" }
   | { kind: "introspection"; introspection: ToolIntrospection };
 
@@ -164,6 +180,8 @@ export interface ReadyMessage extends RuntimeMessageBase {
   capabilities?: {
     captureFrame?: boolean;
     getCaptureStream?: boolean;
+    /** M7b — in-frame MediaRecorder short clip. */
+    recordVideo?: boolean;
     setAssets?: boolean;
   };
 }
@@ -261,6 +279,20 @@ export function createCaptureFrameCommand(
   };
 }
 
+export function createRecordVideoCommand(
+  input: {
+    durationSeconds: number;
+    requestId?: RuntimeRequestId;
+  },
+): RecordVideoCommand {
+  return {
+    ...envelope(),
+    type: "recordVideo",
+    requestId: input.requestId ?? createRuntimeRequestId(),
+    durationSeconds: input.durationSeconds,
+  };
+}
+
 export function createDisposeCommand(
   input?: { requestId?: RuntimeRequestId },
 ): DisposeCommand {
@@ -292,6 +324,7 @@ export function createReadyMessage(
       captureFrame: true,
       setAssets: true,
       getCaptureStream: false,
+      recordVideo: false,
     },
   };
 }

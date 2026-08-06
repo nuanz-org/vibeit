@@ -32,6 +32,7 @@ export {
   createGetIntrospectionCommand,
   createMountCommand,
   createReadyMessage,
+  createRecordVideoCommand,
   createResultMessage,
   createRuntimeRequestId,
   createSetAssetsCommand,
@@ -48,6 +49,7 @@ export type {
   HostToFrameType,
   MountCommand,
   ReadyMessage,
+  RecordVideoCommand,
   ResultMessage,
   RuntimeMessage,
   RuntimeMessageBase,
@@ -66,6 +68,7 @@ export {
   isHostToFrameMessage,
   isIntrospectionResult,
   isReadyMessage,
+  isRecordVideoResult,
   isResultMessage,
   isRuntimeMessage,
 } from "./guards";

@@ -1,8 +1,9 @@
 """
-Tools HTTP surface (M3g + M5c).
+Tools HTTP surface (M3g + M5c + M7d).
 
-GET  /api/v1/tools/{toolId}       — owner read + latest version + draft state
-PATCH /api/v1/tools/{toolId}/draft — owner replace draft params / asset bindings
+GET  /api/v1/tools/{toolId}         — owner read + latest version + draft state
+PATCH /api/v1/tools/{toolId}/draft  — owner replace draft params / asset bindings
+POST /api/v1/tools/{toolId}/publish — owner thin make-public (M7d; no gallery)
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from adapters.db.types import ToolRow
 from core.deps import get_tools_repo
 from core.security import get_current_user
 from schemas.tools import ToolDraftPatchRequest, ToolResponse, ToolVersionResponse
+from services.public_tool import PublicToolError, publish_tool_for_share
 from services.update_tool_draft import DraftValidationError, update_tool_draft
 
 router = APIRouter(prefix="/tools", tags=["tools"])
@@ -121,6 +123,41 @@ async def patch_tool_draft(
             detail="Tool not found",
         ) from None
     except DraftValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.message,
+        ) from None
+
+    latest = await _latest_version_response(tools, tool.id)
+    return _tool_response(tool, latest=latest)
+
+
+@router.post(
+    "/{tool_id}/publish",
+    response_model=ToolResponse,
+    summary="Make tool public (thin share link; no gallery)",
+)
+async def publish_tool(
+    tool_id: str,
+    user: AuthUser = Depends(get_current_user),
+    tools: ToolsRepository = Depends(get_tools_repo),
+) -> ToolResponse:
+    """
+    M7d: set status=published so GET /public/tools/{publicId} works.
+    Does not create gallery listings (M8). Idempotent if already published.
+    """
+    try:
+        tool = await publish_tool_for_share(
+            tools=tools,
+            tool_id=tool_id,
+            owner_user_id=user.id,
+        )
+    except LookupError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool not found",
+        ) from None
+    except PublicToolError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=exc.message,

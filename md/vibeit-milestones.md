@@ -2,7 +2,7 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-06 (M0–M3 + M5 + **M2a7** generated-code delivery · next **M7**)  
+**Date:** 2026-08-03 · **Revised:** 2026-08-06 (M0–M3 + M5 + M2a7 + **M7 complete** · next **M8**)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
@@ -25,8 +25,9 @@
 | Runtime host / Studio / agent | ✅ **M2a + M3 done** | Host + Create agent |
 | **M5 Studio Control** | ✅ **Done** | M5a–M5f · [m5-demo-checklist.md](./m5-demo-checklist.md) |
 | **Generated tool live preview** | ✅ **Done** | **M2a7** — compile TS → ESM → `moduleSource` mount (not fixture-only) |
+| **M7 Export · share · embed** | ✅ **Done** | M7a–M7g · [m7-demo-checklist.md](./m7-demo-checklist.md) |
 
-**Auth → M5 + M2a7 complete.** Next critical path: **M7** export/share/embed → **M8** publish/gallery.
+**Auth → M7 complete.** Next critical path: **M8** publish + gallery.
 
 ### M0-thin — done (polish later OK)
 
@@ -2025,15 +2026,17 @@ In Studio: “make the particles slower and add a subtitle” → tool updates a
 
 **Why:** Creators need outputs outside the app and a public interactive link.
 
+**Progress:** ✅ **Complete** — **M7a–M7g** (export · share · embed · public page). See [m7-demo-checklist.md](./m7-demo-checklist.md).
+
 ### Deliverables
 
-- [ ] **PNG** export via `captureFrame`
-- [ ] **Short video** (3–6s) via client **MediaRecorder** on canvas/capture stream → **WebM**
-- [ ] **PNG-sequence fallback** if MediaRecorder fails or is unsupported
-- [ ] Public page `/t/:publicId` — interactive tool, **auth not required** to view
-- [ ] **Embed** snippet (`iframe` to public tool URL)
-- [ ] Share URL copy in Studio
-- [ ] Browser support notes for MediaRecorder
+- [x] **PNG** export via `captureFrame` — **M7a**
+- [x] **Short video** (3–6s) via client **MediaRecorder** on canvas/capture stream → **WebM** — **M7b**
+- [x] **PNG-sequence fallback** if MediaRecorder fails or is unsupported — **M7c**
+- [x] Public page `/t/:publicId` — interactive tool, **auth not required** to view — **M7e**
+- [x] **Embed** snippet (`iframe` to public tool URL) — **M7f**
+- [x] Share URL copy in Studio — **M7f**
+- [x] Browser support notes for MediaRecorder — **M7c** · [export-browser-support.md](./export-browser-support.md)
 - [ ] Optional later (not DoD): async ffmpeg WebM → MP4
 
 ### Demo
@@ -2042,25 +2045,387 @@ From Studio: download PNG, record short WebM (or PNG sequence), open share link 
 
 ### Exit criteria
 
-- PNG works on canvas2d (and any enabled targets) for reference + generated tools
-- Video path works on at least Chromium; fallback documented and functional
-- Public tool runs without leaking owner-only APIs or source download
+- [x] PNG works on canvas2d (and any enabled targets) for reference + generated tools — **M7a**
+- [x] Video path works on at least Chromium; fallback documented and functional — **M7b + M7c**
+- [x] Public tool runs without leaking owner-only APIs or source download — **M7d + M7e**
 
 ### Out of scope
 
 - Full server headless Playwright/ffmpeg farm, source download/CLI
+- Gallery list / SEO / tags polish (**M8**)
+- Chat refine (**M6**), multi-target / screenshots (**M4**)
 
 ### Depends on
 
-- M2 capture contract  
-- M1 publicId + access rules  
-- M5 enough Studio chrome to trigger export
+- M2 capture contract (+ **M2a7** live generated code in sandbox)  
+- M1 `public_id` + [access-rules.md](./access-rules.md)  
+- M5 Studio chrome enough to trigger export  
+
+### M7 baseline already landed (do not re-build)
+
+| Already exists | Use it |
+|----------------|--------|
+| `captureFrame` host bridge + wire format | `apps/web/runtime/host` · `runtime/capture/` · `CaptureFrameWire` |
+| Real-asset PNG capture path | M2a6 · Studio “Capture PNG” / prove real-asset |
+| CORS + `crossOrigin` policy | `md/contracts/capture-cors.md` · M1d storage headers |
+| `tools.public_id` at create (`t_…`) | `adapters/db/ids.new_public_id` · M1b/c |
+| Access matrix (draft private; published readable; **no source download**) | [access-rules.md](./access-rules.md) |
+| Studio shell + live generated preview | `features/studio/` · **M2a7** `moduleSource` |
+| Draft personalization (params/assets) | M5 draft GET/PATCH — public page should apply **published/default + optional frozen public bindings** (see M7d) |
+
+**Gaps to close in M7:** product export chrome (PNG download + video), fallback when MediaRecorder missing, **anonymous public tool API + `/t/:publicId` page**, Studio share/embed UI, thin “make public link” (status → published without gallery), demo checklist.
+
+---
+
+### M7 — implementation plan (subparts)
+
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M7 done until **M7g**.
+
+| Subpart | Name | Depends on | ~Days | Outcome |
+|---------|------|------------|------:|---------|
+| **M7a** | Studio PNG export (download) | M2a ✓ · M5 ✓ · M2a7 ✓ | 0.25–0.5 | One-click PNG download from fixture + generated tools |
+| **M7b** | Short video export (WebM) | M7a | 0.75–1.25 | 3–6s MediaRecorder WebM download on Chromium |
+| **M7c** | PNG-sequence fallback + browser notes | M7b | 0.25–0.5 | Usable export when MediaRecorder fails; short support doc |
+| **M7d** | Public tool read API + access | M1f ✓ · M5 ✓ | 0.75–1 | Anonymous GET by `publicId` for shareable tools; no owner leaks |
+| **M7e** | Public page `/t/:publicId` | M7d · M2a7 ✓ | 0.75–1 | Interactive tool mounts without login |
+| **M7f** | Studio share + embed chrome | M7e | 0.25–0.5 | Copy share URL + iframe snippet; thin “make public link” |
+| **M7g** | M7 demo checklist + regression | M7a–M7f | 0.25–0.5 | Exit doc + smokes; **M7 complete** → start M8 |
+
+**Suggested effort:** ≈3–5 focused days total (matches ~2–4 planning band if parallelized).
+
+**Parallelism:** After **M7a**, **M7d** (API) can start while **M7b/c** finish video. **M7e** needs M7d. **M7f** needs M7e. Do **not** start full gallery (**M8**) or chat refine (**M6**) inside M7.
+
+**Where code lands:**
+
+| Concern | Path (suggested) |
+|---------|------------------|
+| PNG / video export UI | `apps/web/features/studio/components/` (export panel) · `studio-shell.tsx` |
+| Capture helpers (record, sequence) | `apps/web/runtime/capture/` (extend) or `features/studio/lib/export-*` |
+| Browser support notes | `md/contracts/capture-cors.md` or `md/export-browser-support.md` |
+| Public tool API | `apps/api/src/api/v1/tools.py` (or `public_tools.py`) · schemas · services |
+| Thin publish-for-share | `PATCH`/`POST` owner “make public” → `tools.status = published` (no gallery UI) |
+| Public page | `apps/web/app/t/[publicId]/page.tsx` (+ lightweight public host shell) |
+| Share / embed UI | Studio header actions (copy URL, copy iframe) |
+| Demo | `md/m7-demo-checklist.md` · `apps/api/tests/test_m7_demo_checklist.py` |
+
+**Invariants (every subpart):**
+
+1. **No source download** — public/embed never exposes a download of `version.code`; Studio view-source remains view-only.  
+2. **Anonymous public view ≠ owner APIs** — no draft PATCH, no job create, no asset metadata of other users.  
+3. **Draft stays private** — anonymous `/t/:publicId` only when tool is **shareable** (MVP: `status === published`; see M7d/M7f).  
+4. **Export is client-side** — PNG/WebM in the browser; no Playwright/ffmpeg farm in M7.  
+5. **CORS-safe assets** — real http(s) asset URLs only for capture (M2a/M5 path retained).  
+6. **canvas2d first** — exit on canvas2d fixture + at least one generated tool; p5/three not required.
+
+---
+
+#### M7a — Studio PNG export (download)
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M2a ✓ · M5 ✓ · M2a7 ✓
+
+**Goal:** Product-grade **Download PNG** from Studio for fixture and generated tools (not only “Capture PNG” debug chrome).
+
+**Tasks**
+
+1. **Export action** in Studio (header or Export section): “Download PNG”.
+2. Call host `captureFrame()` → blob → trigger browser download with a sensible filename (`{tool-slug-or-id}-{timestamp}.png`).
+3. Works on **`/studio/social-frame`** and **`/studio/{uuid}`** after tool is live.
+4. Busy / error states if host not mounted or capture fails; keep existing real-asset gate messaging when relevant.
+5. Reuse `CaptureFrameWire` / blob helpers; do not invent a second capture path.
+
+**Touch (landed)**
+
+- `apps/web/features/studio/lib/export-download.ts` — slugify + `buildPngExportFilename` + `downloadBlob`
+- `apps/web/features/studio/hooks/use-studio-runtime.ts` — `downloadPng(filenameBase)` (captureFrame → PNG → download)
+- `apps/web/features/studio/components/export-panel.tsx` — Export section UI
+- `apps/web/features/studio/components/studio-shell.tsx` — Export panel + header “Download PNG”
+
+**Exit**
+
+- [x] Owner can download a PNG of the current preview (fixture + generated)
+- [x] Capture still works after real uploaded asset (M2a path retained — Capture section unchanged)
+- [x] No server upload of export required for MVP
+
+**Out of scope for M7a:** Video, public page, share links.
+
+---
+
+#### M7b — Short video export (WebM)
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M7a ✓
+
+**Goal:** Record a **short (3–6s) WebM** in the browser via **MediaRecorder** and download it.
+
+**Tasks**
+
+1. Prefer tool `getCaptureStream?()` when implemented; else `canvas.captureStream` / host-provided stream path (document which surface M2 host exposes).
+2. **MediaRecorder** → WebM; default duration ~3–6s (constant; user-visible countdown or progress).
+3. Download `.webm` with sensible filename.
+4. Primary target: **Chromium**; fail with clear message if unsupported (fallback is **M7c**).
+5. Do not block UI forever — cancel / timeout path.
+
+**Design (landed):** MediaStream cannot cross postMessage. Host sends `recordVideo` → frame calls `getCaptureStream()` + MediaRecorder → returns base64 **wire** (same shape as PNG). Timeout = duration + 12s buffer.
+
+**Touch (landed)**
+
+- `apps/web/runtime/capture/record-video.ts` — MediaRecorder helper + duration clamp
+- `apps/web/runtime/contract/messages.ts` — `recordVideo` command + result
+- `apps/web/runtime/targets/canvas2d/adapter.ts` — in-frame record
+- `apps/web/runtime/host/bridge.ts` · `RuntimeHost.tsx` — `recordVideo()`
+- `apps/web/features/studio/hooks/use-studio-runtime.ts` — `downloadVideo` + countdown
+- `apps/web/features/studio/components/export-panel.tsx` — Download video button
+- `apps/web/features/studio/lib/export-download.ts` — `.webm` filename
+- `public/runtime-frame.js` — rebuilt via `build:runtime-frame`
+
+**Exit**
+
+- [x] On Chromium: record short WebM and download from Studio
+- [x] Duration and mime type documented (constants: `@repo/contracts` CAPTURE_VIDEO_* + `record-video.ts`)
+- [x] Clear error when MediaRecorder unavailable (handoff to M7c)
+
+**Out of scope for M7b:** MP4/ffmpeg, server-side recording, multi-target polish, PNG-sequence fallback (M7c).
+
+---
+
+#### M7c — PNG-sequence fallback + browser support notes
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M7b ✓
+
+**Goal:** If MediaRecorder fails or is unsupported, user still gets a usable motion export path; document browser reality.
+
+**Tasks**
+
+1. **PNG-sequence fallback** — sample N frames over ~3–6s via repeated `captureFrame` (or timed captures) → zip of PNGs **or** sequential downloads (pick one simple UX; zip preferred if a tiny client zip lib is acceptable).
+2. Wire Export UI: try WebM → on failure offer / auto-run sequence fallback.
+3. **Browser support notes** — short markdown (MediaRecorder WebM: Chromium good; Safari/Firefox caveats; fallback behavior).
+4. Manual smoke once on Chromium + note one non-Chromium path if available.
+
+**Design (landed):**
+
+- Sample at **4 fps** over clamped 3–6s (default 4s) → ~16 frames.
+- Pack into uncompressed **ZIP** (minimal store writer — no new npm dep).
+- **Download video** auto-falls back when MediaRecorder missing or `recordVideo` fails.
+- Explicit **Download PNG sequence** always available.
+
+**Touch (landed)**
+
+- `apps/web/features/studio/lib/export-png-sequence.ts`
+- `apps/web/features/studio/lib/zip-store.ts` — store-only ZIP
+- `apps/web/features/studio/hooks/use-studio-runtime.ts` — `downloadPngSequence` + video auto-fallback
+- `apps/web/features/studio/components/export-panel.tsx`
+- `md/export-browser-support.md`
+- Link from `md/contracts/capture-cors.md`
+
+**Exit**
+
+- [x] Fallback produces a downloadable multi-frame export when WebM cannot run
+- [x] Support notes exist and are linked (`md/export-browser-support.md`)
+- [x] Video path + fallback satisfy M7 exit “fallback documented and functional”
+
+**Out of scope for M7c:** Perfect cross-browser video, MP4.
+
+---
+
+#### M7d — Public tool read API + access
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M1f ✓ · M5 ✓ · M2a7 ✓
+
+**Goal:** Anonymous (and any signed-in non-owner) can load **enough to run** a shareable tool by `publicId`, without owner-only leaks.
+
+**Design (MVP):**
+
+| Rule | Behavior |
+|------|----------|
+| Shareable | `tools.status === 'published'` (draft remains private) |
+| Lookup | By `public_id` only (never require internal UUID on public surface) |
+| Payload | Target, param schema / defaults, asset slot URLs needed to mount, **code for sandbox run**, public title/description |
+| Forbidden | Owner draft write APIs, job APIs, source **download** (`Content-Disposition: attachment`), other users’ private assets metadata |
+| Personalization | Public run uses **version defaults** (+ optional published snapshot later). Owner **draft_params** stay private unless explicitly frozen into published version in M8 — **do not** leak draft-only state anonymously in M7 unless product decides otherwise |
+
+**Tasks**
+
+1. **`GET /api/v1/public/tools/{publicId}`** (or equivalent) — no auth required; **404** if missing or not published.
+2. Response shaped for the public host (camelCase; no owner user id required in client).
+3. Enforce [access-rules.md](./access-rules.md): draft → 404 for anonymous; published → read.
+4. **Thin owner action** (can land with M7f): “Make public link” sets `status = published` + `published_at` **without** gallery UI (M8 adds gallery list/metadata polish/gates).
+5. Tests: published 200; draft 404; no download endpoint; response has no secrets.
+
+**Touch (landed)**
+
+- `apps/api/src/api/v1/public_tools.py` — `GET /api/v1/public/tools/{publicId}`
+- `apps/api/src/api/v1/tools.py` — `POST /api/v1/tools/{toolId}/publish`
+- `apps/api/src/services/public_tool.py`
+- `apps/api/src/schemas/tools.py` — `PublicToolResponse` (no owner/draft)
+- `apps/api/src/adapters/db/repositories/tools.py` — `get_published_tool_by_public_id`, `set_tool_published`
+- `apps/api/tests/test_public_tools_m7d.py`
+- `apps/web/lib/api/tools.ts` — `getPublicTool`, `publishTool`
+
+**Exit**
+
+- [x] Anonymous can GET a published tool by `publicId`
+- [x] Draft tools are not readable anonymously
+- [x] No source download route; code only as needed to run in sandbox (same product rule as Studio)
+
+**Out of scope for M7d:** Gallery listing, tags, quality gates (M8). Public page UI is **M7e**.
+
+---
+
+#### M7e — Public page `/t/:publicId`
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M7d ✓ · M2a7 ✓
+
+**Goal:** Anyone with the link can open an **interactive** tool without signing in.
+
+**Tasks**
+
+1. Route **`/t/[publicId]`** (App Router) — fetch public tool API, mount sandbox host with `moduleSource` / target (reuse Studio runtime stack, thinner chrome).
+2. **No auth required** to view; no Studio Control (params/assets owner chrome optional later — MVP: run with published defaults).
+3. Safe empty/error states: not found, not published, load/mount failure.
+4. Must not offer source download or owner draft controls.
+5. Prove in private/incognito window.
+
+**Design (landed):**
+
+- Page is **outside** `proxy.ts` matcher (`/create`, `/studio` only) — no cookie gate.
+- Client loads `GET /api/v1/public/tools/{publicId}` with `credentials: "omit"`.
+- Compile uses **`POST /api/runtime/compile-public`** `{ publicId }` — server re-fetches published source (no arbitrary TS; no session).
+- Mount via same `RuntimeHost` + `moduleSource` path as Studio (M2a7).
+- Version **defaultParams** only (no draft overlay).
+
+**Touch (landed)**
+
+- `apps/web/app/t/[publicId]/page.tsx` · `not-found.tsx`
+- `apps/web/features/public-tool/` — loader, shell, runtime hook, styles
+- `apps/web/app/api/runtime/compile-public/route.ts`
+- `apps/web/lib/api/runtime-compile.ts` — `compilePublicTool`
+
+**Exit**
+
+- [x] Private window can open `/t/{publicId}` for a published tool and see live canvas2d
+- [x] 404/friendly error for draft or unknown id
+- [x] No owner-only API calls from the public page
+
+**Out of scope for M7e:** Embed snippet UI (M7f), gallery (M8), public param editing (optional later).
+
+---
+
+#### M7f — Studio share + embed chrome
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M7e ✓
+
+**Goal:** From Studio, owner can **copy share URL** and **embed snippet**, and enable the public link if the tool is still draft.
+
+**Tasks**
+
+1. **Share URL** — `origin + /t/ + publicId`; one-click copy; show “link private until public” when draft.
+2. **Make public link** (thin) — owner control → `status = published` (API from M7d); success enables anonymous `/t/...`.
+3. **Embed snippet** — copyable `<iframe src="…/t/{publicId}" …></iframe>` (sensible default size; document `allow` if needed).
+4. Optional: open public page in new tab for smoke.
+5. Do **not** build gallery browse UI here.
+
+**Touch (landed)**
+
+- `apps/web/features/studio/lib/share-links.ts` — share URL + embed + clipboard
+- `apps/web/features/studio/components/share-panel.tsx` — Make public · Copy URL · Copy embed · Open public page
+- `apps/web/features/studio/components/studio-shell.tsx` — Share section + live status badge
+- `apps/web/features/studio/styles.module.css` — share field styles
+- Uses `publishTool()` from M7d (`POST /api/v1/tools/{id}/publish`)
+
+**Exit**
+
+- [x] Owner can copy share URL and iframe embed from Studio
+- [x] After make-public, private window loads the tool
+- [x] Draft remains unreadable anonymously until make-public
+
+**Out of scope for M7f:** Gallery, tags, SEO, unpublish UX polish (M8 can own takedown switch fully).
+
+---
+
+#### M7g — M7 demo checklist + regression
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M7a–M7f ✓
+
+**Goal:** Prove M7 exit criteria with automated smokes + a short manual demo list; update progress docs.
+
+**Tasks**
+
+1. **Checklist doc** `md/m7-demo-checklist.md` (PNG, WebM or fallback, public page, embed, access negatives).
+2. **API tests** — public GET published/draft; no download; optional make-public.
+3. **Web** — typecheck public + Studio export paths.
+4. Capture regression: PNG still works after real asset (M2a).
+5. Mark high-level M7 deliverables complete; update **Current progress** + **Next action** → **M8**.
+
+**Touch (landed)**
+
+- `md/m7-demo-checklist.md`
+- `apps/api/tests/test_m7_demo_checklist.py`
+- This file’s checkboxes / progress table
+
+**Exit**
+
+- [x] All M7 exit criteria demonstrable (automated + manual list)
+- [x] **M7 core-loop exit met** → start **M8** (publish + gallery)
+
+**Out of scope for M7g:** Gallery UI, publish quality gates beyond thin make-public (M8).
+
+---
+
+### M7 subpart sequencing diagram
+
+```
+M5 + M2a7 COMPLETE
+        │
+        ▼
+M7a  Studio PNG export (download)
+        │
+        ├──────────────────────────┐
+        ▼                          ▼
+M7b  Short video (WebM)      M7d  Public tool API + access
+        │                          │
+        ▼                          │
+M7c  PNG-sequence fallback         │
+        │                          │
+        └──────────┬───────────────┘
+                   ▼
+            M7e  Public page /t/:publicId
+                   │
+                   ▼
+            M7f  Studio share + embed chrome
+                   │
+                   ▼
+            M7g  Demo checklist + regression  →  M7 COMPLETE → M8
+```
+
+### M7 checklist rollup
+
+| # | Criterion | Subpart |
+|---|-----------|---------|
+| 1 | Download PNG from Studio | M7a |
+| 2 | Short WebM via MediaRecorder (Chromium) | M7b |
+| 3 | PNG-sequence fallback + browser notes | M7c |
+| 4 | Anonymous public tool API by publicId | M7d |
+| 5 | Interactive `/t/:publicId` without login | M7e |
+| 6 | Copy share URL + embed snippet | M7f |
+| 7 | Thin make-public (no gallery) | M7d + M7f |
+| 8 | No source download / no draft leak | all |
+| 9 | Demo checklist + exit | M7g |
+
+### M7 implementation notes (do not skip)
+
+1. **Reuse M2a7 delivery** for public mount — same `moduleSource` / host path as Studio; do not invent a second sandbox.  
+2. **Published ≠ gallery** — M7 only needs a shareable public URL; M8 adds list, tags, thumbnails, export smoke gates.  
+3. **Prefer client exports** — keep bytes in the browser; optional later: upload export assets to storage.  
+4. **Filename + UX** — export should feel product-ready (not a bare console blob dump).  
+5. **Access rules are law** — if unsure, 404 hide over 403 reveal for private tools.  
+6. ~~**Do not** start M8 gallery while M7 public page is red.~~ — M7 complete; M8 is next.
 
 ---
 
 ## M8 — Publish + gallery + quality gates
 
 **Why:** Complete the consensus success path — others can open and use published tools.
+
+**Progress:** ⬜ **Not started** — next after **M7** (thin make-public already exists for share; M8 adds gallery + metadata + gates).
 
 ### Deliverables
 
@@ -2197,16 +2562,17 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 ## Next action (start here)
 
-Auth + **M0-thin + M1 + M2a + M3 + M5 + M2a7 are complete.** To get the core loop ASAP, execute in this order:
+Auth + **M0-thin + M1 + M2a + M3 + M5 + M2a7 + M7 are complete.** To finish the core loop ASAP:
 
 1. ~~**M0-thin**~~ — **done** (M0a–M0f).  
 2. ~~**M1a–M1f**~~ — **done**. **M1 complete.**  
 3. ~~**M2a**~~ — **done**. See [m2a-demo-checklist.md](./m2a-demo-checklist.md).  
 4. ~~**M3**~~ — **done** (M3a–M3h). See [m3-demo-checklist.md](./m3-demo-checklist.md).  
 5. ~~**M5a–M5f**~~ — **done**. See [m5-demo-checklist.md](./m5-demo-checklist.md).  
-5b. ~~**M2a7** generated-code delivery~~ — **done** (2026-08-06). Studio runs generated tools live (not fixture-only).  
-6. **M7 → M8** — export/share/embed → publish/gallery → **core loop complete**. **← start here (M7)**
+5b. ~~**M2a7** generated-code delivery~~ — **done**. Studio runs generated tools live.  
+6. ~~**M7a–M7g**~~ — **done**. Export · share · embed · public `/t/:publicId`. See [m7-demo-checklist.md](./m7-demo-checklist.md).  
+7. **← start here: M8** — publish + gallery + quality gates → **core loop complete**.
 
 **Do not start next:** p5/three agent work, chat refine (M6), inspiration vision (M4), or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
 
-When you say **build**, start at **M7** (export PNG + short video · share · embed).
+When you say **build**, start **M8** (publish flow, gallery list/detail, publish gates).

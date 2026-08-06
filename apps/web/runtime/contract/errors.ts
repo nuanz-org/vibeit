@@ -18,6 +18,8 @@ export const RUNTIME_ERROR_CODES = {
   TOOL_THROW: "TOOL_THROW",
   /** captureFrame failed (tainted canvas, empty blob, etc.). */
   CAPTURE_FAILED: "CAPTURE_FAILED",
+  /** recordVideo / MediaRecorder failed or unsupported (M7b). */
+  RECORD_FAILED: "RECORD_FAILED",
   /** Command or target not supported by this frame. */
   UNSUPPORTED: "UNSUPPORTED",
   /** Tool factory / target loader failed. */
@@ -34,6 +36,8 @@ export const RUNTIME_ERROR_CODE_MEANING: Record<RuntimeErrorCode, string> = {
   INVALID_MESSAGE: "postMessage failed protocol validation",
   TOOL_THROW: "VibeTool method threw or rejected",
   CAPTURE_FAILED: "captureFrame could not produce a PNG payload",
+  RECORD_FAILED:
+    "recordVideo could not produce a WebM clip (MediaRecorder / stream)",
   UNSUPPORTED: "Command or capability not available in this frame",
   LOAD_FAILED: "Tool or target runtime failed to load",
 };

@@ -3,6 +3,7 @@
  *
  * Wire encode/decode: contract CaptureFrameWire.
  * Real-asset gate: M2a exit (not data: fixtures).
+ * Short video (M7b): record-video (in-frame MediaRecorder).
  */
 
 export {
@@ -25,3 +26,14 @@ export {
   waitForPaintFrames,
 } from "./real-asset";
 export type { RealAssetCaptureGate } from "./real-asset";
+
+export {
+  RECORD_VIDEO_DEFAULT_SECONDS,
+  RECORD_VIDEO_MIME_CANDIDATES,
+  RECORD_VIDEO_STREAM_FPS,
+  clampRecordDurationSeconds,
+  isMediaRecorderSupported,
+  pickRecordVideoMimeType,
+  recordMediaStreamToBlob,
+} from "./record-video";
+export type { RecordMediaStreamOptions } from "./record-video";
