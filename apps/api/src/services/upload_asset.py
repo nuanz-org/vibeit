@@ -22,8 +22,11 @@ _MIME_ALIASES = {
     "image/jpg": "image/jpeg",
 }
 
-UPLOAD_KINDS = frozenset({"inspiration", "studio"})
+# M8c: thumb for gallery frame grab; export reserved for later product exports
+UPLOAD_KINDS = frozenset({"inspiration", "studio", "thumb", "export"})
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+# Gallery thumbs stay small
+THUMB_MAX_BYTES = 2 * 1024 * 1024  # 2 MB
 
 _SAFE_NAME = re.compile(r"[^a-zA-Z0-9._\-]+")
 
@@ -87,9 +90,10 @@ async def upload_asset(
     if not data:
         raise UploadValidationError("empty file")
 
-    if len(data) > max_bytes:
+    limit = THUMB_MAX_BYTES if kind == "thumb" else max_bytes
+    if len(data) > limit:
         raise UploadValidationError(
-            f"file too large: {len(data)} bytes (max {max_bytes})"
+            f"file too large: {len(data)} bytes (max {limit})"
         )
 
     asset_id = uuid4()

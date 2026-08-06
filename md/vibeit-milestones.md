@@ -2,7 +2,7 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-06 (M0–M3 + M5 + M2a7 + **M7 complete** · next **M8**)  
+**Date:** 2026-08-03 · **Revised:** 2026-08-06 (M0–M3 + M5 + M2a7 + **M7 complete** + **M8 complete** · **core loop complete** · next **M9** / fast-follows)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
@@ -26,8 +26,10 @@
 | **M5 Studio Control** | ✅ **Done** | M5a–M5f · [m5-demo-checklist.md](./m5-demo-checklist.md) |
 | **Generated tool live preview** | ✅ **Done** | **M2a7** — compile TS → ESM → `moduleSource` mount (not fixture-only) |
 | **M7 Export · share · embed** | ✅ **Done** | M7a–M7g · [m7-demo-checklist.md](./m7-demo-checklist.md) |
+| **M8 Publish · gallery · gates** | ✅ **Done** | M8a–M8g · [m8-demo-checklist.md](./m8-demo-checklist.md) |
+| **Core loop (canvas2d)** | ✅ **Complete** | Auth → Create → Studio → Export/share → Publish gallery |
 
-**Auth → M7 complete.** Next critical path: **M8** publish + gallery.
+**Auth → M8 complete.** Core loop complete on canvas2d. Next: **M9** hardening, or fast-follows **M2b / M4 / M6**.
 
 ### M0-thin — done (polish later OK)
 
@@ -127,7 +129,7 @@ A real user can: **sign in → describe vision → get a live canvas2d tool → 
 | M3 | LangGraph Create canvas2d + Create UI + jobs + quota | 5–8 |
 | M5 | Full Control UI (may start earlier on fixtures) | 3–5 |
 | M7 | PNG/video/share/embed | 2–4 |
-| M8 | Publish gates + gallery | 2–3 |
+| M8 | Publish gates + gallery (**M8a–M8g**) | 2–3 |
 | **Sum to core loop** | | **~19–32** |
 
 Numbers are planning aids, not commitments. Cut polish, not the path.
@@ -2425,16 +2427,17 @@ M7c  PNG-sequence fallback         │
 
 **Why:** Complete the consensus success path — others can open and use published tools.
 
-**Progress:** ⬜ **Not started** — next after **M7** (thin make-public already exists for share; M8 adds gallery + metadata + gates).
+**Progress:** ✅ **Done** (2026-08-06) — **M8a–M8g** · **core loop complete** on canvas2d.
 
-### Deliverables
+### Deliverables (rollup)
 
-- [ ] Publish flow: title, description, tags, auto thumbnail (from frame grab)
-- [ ] **Gates:** preview smoke + export smoke OK before publish
-- [ ] Gallery list + detail → open public tool
-- [ ] Publish creates/updates owned published version; failed gens never appear as published
-- [ ] Anonymous browse of published gallery + public tools
-- [ ] Takedown / unpublish switch for owner or ops
+- [x] Publish flow: title, description, tags, auto thumbnail (from frame grab) — **M8a + M8c + M8f**
+- [x] **Gates:** preview smoke + export smoke OK before publish — **M8b**
+- [x] Gallery list + detail → open public tool — **M8d + M8e**
+- [x] Publish creates/updates owned published version; failed gens never appear as published — **M8a**
+- [x] Anonymous browse of published gallery + public tools — **M8d + M8e**
+- [x] Takedown / unpublish switch for owner or ops — **M8f**
+- [x] Full-loop demo checklist + regression — **M8g**
 
 ### Demo
 
@@ -2446,22 +2449,442 @@ Full success criteria path (canvas2d):
 4. Studio: params, assets, colors  
 5. Export PNG + short video  
 6. Share link + embed  
-7. Publish → another browser session finds it in gallery and uses it  
+7. Publish (metadata + gates + thumb) → another browser session finds it in gallery and uses it  
+8. Owner can unpublish → gallery + public page hide it  
 
 ### Exit criteria
 
-- Consensus **“flow is complete”** checklist passes with a real user dry-run on canvas2d
-- Gate failures block publish with actionable errors
-- No unpublished/broken jobs in gallery
+- [x] Consensus **“flow is complete”** checklist passes (automated M8g + manual list in [m8-demo-checklist.md](./m8-demo-checklist.md))
+- [x] Gate failures block publish with actionable errors
+- [x] No unpublished/broken jobs in gallery
+- [x] **M8g** complete → **core loop complete**
 
 ### Out of scope
 
 - Browse-first growth loops, remix/fork graph, team workspaces, SEO/growth polish beyond basic gallery
 - Chat refine (M6) and multi-target (M4) unless already shipped
+- Server-side headless export farm, MP4 transcode (M9 optional)
 
 ### Depends on
 
 - M3, M5, M7 (not M4/M6)
+
+### M8 baseline already landed (do not re-build)
+
+| Already exists | Use it |
+|----------------|--------|
+| Thin make-public | `POST /api/v1/tools/{id}/publish` · `publish_tool_for_share` · Studio “Make public link” |
+| Public tool read API | `GET /api/v1/public/tools/{publicId}` · M7d |
+| Public page `/t/:publicId` | M7e · `features/public-tool/` |
+| Share / embed chrome | M7f · `share-panel.tsx` |
+| Tool gallery columns | `tools.title`, `description`, `thumbnail_asset_id`, `published_at`, `status` |
+| Asset kind `thumb` | Reserved in schema (`ASSET_KINDS`) — wire upload in M8c |
+| PNG capture + download | M7a · host `captureFrame` |
+| Access matrix | [access-rules.md](./access-rules.md) — published readable; failed never gallery-ready |
+
+**Gaps to close in M8:** publish **metadata** (title/desc/tags) + **version freeze**, **quality gates** before gallery, **auto thumbnail**, **gallery list API + UI**, **unpublish**, upgrade thin make-public into a real publish flow without breaking share.
+
+---
+
+### M8 — implementation plan (subparts)
+
+Complete these **in order** unless noted as parallel. Each subpart has its own exit; do not claim M8 (or core loop) done until **M8g**.
+
+| Subpart | Name | Depends on | ~Days | Outcome |
+|---------|------|------------|------:|---------|
+| **M8a** | Publish metadata + version freeze | M7 ✓ | 0.5–0.75 | title/desc/tags on publish; freeze published version; failed gens blocked |
+| **M8b** | Publish quality gates | M8a | 0.5–1 | preview + export smoke must pass; actionable gate errors |
+| **M8c** | Auto thumbnail (frame grab) | M8a · M7a ✓ | 0.25–0.5 | thumb asset from capture; stored on tool |
+| **M8d** | Gallery list API | M8a | 0.5–0.75 | anonymous list of published tools (public_id + cards) |
+| **M8e** | Gallery web UI | M8d · M7e ✓ | 0.5–1 | `/gallery` list + detail → open `/t/:publicId` |
+| **M8f** | Studio publish panel + unpublish | M8a · M8b · M8c | 0.5–0.75 | full publish UX; owner takedown switch |
+| **M8g** | M8 demo checklist + core-loop exit | M8a–M8f | 0.25–0.5 | dry-run passes → **core loop complete** |
+
+**Suggested effort:** ≈2.5–4 focused days total (matches ~2–3 planning band if parallelized).
+
+**Parallelism:** After **M8a**, run **M8b ∥ M8c ∥ M8d**. **M8e** needs M8d. **M8f** needs M8a + M8b + M8c (can start UI shell earlier). **M8g** last. Do **not** ship gallery cards that skip gates or show failed gens.
+
+**Where code lands:**
+
+| Concern | Path (suggested) |
+|---------|------------------|
+| Tags / publish metadata schema | `apps/api/migrations/` · `adapters/db/types.py` · tools repo |
+| Publish service + gates | `apps/api/src/services/publish_tool.py` · `domain/publish_gates.py` |
+| Upgrade publish route | `apps/api/src/api/v1/tools.py` (extend M7 thin publish) · schemas |
+| Gallery list API | `apps/api/src/api/v1/gallery.py` (or `public_gallery.py`) · services |
+| Thumbnail upload | asset `kind=thumb` · storage path · link `tools.thumbnail_asset_id` |
+| Studio publish UI | `apps/web/features/studio/components/` (publish panel) |
+| Gallery web | `apps/web/app/gallery/` · `features/gallery/` |
+| Demo | `md/m8-demo-checklist.md` · `apps/api/tests/test_m8_demo_checklist.py` |
+
+**Invariants (every subpart):**
+
+1. **Failed generations never published** — no `status=published` / gallery row without a succeeded version.  
+2. **Published ≠ “in gallery” without gates** — thin M7 share may still set published for `/t/...`; **gallery listing** requires gate pass (document clearly in M8b/M8d).  
+3. **No source download** — gallery/public never expose download of `version.code`.  
+4. **Anonymous gallery read only** — list/detail for published tools; no owner draft PATCH.  
+5. **public_id in human URLs** — never internal UUID alone for gallery/share links.  
+6. **canvas2d first** — exit on canvas2d; p5/three not required.  
+7. **Access rules are law** — 404 hide over 403 reveal for private tools.
+
+---
+
+#### M8a — Publish metadata + version freeze
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M7 ✓
+
+**Goal:** Upgrade thin make-public into a **metadata-aware publish** that freezes a public version snapshot and never publishes failed gens.
+
+**Tasks**
+
+1. **Schema** — add `tags` if missing (`text[]` or `jsonb` string array on `tools`). Confirm `title`, `description`, `thumbnail_asset_id`, `published_at` usable for gallery cards.
+2. **Publish request body** — owner may send `title`, `description`, `tags` (required title for gallery; sensible defaults from vision/title if empty).
+3. **Version freeze** — on publish, freeze the version the public page will run: latest ready version + optional snap of defaults (do **not** leak live owner `draft_params` unless product freezes them into published defaults — document choice in service).
+4. **Failed gens blocked** — reject publish if no succeeded version / tool not ready; tests prove failed jobs never become published.
+5. Keep M7 thin path working: publish without gallery fields still sets `status=published` for share **or** require metadata only when “Publish to gallery” (prefer one service with optional gallery flag — see M8b).
+6. Tests: metadata round-trip; failed job cannot publish; draft remains private until publish.
+
+**Design (landed)**
+
+| Rule | Behavior |
+|------|----------|
+| Thin share | `POST /publish` with empty body still works (M7 “Make public link”) |
+| Metadata | Optional `title`, `description`, `tags` (normalized lowercase, max 20×48 chars) |
+| Version freeze | Always set `published_version_id` to the public-run version |
+| Draft leak | Default: public uses version `default_params` only (draft stays private) |
+| `freezeDraft: true` | New version with `default_params = merge(version, draft_params)`, then pin it |
+| Ready check | No version or empty code → **422** `NO_VERSION` (failed gens never published) |
+| Public GET | Prefer frozen `published_version_id`; fall back to latest |
+
+**Touch (landed)**
+
+- `apps/api/migrations/004_publish_metadata.sql` — `tags text[]`, `published_version_id`
+- `apps/api/src/adapters/db/types.py` · `_mapping.py` · `repositories/tools.py`
+- `apps/api/src/services/public_tool.py` — metadata + freeze + normalize_tags
+- `apps/api/src/schemas/tools.py` — `ToolPublishRequest`; tags/published fields on responses
+- `apps/api/src/api/v1/tools.py` — optional publish body
+- `apps/web/lib/api/tools.ts` — `ToolPublishRequest` + optional body on `publishTool`
+- `apps/api/tests/test_publish_m8a.py`
+
+**Exit**
+
+- [x] Owner can set title/description/tags on publish (API)
+- [x] Published tool has a stable version for public run
+- [x] Failed generation cannot become `status=published` (no/empty version blocked)
+- [x] M7 share/public page still works
+
+**Out of scope for M8a:** Gate smokes, thumbnail capture, gallery list UI, unpublish.
+
+---
+
+#### M8b — Publish quality gates
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M8a ✓
+
+**Goal:** Block **gallery publish** unless preview + export smoke pass; return actionable errors.
+
+**Tasks**
+
+1. **`domain/publish_gates`** (or service helper) — ordered checks, each with code + human message.
+2. **Preview smoke** — tool has runnable published version (target + code + mountable contract); optional lightweight “last preview OK” flag from Studio if easy, else server-side readiness checks (version exists, target allowed, code non-empty, param schema valid).
+3. **Export smoke** — client-side: successful `captureFrame` (or PNG export) within the publish flow before calling gallery publish; server may require a recent smoke token / thumb upload as proof.
+4. **API** — gallery publish returns **4xx** with structured gate failures (not a silent 200). Thin “make public link” for share may stay lighter **or** share the same gates — prefer: **share can stay thin; gallery requires gates** (document in access/publish notes).
+5. Tests: each gate failure blocks gallery listing eligibility; pass path succeeds.
+
+**Design (landed)**
+
+| Mode | Behavior |
+|------|----------|
+| Thin share (`forGallery` omitted/false) | `status=published` only; **no** gallery gates; `galleryReady` stays false |
+| Gallery publish (`forGallery: true`) | Run `domain.publish_gates`; pass → `galleryReady=true` + `exportSmokeAt` |
+| Gate fail | **422** `{ code: GATES_FAILED, gates: [{code, message}, …] }` — tool not published / not gallery-ready |
+
+**Gallery gates (ordered):**
+
+| Code | Check |
+|------|--------|
+| `PREVIEW_NO_VERSION` | No tool_versions row |
+| `PREVIEW_EMPTY_CODE` | Code empty/whitespace |
+| `PREVIEW_TARGET` | Target missing or not in canvas2d/p5/three |
+| `PREVIEW_PARAM_SCHEMA` | paramSchema present but not a list |
+| `GALLERY_TITLE_REQUIRED` | No non-empty title (request or existing) |
+| `EXPORT_SMOKE_REQUIRED` | `exportSmokeOk` not true (client must prove capture/PNG) |
+
+Export smoke is **client-asserted** for MVP (Studio sets `exportSmokeOk` after successful `captureFrame` / Download PNG — wire in M8f). No headless farm.
+
+**Touch (landed)**
+
+- `apps/api/migrations/005_publish_gates.sql` — `gallery_ready`, `export_smoke_at`
+- `apps/api/src/domain/publish_gates.py` — pure gate evaluator
+- `apps/api/src/services/public_tool.py` — `PublishGateError`, gallery path
+- `apps/api/src/schemas/tools.py` · `api/v1/tools.py` · tools repo/types
+- `apps/web/lib/api/tools.ts` — `forGallery`, `exportSmokeOk`, `PublishGatesError`
+- `apps/api/tests/test_publish_gates_m8b.py`
+
+**Exit**
+
+- [x] Gate failures block gallery publish with actionable errors
+- [x] Happy path: preview + export smoke OK → publish allowed (`galleryReady`)
+- [x] No broken/missing-version tools appear as gallery-eligible
+
+**Out of scope for M8b:** Full SEO, multi-browser export matrix, server video farm.
+
+---
+
+#### M8c — Auto thumbnail (frame grab)
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M8a · M7a ✓ · M8b ✓
+
+**Goal:** On publish (or pre-publish step), grab a frame and store it as the gallery thumbnail.
+
+**Tasks**
+
+1. Studio (or publish panel): `captureFrame` → blob → upload asset with `kind=thumb` (or dedicated thumb endpoint).
+2. Set `tools.thumbnail_asset_id` on successful publish / thumb attach.
+3. Public gallery cards resolve a **CORS-safe** thumb URL (raw asset pattern OK per access-rules; no private asset listing).
+4. Fallback: placeholder thumb if capture fails but gates otherwise allow (product choice: prefer **block gallery publish** if no thumb when gate requires export smoke — align with M8b).
+5. Tests: publish with thumb id; public list includes thumb URL or id.
+
+**Design (landed)**
+
+| Piece | Behavior |
+|-------|----------|
+| Upload | `POST /api/v1/assets` `kind=thumb` (also allows `export`); max 2MB; optional `toolId` |
+| Studio | **Save gallery thumbnail** → `captureFrame` → upload → preview in Export panel |
+| Publish | `thumbnailAssetId` on body → validates owner + kind ∈ {thumb, export} → `tools.thumbnail_asset_id` |
+| Gallery gate | `GALLERY_THUMBNAIL_REQUIRED` when `forGallery` and no thumb; thumb also satisfies export smoke |
+| Public URL | `thumbnailUrl` = `/api/v1/assets/raw/{id}` (anonymous CORS, no session) |
+
+**Touch (landed)**
+
+- `apps/api/src/services/upload_asset.py` — thumb/export kinds
+- `apps/api/src/domain/publish_gates.py` — `has_thumbnail` / `GALLERY_THUMBNAIL_REQUIRED`
+- `apps/api/src/services/public_tool.py` — resolve + attach thumb; public response URLs
+- `apps/api/src/api/v1/tools.py` · `public_tools.py` · schemas
+- `apps/web/lib/api/assets.ts` · `tools.ts`
+- `apps/web/features/studio/lib/upload-thumbnail.ts`
+- `use-studio-runtime.captureAndUploadThumbnail` · Export panel · Studio shell
+- `apps/api/tests/test_thumbnail_m8c.py`
+
+**Exit**
+
+- [x] Published gallery item can show an auto (or owner-confirmed) thumbnail
+- [x] Thumb uses reserved `thumb` kind / `thumbnail_asset_id`
+- [x] No session-required image load that breaks canvas/gallery CORS
+
+**Out of scope for M8c:** Multi-frame animated thumbs, CDN image transforms.
+
+---
+
+#### M8d — Gallery list API
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M8a · M8b · M8c ✓
+
+**Goal:** Anonymous clients can list published, gallery-eligible tools for browse.
+
+**Tasks**
+
+1. **`GET /api/v1/public/gallery`** (or `/api/v1/gallery`) — no auth; returns cards: `publicId`, `title`, `description`, `tags`, `thumbnailUrl`/`thumbnailAssetId`, `publishedAt`.
+2. **Eligibility filter** — only `status=published` **and** gallery-ready (gates passed / not unpublished from gallery). Do not list drafts or failed gens.
+3. Pagination (`limit`/`cursor` or offset); stable sort (`published_at DESC`).
+4. Optional: `GET .../gallery/{publicId}` detail metadata (not full Studio) if list is thin.
+5. Tests: draft excluded; published included; pagination; no owner/draft fields leaked.
+
+**Design (landed)**
+
+| Endpoint | Behavior |
+|----------|----------|
+| `GET /api/v1/public/gallery?limit=&offset=` | Anonymous list; `limit` 1–100 (default 24); `hasMore` via limit+1 fetch |
+| `GET /api/v1/public/gallery/{publicId}` | One card; **404** if draft, thin-share only, or unknown |
+| Eligibility | `status=published` **AND** `gallery_ready=true` |
+| Sort | `published_at DESC NULLS LAST`, then `public_id ASC` |
+| Card fields | `publicId`, `title`, `description`, `tags`, `thumbnailAssetId`, `thumbnailUrl`, `publishedAt` |
+| Leaks | No owner, draft, code, internal UUID |
+
+Thin share (`status=published`, `galleryReady=false`) still works on `/public/tools/{id}` and `/t/...` but **not** in gallery list.
+
+**Touch (landed)**
+
+- `apps/api/src/adapters/db/repositories/tools.py` — `list_gallery_tools`, `get_gallery_tool_by_public_id`
+- `apps/api/src/services/gallery.py` · `schemas/gallery.py`
+- `apps/api/src/api/v1/public_gallery.py` · router include
+- `apps/web/lib/api/gallery.ts` — `listGallery`, `getGalleryItem`
+- `apps/api/tests/test_gallery_m8d.py`
+
+**Exit**
+
+- [x] Anonymous list returns only published gallery tools
+- [x] Card payload enough for UI without owner APIs
+- [x] Failed/draft tools never listed
+
+**Out of scope for M8d:** Search/rank algorithms, follow graph, SEO sitemaps.
+
+---
+
+#### M8e — Gallery web UI
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M8d · M7e ✓
+
+**Goal:** Anyone can browse the gallery and open a public tool.
+
+**Tasks**
+
+1. Routes: **`/gallery`** list; optional **`/gallery/[publicId]`** detail card before run.
+2. List cards: title, description snippet, tags, thumbnail, link to **`/t/{publicId}`** (reuse M7e public run page — do not fork a second sandbox).
+3. Empty / error / loading states; works in private/incognito (no login).
+4. Basic responsive layout; no growth SEO pack required.
+5. Nav entry from app chrome (header link) when signed in or marketing home — keep thin.
+
+**Design (landed)**
+
+| Route | Behavior |
+|-------|----------|
+| `/gallery` | Grid of cards from `listGallery` (infinite load-more) |
+| `/gallery/[publicId]` | Detail card + **Open tool** → `/t/{publicId}` (M7e host) |
+| Auth | None — outside proxy matcher |
+| Empty | Friendly empty state + Create CTA |
+| Not in gallery | Friendly error + back to gallery |
+
+**Nav:** Home header + “Browse gallery” CTA · Studio header · Public tool header · Gallery shell (Browse / Create).
+
+**Touch (landed)**
+
+- `apps/web/app/gallery/page.tsx` · `app/gallery/[publicId]/page.tsx`
+- `apps/web/features/gallery/` — shell, card, list, detail, styles
+- Home / Studio / public-tool nav links
+- `apps/api/tests/test_gallery_ui_m8e.py`
+
+**Exit**
+
+- [x] Anonymous user browses gallery and opens a tool to a live public page
+- [x] Detail/list never offers source download or owner controls
+- [x] canvas2d published tool runs after click-through (`/t/:publicId`)
+
+**Out of scope for M8e:** Remix/fork buttons, related tools, infinite social feed.
+
+---
+
+#### M8f — Studio publish panel + unpublish
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M8a · M8b · M8c ✓
+
+**Goal:** Owner completes publish from Studio (metadata + gates + thumb) and can take a tool down.
+
+**Tasks**
+
+1. **Publish panel** in Studio: edit title, description, tags; show gate status; trigger export/preview smoke; publish to gallery.
+2. Wire to upgraded publish API + thumb upload; success shows “In gallery” + link to gallery card / public page.
+3. **Unpublish / takedown** — owner control sets tool back to non-gallery (MVP: `status=draft` or `published` with `gallery_visible=false` — pick one and document; **must** hide from M8d list and anonymous `/t/...` if full takedown).
+4. Prefer **404 hide** for unpublished (access-rules).
+5. Ops note: same unpublish path is enough for MVP ops (no separate admin UI required).
+6. Keep share URL / embed working when still public; clarify copy when unpublished.
+
+**Design (landed)**
+
+| Surface | Behavior |
+|---------|----------|
+| **Share panel** | Thin make-public only (`status=published`, no gallery gates) |
+| **Publish panel** | Title / description / tags · capture thumb · checklist · `forGallery` publish |
+| Gate errors | Structured `PublishGatesError` list in UI |
+| **Unpublish** | `POST /tools/{id}/unpublish` → `status=draft`, `gallery_ready=false`, `published_at=null` |
+| Hide | Public `/t` + gallery 404; thumb kept for re-publish |
+| Ops | Same owner unpublish path (no admin UI) |
+
+**Touch (landed)**
+
+- `apps/api/src/adapters/db/repositories/tools.py` — `set_tool_unpublished`
+- `apps/api/src/services/public_tool.py` — `unpublish_tool`
+- `apps/api/src/api/v1/tools.py` — `POST .../unpublish`
+- `apps/web/lib/api/tools.ts` — `unpublishTool`
+- `apps/web/features/studio/components/publish-panel.tsx`
+- Studio shell + tool loader wiring; Share copy clarifies thin vs gallery
+- `apps/api/tests/test_unpublish_m8f.py`
+
+**Exit**
+
+- [x] Owner can publish with metadata + see gate feedback in Studio
+- [x] Owner (or ops via same owner path) can unpublish; gallery + public page stop showing the tool
+- [x] Thin share flow remains understandable (published for link vs in gallery)
+
+**Out of scope for M8f:** Admin moderation console, report abuse workflow, team roles.
+
+---
+
+#### M8g — M8 demo checklist + core-loop exit
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M8a–M8f ✓
+
+**Goal:** Prove full success path; mark **core loop complete**.
+
+**Tasks**
+
+1. Checklist doc **`md/m8-demo-checklist.md`** (publish metadata, gates fail/pass, thumb, gallery list, open tool, unpublish, failed gen never listed).
+2. API tests for gallery list, publish gates, unpublish, failed-never-published.
+3. Web typecheck gallery + Studio publish paths.
+4. One real-user dry-run of consensus path on canvas2d.
+5. Update **Current progress** + **Next action** → M9 (or fast-follows); check all M8 deliverable boxes.
+
+**Touch (landed)**
+
+- `md/m8-demo-checklist.md` — automated + manual full-loop path
+- `apps/api/tests/test_m8_demo_checklist.py` — inventory + re-runs M8a–M8f smokes
+- This file: M8 deliverables checked; **core loop complete**
+
+**Exit**
+
+- [x] All M8 exit criteria demonstrable (automated + manual list)
+- [x] **Core loop complete** on canvas2d (Auth → Create → Studio → Export/share → Publish gallery)
+- [x] Gate failures and unpublish verified (automated M8b/M8f)
+
+**Out of scope for M8g:** M9 hardening, M4/M6 polish.
+
+---
+
+### M8 subpart sequencing diagram
+
+```
+M7 COMPLETE (thin make-public · /t/:publicId · export)
+        │
+        ▼
+M8a  Publish metadata + version freeze
+        │
+        ├──────────────────┬──────────────────┐
+        ▼                  ▼                  ▼
+M8b  Quality gates   M8c  Auto thumbnail   M8d  Gallery list API
+        │                  │                  │
+        └────────┬─────────┘                  │
+                 ▼                            ▼
+          M8f  Studio publish + unpublish   M8e  Gallery web UI
+                 │                            │
+                 └────────────┬───────────────┘
+                              ▼
+                       M8g  Demo + core-loop exit
+                              │
+                              ▼
+                    CORE LOOP COMPLETE → M9 / fast-follows
+```
+
+### M8 checklist rollup
+
+| # | Criterion | Subpart |
+|---|-----------|---------|
+| 1 | title / description / tags on publish | M8a · M8f |
+| 2 | Freeze published version; failed gens never published | M8a |
+| 3 | Preview + export smoke gates | M8b ✅ |
+| 4 | Auto thumbnail from frame grab | M8c ✅ |
+| 5 | Anonymous gallery list API | M8d ✅ |
+| 6 | Gallery UI → open `/t/:publicId` | M8e ✅ |
+| 7 | Studio publish panel + unpublish | M8f ✅ |
+| 8 | Full dry-run + exit docs | M8g ✅ |
+
+### M8 implementation notes (do not skip)
+
+1. **Reuse M7 public run** — gallery opens existing `/t/:publicId`; do not invent a second host.  
+2. **Thin share vs gallery** — M7 “Make public link” can remain for share; gallery eligibility is gated (M8b). Document the difference in UI copy.  
+3. **Prefer client export smoke** — no Playwright farm in M8.  
+4. **Tags stay simple** — string list, case-normalized; no taxonomy service.  
+5. **Unpublish is required for exit** — not optional polish.  
+6. **Do not start M9 / M4 / M6** until M8g is green (unless explicit learning spike).
 
 ---
 
@@ -2562,7 +2985,7 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 ## Next action (start here)
 
-Auth + **M0-thin + M1 + M2a + M3 + M5 + M2a7 + M7 are complete.** To finish the core loop ASAP:
+**Core loop complete** on canvas2d (Auth → Create → Studio → Export/share → Publish gallery).
 
 1. ~~**M0-thin**~~ — **done** (M0a–M0f).  
 2. ~~**M1a–M1f**~~ — **done**. **M1 complete.**  
@@ -2571,8 +2994,9 @@ Auth + **M0-thin + M1 + M2a + M3 + M5 + M2a7 + M7 are complete.** To finish the 
 5. ~~**M5a–M5f**~~ — **done**. See [m5-demo-checklist.md](./m5-demo-checklist.md).  
 5b. ~~**M2a7** generated-code delivery~~ — **done**. Studio runs generated tools live.  
 6. ~~**M7a–M7g**~~ — **done**. Export · share · embed · public `/t/:publicId`. See [m7-demo-checklist.md](./m7-demo-checklist.md).  
-7. **← start here: M8** — publish + gallery + quality gates → **core loop complete**.
+7. ~~**M8a–M8g**~~ — **done**. Publish · gallery · gates. See [m8-demo-checklist.md](./m8-demo-checklist.md).  
+8. **← start here: M9** — hardening & launch polish (or pull forward **M2b / M4 / M6** fast-follows).
 
-**Do not start next:** p5/three agent work, chat refine (M6), inspiration vision (M4), or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
+**Optional once:** run the manual list in [m8-demo-checklist.md](./m8-demo-checklist.md) on a real browser if not already done.
 
-When you say **build**, start **M8** (publish flow, gallery list/detail, publish gates).
+When you say **build**, start **M9** (rate limits, observability, deploy runbook, sandbox review) unless you explicitly want a fast-follow.

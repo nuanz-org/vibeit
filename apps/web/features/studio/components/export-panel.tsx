@@ -36,10 +36,18 @@ export type ExportPanelProps = {
   lastSequenceAt?: string | null;
   lastSequenceFrameCount?: number | null;
   lastSequenceAsFallback?: boolean | null;
+  /**
+   * M8c — when set, show "Save gallery thumbnail" (generated tools only).
+   * Returns uploaded asset id after capture+upload.
+   */
+  onSaveGalleryThumbnail?: () => void | Promise<void>;
+  /** Last saved gallery thumbnail URL for preview. */
+  lastThumbnailUrl?: string | null;
+  lastThumbnailAt?: string | null;
 };
 
 /**
- * M7a–M7c — product export chrome (PNG, WebM, PNG-sequence fallback).
+ * M7a–M7c export + M8c gallery thumbnail capture.
  */
 export function ExportPanel({
   mounted,
@@ -59,6 +67,9 @@ export function ExportPanel({
   lastSequenceAt,
   lastSequenceFrameCount,
   lastSequenceAsFallback,
+  onSaveGalleryThumbnail,
+  lastThumbnailUrl,
+  lastThumbnailAt,
 }: ExportPanelProps) {
   const disabled = !mounted || busy;
   const recording = recordSecondsLeft != null;
@@ -130,7 +141,41 @@ export function ExportPanel({
             ? `Frames… ${sequenceProgress.done}/${sequenceProgress.total}`
             : "Download PNG sequence"}
         </button>
+        {onSaveGalleryThumbnail ? (
+          <button
+            type="button"
+            className={styles.button}
+            disabled={disabled}
+            onClick={() => void onSaveGalleryThumbnail()}
+            title={
+              mounted
+                ? "Capture frame and upload as gallery thumbnail (kind=thumb)"
+                : "Wait until the tool is live"
+            }
+          >
+            Save gallery thumbnail
+          </button>
+        ) : null}
       </div>
+      {lastThumbnailAt || lastThumbnailUrl ? (
+        <div className={styles.thumbPreview}>
+          {lastThumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={lastThumbnailUrl}
+              alt="Gallery thumbnail"
+              className={styles.thumbImage}
+              crossOrigin="anonymous"
+            />
+          ) : null}
+          <p className={styles.muted}>
+            Gallery thumbnail
+            {lastThumbnailAt
+              ? ` · ${new Date(lastThumbnailAt).toLocaleTimeString()}`
+              : null}
+          </p>
+        </div>
+      ) : null}
       {!mediaRecorderSupported ? (
         <p className={styles.muted}>
           MediaRecorder not detected — video button uses PNG-sequence fallback.

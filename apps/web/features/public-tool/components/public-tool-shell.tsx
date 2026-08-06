@@ -62,6 +62,9 @@ export function PublicToolShell({
           </span>
         </div>
         <div className={styles.headerMeta}>
+          <Link href="/gallery" className={styles.linkMuted}>
+            Gallery
+          </Link>
           <Link href="/create" className={styles.linkMuted}>
             Create your own
           </Link>

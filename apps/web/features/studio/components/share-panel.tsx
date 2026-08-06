@@ -121,12 +121,14 @@ export function SharePanel({
       {!isPublished ? (
         <p className={styles.muted}>
           Link is <strong>private</strong> until you make it public. Anonymous
-          visitors get 404 until then.
+          visitors get 404 until then. This is a thin share link only — use{" "}
+          <strong>Publish to gallery</strong> below to list it publicly.
         </p>
       ) : (
         <p className={styles.muted}>
           Public link is live — anyone with the URL can open the interactive
-          tool (no Studio controls).
+          tool (no Studio controls). Gallery listing is separate (see Publish
+          below).
         </p>
       )}
 

@@ -105,6 +105,12 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
       versionAssetSlots={versionAssetSlots}
       initialDraftParams={asParams(tool.draftParams)}
       initialDraftAssets={asDraftAssets(tool.draftAssets)}
+      initialTitle={tool.title}
+      initialDescription={tool.description}
+      initialTags={tool.tags}
+      initialGalleryReady={tool.galleryReady}
+      initialThumbnailAssetId={tool.thumbnailAssetId}
+      initialThumbnailUrl={tool.thumbnailUrl}
     />
   );
 }

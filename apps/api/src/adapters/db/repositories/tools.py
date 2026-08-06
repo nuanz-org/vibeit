@@ -13,7 +13,8 @@ from adapters.db.types import ToolRow, ToolVersionRow
 _TOOL_COLUMNS = """
     id, public_id, owner_user_id, status, title, description,
     thumbnail_asset_id, published_at, created_at, updated_at,
-    draft_params, draft_assets
+    draft_params, draft_assets, tags, published_version_id,
+    gallery_ready, export_smoke_at
 """
 
 _VERSION_COLUMNS = """
@@ -90,24 +91,145 @@ class ToolsRepository:
             )
         return tool_from_record(row) if row else None
 
+    async def get_gallery_tool_by_public_id(
+        self,
+        public_id: str,
+    ) -> ToolRow | None:
+        """M8d: gallery detail — published AND gallery_ready."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                SELECT {_TOOL_COLUMNS}
+                FROM tools
+                WHERE public_id = $1
+                  AND status = 'published'
+                  AND gallery_ready = true
+                """,
+                public_id,
+            )
+        return tool_from_record(row) if row else None
+
+    async def list_gallery_tools(
+        self,
+        *,
+        limit: int = 24,
+        offset: int = 0,
+    ) -> list[ToolRow]:
+        """
+        M8d: anonymous gallery browse.
+        Only status=published AND gallery_ready (gates passed).
+        Newest first; fetch limit+1 so callers can detect has_more.
+        """
+        lim = max(1, min(int(limit), 100))
+        off = max(0, int(offset))
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"""
+                SELECT {_TOOL_COLUMNS}
+                FROM tools
+                WHERE status = 'published' AND gallery_ready = true
+                ORDER BY published_at DESC NULLS LAST, public_id ASC
+                LIMIT $1 OFFSET $2
+                """,
+                lim + 1,
+                off,
+            )
+        return [tool_from_record(r) for r in rows]
+
     async def set_tool_published(
+        self,
+        tool_id: UUID | str,
+        *,
+        owner_user_id: str,
+        published_version_id: UUID | str | None = None,
+        title: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        gallery_ready: bool | None = None,
+        mark_export_smoke: bool = False,
+        thumbnail_asset_id: UUID | str | None = None,
+        set_thumbnail: bool = False,
+    ) -> ToolRow | None:
+        """
+        Owner sets status=published (+ optional M8a/M8b/M8c metadata).
+        Idempotent if already published (keeps first published_at).
+        Returns None if tool missing or not owned by owner_user_id.
+
+        - title/description/tags: only applied when not None (tags replaces full list).
+        - published_version_id: when set, pins public run to that version.
+        - gallery_ready: when True/False, set eligibility for gallery list (M8b).
+        - mark_export_smoke: when True, set export_smoke_at = now().
+        - set_thumbnail + thumbnail_asset_id: set tools.thumbnail_asset_id (M8c).
+          Pass set_thumbnail=True with thumbnail_asset_id=None to clear.
+        """
+        sets: list[str] = [
+            "status = 'published'",
+            "published_at = COALESCE(published_at, now())",
+            "updated_at = now()",
+        ]
+        args: list[Any] = [str(tool_id), owner_user_id]
+        # $1 = tool_id, $2 = owner
+
+        if published_version_id is not None:
+            args.append(str(published_version_id))
+            sets.append(f"published_version_id = ${len(args)}::uuid")
+
+        if title is not None:
+            args.append(title)
+            sets.append(f"title = ${len(args)}")
+
+        if description is not None:
+            args.append(description)
+            sets.append(f"description = ${len(args)}")
+
+        if tags is not None:
+            args.append(tags)
+            sets.append(f"tags = ${len(args)}::text[]")
+
+        if gallery_ready is not None:
+            args.append(gallery_ready)
+            sets.append(f"gallery_ready = ${len(args)}")
+
+        if mark_export_smoke:
+            sets.append("export_smoke_at = now()")
+
+        if set_thumbnail:
+            if thumbnail_asset_id is None:
+                sets.append("thumbnail_asset_id = NULL")
+            else:
+                args.append(str(thumbnail_asset_id))
+                sets.append(f"thumbnail_asset_id = ${len(args)}::uuid")
+
+        sql = f"""
+            UPDATE tools
+            SET {", ".join(sets)}
+            WHERE id = $1::uuid AND owner_user_id = $2
+            RETURNING {_TOOL_COLUMNS}
+        """
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(sql, *args)
+        return tool_from_record(row) if row else None
+
+    async def set_tool_unpublished(
         self,
         tool_id: UUID | str,
         *,
         owner_user_id: str,
     ) -> ToolRow | None:
         """
-        M7d thin make-public: owner sets status=published.
-        Idempotent if already published (keeps first published_at).
-        Returns None if tool missing or not owned by owner_user_id.
+        M8f full takedown: status=draft, gallery_ready=false, clear published_at.
+        Keeps thumbnail_asset_id + published_version_id for easy re-publish.
+        Hides from /t/:publicId and gallery list (404 hide).
+        Returns None if missing or not owned.
         """
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 UPDATE tools
                 SET
-                    status = 'published',
-                    published_at = COALESCE(published_at, now()),
+                    status = 'draft',
+                    gallery_ready = false,
+                    published_at = NULL,
                     updated_at = now()
                 WHERE id = $1::uuid AND owner_user_id = $2
                 RETURNING {_TOOL_COLUMNS}
@@ -116,6 +238,21 @@ class ToolsRepository:
                 owner_user_id,
             )
         return tool_from_record(row) if row else None
+
+    async def get_tool_version_for_public(
+        self,
+        tool_id: UUID | str,
+        *,
+        published_version_id: UUID | str | None = None,
+    ) -> ToolVersionRow | None:
+        """
+        M8a: prefer frozen published_version_id; fall back to latest.
+        """
+        if published_version_id is not None:
+            version = await self.get_tool_version(published_version_id)
+            if version is not None and str(version.tool_id) == str(tool_id):
+                return version
+        return await self.get_latest_tool_version(tool_id)
 
     async def create_tool_version(
         self,

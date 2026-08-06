@@ -21,7 +21,17 @@ export default function Home() {
             "1px solid color-mix(in srgb, var(--foreground) 10%, transparent)",
         }}
       >
-        <span style={{ fontWeight: 700, letterSpacing: "-0.03em" }}>Vibeit</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <span style={{ fontWeight: 700, letterSpacing: "-0.03em" }}>
+            Vibeit
+          </span>
+          <Link
+            href="/gallery"
+            style={{ fontSize: "0.9rem", fontWeight: 500, opacity: 0.75 }}
+          >
+            Gallery
+          </Link>
+        </div>
         <UserMenu />
       </header>
 
@@ -79,6 +89,19 @@ export default function Home() {
             }}
           >
             Start creating
+          </Link>
+          <Link
+            href="/gallery"
+            style={{
+              padding: "0.7rem 1.15rem",
+              borderRadius: 10,
+              border:
+                "1px solid color-mix(in srgb, var(--foreground) 18%, transparent)",
+              fontWeight: 500,
+              fontSize: "0.95rem",
+            }}
+          >
+            Browse gallery
           </Link>
           <Link
             href="/login"

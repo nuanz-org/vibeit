@@ -354,6 +354,70 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
   }, [applyCaptureResult]);
 
   /**
+   * M8c — captureFrame → PNG blob → upload kind=thumb for gallery.
+   * Also updates the in-Studio capture preview. Returns uploaded asset id + url.
+   */
+  const captureAndUploadThumbnail = useCallback(
+    async (toolId: string) => {
+      setError(null);
+      setBusy(true);
+      try {
+        const host = hostRef.current;
+        if (!host?.isReady()) {
+          throw new Error("Host not ready — wait until the tool is live");
+        }
+        if (!toolId.trim()) {
+          throw new Error("Tool id required to save a gallery thumbnail");
+        }
+        await waitForPaintFrames();
+        const frame = await host.captureFrame();
+        assertCaptureFrameLooksLikePng(frame);
+        const blob = captureFrameWireToBlob(frame);
+        if (blob.size < 32) {
+          throw new Error("PNG blob empty — possible tainted canvas");
+        }
+
+        const at = new Date();
+        const real = gateRealAssetCapture(assetsRef.current);
+        applyCaptureResult(blob, {
+          usedRealAsset: real.ok,
+          realAssetSlotId: real.ok ? real.slotId : undefined,
+          realAssetUrl: real.ok ? real.url : undefined,
+          at: at.toISOString(),
+          byteLength: frame.byteLength ?? blob.size,
+        });
+        if (real.ok) {
+          setM2aCaptureProved(true);
+        }
+
+        const { uploadThumbnailBlob } = await import("../lib/upload-thumbnail");
+        const asset = await uploadThumbnailBlob(blob, {
+          toolId: toolId.trim(),
+          filename: `thumb-${toolId.trim().slice(0, 8)}-${at.getTime()}.png`,
+        });
+        return {
+          assetId: asset.id,
+          url: asset.url,
+          byteLength: asset.byteSize,
+        };
+      } catch (err) {
+        const msg = formatErr(err);
+        if (/taint|security|cross-origin|CAPTURE_FAILED/i.test(msg)) {
+          setError(
+            `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
+          );
+        } else {
+          setError(msg);
+        }
+        throw err instanceof Error ? err : new Error(msg);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [applyCaptureResult],
+  );
+
+  /**
    * M7a — product PNG export: captureFrame → PNG blob → browser download.
    * Also updates the in-Studio capture preview (same path as capturePng).
    *
@@ -691,6 +755,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     resetParams,
     setAsset,
     capturePng,
+    captureAndUploadThumbnail,
     downloadPng,
     downloadVideo,
     downloadPngSequence,

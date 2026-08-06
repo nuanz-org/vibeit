@@ -16,6 +16,7 @@ import { AssetSlotsPanel } from "./asset-slots-panel";
 import { EmptySlotsBanner } from "./empty-slots-banner";
 import { ExportPanel } from "./export-panel";
 import { ParamControls } from "./param-controls";
+import { PublishPanel } from "./publish-panel";
 import { SharePanel } from "./share-panel";
 import { ViewSourcePanel } from "./view-source-panel";
 
@@ -43,6 +44,13 @@ export type StudioShellProps = {
   initialDraftParams?: ToolParams | null;
   /** M5d: tools.draft_assets from GET. */
   initialDraftAssets?: Record<string, string | null> | null;
+  /** M8f: publish panel seed from GET tool */
+  initialTitle?: string | null;
+  initialDescription?: string | null;
+  initialTags?: string[] | null;
+  initialGalleryReady?: boolean | null;
+  initialThumbnailAssetId?: string | null;
+  initialThumbnailUrl?: string | null;
 };
 
 function saveStatusLabel(
@@ -80,12 +88,35 @@ export function StudioShell({
   versionAssetSlots,
   initialDraftParams,
   initialDraftAssets,
+  initialTitle,
+  initialDescription,
+  initialTags,
+  initialGalleryReady,
+  initialThumbnailAssetId,
+  initialThumbnailUrl,
 }: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
   /** M7f: update badge after thin publish without full reload. */
   const [liveToolStatus, setLiveToolStatus] = useState<string | null>(
     toolStatus ?? null,
+  );
+  const [liveGalleryReady, setLiveGalleryReady] = useState(
+    Boolean(initialGalleryReady),
+  );
+  /** M8c: last gallery thumbnail capture (asset id for publish later). */
+  const [galleryThumb, setGalleryThumb] = useState<{
+    assetId: string;
+    url: string;
+    at: string;
+  } | null>(
+    initialThumbnailAssetId && initialThumbnailUrl
+      ? {
+          assetId: initialThumbnailAssetId,
+          url: initialThumbnailUrl,
+          at: new Date().toISOString(),
+        }
+      : null,
   );
   const assetsSectionRef = useRef<HTMLElement | null>(null);
 
@@ -129,6 +160,26 @@ export function StudioShell({
     setLiveToolStatus(next);
   }, []);
 
+  const onToolUpdated = useCallback(
+    (tool: {
+      status: string;
+      galleryReady?: boolean;
+      thumbnailAssetId?: string | null;
+      thumbnailUrl?: string | null;
+    }) => {
+      setLiveToolStatus(tool.status);
+      setLiveGalleryReady(Boolean(tool.galleryReady));
+      if (tool.thumbnailAssetId && tool.thumbnailUrl) {
+        setGalleryThumb({
+          assetId: tool.thumbnailAssetId,
+          url: tool.thumbnailUrl,
+          at: new Date().toISOString(),
+        });
+      }
+    },
+    [],
+  );
+
   const statusClass =
     runtime.status === "ready" || runtime.mounted
       ? styles.badgeReady
@@ -154,6 +205,17 @@ export function StudioShell({
             Vibeit
           </Link>
           <span className={styles.badge}>Studio</span>
+          <Link
+            href="/gallery"
+            style={{
+              fontSize: "0.8rem",
+              opacity: 0.65,
+              textDecoration: "underline",
+              color: "inherit",
+            }}
+          >
+            Gallery
+          </Link>
           {displayStatus ? (
             <span
               className={`${styles.badge} ${
@@ -338,14 +400,62 @@ export function StudioShell({
             lastSequenceAsFallback={
               runtime.lastSequenceExport?.usedAsVideoFallback
             }
+            onSaveGalleryThumbnail={
+              persistToolId
+                ? async () => {
+                    const result =
+                      await runtime.captureAndUploadThumbnail(persistToolId);
+                    setGalleryThumb({
+                      assetId: result.assetId,
+                      url: result.url,
+                      at: new Date().toISOString(),
+                    });
+                  }
+                : undefined
+            }
+            lastThumbnailUrl={galleryThumb?.url}
+            lastThumbnailAt={galleryThumb?.at}
           />
 
           <SharePanel
             publicId={publicId}
             toolId={persistToolId}
             status={displayStatus}
-            title={fixture.label}
+            title={initialTitle ?? fixture.label}
             onPublished={onPublished}
+            fixtureMode={isFixtureOnly}
+          />
+
+          <PublishPanel
+            toolId={persistToolId}
+            publicId={publicId}
+            status={displayStatus}
+            galleryReady={liveGalleryReady}
+            initialTitle={initialTitle ?? fixture.label}
+            initialDescription={initialDescription ?? fixture.description}
+            initialTags={initialTags}
+            thumbnailAssetId={galleryThumb?.assetId ?? initialThumbnailAssetId}
+            thumbnailUrl={galleryThumb?.url ?? initialThumbnailUrl}
+            mounted={runtime.mounted}
+            busy={runtime.busy}
+            exportSmokeProved={Boolean(
+              runtime.lastCapture?.byteLength || galleryThumb,
+            )}
+            onCaptureThumbnail={
+              persistToolId
+                ? async () => {
+                    const result =
+                      await runtime.captureAndUploadThumbnail(persistToolId);
+                    setGalleryThumb({
+                      assetId: result.assetId,
+                      url: result.url,
+                      at: new Date().toISOString(),
+                    });
+                    return { assetId: result.assetId, url: result.url };
+                  }
+                : undefined
+            }
+            onToolUpdated={onToolUpdated}
             fixtureMode={isFixtureOnly}
           />
 

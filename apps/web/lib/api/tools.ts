@@ -19,6 +19,16 @@ export type ToolResponse = {
   status: string;
   title?: string | null;
   description?: string | null;
+  /** M8a gallery tags */
+  tags?: string[];
+  publishedAt?: string | null;
+  publishedVersionId?: string | null;
+  /** M8b: eligible for gallery list after gates */
+  galleryReady?: boolean;
+  exportSmokeAt?: string | null;
+  /** M8c gallery thumbnail */
+  thumbnailAssetId?: string | null;
+  thumbnailUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   latestVersion?: ToolVersionResponse | null;
@@ -26,6 +36,27 @@ export type ToolResponse = {
   draftParams?: Record<string, unknown>;
   /** M5c: slotId → http URL | null */
   draftAssets?: Record<string, string | null>;
+};
+
+/** Structured gate failure from gallery publish 422. */
+export type PublishGateFailure = {
+  code: string;
+  message: string;
+};
+
+/** M8a/M8b optional body for POST /publish (thin share = {}). */
+export type ToolPublishRequest = {
+  title?: string | null;
+  description?: string | null;
+  tags?: string[];
+  /** When true, snap draftParams into a new version's defaultParams. */
+  freezeDraft?: boolean;
+  /** When true, run quality gates and set galleryReady. */
+  forGallery?: boolean;
+  /** Client proved captureFrame / PNG export (required when forGallery). */
+  exportSmokeOk?: boolean;
+  /** M8c: asset id from upload kind=thumb (required for gallery). */
+  thumbnailAssetId?: string | null;
 };
 
 export type ToolDraftPatch = {
@@ -48,7 +79,12 @@ export type PublicToolResponse = {
   status: string;
   title?: string | null;
   description?: string | null;
+  tags?: string[];
   publishedAt?: string | null;
+  publishedVersionId?: string | null;
+  thumbnailAssetId?: string | null;
+  /** CORS-safe raw URL for gallery cards / <img> */
+  thumbnailUrl?: string | null;
   version: PublicToolVersionResponse;
 };
 
@@ -132,13 +168,87 @@ export async function getPublicTool(
   return res.json() as Promise<PublicToolResponse>;
 }
 
+export class PublishGatesError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly gates: PublishGateFailure[];
+
+  constructor(
+    message: string,
+    opts: { status: number; code: string; gates: PublishGateFailure[] },
+  ) {
+    super(message);
+    this.name = "PublishGatesError";
+    this.status = opts.status;
+    this.code = opts.code;
+    this.gates = opts.gates;
+  }
+}
+
 /**
- * POST /api/v1/tools/{toolId}/publish — owner thin make-public (M7d).
- * Sets status=published so the public GET works. No gallery (M8).
+ * POST /api/v1/tools/{toolId}/publish — owner publish (M7 thin + M8a/M8b).
+ * Sets status=published, freezes publishedVersionId.
+ * forGallery + exportSmokeOk → galleryReady after gates; else thin share only.
  */
-export async function publishTool(toolId: string): Promise<ToolResponse> {
+export async function publishTool(
+  toolId: string,
+  body?: ToolPublishRequest,
+): Promise<ToolResponse> {
   const res = await fetch(
     `${getApiBaseUrl()}/api/v1/tools/${encodeURIComponent(toolId)}/publish`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    if (res.status === 422 && text) {
+      try {
+        const parsed = JSON.parse(text) as {
+          detail?: {
+            code?: string;
+            message?: string;
+            gates?: PublishGateFailure[];
+          };
+        };
+        const detail = parsed.detail;
+        if (
+          detail &&
+          detail.code === "GATES_FAILED" &&
+          Array.isArray(detail.gates)
+        ) {
+          throw new PublishGatesError(
+            detail.message || "Publish gates failed",
+            {
+              status: res.status,
+              code: detail.code,
+              gates: detail.gates,
+            },
+          );
+        }
+      } catch (e) {
+        if (e instanceof PublishGatesError) throw e;
+      }
+    }
+    throw new Error(
+      `Publish tool failed (${res.status})${text ? `: ${text}` : ""}`,
+    );
+  }
+
+  return res.json() as Promise<ToolResponse>;
+}
+
+/**
+ * POST /api/v1/tools/{toolId}/unpublish — owner full takedown (M8f).
+ * status=draft, galleryReady=false; public /t and gallery hide the tool.
+ */
+export async function unpublishTool(toolId: string): Promise<ToolResponse> {
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/tools/${encodeURIComponent(toolId)}/unpublish`,
     {
       method: "POST",
       credentials: "include",
@@ -148,7 +258,7 @@ export async function publishTool(toolId: string): Promise<ToolResponse> {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `Publish tool failed (${res.status})${text ? `: ${text}` : ""}`,
+      `Unpublish tool failed (${res.status})${text ? `: ${text}` : ""}`,
     );
   }
 

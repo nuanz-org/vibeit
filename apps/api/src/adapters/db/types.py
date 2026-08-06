@@ -23,6 +23,12 @@ class ToolRow:
     # M5c: live Studio personalization (overlay; not a new version per save)
     draft_params: Any
     draft_assets: Any
+    # M8a: gallery tags + frozen public version
+    tags: list[str]
+    published_version_id: UUID | None
+    # M8b: gallery eligibility after quality gates
+    gallery_ready: bool
+    export_smoke_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)

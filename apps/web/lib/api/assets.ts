@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from "./config";
 
-export type AssetKind = "inspiration" | "studio";
+/** Upload kinds accepted by POST /api/v1/assets (M1e + M8c thumb). */
+export type AssetKind = "inspiration" | "studio" | "thumb" | "export";
 
 export type AssetResponse = {
   id: string;
@@ -13,7 +14,7 @@ export type AssetResponse = {
 };
 
 export type UploadAssetOptions = {
-  /** M5d: attach studio upload to a tool when supported. */
+  /** M5d/M8c: attach studio or thumb upload to a tool. */
   toolId?: string;
 };
 

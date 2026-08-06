@@ -30,6 +30,30 @@ def tool_from_record(row: Any) -> ToolRow:
         draft_assets = _json_value(row["draft_assets"])
     except (KeyError, TypeError):
         draft_assets = {}
+    # tags / published_version_id added in 004_publish_metadata
+    try:
+        raw_tags = row["tags"]
+    except (KeyError, TypeError):
+        raw_tags = None
+    if raw_tags is None:
+        tags: list[str] = []
+    elif isinstance(raw_tags, list):
+        tags = [str(t) for t in raw_tags]
+    else:
+        tags = list(raw_tags) if raw_tags else []
+    try:
+        published_version_id = row["published_version_id"]
+    except (KeyError, TypeError):
+        published_version_id = None
+    # gallery_ready / export_smoke_at added in 005_publish_gates
+    try:
+        gallery_ready = bool(row["gallery_ready"])
+    except (KeyError, TypeError):
+        gallery_ready = False
+    try:
+        export_smoke_at = row["export_smoke_at"]
+    except (KeyError, TypeError):
+        export_smoke_at = None
     return ToolRow(
         id=row["id"],
         public_id=str(row["public_id"]),
@@ -43,6 +67,10 @@ def tool_from_record(row: Any) -> ToolRow:
         updated_at=row["updated_at"],
         draft_params=draft_params if isinstance(draft_params, dict) else {},
         draft_assets=draft_assets if isinstance(draft_assets, dict) else {},
+        tags=tags,
+        published_version_id=published_version_id,
+        gallery_ready=gallery_ready,
+        export_smoke_at=export_smoke_at,
     )
 
 

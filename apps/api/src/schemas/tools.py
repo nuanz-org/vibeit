@@ -34,6 +34,19 @@ class ToolResponse(CamelModel):
     status: str
     title: str | None = None
     description: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    published_at: str | None = Field(default=None, alias="publishedAt")
+    published_version_id: str | None = Field(
+        default=None,
+        alias="publishedVersionId",
+    )
+    gallery_ready: bool = Field(default=False, alias="galleryReady")
+    export_smoke_at: str | None = Field(default=None, alias="exportSmokeAt")
+    thumbnail_asset_id: str | None = Field(
+        default=None,
+        alias="thumbnailAssetId",
+    )
+    thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
     latest_version: ToolVersionResponse | None = Field(
@@ -49,6 +62,41 @@ class ToolResponse(CamelModel):
         default_factory=dict,
         alias="draftAssets",
     )
+
+
+class ToolPublishRequest(CamelModel):
+    """
+    M8a/M8b optional publish body. All fields optional for thin M7 share compat.
+    Empty body / omitted fields keep existing tool metadata.
+
+    forGallery=true runs quality gates and sets galleryReady on success.
+    exportSmokeOk must be true for gallery (client proved captureFrame/PNG).
+    """
+
+    title: str | None = None
+    description: str | None = None
+    tags: list[str] | None = None
+    freeze_draft: bool = Field(default=False, alias="freezeDraft")
+    for_gallery: bool = Field(default=False, alias="forGallery")
+    export_smoke_ok: bool = Field(default=False, alias="exportSmokeOk")
+    # M8c: asset id from POST /assets kind=thumb (omit to keep existing)
+    thumbnail_asset_id: str | None = Field(
+        default=None,
+        alias="thumbnailAssetId",
+    )
+
+
+class PublishGateFailureItem(CamelModel):
+    code: str
+    message: str
+
+
+class PublishGatesFailedDetail(CamelModel):
+    """Structured 422 detail when gallery gates fail."""
+
+    message: str = "Publish gates failed"
+    code: str = "GATES_FAILED"
+    gates: list[PublishGateFailureItem] = Field(default_factory=list)
 
 
 class ToolDraftPatchRequest(CamelModel):
@@ -96,5 +144,15 @@ class PublicToolResponse(CamelModel):
     status: str
     title: str | None = None
     description: str | None = None
+    tags: list[str] = Field(default_factory=list)
     published_at: str | None = Field(default=None, alias="publishedAt")
+    published_version_id: str | None = Field(
+        default=None,
+        alias="publishedVersionId",
+    )
+    thumbnail_asset_id: str | None = Field(
+        default=None,
+        alias="thumbnailAssetId",
+    )
+    thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
     version: PublicToolVersionResponse

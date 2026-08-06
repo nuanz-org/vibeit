@@ -11,6 +11,10 @@ Auth identity: Better Auth `"user".id` (text). No product users table.
 | generation_jobs   | Create job status machine (M0e)              |
 | assets            | Inspiration / studio (export/thumb later)    |
 | schema_migrations | Applied SQL migration versions               |
+
+M8a columns on tools: tags (text[]), published_version_id (FK → tool_versions).
+M8b columns on tools: gallery_ready (bool), export_smoke_at (timestamptz).
+  published ≠ gallery: status=published enables /t share; gallery_ready after gates.
 """
 
 from __future__ import annotations

@@ -7,7 +7,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 AssetKind = Literal["inspiration", "studio", "export", "thumb"]
-UploadAssetKind = Literal["inspiration", "studio"]
+# M8c: thumb upload for gallery frame grab
+UploadAssetKind = Literal["inspiration", "studio", "thumb", "export"]
 
 
 class CamelModel(BaseModel):

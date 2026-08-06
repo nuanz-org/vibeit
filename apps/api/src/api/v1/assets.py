@@ -63,14 +63,17 @@ def _to_response(row, *, api_public_base_url: str) -> AssetResponse:
     "",
     response_model=AssetResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Upload inspiration or studio image",
+    summary="Upload image (inspiration | studio | thumb | export)",
 )
 async def post_asset(
-    kind: str = Form(..., description="inspiration | studio"),
+    kind: str = Form(
+        ...,
+        description="inspiration | studio | thumb (M8c gallery) | export",
+    ),
     file: UploadFile = File(...),
     toolId: str | None = Form(
         default=None,
-        description="Optional tool to attach (M5d studio uploads)",
+        description="Optional tool to attach (M5d studio / M8c thumb)",
     ),
     user: AuthUser = Depends(get_current_user),
     assets: AssetsRepository = Depends(get_assets_repo),
