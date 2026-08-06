@@ -78,16 +78,25 @@ export interface ToolIntrospection {
 // Parent → iframe commands
 // ---------------------------------------------------------------------------
 
+/** Max compiled ESM length accepted on mount (enforced in adapter, not guard). */
+export const RUNTIME_MODULE_SOURCE_MAX_CHARS = 500_000;
+
 export interface MountCommand extends RuntimeMessageBase {
   type: "mount";
   requestId: RuntimeRequestId;
   /**
-   * Optional fixture / version id for logging and multi-tool hosts later.
-   * M2a host may ignore and always load the reference tool.
+   * Optional fixture / version id for logging and fixture registry lookup.
+   * When omitted (and no moduleSource), frame uses defaultToolId.
    */
   toolId?: string;
   /** Target runtime; ASAP path is always canvas2d. */
   target?: "canvas2d" | "p5" | "three";
+  /**
+   * Precompiled browser ESM module source (export createTool).
+   * Frame loads via blob URL + dynamic import (requires ESM frame bundle).
+   * Size limit enforced in adapter as LOAD_FAILED (not in guards — silent drop).
+   */
+  moduleSource?: string;
   params: ToolParams;
   assets?: ToolAssets;
 }
@@ -209,6 +218,8 @@ export function createMountCommand(
     requestId: input.requestId ?? createRuntimeRequestId(),
     toolId: input.toolId,
     target: input.target ?? "canvas2d",
+    // Explicit field list — do not drop moduleSource (would silently no-op delivery)
+    moduleSource: input.moduleSource,
     params: input.params,
     assets: input.assets,
   };

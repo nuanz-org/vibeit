@@ -47,7 +47,8 @@ export const RUNTIME_COMMAND_TIMEOUT_MS = 15_000;
  */
 export const RUNTIME_FRAME_CSP = [
   "default-src 'none'",
-  "script-src 'self'",
+  // blob: — dynamic import of compiled tool modules (frame-local blob URLs)
+  "script-src 'self' blob:",
   "style-src 'unsafe-inline'",
   // User/storage asset URLs (local + https) + data/blob fixtures
   "img-src http: https: blob: data:",

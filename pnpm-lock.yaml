@@ -71,6 +71,9 @@ importers:
       better-auth:
         specifier: ^1.6.25
         version: 1.6.25(next@16.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(pg@8.22.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      esbuild:
+        specifier: ^0.25.12
+        version: 0.25.12
       next:
         specifier: 16.2.0
         version: 16.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -102,9 +105,6 @@ importers:
       '@types/react-dom':
         specifier: 19.2.2
         version: 19.2.2(@types/react@19.2.2)
-      esbuild:
-        specifier: ^0.25.12
-        version: 0.25.12
       eslint:
         specifier: ^9.39.1
         version: 9.39.1

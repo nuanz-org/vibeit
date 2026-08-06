@@ -15,10 +15,8 @@ import {
 import { StudioShell } from "./studio-shell";
 
 /**
- * Load a generated tool from the API and open Studio shell (M3g + M5d + M5e).
- * Control prefers version paramSchema / assetSlots from API.
- * Preview may still use the canvas2d fixture harness (M3g limitation);
- * personalization + source + draft persist satisfy the M5 product bar.
+ * Load a generated tool from the API and open Studio shell.
+ * Compiles version.code and mounts it in the sandbox (not the social-frame fixture).
  */
 export function StudioToolLoader({ toolId }: { toolId: string }) {
   const q = useQuery({
@@ -54,14 +52,38 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
 
   const tool = q.data;
   const version = tool.latestVersion;
+  const versionCode = version?.code ?? null;
+
+  // Empty-code early return lives in the loader — never mount StudioShell with
+  // a generated tool and null sourceCode (that would fall back to default fixture).
+  if (!versionCode?.trim()) {
+    return (
+      <main style={{ padding: "2rem", maxWidth: 520, margin: "0 auto" }}>
+        <h1 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          No runnable source
+        </h1>
+        <p style={{ opacity: 0.7, marginBottom: "1rem", lineHeight: 1.5 }}>
+          This tool has no version code yet, so the live preview cannot start.
+          Create a new tool from vision, or open a completed generation.
+        </p>
+        <p style={{ opacity: 0.6, marginBottom: "1rem", fontSize: "0.9rem" }}>
+          {tool.title || tool.id}
+        </p>
+        <Link href="/create" style={{ textDecoration: "underline" }}>
+          Back to Create
+        </Link>
+      </main>
+    );
+  }
+
   const versionParamSchema = parseVersionParamSchema(version?.paramSchema);
   const versionAssetSlots = parseVersionAssetSlots(version?.assetSlots);
   const versionDefaultParams = asParams(version?.defaultParams);
 
   const meta: StudioFixtureMeta = {
     toolId: tool.id,
-    // Preview host still mounts canvas2d fixture harness for generated tools.
-    runtimeToolId: "fixture:social-frame",
+    // Logging / mount toolId — not a fixture id; moduleSource carries the code.
+    runtimeToolId: tool.id,
     label: tool.title || "Generated tool",
     description:
       tool.description ||
@@ -72,7 +94,7 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
   return (
     <StudioShell
       fixture={meta}
-      sourceCode={version?.code ?? null}
+      sourceCode={versionCode}
       versionId={version?.id ?? null}
       publicId={tool.publicId}
       toolStatus={tool.status}
@@ -83,7 +105,6 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
       versionAssetSlots={versionAssetSlots}
       initialDraftParams={asParams(tool.draftParams)}
       initialDraftAssets={asDraftAssets(tool.draftAssets)}
-      previewHarnessNote
     />
   );
 }

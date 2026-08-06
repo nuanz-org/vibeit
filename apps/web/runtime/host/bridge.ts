@@ -199,6 +199,8 @@ export class RuntimeHostBridge {
     options?: {
       toolId?: string;
       target?: "canvas2d" | "p5" | "three";
+      /** Precompiled ESM module source for generated tools. */
+      moduleSource?: string;
       timeoutMs?: number;
     },
   ): Promise<ToolIntrospection> {
@@ -208,6 +210,7 @@ export class RuntimeHostBridge {
         assets,
         toolId: options?.toolId,
         target: options?.target ?? "canvas2d",
+        moduleSource: options?.moduleSource,
       }),
       options?.timeoutMs,
     );

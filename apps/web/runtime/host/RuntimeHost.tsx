@@ -50,6 +50,8 @@ export type RuntimeHostHandle = {
     options?: {
       toolId?: string;
       target?: "canvas2d" | "p5" | "three";
+      /** Precompiled ESM module source for generated tools. */
+      moduleSource?: string;
       timeoutMs?: number;
     },
   ) => Promise<ToolIntrospection>;

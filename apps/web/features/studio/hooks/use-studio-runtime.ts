@@ -10,6 +10,10 @@ import type {
 } from "@repo/contracts";
 
 import {
+  RuntimeCompileError,
+  compileToolSource,
+} from "@/lib/api/runtime-compile";
+import {
   RuntimeBridgeError,
   assertCaptureFrameLooksLikePng,
   captureFrameWireToBlob,
@@ -27,8 +31,24 @@ function formatErr(err: unknown): string {
   if (err instanceof RuntimeBridgeError) {
     return `${err.code}: ${err.message}`;
   }
+  if (err instanceof RuntimeCompileError) {
+    const detail =
+      err.details && err.details.length > 0
+        ? ` (${err.details.join("; ")})`
+        : "";
+    return `Compile failed: ${err.message}${detail}`;
+  }
   if (err instanceof Error) return err.message;
   return "Unknown runtime error";
+}
+
+/** Simple stable hash for compile cache keys. */
+function hashSource(source: string): string {
+  let h = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    h = (Math.imul(31, h) + source.charCodeAt(i)) | 0;
+  }
+  return `${source.length}:${h}`;
 }
 
 export type LastCaptureInfo = {
@@ -48,6 +68,12 @@ export type LastCaptureInfo = {
 export type UseStudioRuntimeOptions = {
   runtimeToolId: string;
   /**
+   * Generated TypeScript from tool_versions.code.
+   * When non-empty, compile + mount as moduleSource (no fixture silent fallback).
+   * Read on READY via hydrateOptsRef so new versions recompile without stale closure.
+   */
+  sourceCode?: string | null;
+  /**
    * M5d: generation baseline from tool_versions.default_params.
    * Merged over host introspection defaults for Reset + hydrate base.
    */
@@ -58,7 +84,6 @@ export type UseStudioRuntimeOptions = {
   initialDraftAssets?: Record<string, string | null> | null;
   /**
    * M5e: prefer API paramSchema for Control UI when non-empty.
-   * Host still drives live canvas preview (may use fixture harness).
    */
   versionParamSchema?: ParamSchema | null;
   /** M5e: prefer API assetSlots for Assets panel when non-empty. */
@@ -76,6 +101,9 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
   const hydrateOptsRef = useRef(options);
   hydrateOptsRef.current = options;
 
+  /** Cache compiled ESM by source hash (avoid recompile on remount). */
+  const compileCacheRef = useRef<{ key: string; js: string } | null>(null);
+
   const [status, setStatus] = useState<RuntimeHostStatus>("idle");
   const [ready, setReady] = useState<ReadyMessage | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -92,88 +120,104 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
   const [busy, setBusy] = useState(false);
   const [m2aCaptureProved, setM2aCaptureProved] = useState(false);
 
+  const resolveModuleSource = useCallback(async (): Promise<
+    string | undefined
+  > => {
+    const source = hydrateOptsRef.current.sourceCode?.trim() ?? "";
+    if (!source) return undefined;
+
+    const key = hashSource(source);
+    const cached = compileCacheRef.current;
+    if (cached && cached.key === key) {
+      return cached.js;
+    }
+
+    const js = await compileToolSource(source);
+    compileCacheRef.current = { key, js };
+    return js;
+  }, []);
+
   const onStatusChange = useCallback((s: RuntimeHostStatus) => {
     setStatus(s);
   }, []);
 
-  const onReady = useCallback(
-    async (message: ReadyMessage) => {
-      setReady(message);
-      setError(null);
-      setBusy(true);
-      setHydrated(false);
-      try {
-        const host = hostRef.current;
-        if (!host) return;
-        const intro = await host.mountTool(
-          {},
-          undefined,
-          { toolId: options.runtimeToolId, target: "canvas2d" },
-        );
+  const onReady = useCallback(async (message: ReadyMessage) => {
+    setReady(message);
+    setError(null);
+    setBusy(true);
+    setHydrated(false);
+    try {
+      const host = hostRef.current;
+      if (!host) return;
 
-        const opts = hydrateOptsRef.current;
-        // M5e: prefer version metadata for Control labels when present
-        const controlSchema =
-          opts.versionParamSchema && opts.versionParamSchema.length > 0
-            ? opts.versionParamSchema
-            : intro.paramSchema;
-        const controlSlots =
-          opts.versionAssetSlots && opts.versionAssetSlots.length > 0
-            ? opts.versionAssetSlots
-            : intro.assetSlots;
-        setParamSchema(controlSchema);
-        setAssetSlots(controlSlots);
+      const opts = hydrateOptsRef.current;
+      // sourceCode via ref — onReady deps only need stable runtimeToolId identity
+      // but regenerated versions update hydrateOptsRef every render.
+      const moduleSource = await resolveModuleSource();
 
-        const versionDefaults = opts.versionDefaultParams ?? {};
-        // Baseline for Reset: host defaults overlaid by version defaults
-        const baseline: ToolParams = {
-          ...intro.defaultParams,
-          ...versionDefaults,
-        };
-        // Ensure every schema field has a baseline value when possible
-        for (const field of controlSchema) {
-          if (
-            field.kind !== "assetRef" &&
-            baseline[field.name] === undefined &&
-            "default" in field
-          ) {
-            baseline[field.name] = field.default;
-          }
+      const intro = await host.mountTool({}, undefined, {
+        toolId: opts.runtimeToolId,
+        target: "canvas2d",
+        moduleSource,
+      });
+
+      // M5e: prefer version metadata for Control labels when present
+      const controlSchema =
+        opts.versionParamSchema && opts.versionParamSchema.length > 0
+          ? opts.versionParamSchema
+          : intro.paramSchema;
+      const controlSlots =
+        opts.versionAssetSlots && opts.versionAssetSlots.length > 0
+          ? opts.versionAssetSlots
+          : intro.assetSlots;
+      setParamSchema(controlSchema);
+      setAssetSlots(controlSlots);
+
+      const versionDefaults = opts.versionDefaultParams ?? {};
+      const baseline: ToolParams = {
+        ...intro.defaultParams,
+        ...versionDefaults,
+      };
+      for (const field of controlSchema) {
+        if (
+          field.kind !== "assetRef" &&
+          baseline[field.name] === undefined &&
+          "default" in field
+        ) {
+          baseline[field.name] = field.default;
         }
-        setDefaultParams(baseline);
-
-        const draftParams = opts.initialDraftParams ?? {};
-        const hydratedParams: ToolParams = {
-          ...baseline,
-          ...draftParams,
-        };
-        setParams(hydratedParams);
-
-        const hydratedAssets = draftAssetsToToolAssets(
-          opts.initialDraftAssets ?? undefined,
-        );
-        assetsRef.current = hydratedAssets;
-        setAssetsState(hydratedAssets);
-
-        // Apply overlay without remount when different from empty mount
-        await host.updateParams(hydratedParams);
-        if (Object.keys(hydratedAssets).length > 0) {
-          await host.setAssets(hydratedAssets);
-          await waitForPaintFrames();
-        }
-
-        setMounted(true);
-        setHydrated(true);
-      } catch (err) {
-        setError(formatErr(err));
-        setMounted(false);
-        setHydrated(false);
-      } finally {
-        setBusy(false);
       }
-    },
-    [options.runtimeToolId],
-  );
+      setDefaultParams(baseline);
+
+      const draftParams = opts.initialDraftParams ?? {};
+      const hydratedParams: ToolParams = {
+        ...baseline,
+        ...draftParams,
+      };
+      setParams(hydratedParams);
+
+      const hydratedAssets = draftAssetsToToolAssets(
+        opts.initialDraftAssets ?? undefined,
+      );
+      assetsRef.current = hydratedAssets;
+      setAssetsState(hydratedAssets);
+
+      await host.updateParams(hydratedParams);
+      if (Object.keys(hydratedAssets).length > 0) {
+        await host.setAssets(hydratedAssets);
+        await waitForPaintFrames();
+      }
+
+      setMounted(true);
+      setHydrated(true);
+    } catch (err) {
+      setError(formatErr(err));
+      setMounted(false);
+      setHydrated(false);
+    } finally {
+      setBusy(false);
+    }
+  }, [resolveModuleSource]);
 
   const onBridgeError = useCallback((err: RuntimeBridgeError) => {
     setError(`${err.code}: ${err.message}`);
@@ -225,8 +269,6 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
 
     setBusy(true);
     try {
-      // Adapter awaits harness setAssets → images loaded before return (M2a6).
-      // Slot-level update (null clears that slot in the harness).
       await host.setAssets({ [slotId]: url });
       await waitForPaintFrames();
     } catch (err) {
@@ -248,7 +290,6 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     [],
   );
 
-  /** Capture current frame (works with or without real assets). */
   const capturePng = useCallback(async () => {
     setError(null);
     setBusy(true);
@@ -277,10 +318,6 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     }
   }, [applyCaptureResult]);
 
-  /**
-   * M2a6 exit path: require real uploaded asset URL, settle paint, capture PNG.
-   * Fails clearly if only data:/blob: fixtures are bound.
-   */
   const proveRealAssetCapture = useCallback(async () => {
     setError(null);
     const gate = gateRealAssetCapture(assetsRef.current);
@@ -294,7 +331,6 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       const host = hostRef.current;
       if (!host) throw new Error("Host not ready");
 
-      // Re-apply real asset so load is fresh and await completes.
       await host.setAssets({ [gate.slotId]: gate.url });
       await waitForPaintFrames();
 
@@ -315,7 +351,6 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       setM2aCaptureProved(true);
     } catch (err) {
       const msg = formatErr(err);
-      // Surface tainted-canvas style failures clearly
       if (/taint|security|cross-origin|CAPTURE_FAILED/i.test(msg)) {
         setError(
           `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
@@ -335,11 +370,13 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     try {
       const host = hostRef.current;
       if (!host) return;
-      const intro = await host.mountTool(params, assetsRef.current, {
-        toolId: options.runtimeToolId,
-        target: "canvas2d",
-      });
       const opts = hydrateOptsRef.current;
+      const moduleSource = await resolveModuleSource();
+      const intro = await host.mountTool(params, assetsRef.current, {
+        toolId: opts.runtimeToolId,
+        target: "canvas2d",
+        moduleSource,
+      });
       const controlSchema =
         opts.versionParamSchema && opts.versionParamSchema.length > 0
           ? opts.versionParamSchema
@@ -363,7 +400,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     } finally {
       setBusy(false);
     }
-  }, [options.runtimeToolId, params]);
+  }, [params, resolveModuleSource]);
 
   return {
     hostRef,

@@ -1,32 +1,48 @@
 /**
- * In-frame canvas2d VibeTool adapter (M2a3).
+ * In-frame canvas2d VibeTool adapter (M2a3 + dynamic module load).
  *
  * Maps host postMessage commands → VibeTool lifecycle.
  * Runs only inside the sandboxed runtime frame (bundled entry).
+ *
+ * Factory resolution (mount):
+ * 1. moduleSource → blob import → activeFactory
+ * 2. toolId in fixtureRegistry
+ * 3. defaultToolId (covers bare mountTool(params) e.g. /dev/runtime-host)
+ *
+ * Introspection probes mounted tool → activeFactory → default fixture
+ * (never a stale fixed constructor factory after a generated load).
  */
 
 import type { CreateVibeTool, ToolAssets, ToolParams, VibeTool } from "@repo/contracts";
 
 import {
   RUNTIME_ERROR_CODES,
+  RUNTIME_MODULE_SOURCE_MAX_CHARS,
   blobToCaptureFrameWire,
   createErrorMessage,
   createReadyMessage,
   createResultMessage,
   isHostToFrameMessage,
   type HostToFrameMessage,
+  type MountCommand,
   type RuntimeResultPayload,
   type ToolIntrospection,
 } from "../../contract";
+import { loadCreateToolFromModuleSource } from "../../frame/load-module";
 
 export type Canvas2dFrameAdapterOptions = {
   /** Mount root element inside the frame document. */
   root: HTMLElement;
   /**
-   * Factory for the tool currently loaded in this frame.
-   * M2a3/M2a4: fixed reference tool. M3+: host may later select among fixtures.
+   * Fixture factories keyed by toolId (e.g. fixture:social-frame).
+   * Used when mount has no moduleSource.
    */
-  createTool: CreateVibeTool;
+  fixtureRegistry: Record<string, CreateVibeTool>;
+  /**
+   * Used when mount has neither moduleSource nor a resolvable toolId
+   * (dev host bare mountTool(params)).
+   */
+  defaultToolId: string;
   /** postMessage targetOrigin for parent replies (opaque frame → `"*"`). */
   parentOrigin?: string;
   /** Target id advertised in READY (always canvas2d for this adapter). */
@@ -47,15 +63,19 @@ function errorMessage(err: unknown): string {
 }
 
 /**
- * Frame-side controller: READY pulse + command handling for one canvas2d tool factory.
+ * Frame-side controller: READY pulse + command handling for canvas2d tools.
  */
 export class Canvas2dFrameAdapter {
   private readonly root: HTMLElement;
-  private readonly createTool: CreateVibeTool;
+  private readonly fixtureRegistry: Record<string, CreateVibeTool>;
+  private readonly defaultToolId: string;
   private readonly parentOrigin: string;
   private readonly target: "canvas2d";
 
   private tool: VibeTool | null = null;
+  /** Last successfully resolved factory (module or fixture). */
+  private activeFactory: CreateVibeTool | null = null;
+  private revokeModule: (() => void) | null = null;
   private hostSeen = false;
   private readyTimer: ReturnType<typeof setInterval> | null = null;
   private started = false;
@@ -63,7 +83,8 @@ export class Canvas2dFrameAdapter {
 
   constructor(options: Canvas2dFrameAdapterOptions) {
     this.root = options.root;
-    this.createTool = options.createTool;
+    this.fixtureRegistry = options.fixtureRegistry;
+    this.defaultToolId = options.defaultToolId;
     this.parentOrigin = options.parentOrigin ?? "*";
     this.target = options.target ?? "canvas2d";
     this.onWindowMessage = (event) => {
@@ -85,6 +106,14 @@ export class Canvas2dFrameAdapter {
     window.removeEventListener("message", this.onWindowMessage);
     this.clearReadyPulse();
     void this.safeDisposeTool();
+    this.revokeLoadedModule();
+  }
+
+  private revokeLoadedModule(): void {
+    if (this.revokeModule) {
+      this.revokeModule();
+      this.revokeModule = null;
+    }
   }
 
   private postToParent(message: unknown): void {
@@ -171,7 +200,7 @@ export class Canvas2dFrameAdapter {
   ): Promise<RuntimeResultPayload> {
     switch (command.type) {
       case "mount":
-        return this.mount(command.params, command.assets);
+        return this.mount(command);
       case "update":
         return this.update(command.params);
       case "setAssets":
@@ -193,15 +222,68 @@ export class Canvas2dFrameAdapter {
     }
   }
 
-  private async mount(
-    params: ToolParams,
-    assets?: ToolAssets,
-  ): Promise<RuntimeResultPayload> {
+  /**
+   * Resolve createTool: moduleSource → toolId registry → defaultToolId.
+   */
+  private async resolveCreateTool(
+    command: MountCommand,
+  ): Promise<CreateVibeTool> {
+    if (command.moduleSource !== undefined) {
+      if (command.moduleSource.length > RUNTIME_MODULE_SOURCE_MAX_CHARS) {
+        throw new FrameAdapterError(
+          RUNTIME_ERROR_CODES.LOAD_FAILED,
+          `moduleSource exceeds ${RUNTIME_MODULE_SOURCE_MAX_CHARS} character limit`,
+        );
+      }
+      try {
+        this.revokeLoadedModule();
+        const loaded = await loadCreateToolFromModuleSource(
+          command.moduleSource,
+        );
+        this.revokeModule = loaded.revoke;
+        return loaded.createTool;
+      } catch (err) {
+        throw new FrameAdapterError(
+          RUNTIME_ERROR_CODES.LOAD_FAILED,
+          `module load failed: ${errorMessage(err)}`,
+          { cause: err },
+        );
+      }
+    }
+
+    const toolId = command.toolId ?? this.defaultToolId;
+    const factory = this.fixtureRegistry[toolId];
+    if (!factory) {
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.LOAD_FAILED,
+        `Unknown toolId ${JSON.stringify(toolId)} and no moduleSource`,
+      );
+    }
+    // Fixture path: drop any previous generated module blob
+    this.revokeLoadedModule();
+    return factory;
+  }
+
+  private async mount(command: MountCommand): Promise<RuntimeResultPayload> {
     await this.safeDisposeTool();
+
+    let createTool: CreateVibeTool;
+    try {
+      createTool = await this.resolveCreateTool(command);
+    } catch (err) {
+      if (err instanceof FrameAdapterError) throw err;
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.LOAD_FAILED,
+        `resolve createTool failed: ${errorMessage(err)}`,
+        { cause: err },
+      );
+    }
+
+    this.activeFactory = createTool;
 
     let tool: VibeTool;
     try {
-      tool = this.createTool();
+      tool = createTool();
     } catch (err) {
       throw new FrameAdapterError(
         RUNTIME_ERROR_CODES.LOAD_FAILED,
@@ -214,8 +296,8 @@ export class Canvas2dFrameAdapter {
     try {
       await Promise.resolve(
         tool.mount(this.root, {
-          params,
-          assets,
+          params: command.params,
+          assets: command.assets,
         }),
       );
     } catch (err) {
@@ -299,11 +381,23 @@ export class Canvas2dFrameAdapter {
     return { kind: "dispose" };
   }
 
+  private resolveProbeFactory(): CreateVibeTool {
+    if (this.activeFactory) return this.activeFactory;
+    const fallback = this.fixtureRegistry[this.defaultToolId];
+    if (!fallback) {
+      throw new FrameAdapterError(
+        RUNTIME_ERROR_CODES.NOT_MOUNTED,
+        "No tool mounted and no default fixture factory",
+      );
+    }
+    return fallback;
+  }
+
   private getIntrospection(): RuntimeResultPayload {
     const tool = this.tool;
     if (!tool) {
-      // Allow introspection from a fresh factory without leaving a mounted instance.
-      const probe = this.createTool();
+      const probeFactory = this.resolveProbeFactory();
+      const probe = probeFactory();
       try {
         return {
           kind: "introspection",

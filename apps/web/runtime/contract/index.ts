@@ -24,6 +24,7 @@ export {
   FRAME_TO_HOST_TYPES,
   HOST_TO_FRAME_TYPES,
   RUNTIME_CHANNEL,
+  RUNTIME_MODULE_SOURCE_MAX_CHARS,
   RUNTIME_PROTOCOL_VERSION,
   createCaptureFrameCommand,
   createDisposeCommand,

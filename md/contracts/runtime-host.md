@@ -179,7 +179,7 @@ Sandbox attrs + CSP are enforced by the **M2a2 host** (see below), not by TypeSc
 | Control | Value | Why |
 |---------|--------|-----|
 | `sandbox` | `allow-scripts` only | Scripts run; **no** `allow-same-origin` → opaque origin; no parent cookie/DOM access |
-| Frame CSP | `default-src 'none'`; `script-src 'self'`; `connect-src 'none'`; `img-src http: https: blob: data:` | Block fetch/XHR; allow asset images for canvas |
+| Frame CSP | `default-src 'none'`; `script-src 'self' blob:`; `connect-src 'none'`; `img-src http: https: blob: data:` | Block fetch/XHR; allow asset images + blob tool modules |
 | Inbound origin | `"null"` | Opaque sandboxed frames report this origin string |
 | Parent → frame `targetOrigin` | `"*"` | Required when frame origin is opaque |
 | Ready race | Frame **pulses** `ready` every 250ms until first host command | Parent often attaches listener on `load` after first ready |
@@ -189,23 +189,26 @@ Sandbox attrs + CSP are enforced by the **M2a2 host** (see below), not by TypeSc
 | Phase | Behavior |
 |-------|----------|
 | Load | Bundle starts `Canvas2dFrameAdapter`; pulses `ready` (`target: canvas2d`, capture/setAssets true) |
-| `mount` | `createTool()` → `VibeTool.mount` → returns introspection |
+| `mount` | Resolve factory: `moduleSource` (blob import) → `toolId` fixture registry → `defaultToolId`; then `createTool()` → mount → introspection |
 | `update` / `setAssets` | Forward to mounted tool |
 | `captureFrame` | `captureFrame()` → `CaptureFrameWire` (base64 PNG) |
-| `dispose` | Tool dispose + clear `#root` |
-| `getIntrospection` | From mounted tool, or probe factory if not mounted |
+| `dispose` | Tool dispose + clear `#root` (blob URL revoked on remount/stop) |
+| `getIntrospection` | Mounted tool → else last `activeFactory` → else default fixture (never a stale fixed factory after generated load) |
 | Errors | `NOT_MOUNTED` / `TOOL_THROW` / `CAPTURE_FAILED` / `LOAD_FAILED` |
+
+**Delivery:** Parent compiles version TS via `POST /api/runtime/compile` (session required) and passes ESM on mount as `moduleSource`. Frame must be built **`--format=esm`** and loaded with `<script type="module">` so dynamic `import(blobUrl)` is native. CSP: `script-src 'self' blob:`.
 
 ### Build the frame bundle
 
 ```bash
 pnpm --filter web build:runtime-frame
 # also runs automatically before web dev / build
+# MUST remain --format=esm (IIFE rewrites dynamic import(blobUrl))
 ```
 
-Source: `runtime/frame/entry.ts` → `createSocialFrameTool` (`runtime/fixtures/social-frame`).  
+Source: `runtime/frame/entry.ts` → fixture registry + `defaultToolId: fixture:social-frame`.  
 Schema: `@repo/contracts/examples/canvas2d-social-frame` (M0b).  
-Output: `public/runtime-frame.js` (do not hand-edit).
+Output: `public/runtime-frame.js` (ESM; do not hand-edit; commit after rebuild).
 
 ### Parent API sketch
 

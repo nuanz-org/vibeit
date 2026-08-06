@@ -87,8 +87,19 @@ export function isHostToFrameMessage(
   }
 
   switch (type) {
-    case "mount":
-      return isRecord(value.params);
+    case "mount": {
+      // Type-check only. Size limits belong in the adapter (LOAD_FAILED);
+      // rejecting here would make the frame silently ignore the message.
+      if (!isRecord(value.params)) return false;
+      if (value.moduleSource !== undefined) {
+        if (typeof value.moduleSource !== "string") return false;
+        if (value.moduleSource.length === 0) return false;
+      }
+      if (value.toolId !== undefined && typeof value.toolId !== "string") {
+        return false;
+      }
+      return true;
+    }
     case "update":
       return isRecord(value.params);
     case "setAssets":

@@ -41,11 +41,6 @@ export type StudioShellProps = {
   initialDraftParams?: ToolParams | null;
   /** M5d: tools.draft_assets from GET. */
   initialDraftAssets?: Record<string, string | null> | null;
-  /**
-   * M5e: show note that live preview may use the canvas2d fixture harness
-   * while Control / source come from the generated version.
-   */
-  previewHarnessNote?: boolean;
 };
 
 function saveStatusLabel(
@@ -83,7 +78,6 @@ export function StudioShell({
   versionAssetSlots,
   initialDraftParams,
   initialDraftAssets,
-  previewHarnessNote,
 }: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
@@ -91,6 +85,7 @@ export function StudioShell({
 
   const runtime = useStudioRuntime({
     runtimeToolId: fixture.runtimeToolId,
+    sourceCode,
     versionDefaultParams,
     versionParamSchema,
     versionAssetSlots,
@@ -224,13 +219,6 @@ export function StudioShell({
                 Fixture mode — personalization is local only (not persisted).
               </p>
             )}
-            {previewHarnessNote ? (
-              <p className={styles.harnessNote}>
-                Live preview uses the canvas2d host harness. Control schema and
-                View source come from your generated version — personalize
-                without regenerating.
-              </p>
-            ) : null}
           </div>
 
           <section className={styles.section}>

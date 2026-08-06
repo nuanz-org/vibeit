@@ -1,13 +1,14 @@
 /**
  * Runtime frame entry (bundled → public/runtime-frame.js).
  *
- * Build: `pnpm --filter web build:runtime-frame`
- * Loaded by public/runtime-frame.html inside the sandboxed iframe.
- *
- * M2a4: hand-authored social-frame reference tool + canvas2d adapter.
+ * Build: `pnpm --filter web build:runtime-frame` (ESM — required for import(blobUrl))
+ * Loaded by public/runtime-frame.html as <script type="module">.
  */
 
-import { createSocialFrameTool } from "../fixtures/social-frame";
+import {
+  SOCIAL_FRAME_TOOL_ID,
+  createSocialFrameTool,
+} from "../fixtures/social-frame";
 import { startCanvas2dFrameAdapter } from "../targets/canvas2d/adapter";
 
 function ensureRoot(): HTMLElement {
@@ -24,7 +25,10 @@ const root = ensureRoot();
 
 startCanvas2dFrameAdapter({
   root,
-  createTool: createSocialFrameTool,
+  fixtureRegistry: {
+    [SOCIAL_FRAME_TOOL_ID]: createSocialFrameTool,
+  },
+  defaultToolId: SOCIAL_FRAME_TOOL_ID,
   parentOrigin: "*",
   target: "canvas2d",
 });

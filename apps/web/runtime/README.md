@@ -13,6 +13,7 @@ Counterpart to the backend **agent** boundary (contract-driven, allowlisted).
 | **M2a4** reference tool | ✅ Done | `fixtures/social-frame` — full schema + motion + logo/bg slots |
 | **M2a5** Studio shell | ✅ Done | `/studio/social-frame` — Control + assets + preview |
 | **M2a6** real-asset capture | ✅ Done | Studio prove + API CORS checklist; M2a exit met |
+| **Dynamic tool delivery** | ✅ Done | esbuild compile + mount `moduleSource` (ESM frame + blob import) |
 | **M2b** p5/three | Deferred | Fast-follow |
 
 ## Import (parent / Studio)
@@ -39,12 +40,18 @@ pnpm --filter web build:runtime-frame
 
 | Source | Output |
 |--------|--------|
-| `runtime/frame/entry.ts` | loads social-frame fixture |
+| `runtime/frame/entry.ts` | fixture registry + defaultToolId |
 | `runtime/fixtures/social-frame/` | hand-authored reference tool (M2a4) |
-| `runtime/targets/canvas2d/adapter.ts` | VibeTool bridge |
-| → `public/runtime-frame.js` | generated IIFE |
+| `runtime/targets/canvas2d/adapter.ts` | VibeTool bridge + moduleSource load |
+| → `public/runtime-frame.js` | generated **ESM** (must stay ESM so `import(blobUrl)` works) |
 
-`dev` / `build` scripts run the frame bundle step first.
+HTML loads with `<script type="module" src="/runtime-frame.js">`. CSP allows `script-src 'self' blob:`.
+
+`dev` / `build` scripts run the frame bundle step first. Commit regenerated `public/runtime-frame.js` with frame source changes.
+
+### Generated tools
+
+Studio: `POST /api/runtime/compile` (auth) → esbuild TS→ESM → `mountTool({ moduleSource })` → frame blob `import()`. Fixtures omit `moduleSource` and use `toolId` / `defaultToolId`.
 
 ## Smoke
 
