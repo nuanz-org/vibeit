@@ -5,9 +5,9 @@
  * Not a runnable tool — runtime harness lands in M0c / M2a.
  */
 
-import type { AssetSlots, ParamSchema } from "../param-schema.js";
-import type { TargetId } from "../targets.js";
-import type { ToolParams } from "../vibe-tool.js";
+import type { AssetSlots, ParamSchema } from "../param-schema";
+import type { TargetId } from "../targets";
+import type { ToolParams } from "../vibe-tool";
 
 /** Asset slots: logo mark + optional full-bleed background. */
 export const socialFrameAssetSlots = [

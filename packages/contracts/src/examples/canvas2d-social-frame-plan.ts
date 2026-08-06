@@ -5,12 +5,12 @@
  * Not an LLM prompt — structured agent *output* shape only.
  */
 
-import { createAsapToolPlan } from "../plan.js";
-import type { AsapToolPlan, ToolPlan } from "../plan.js";
+import { createAsapToolPlan } from "../plan";
+import type { AsapToolPlan, ToolPlan } from "../plan";
 import {
   socialFrameAssetSlots,
   socialFrameParamSchema,
-} from "./canvas2d-social-frame.js";
+} from "./canvas2d-social-frame";
 
 /**
  * Hand-authored plan fixture that `satisfies ToolPlan` / `AsapToolPlan`.

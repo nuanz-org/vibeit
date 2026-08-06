@@ -11,8 +11,8 @@
  * Docs: md/contracts/plan-json.md
  */
 
-import type { AssetSlots, ParamSchema } from "./param-schema.js";
-import { ASAP_TARGET, type TargetId } from "./targets.js";
+import type { AssetSlots, ParamSchema } from "./param-schema";
+import { ASAP_TARGET, type TargetId } from "./targets";
 
 // ---------------------------------------------------------------------------
 // Aspect

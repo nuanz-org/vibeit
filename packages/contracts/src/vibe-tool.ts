@@ -9,7 +9,7 @@
  * Docs: md/contracts/vibe-tool.md
  */
 
-import type { AssetSlots, ParamSchema } from "./param-schema.js";
+import type { AssetSlots, ParamSchema } from "./param-schema";
 
 // ---------------------------------------------------------------------------
 // Params & assets (no brand kit at create/mount)

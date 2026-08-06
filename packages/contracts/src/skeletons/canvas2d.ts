@@ -14,14 +14,14 @@
  * - unrestricted fetch
  */
 
-import type { AssetSlots, ParamSchema } from "../param-schema.js";
+import type { AssetSlots, ParamSchema } from "../param-schema";
 import type {
   AssetRef,
   CreateVibeTool,
   ToolAssets,
   ToolParams,
   VibeTool,
-} from "../vibe-tool.js";
+} from "../vibe-tool";
 
 // ---------------------------------------------------------------------------
 // Harness options + draw context

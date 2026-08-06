@@ -9,7 +9,7 @@ import type {
   JobErrorBody,
   JobResultResponse,
   JobStatusResponse,
-} from "../job-api.js";
+} from "../job-api";
 
 export const exampleCreateJobRequest = {
   visionText:

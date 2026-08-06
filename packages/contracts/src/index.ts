@@ -14,7 +14,7 @@ export type {
   ToolAssets,
   ToolParams,
   VibeTool,
-} from "./vibe-tool.js";
+} from "./vibe-tool";
 
 // M0b — Param schema + asset slots
 export type {
@@ -33,7 +33,7 @@ export type {
   ParamSchema,
   ParamValueForKind,
   TextParamField,
-} from "./param-schema.js";
+} from "./param-schema";
 
 // M0c — Target registry
 export {
@@ -43,12 +43,12 @@ export {
   TARGET_REGISTRY,
   isAsapTarget,
   isTargetId,
-} from "./targets.js";
-export type { TargetDefinition, TargetId, TargetLaunchStatus } from "./targets.js";
+} from "./targets";
+export type { TargetDefinition, TargetId, TargetLaunchStatus } from "./targets";
 
 // M0d — Plan JSON
-export { createAsapToolPlan, isAsapToolPlan } from "./plan.js";
-export type { AsapToolPlan, PlanAspect, ToolPlan } from "./plan.js";
+export { createAsapToolPlan, isAsapToolPlan } from "./plan";
+export type { AsapToolPlan, PlanAspect, ToolPlan } from "./plan";
 
 // M0e — Job API shapes
 export {
@@ -60,7 +60,7 @@ export {
   JOB_STATUSES,
   isTerminalJobStatus,
   jobMayBecomePublished,
-} from "./job-api.js";
+} from "./job-api";
 export type {
   CreateJobRequest,
   CreateJobResponse,
@@ -73,7 +73,7 @@ export type {
   QuotaFields,
   RepairBudgetFields,
   TerminalJobStatus,
-} from "./job-api.js";
+} from "./job-api";
 
 // M0f — Capture + CORS provisional policy
 export {
@@ -91,9 +91,9 @@ export {
   isRealUploadedAssetUrl,
   isVibeitServedAssetUrl,
   provisionalCorsResponseHeaders,
-} from "./capture-cors.js";
+} from "./capture-cors";
 export type {
   AssetCrossOriginMode,
   CaptureFailureReason,
   StorageCorsPolicy,
-} from "./capture-cors.js";
+} from "./capture-cors";

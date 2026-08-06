@@ -12,7 +12,7 @@
  * Docs: md/contracts/job-api.md
  */
 
-import type { TargetId } from "./targets.js";
+import type { TargetId } from "./targets";
 
 // ---------------------------------------------------------------------------
 // Status machine
