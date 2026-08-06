@@ -2,12 +2,12 @@
 
 **Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
-**Date:** 2026-08-03 · **Revised:** 2026-08-05 (M0–M3 + **M5 complete** · next **M7**)  
+**Date:** 2026-08-03 · **Revised:** 2026-08-06 (M0–M3 + M5 + **M2a7** generated-code delivery · next **M7**)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  
 
 ---
 
-## Current progress (2026-08-05)
+## Current progress (2026-08-06)
 
 | Area | Status | Notes |
 |------|--------|-------|
@@ -24,8 +24,9 @@
 | **M0-thin contracts** | ✅ **Done** | M0a–M0f landed — see note below |
 | Runtime host / Studio / agent | ✅ **M2a + M3 done** | Host + Create agent |
 | **M5 Studio Control** | ✅ **Done** | M5a–M5f · [m5-demo-checklist.md](./m5-demo-checklist.md) |
+| **Generated tool live preview** | ✅ **Done** | **M2a7** — compile TS → ESM → `moduleSource` mount (not fixture-only) |
 
-**Auth → M5 complete.** Next critical path: **M7** export/share/embed → **M8** publish/gallery.
+**Auth → M5 + M2a7 complete.** Next critical path: **M7** export/share/embed → **M8** publish/gallery.
 
 ### M0-thin — done (polish later OK)
 
@@ -1042,6 +1043,47 @@ Open Studio on canvas2d fixture → tweak params → swap logo → live preview 
 
 **M2a exit met (2026-08-04).** Start **M3**.
 
+#### M2a7 — Generated-code delivery (Studio sandbox)
+
+**Status:** ✅ **Done** (2026-08-06) · **Depends on:** M2a ✓ · M3g ✓ (owner tool GET + `version.code`)
+
+**Goal:** Studio mounts **generated** `tool_versions.code` in the existing sandboxed iframe — not always `fixture:social-frame`. Sandbox / bridge / adapter lifecycle stay; only the **code delivery path** changes.
+
+**Why (product):** Until this lands, Create → Studio shows the social-frame fixture while View source shows real TS. Users never see their tool. M3g and M5e deliberately deferred this; M2a7 closes the gap.
+
+**What shipped**
+
+1. **Frame ESM** — `build:runtime-frame` `--format=esm` + `<script type="module">` so `import(blobUrl)` stays native (IIFE rewrote dynamic import).
+2. **CSP** — `script-src 'self' blob:` in `sandbox.ts` + `runtime-frame.html` (keep in sync).
+3. **Protocol** — optional `MountCommand.moduleSource` (precompiled ESM); `createMountCommand` must set the field explicitly (no silent drop).
+4. **Adapter** — resolve factory: `moduleSource` → `toolId` fixture registry → `defaultToolId` (`fixture:social-frame` for bare `/dev/runtime-host` mount); cache **`activeFactory`** so pre-mount / post-dispose introspection never lies with the fixture schema after a generated load; revoke blob on remount + `stop()`.
+5. **Compile** — `POST /api/runtime/compile` (auth via `getSession` → JSON 401, not redirect); allowlist (defense-in-depth) + esbuild full-bundle ESM; client `compileToolSource`.
+6. **Studio** — thread `sourceCode` through shell → `useStudioRuntime` (via `hydrateOptsRef`); compile on READY; **no silent fixture fallback** on compile failure; empty `version.code` blocked in `StudioToolLoader` before shell mount.
+
+**Touch (landed)**
+
+- `apps/web/runtime/compile/*` · `app/api/runtime/compile/route.ts` · `lib/api/runtime-compile.ts`
+- `runtime/frame/entry.ts` · `load-module.ts` · `targets/canvas2d/adapter.ts`
+- `runtime/contract/messages.ts` · `guards.ts` · host bridge / `RuntimeHost`
+- `features/studio/hooks/use-studio-runtime.ts` · `studio-tool-loader.tsx` · `studio-shell.tsx`
+- `public/runtime-frame.js` (regenerated ESM — commit with frame source changes)
+- Docs: [runtime-host.md](./contracts/runtime-host.md) · `apps/web/runtime/README.md`
+
+**Exit**
+
+- [x] Create → `/studio/{uuid}` runs **generated** canvas (not stock social-frame identity)
+- [x] `/studio/social-frame` still fixture-only (no compile required)
+- [x] `/dev/runtime-host` bare `mountTool(params)` uses `defaultToolId`
+- [x] Compile failure surfaces error — does **not** silently fall back to social-frame
+- [x] Empty version code → “No runnable source” (loader), not fixture mount
+- [x] Smoke: `pnpm --filter web smoke:compile` · frame rebuild ESM
+
+**Out of scope for M2a7:** Public `/t/:id` / embed delivery (M7 — reuse same path later); persist `code_js` on finalize; p5/three dynamic load.
+
+**Supersedes notes on:** M3g “dynamic iframe load later”; M5e harness-only preview limitation; M5 “fixture + API schema path covers personalization without live generated JS.”
+
+---
+
 ### M2b — p5 + three stubs *(fast-follow; not on ASAP critical path)*
 
 #### Deliverables
@@ -1434,7 +1476,9 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 7. Debug stubs demoted to collapsible upload section.
 8. **`GET /api/v1/tools/{id}`** owner read + Studio UUID loader.
 
-**Note:** Sandbox preview still mounts the canvas2d host harness (fixture runtime); **View source** shows the generated version code from the API. Dynamic iframe code load is a later upgrade.
+**Note (at M3g ship, 2026-08-04):** Sandbox preview still mounted the canvas2d host harness (fixture runtime); **View source** showed generated version code. Dynamic iframe code load was deferred.
+
+**Update (2026-08-06):** Dynamic load is **done** as **[M2a7](#m2a7--generated-code-delivery-studio-sandbox)** — Studio compiles `version.code` and mounts via `moduleSource`.
 
 **Touch (landed)**
 
@@ -1451,7 +1495,7 @@ Complete these **in order** unless noted as parallel. Each subpart has its own e
 - [x] Happy path does not require `/studio/social-frame` slug
 - [x] Create UI checkbox complete
 
-**Out of scope for M3g:** Inspiration screenshots (M4), chat refine (M6), full Control chrome (M5), dynamic iframe code injection.
+**Out of scope for M3g (at ship):** Inspiration screenshots (M4), chat refine (M6), full Control chrome (M5). ~~Dynamic iframe code injection~~ → **M2a7 ✅**.
 
 ---
 
@@ -1536,7 +1580,7 @@ M3h  Eval set + demo checklist  →  M3 COMPLETE → M5 / M7
 - **Poll first, SSE later** — M0e transport MVP is polling; do not block M3g on EventSource.
 - **In-process worker OK for early M3** — dedicated worker process when jobs are slow/flaky.
 - **Sandbox smoke is the quality gate** — static validate alone is not enough to mark ready.
-- **Studio must load generated code** — fixture-only Studio is insufficient for M3 demo; plan thin owner tool GET in M3g if missing.
+- **Studio must load generated code** — owner tool GET landed in M3g; **live generated preview** landed in **M2a7** (do not re-hardcode `fixture:social-frame` for generated tools).
 - **Secrets:** `OPENROUTER_API_KEY` only in API env; never `NEXT_PUBLIC_*`.
 - **Do not open M4/M6** while M3 is red unless for learning spikes.
 
@@ -1610,7 +1654,7 @@ Open generated tool → change colors → upload logo into slot → motion updat
 ### Out of scope
 
 - Chat refine, fonts/full brand kit object, Brand Kit save-for-reuse
-- Dynamic sandbox eval of arbitrary generated JS (optional polish if already easy; **not** required for M5 exit if fixture + API schema path covers personalization)
+- ~~Dynamic sandbox eval of generated JS~~ — **not** required for original M5 exit; **shipped later as M2a7** (generated tools now run live in the sandbox)
 - Export / share / publish (M7 / M8)
 
 ### Depends on
@@ -1632,7 +1676,9 @@ Open generated tool → change colors → upload logo into slot → motion updat
 | Param / asset contracts | `@repo/contracts` · `md/contracts/param-schema.md` |
 | Upload API | `POST /api/v1/assets` (M1e) |
 
-**Gaps to close in M5:** presets, empty-slot loud UX, **persist** params/assets so reload survives, hydrate Studio from saved draft state, owner-only source discipline, demo checklist. Generated tools still mount the canvas2d harness for preview (M3g note) — personalization is driven by schema + host updates; full generated-code iframe injection is **not** the M5 exit gate.
+**Gaps to close in M5 (at plan time):** presets, empty-slot loud UX, **persist** params/assets so reload survives, hydrate Studio from saved draft state, owner-only source discipline, demo checklist. Generated tools then still mounted the canvas2d harness for preview (M3g note) — personalization via schema + host updates; full generated-code iframe injection was **not** the M5 exit gate.
+
+**Update (2026-08-06):** Live generated preview is **[M2a7](#m2a7--generated-code-delivery-studio-sandbox)** ✅ — Studio compiles and mounts `version.code` via `moduleSource`.
 
 ---
 
@@ -1844,14 +1890,14 @@ Codegen baseline stays on `tool_versions.default_params` / `asset_slots`.
 3. **View source** shows generated `version.code`; ensure **no download** control or endpoint.
 4. Title / description from tool row; status badge draft vs ready.
 5. Empty schema/slots → graceful empty Control (no crash).
-6. Document M3g limitation: preview harness may still be social-frame creative; Control + persist + source still satisfy personalization bar.
+6. At M5e ship: document M3g limitation (preview harness may still be social-frame creative). **Superseded by M2a7** — live preview now runs generated code.
 
 **Touch (landed)**
 
 - `lib/version-metadata.ts` — parse API schema/slots safely
 - `use-studio-runtime.ts` — prefer version schema/slots for Control
-- `studio-tool-loader.tsx` — full version metadata + harness note
-- `studio-shell.tsx` — tool status badge, empty schema handling, harness note
+- `studio-tool-loader.tsx` — full version metadata (+ later M2a7 empty-code gate)
+- `studio-shell.tsx` — tool status badge, empty schema handling
 - `view-source-panel.tsx` — view-only policy chrome (no download)
 
 **Exit**
@@ -1859,9 +1905,9 @@ Codegen baseline stays on `tool_versions.default_params` / `asset_slots`.
 - [x] Open `/studio/{toolUuid}` → schema controls + assets + source
 - [x] Demo path works on a tool produced by M3 Create (API load + Control + persist)
 - [x] Source view-only; no download affordance
-- [x] Preview harness limitation documented in UI
+- [x] Preview harness limitation documented at M5e ship (UI note removed after **M2a7**)
 
-**Out of scope for M5e:** Public `/t/:publicId` (M7); chat refine (M6); dynamic generated-code iframe eval.
+**Out of scope for M5e:** Public `/t/:publicId` (M7); chat refine (M6). ~~Dynamic generated-code iframe eval~~ → **[M2a7](#m2a7--generated-code-delivery-studio-sandbox) ✅**.
 
 ---
 
@@ -1938,8 +1984,9 @@ M5f  Demo checklist + capture regression  →  M5 COMPLETE → M7
 1. **Debounce saves** — never write DB on every `input` event without debounce.  
 2. **http(s) asset URLs only** in `draft_assets` for capture CORS path (reject `data:` in persisted state if easy).  
 3. **Do not** create a new tool version per param tweak — that is refine/codegen territory (M6).  
-4. **Fixtures** remain the fastest Control dev loop; generated UUID path is the product demo.  
-5. Keep Studio state in **local React state** → runtime; TanStack Query for tool GET + draft mutation invalidation only.
+4. **Fixtures** remain the fastest Control dev loop; generated UUID path is the product demo (**M2a7** mounts real `version.code`).  
+5. Keep Studio state in **local React state** → runtime; TanStack Query for tool GET + draft mutation invalidation only.  
+6. **Do not** re-hardcode `runtimeToolId: "fixture:social-frame"` for generated tools — that regressed the product to a demo harness (fixed in M2a7).
 
 ---
 
@@ -2150,13 +2197,14 @@ That is **M8 exit** on the critical path. Screenshots, multi-target, and chat re
 
 ## Next action (start here)
 
-Auth + **M0-thin + M1 + M2a + M3 are complete.** To get the core loop ASAP, execute in this order:
+Auth + **M0-thin + M1 + M2a + M3 + M5 + M2a7 are complete.** To get the core loop ASAP, execute in this order:
 
 1. ~~**M0-thin**~~ — **done** (M0a–M0f).  
 2. ~~**M1a–M1f**~~ — **done**. **M1 complete.**  
 3. ~~**M2a**~~ — **done**. See [m2a-demo-checklist.md](./m2a-demo-checklist.md).  
 4. ~~**M3**~~ — **done** (M3a–M3h). See [m3-demo-checklist.md](./m3-demo-checklist.md).  
 5. ~~**M5a–M5f**~~ — **done**. See [m5-demo-checklist.md](./m5-demo-checklist.md).  
+5b. ~~**M2a7** generated-code delivery~~ — **done** (2026-08-06). Studio runs generated tools live (not fixture-only).  
 6. **M7 → M8** — export/share/embed → publish/gallery → **core loop complete**. **← start here (M7)**
 
 **Do not start next:** p5/three agent work, chat refine (M6), inspiration vision (M4), or M9 polish until M8 is green (unless explicitly pulled forward for learning only).
