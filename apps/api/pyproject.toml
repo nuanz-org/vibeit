@@ -8,5 +8,6 @@ dependencies = [
     "asyncpg>=0.31.0",
     "fastapi[standard]>=0.140.13",
     "langgraph>=1.2.10",
+    "playwright>=1.62.0",
     "python-dotenv>=1.2.2",
 ]

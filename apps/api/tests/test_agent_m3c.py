@@ -11,7 +11,7 @@ if str(_SRC) not in sys.path:
 
 from agent.fixtures import load_fixture_source
 from agent.graphs.create import run_create_fixture_pipeline
-from agent.validators.sandbox_smoke import run_sandbox_smoke
+from agent.validators.sandbox_smoke import run_structural_smoke
 from agent.validators.static_validate import static_validate_tool_source
 
 _BROKEN_EVAL = """
@@ -93,19 +93,20 @@ def test_static_validate_empty() -> None:
 
 
 def test_sandbox_smoke_fixture_passes() -> None:
+    # M3c unit surface is structural pre-filter; full host smoke is AM2.
     code = load_fixture_source("social-frame")
-    result = run_sandbox_smoke(code)
+    result = run_structural_smoke(code)
     assert result.ok, result.errors
     assert result.mode == "structural"
 
 
 def test_sandbox_smoke_minimal_ok() -> None:
-    result = run_sandbox_smoke(_MINIMAL_OK)
+    result = run_structural_smoke(_MINIMAL_OK)
     assert result.ok, result.errors
 
 
 def test_sandbox_smoke_rejects_broken() -> None:
-    result = run_sandbox_smoke(_BROKEN_EVAL)
+    result = run_structural_smoke(_BROKEN_EVAL)
     assert not result.ok
 
 

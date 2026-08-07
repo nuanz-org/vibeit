@@ -1,7 +1,7 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** **AM1 craft floor — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Status:** **AM2 real gates — code complete / exit partial** (see [Coverage log](#coverage-log))
 **Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
@@ -16,12 +16,46 @@ What has actually been implemented on this track (update when an AM lands).
 | Milestone | Name | Coverage | Commit / notes |
 |-----------|------|----------|----------------|
 | **AM1** | Craft floor (prompts + golden library) | **Covered in code** — subparts AM1a–AM1d shipped; full exit still needs owner Studio/eyeball | `02fe278` (2026-08-07) |
-| AM2 | Real gates (compile + host smoke) | **Not started** | — |
+| **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `64279f1` (2026-08-07) |
 | AM3 | Critic loop + quality evals | **Not started** | — |
 | AM4 | Model routing + live A/B | **Not started** | — |
 | AM5 | Style conditioning | **Not started** (gated on AM1–AM3) | — |
 | AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
 | AM7 | Chat refine agents | **Not started** | — |
+
+### AM2 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM2** (real execute gates). Structural smoke demoted to pre-filter.
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM2a** | ✅ | `validators/compile_check.py` + `apps/web/runtime/compile/cli-compile.mjs` (esbuild, same config as Studio) |
+| **AM2b** | ✅ | `validators/host_smoke.py` + Playwright Chromium + `smoke_assets/host.html`; blank canvas / console / captureFrame; screenshot under `apps/api/.data/smoke/` |
+| **AM2c** | ✅ | `validators/param_coverage.py`; runner/repair get compile+host errors; phase `smoke:host` / `smoke:compile` |
+| **AM2d** | ✅ | `tests/test_agent_am2.py`; wall default 120s; min variance env `VIBEIT_SMOKE_MIN_VARIANCE` |
+
+**Files touched (canonical):**
+
+| Area | Paths |
+|------|--------|
+| Compile CLI | `apps/web/runtime/compile/cli-compile.mjs` |
+| Compile gate | `apps/api/src/agent/validators/compile_check.py` |
+| Host smoke | `apps/api/src/agent/validators/host_smoke.py`, `smoke_assets/host.html` |
+| Param coverage | `apps/api/src/agent/validators/param_coverage.py` |
+| Smoke orchestrator | `apps/api/src/agent/validators/sandbox_smoke.py`, `nodes/sandbox_smoke.py` |
+| Frame loader | `apps/web/runtime/frame/load-module.ts` (+ rebuilt `public/runtime-frame.js`) |
+| Runner / state / repair | `runner.py`, `state.py`, `prompts/create_repair.py`, `core/config.py`, `services/create_job.py` |
+| Deps | `apps/api/pyproject.toml` (`playwright`), `uv.lock` |
+| Tests | `apps/api/tests/test_agent_am2.py` (+ AM1/M3c/M3e fixture updates) |
+| Docs | this file, `apps/api/README.md` |
+
+**App impact:** Create jobs automatically run esbuild + Playwright host smoke before finalize (no new UI). Blank/runtime-throw tools fail closed. Screenshots under `apps/api/.data/smoke/` (gitignored). Requires Node + `playwright install chromium` + built runtime-frame.
+
+**Still open for full AM2 exit:**
+
+- [ ] Live eval corpus still meets gates with host smoke wall-time (default wall 120s; eval default 150s)
+- [ ] Owner sanity: deliberately blank + runtime-throw tools never finalize in Studio create
+- [ ] Then mark AM2 fully exited and start **AM3**
 
 ### AM1 — what was shipped (2026-08-07)
 
@@ -53,7 +87,7 @@ What has actually been implemented on this track (update when an AM lands).
 
 - [ ] Mount 3 goldens in Studio + human design review  
 - [ ] Owner eyeball ≥7/10 corpus outputs “visibly better”  
-- [ ] Then mark AM1 fully exited and start **AM2**
+- [ ] Then mark AM1 fully exited *(AM2 already landed in parallel once prompts were stable)*
 
 ---
 
@@ -73,9 +107,9 @@ Same conventions as [vibeit-milestones.md](./vibeit-milestones.md):
 ```
 AM1  Craft floor (prompts + golden library)          ← COVERED (code complete; exit partial)
  ↓
-AM2  Real gates (esbuild compile + Playwright host smoke)  ← next
+AM2  Real gates (esbuild compile + Playwright host smoke)  ← COVERED (code complete; exit partial)
  ↓
-AM3  Critic loop + quality evals (screenshot judge, calibration)
+AM3  Critic loop + quality evals (screenshot judge, calibration)  ← next
  ↓
 AM4  Model routing + live A/B (unlock per-role models, set codegen default)
  ↓
@@ -173,15 +207,17 @@ Same 10 eval prompts through the live pipeline before vs after — visible compo
 
 ## AM2 — Real gates (compile + host smoke)
 
+**Coverage:** **Implemented** (2026-08-07). Subparts AM2a–AM2d done in code. Full exit still needs live eval wall-time confirmation (see Coverage log).
+
 **Why:** Current smoke is regex — a tool can pass while blank or crashing at runtime. Brik-level quality needs gates that execute the tool. The compile pipeline already exists in `apps/web` (M2a7); the agent just never calls it.
 
 ### Deliverables
 
-- [ ] **Compile gate** — esbuild bundles the generated module (API-side, same config as `apps/web` compile route); TS errors become repair input
-- [ ] **Playwright host smoke** — mount module in real `runtime-frame`: zero console errors, canvas non-blank (pixel variance above threshold), `captureFrame` succeeds, **screenshot saved**
-- [ ] **Param-coverage check** — every plan param name referenced in generated code
-- [ ] **Runner wiring** — repair receives compile errors + console errors (not just regex strings); job phase gains `smoke:host`
-- [ ] Structural regex smoke demoted to fast pre-filter (kept — cheap)
+- [x] **Compile gate** — esbuild bundles the generated module (API-side, same config as `apps/web` compile route); TS errors become repair input
+- [x] **Playwright host smoke** — mount module in real `runtime-frame`: zero console errors, canvas non-blank (pixel variance above threshold), `captureFrame` succeeds, **screenshot saved**
+- [x] **Param-coverage check** — every plan param name referenced in generated code
+- [x] **Runner wiring** — repair receives compile errors + console errors (not just regex strings); job phase gains `smoke:host`
+- [x] Structural regex smoke demoted to fast pre-filter (kept — cheap)
 
 ### Demo
 
@@ -189,10 +225,10 @@ A deliberately broken (runtime-throwing) and a deliberately blank (clear-only) t
 
 ### Exit criteria
 
-- [ ] Runtime-crashing code never reaches finalize (previously could pass regex)
-- [ ] Blank/near-blank canvas never reaches finalize
-- [ ] Screenshot artifact stored per eval run (feeds AM3 critic)
-- [ ] Eval gates still pass on corpus; wall-time budget adjusted (host smoke adds seconds)
+- [x] Runtime-crashing code never reaches finalize (previously could pass regex) — unit covered in `test_agent_am2.py`
+- [x] Blank/near-blank canvas never reaches finalize — unit covered
+- [x] Screenshot artifact stored per successful host smoke (`apps/api/.data/smoke/`)
+- [ ] Eval gates still pass on corpus; wall-time budget adjusted (host smoke adds seconds) — default wall raised to 120s; live re-run open
 
 ### Out of scope
 
@@ -206,12 +242,12 @@ A deliberately broken (runtime-throwing) and a deliberately blank (clear-only) t
 
 ### AM2 — implementation plan (subparts)
 
-| Subpart | Name | Depends on | ~Days | Outcome |
-|---------|------|------------|------:|---------|
-| **AM2a** | esbuild compile gate in API | — | 0.5–1 | `validators/compile_check.py`; errors → repair context |
-| **AM2b** | Playwright host smoke + screenshot | AM2a | 1–1.5 | `validators/host_smoke.py`; console/blank/capture checks |
-| **AM2c** | Param coverage + runner wiring | AM2b | 0.5 | Repair gets real failure signals; phase updates |
-| **AM2d** | AM2 checklist + gate tune | AM2c | 0.25 | Thresholds (pixel variance) tuned on corpus |
+| Subpart | Name | Depends on | ~Days | Outcome | Done |
+|---------|------|------------|------:|---------|:----:|
+| **AM2a** | esbuild compile gate in API | — | 0.5–1 | `validators/compile_check.py`; errors → repair context | ✅ |
+| **AM2b** | Playwright host smoke + screenshot | AM2a | 1–1.5 | `validators/host_smoke.py`; console/blank/capture checks | ✅ |
+| **AM2c** | Param coverage + runner wiring | AM2b | 0.5 | Repair gets real failure signals; phase updates | ✅ |
+| **AM2d** | AM2 checklist + gate tune | AM2c | 0.25 | Thresholds (pixel variance) tuned on corpus | ✅ |
 
 **Where code lands:**
 

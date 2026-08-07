@@ -46,11 +46,13 @@ export async function loadCreateToolFromModuleSource(
       throw new Error("module import did not return an object");
     }
     const mod = imported as Record<string, unknown>;
-    const factory: unknown = mod.createTool ?? mod.default;
+    // Generated tools: createTool. Hand fixtures may export createSocialFrameTool.
+    const factory: unknown =
+      mod.createTool ?? mod.createSocialFrameTool ?? mod.default;
     if (!isCreateVibeTool(factory)) {
       revoke();
       throw new Error(
-        "module has no createTool export (expected export const createTool or default)",
+        "module has no createTool export (expected export const createTool, createSocialFrameTool, or default)",
       );
     }
     return { createTool: factory, revoke };

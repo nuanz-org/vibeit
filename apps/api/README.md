@@ -142,28 +142,38 @@ ingest → plan(LLM) → codegen(LLM) → validate → smoke → END
 |------|------|
 | `agent/graphs/create.py` | Compiled `StateGraph` + `run_create_llm_pipeline` |
 | `agent/nodes/plan.py` · `codegen.py` | OpenRouter via `LLMClient` |
-| `agent/validators/` | Static hard rules + structural smoke |
+| `agent/validators/` | Static hard rules + **AM2 real gates** (compile + host smoke) |
 | `agent/fixtures.py` | Loads monorepo social-frame `tool.ts` |
 
 ```bash
 cd apps/api && uv run python tests/test_agent_m3c.py
 cd apps/api && uv run python tests/test_agent_m3d.py
+cd apps/api && uv run python tests/test_agent_am2.py   # needs: uv run playwright install chromium
 ```
 
-Smoke mode today: **structural** (Python). Host/Playwright smoke can replace `run_sandbox_smoke` later.
+Smoke pipeline (AM2): **structural → esbuild compile → param coverage → Playwright host** (runtime-frame). Screenshots land in `apps/api/.data/smoke/`. Fail closed if Node/esbuild/Playwright/Chromium missing.
+
+Setup once:
+
+```bash
+cd apps/api && uv sync && uv run playwright install chromium
+pnpm --filter web build:runtime-frame   # public/runtime-frame.js
+```
 
 ## Create worker + repair (M3e)
 
 After `POST /api/v1/jobs`, if `OPENROUTER_API_KEY` is set and `CREATE_WORKER_ENABLED` is not false, a **background task** runs:
 
 ```text
-running → plan → codegen → validate ⇄ repair (≤ N) → smoke → finalize
+running → plan → codegen → validate ⇄ repair (≤ N) → smoke (compile+host) → finalize
 ```
 
 | Env | Default | Notes |
 |-----|---------|--------|
 | `CREATE_REPAIR_MAX` | `3` | Repair attempts |
-| `CREATE_WALL_TIME_SECONDS` | `60` | Job wall clock |
+| `CREATE_WALL_TIME_SECONDS` | `120` | Job wall clock (AM2 host smoke needs headroom) |
+| `VIBEIT_HOST_SMOKE_TIMEOUT_SECONDS` | `45` | Per host-smoke attempt |
+| `VIBEIT_SMOKE_MIN_VARIANCE` | `5` | Blank-canvas luminance variance floor |
 | `CREATE_WORKER_ENABLED` | `true` | Set `false` to only enqueue |
 
 | Outcome | Job status | Tool |

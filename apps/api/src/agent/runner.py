@@ -53,7 +53,7 @@ async def run_create_with_repairs(
     use_fixture_code: bool = False,
     fixture_name: str = "social-frame",
     max_repairs: int = 3,
-    wall_time_seconds: float = 60.0,
+    wall_time_seconds: float = 120.0,
     job_id: str | None = None,
     tool_id: str | None = None,
     on_phase: PhaseCallback | None = None,

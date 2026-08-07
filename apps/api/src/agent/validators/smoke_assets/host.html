@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vibeit host smoke</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #111;
+      }
+      #frame {
+        border: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #0a0a0c;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Parent host for AM2 Playwright smoke.
+      Mirrors RuntimeHostBridge postMessage protocol (channel vibeit-runtime).
+      iframe sandbox matches Studio (allow-scripts only → opaque origin).
+    -->
+    <iframe
+      id="frame"
+      src="/runtime-frame.html"
+      sandbox="allow-scripts"
+      title="runtime-frame"
+    ></iframe>
+    <script>
+      const CHANNEL = "vibeit-runtime";
+      const VERSION = 1;
+      const consoleErrors = [];
+
+      // Capture console errors from this parent page
+      const origError = console.error.bind(console);
+      console.error = (...args) => {
+        consoleErrors.push(args.map(String).join(" "));
+        origError(...args);
+      };
+      window.addEventListener("error", (e) => {
+        consoleErrors.push(String(e.message || e.error || "window error"));
+      });
+      window.addEventListener("unhandledrejection", (e) => {
+        consoleErrors.push(String(e.reason || "unhandledrejection"));
+      });
+
+      let ready = false;
+      const pending = new Map();
+      let frameWin = null;
+
+      function requestId() {
+        return (
+          (crypto.randomUUID && crypto.randomUUID()) ||
+          `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+        );
+      }
+
+      function post(cmd) {
+        if (!frameWin) throw new Error("frame window missing");
+        frameWin.postMessage(cmd, "*");
+      }
+
+      function sendCommand(partial, timeoutMs = 15000) {
+        const id = requestId();
+        const msg = {
+          channel: CHANNEL,
+          version: VERSION,
+          requestId: id,
+          ...partial,
+        };
+        return new Promise((resolve, reject) => {
+          const timer = setTimeout(() => {
+            pending.delete(id);
+            reject(new Error(`timeout waiting for ${partial.type} (${timeoutMs}ms)`));
+          }, timeoutMs);
+          pending.set(id, { resolve, reject, timer });
+          post(msg);
+        });
+      }
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.channel !== CHANNEL || data.version !== VERSION) return;
+
+        if (data.type === "ready") {
+          ready = true;
+          frameWin = event.source;
+          return;
+        }
+
+        if (data.type === "result" || data.type === "error") {
+          const entry = pending.get(data.requestId);
+          if (!entry) return;
+          clearTimeout(entry.timer);
+          pending.delete(data.requestId);
+          if (data.type === "error") {
+            entry.reject(
+              new Error(
+                `${data.code || "ERROR"}: ${data.message || "frame error"}`,
+              ),
+            );
+          } else {
+            entry.resolve(data.payload);
+          }
+        }
+      });
+
+      function waitReady(timeoutMs = 10000) {
+        const start = Date.now();
+        return new Promise((resolve, reject) => {
+          const tick = () => {
+            if (ready && frameWin) {
+              resolve(true);
+              return;
+            }
+            if (Date.now() - start > timeoutMs) {
+              reject(new Error(`frame ready timeout (${timeoutMs}ms)`));
+              return;
+            }
+            setTimeout(tick, 50);
+          };
+          tick();
+        });
+      }
+
+      /**
+       * Sample PNG base64 for pixel variance (blank-canvas gate).
+       * Decodes via Image + canvas in the parent (capture is postMessage wire).
+       */
+      async function pixelVarianceFromBase64(base64, mimeType) {
+        const mime = mimeType || "image/png";
+        const url = `data:${mime};base64,${base64}`;
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error("failed to decode capture PNG"));
+          img.src = url;
+        });
+        const w = Math.min(img.naturalWidth || img.width, 256);
+        const h = Math.min(img.naturalHeight || img.height, 256);
+        if (w < 2 || h < 2) {
+          return { variance: 0, width: w, height: h, samples: 0 };
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, w, h);
+        const { data } = ctx.getImageData(0, 0, w, h);
+        // Sample stride for speed
+        let n = 0;
+        let sum = 0;
+        let sumSq = 0;
+        const stride = 16; // every 4th pixel (RGBA)
+        for (let i = 0; i < data.length; i += stride) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // luminance
+          const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          sum += y;
+          sumSq += y * y;
+          n += 1;
+        }
+        if (n === 0) return { variance: 0, width: w, height: h, samples: 0 };
+        const mean = sum / n;
+        const variance = sumSq / n - mean * mean;
+        return { variance, width: w, height: h, samples: n, mean };
+      }
+
+      /**
+       * Full smoke: wait ready → mount module → settle → captureFrame → variance.
+       */
+      window.__vibeitHostSmoke = {
+        getConsoleErrors() {
+          return consoleErrors.slice();
+        },
+        async run(moduleSource, opts = {}) {
+          const readyMs = opts.readyTimeoutMs ?? 10000;
+          const cmdMs = opts.commandTimeoutMs ?? 15000;
+          const settleMs = opts.settleMs ?? 400;
+          const minVariance = opts.minVariance ?? 5;
+
+          await waitReady(readyMs);
+
+          const mountPayload = await sendCommand(
+            {
+              type: "mount",
+              target: "canvas2d",
+              moduleSource,
+              params: opts.params || {},
+            },
+            cmdMs,
+          );
+
+          // Let rAF draw a few frames
+          await new Promise((r) => setTimeout(r, settleMs));
+
+          const capture = await sendCommand({ type: "captureFrame" }, cmdMs);
+          if (!capture || capture.kind !== "captureFrame" || !capture.frame) {
+            throw new Error("captureFrame missing frame payload");
+          }
+          const frame = capture.frame;
+          if (!frame.base64 || typeof frame.base64 !== "string") {
+            throw new Error("captureFrame wire missing base64");
+          }
+
+          const stats = await pixelVarianceFromBase64(
+            frame.base64,
+            frame.mimeType,
+          );
+
+          // Best-effort dispose
+          try {
+            await sendCommand({ type: "dispose" }, Math.min(cmdMs, 5000));
+          } catch {
+            /* ignore */
+          }
+
+          return {
+            ok: stats.variance >= minVariance,
+            variance: stats.variance,
+            minVariance,
+            width: stats.width,
+            height: stats.height,
+            samples: stats.samples,
+            mean: stats.mean,
+            captureBytes: frame.byteLength || Math.floor((frame.base64.length * 3) / 4),
+            consoleErrors: consoleErrors.slice(),
+            introspection: mountPayload?.introspection || null,
+            frameBase64: frame.base64,
+            mimeType: frame.mimeType || "image/png",
+          };
+        },
+      };
+    </script>
+  </body>
+</html>

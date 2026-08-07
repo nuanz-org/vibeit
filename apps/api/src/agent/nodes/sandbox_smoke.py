@@ -1,4 +1,4 @@
-"""Sandbox smoke node (M3c — structural smoke)."""
+"""Sandbox smoke node (M3c structural + AM2 compile/host gates)."""
 
 from __future__ import annotations
 
@@ -17,12 +17,29 @@ def sandbox_smoke_node(state: CreateGraphState) -> dict:
         }
 
     code = state.get("code") or ""
-    result = run_sandbox_smoke(code)
+    plan = state.get("plan") if isinstance(state.get("plan"), dict) else None
+    job_id = state.get("job_id")
+    job_id_s = str(job_id) if job_id else None
+
+    result = run_sandbox_smoke(code, plan=plan, job_id=job_id_s)
+
+    # Phase label: smoke:host when host stage ran; else smoke / smoke:compile
+    if "host" in result.stages_run:
+        phase = "smoke:host"
+    elif "compile" in result.stages_run:
+        phase = "smoke:compile"
+    else:
+        phase = "smoke"
+
     updates: dict = {
-        "phase": "smoke",
+        "phase": phase,
         "smoke_errors": result.errors,
         "smoke_ok": result.ok,
         "ready_for_finalize": result.ok,
+        "smoke_mode": result.mode,
+        "compiled_js": result.compiled_js,
+        "smoke_screenshot_path": result.screenshot_path,
+        "smoke_variance": result.variance,
     }
     if result.ok:
         updates["error_code"] = None

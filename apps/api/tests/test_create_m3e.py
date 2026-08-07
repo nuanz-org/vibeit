@@ -30,17 +30,26 @@ export const createTool = () =>
   createCanvas2dTool(
     {
       getParamSchema: () => [
-        { name: "bg", kind: "color", default: "#111" },
+        { name: "bg", kind: "color", default: "#111111" },
+        { name: "accent", kind: "color", default: "#7c5cff" },
         { name: "title", kind: "text", default: "Hi" },
       ],
-      getDefaultParams: () => ({ bg: "#111", title: "Hi" }),
+      getDefaultParams: () => ({
+        bg: "#111111",
+        accent: "#7c5cff",
+        title: "Hi",
+      }),
       getAssetSlots: () => [],
       draw(c) {
-        c.ctx.fillStyle = String(c.params.bg ?? "#111");
+        c.ctx.fillStyle = String(c.params.bg ?? "#111111");
         c.ctx.fillRect(0, 0, c.width, c.height);
-        c.ctx.fillStyle = "#fff";
-        c.ctx.font = "16px system-ui";
-        c.ctx.fillText(String(c.params.title ?? ""), 12, 24);
+        c.ctx.fillStyle = String(c.params.accent ?? "#7c5cff");
+        c.ctx.beginPath();
+        c.ctx.arc(c.width * 0.5, c.height * 0.4, 36, 0, Math.PI * 2);
+        c.ctx.fill();
+        c.ctx.fillStyle = "#ffffff";
+        c.ctx.font = "bold 20px system-ui";
+        c.ctx.fillText(String(c.params.title ?? ""), 12, 28);
       },
     },
     { aspect: "1:1", autoDpr: true },
@@ -51,7 +60,11 @@ _BAD_THEN_GOOD_PLAN = {
     "concept": "test",
     "aspect": "1:1",
     "motion": "still",
-    "params": [{"name": "bg", "kind": "color", "default": "#000"}],
+    "params": [
+        {"name": "bg", "kind": "color", "default": "#000000"},
+        {"name": "accent", "kind": "color", "default": "#7c5cff"},
+        {"name": "title", "kind": "text", "default": "test"},
+    ],
     "assetSlots": [],
     "target": "canvas2d",
 }
@@ -119,7 +132,7 @@ def test_runner_repair_recovers() -> None:
             vision_text="purple orb",
             llm=llm,
             max_repairs=3,
-            wall_time_seconds=30,
+            wall_time_seconds=90,
         )
         assert state.get("ready_for_finalize") is True, state
         assert state.get("smoke_ok") is True

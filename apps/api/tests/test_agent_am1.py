@@ -91,26 +91,28 @@ export const createTool = () =>
   createCanvas2dTool(
     {
       getParamSchema: () => [
-        { name: "bg", kind: "color", default: "#0b0b12" },
-        { name: "accent", kind: "color", default: "#7c5cff" },
-        { name: "title", kind: "text", default: "Your vibe", maxLength: 48 },
+        { name: "bg", kind: "color", default: "#0a0a0f" },
+        { name: "ink", kind: "color", default: "#f4f1ea" },
+        { name: "accent", kind: "color", default: "#ff4d6d" },
+        { name: "title", kind: "text", default: "MOTION", maxLength: 24 },
       ],
       getDefaultParams: () => ({
-        bg: "#0b0b12",
-        accent: "#7c5cff",
-        title: "Your vibe",
+        bg: "#0a0a0f",
+        ink: "#f4f1ea",
+        accent: "#ff4d6d",
+        title: "MOTION",
       }),
       getAssetSlots: () => [],
       draw(c) {
-        c.ctx.fillStyle = String(c.params.bg ?? "#0b0b12");
+        c.ctx.fillStyle = String(c.params.bg ?? "#0a0a0f");
         c.ctx.fillRect(0, 0, c.width, c.height);
         const pulse = 0.5 + 0.5 * Math.sin(c.time * 2);
-        c.ctx.fillStyle = String(c.params.accent ?? "#7c5cff");
+        c.ctx.fillStyle = String(c.params.accent ?? "#ff4d6d");
         c.ctx.beginPath();
         c.ctx.arc(c.width * 0.5, c.height * 0.45, 40 + 10 * pulse, 0, Math.PI * 2);
         c.ctx.fill();
-        c.ctx.fillStyle = "#fff";
-        c.ctx.font = "16px system-ui";
+        c.ctx.fillStyle = String(c.params.ink ?? "#f4f1ea");
+        c.ctx.font = "bold 28px system-ui";
         c.ctx.textAlign = "center";
         c.ctx.fillText(String(c.params.title ?? ""), c.width * 0.5, c.height * 0.72);
       },

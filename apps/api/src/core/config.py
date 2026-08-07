@@ -93,10 +93,17 @@ class Settings:
         ).strip()
         self.llm_app_title: str = os.getenv("LLM_APP_TITLE", "Vibeit").strip()
 
-        # --- Create agent budgets (M3e / M3f) ---
+        # --- Create agent budgets (M3e / M3f / AM2) ---
         self.create_repair_max: int = int(os.getenv("CREATE_REPAIR_MAX", "3"))
+        # AM2 host smoke adds ~5–15s per attempt; default raised from 60 → 120
         self.create_wall_time_seconds: float = float(
-            os.getenv("CREATE_WALL_TIME_SECONDS", "60")
+            os.getenv("CREATE_WALL_TIME_SECONDS", "120")
+        )
+        self.host_smoke_timeout_seconds: float = float(
+            os.getenv("VIBEIT_HOST_SMOKE_TIMEOUT_SECONDS", "45")
+        )
+        self.smoke_min_variance: float = float(
+            os.getenv("VIBEIT_SMOKE_MIN_VARIANCE", "5")
         )
         # When true, POST /jobs runs agent via BackgroundTasks (M3e default).
         self.create_worker_enabled: bool = os.getenv(

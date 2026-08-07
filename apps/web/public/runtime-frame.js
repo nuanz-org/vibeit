@@ -795,11 +795,11 @@ async function loadCreateToolFromModuleSource(moduleSource) {
       throw new Error("module import did not return an object");
     }
     const mod = imported;
-    const factory = mod.createTool ?? mod.default;
+    const factory = mod.createTool ?? mod.createSocialFrameTool ?? mod.default;
     if (!isCreateVibeTool(factory)) {
       revoke();
       throw new Error(
-        "module has no createTool export (expected export const createTool or default)"
+        "module has no createTool export (expected export const createTool, createSocialFrameTool, or default)"
       );
     }
     return { createTool: factory, revoke };

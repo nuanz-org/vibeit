@@ -248,7 +248,7 @@ async def run_eval(
     *,
     live: bool,
     max_repairs: int = 3,
-    wall_time: float = 90.0,
+    wall_time: float = 150.0,
 ) -> EvalSummary:
     suite = load_suite()
     gates = suite.get("gates") or {}

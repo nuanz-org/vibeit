@@ -31,6 +31,12 @@ class CreateGraphState(TypedDict, total=False):
     smoke_errors: list[str]
     smoke_ok: bool
 
+    # AM2 — real gates artifacts
+    smoke_mode: NotRequired[str]
+    compiled_js: NotRequired[str | None]
+    smoke_screenshot_path: NotRequired[str | None]
+    smoke_variance: NotRequired[float | None]
+
     # Repair / budgets (M3e fills these)
     repair_count: int
     max_repairs: int
