@@ -16,7 +16,7 @@ What has actually been implemented on this track (update when an AM lands).
 | Milestone | Name | Coverage | Commit / notes |
 |-----------|------|----------|----------------|
 | **AM1** | Craft floor (prompts + golden library) | **Covered in code** — subparts AM1a–AM1d shipped; full exit still needs owner Studio/eyeball | `02fe278` (2026-08-07) |
-| **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `64279f1` (2026-08-07) |
+| **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `dc95de9` (2026-08-07) |
 | AM3 | Critic loop + quality evals | **Not started** | — |
 | AM4 | Model routing + live A/B | **Not started** | — |
 | AM5 | Style conditioning | **Not started** (gated on AM1–AM3) | — |
