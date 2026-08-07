@@ -84,10 +84,13 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
         }
 
     usage = completion.usage
+    tgt = "canvas2d"
+    if isinstance(plan, dict) and isinstance(plan.get("target"), str):
+        tgt = plan["target"]
     return {
         "phase": "codegen",
         "code": code,
-        "target": "canvas2d",
+        "target": tgt,
         "error_code": None,
         "error_message": None,
         "llm_tokens_used": (state.get("llm_tokens_used") or 0) + usage.total_tokens,  # type: ignore[operator]

@@ -75,10 +75,11 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
             last_raw = completion.text
             plan = parse_asap_plan(completion.text)
             tokens += completion.usage.total_tokens
+            tgt = plan.get("target") if isinstance(plan.get("target"), str) else "canvas2d"
             return {
                 "phase": "plan",
                 "plan": plan,
-                "target": "canvas2d",
+                "target": tgt,
                 "error_code": None,
                 "error_message": None,
                 "llm_tokens_used": tokens,

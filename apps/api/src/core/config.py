@@ -127,6 +127,13 @@ class Settings:
         self.critic_enforced: bool = os.getenv(
             "VIBEIT_CRITIC_ENFORCED", ""
         ).lower() in ("1", "true", "yes", "on")
+        # AM6 multi-target (config-gated; canvas2d always on)
+        self.target_p5_enabled: bool = os.getenv(
+            "VIBEIT_TARGET_P5_ENABLED", ""
+        ).lower() in ("1", "true", "yes", "on")
+        self.target_three_enabled: bool = os.getenv(
+            "VIBEIT_TARGET_THREE_ENABLED", ""
+        ).lower() in ("1", "true", "yes", "on")
         # When true, POST /jobs runs agent via BackgroundTasks (M3e default).
         self.create_worker_enabled: bool = os.getenv(
             "CREATE_WORKER_ENABLED", "true"

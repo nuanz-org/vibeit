@@ -56,7 +56,9 @@ function allowlist(source) {
     if (pattern.test(source)) errors.push(`forbidden pattern: ${name}`);
   }
   if (/from\s+['"]p5['"]|from\s+['"]three['"]/.test(source)) {
-    errors.push("p5/three imports not allowed on ASAP canvas2d path");
+    errors.push(
+      "bare p5/three package imports not allowed — use @repo/contracts/skeletons/*",
+    );
   }
   return errors.length ? { ok: false, errors } : { ok: true };
 }

@@ -8,7 +8,13 @@ from agent.validators.static_validate import static_validate_tool_source
 
 def validate_node(state: CreateGraphState) -> dict:
     code = state.get("code") or ""
-    result = static_validate_tool_source(code)
+    plan = state.get("plan") if isinstance(state.get("plan"), dict) else None
+    target = None
+    if plan and isinstance(plan.get("target"), str):
+        target = plan["target"]
+    elif state.get("target"):
+        target = str(state.get("target"))
+    result = static_validate_tool_source(code, target=target)
     updates: dict = {
         "phase": "validate",
         "validation_errors": result.errors,

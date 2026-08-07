@@ -1,7 +1,7 @@
 """
-Parse / normalize ToolPlan JSON from LLM output (M3d + AM1 DesignBrief v2).
+Parse / normalize ToolPlan JSON from LLM output (M3d + AM1 DesignBrief v2 + AM6 targets).
 
-Forces target=canvas2d on ASAP path.
+Default target=canvas2d. p5 / three only when config-gated (AM6 target_policy).
 Backward compatible: legacy plans without DesignBrief fields still parse.
 """
 
@@ -11,7 +11,7 @@ import json
 import re
 from typing import Any
 
-ASAP_TARGET = "canvas2d"
+from agent.target_policy import ASAP_TARGET, resolve_plan_target
 _PARAM_KINDS = frozenset(
     {"color", "number", "text", "enum", "boolean", "assetRef"}
 )
@@ -185,7 +185,7 @@ def _normalize_control_surface(raw: Any) -> dict[str, Any] | None:
 
 def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
     """
-    Validate required fields and force target=canvas2d.
+    Validate required fields; resolve target via AM6 policy (default canvas2d).
     Accepts DesignBrief v2 optional fields; drops invalid ones.
     """
     concept = str(data.get("concept") or "").strip()
@@ -239,15 +239,19 @@ def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
     if notes is not None:
         notes = str(notes)
 
-    # Force ASAP target regardless of model output
+    # AM6: honor model target only when config-enabled; else canvas2d
+    target = resolve_plan_target(data.get("target"))
     plan: dict[str, Any] = {
         "concept": concept,
         "aspect": aspect,
         "motion": motion,
         "params": params,
         "assetSlots": cleaned_slots,
-        "target": ASAP_TARGET,
+        "target": target,
     }
+    rationale = data.get("targetRationale") or data.get("target_rationale")
+    if rationale is not None and str(rationale).strip():
+        plan["targetRationale"] = str(rationale).strip()[:400]
     if palette is not None:
         plan["palette"] = palette
     if notes:

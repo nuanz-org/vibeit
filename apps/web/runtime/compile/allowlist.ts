@@ -48,8 +48,11 @@ export function allowlistToolSource(source: string): AllowlistResult {
     }
   }
 
+  // Bare p5/three packages blocked; @repo/contracts/skeletons/* is allowed (AM6)
   if (/from\s+['"]p5['"]|from\s+['"]three['"]/.test(text)) {
-    errors.push("p5/three imports not allowed on ASAP canvas2d path");
+    errors.push(
+      "bare p5/three package imports not allowed — use @repo/contracts/skeletons/*",
+    );
   }
 
   if (errors.length > 0) {

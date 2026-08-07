@@ -73,24 +73,37 @@ def retrieve_goldens(
     plan: dict[str, Any] | None,
     *,
     limit: int = 2,
+    target: str | None = None,
 ) -> list[RetrievedGolden]:
     """
     Return up to `limit` goldens ordered by tag relevance.
-    Always returns at least one golden when the library is non-empty
-    (falls back to kinetic-type → particle-field → gradient-poster order).
+    Prefer goldens matching plan.target (AM6); fall back within that target.
+    Always returns at least one golden when the library is non-empty.
     """
     limit = max(1, min(3, int(limit)))
-    query = _plan_query_tokens(plan or {})
+    plan_d = plan or {}
+    tgt = (target or plan_d.get("target") or "canvas2d")
+    if not isinstance(tgt, str):
+        tgt = "canvas2d"
+    tgt = tgt.strip() or "canvas2d"
+
+    pool = [e for e in GOLDEN_MANIFEST if e.target == tgt]
+    if not pool:
+        pool = [e for e in GOLDEN_MANIFEST if e.target == "canvas2d"]
+    if not pool:
+        pool = list(GOLDEN_MANIFEST)
+
+    query = _plan_query_tokens(plan_d)
 
     scored: list[tuple[float, GoldenEntry]] = []
-    for entry in GOLDEN_MANIFEST:
+    for entry in pool:
         scored.append((_score_entry(entry, query), entry))
 
     scored.sort(key=lambda x: (-x[0], x[1].id))
 
-    # If nothing matched, use stable default order from manifest
+    # If nothing matched, use stable default order from target pool
     if not scored or all(s <= 0 for s, _ in scored):
-        chosen = list(GOLDEN_MANIFEST[:limit])
+        chosen = list(pool[:limit])
         scores = [0.0] * len(chosen)
     else:
         # Keep positive scores first; pad with next best if needed

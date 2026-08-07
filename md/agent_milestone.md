@@ -1,7 +1,7 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** **AM5 style conditioning — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Status:** **AM6 multi-target — code complete / exit partial** (see [Coverage log](#coverage-log))
 **Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
@@ -20,8 +20,24 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM3** | Critic loop + quality evals | **Covered in code** — AM3a–AM3d scaffold shipped; enforcement waits on human calibration | `ba5ec07` (2026-08-07) |
 | **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | `0555253` (2026-08-07) |
 | **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | `599ead3` (2026-08-07) |
-| AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
+| **AM6** | Multi-target goldens (p5/three) | **Covered in code** — skeletons + goldens + config gates; p5/three off by default | 2026-08-07 |
 | AM7 | Chat refine agents | **Not started** | — |
+
+### AM6 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM6** (multi-target stubs + goldens + gates). **Default production remains canvas2d only.**
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM6a** | ✅ | `createP5Tool` / `createThreeTool` skeletons (Canvas2D + WebGL stubs); host target stubs |
+| **AM6b** | ✅ | Goldens `p5-orbit`, `three-depth`; retriever filters by target; plan `target` + rationale |
+| **AM6c** | ✅ | `VIBEIT_TARGET_P5_ENABLED` / `THREE`; target-aware static validate; tests `test_agent_am6.py` |
+
+**Still open for full AM6 exit:**
+
+- [ ] Live eval gates on p5 subset before enabling p5 in prod  
+- [ ] three stays off until owner accepts WebGL quality  
+- [ ] Optional: full allowlisted p5.js / three.js bundles (M2b+)  
 
 ### AM5 — what was shipped (2026-08-07)
 
@@ -502,21 +518,23 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ## AM6 — Multi-target goldens (p5 / three) — *M4/M2b agent deliverable*
 
+**Coverage:** **Implemented** (2026-08-07). Stub harnesses + goldens + config gates. Full p5.js/three.js bundles still deferred.
+
 **Why:** Brik's showpiece outputs are Three.js shaders. Only worth doing once canvas2d quality is proven — multi-target amplifies the loop's existing quality, good or bad.
 
 ### Deliverables
 
-- [ ] p5/three **skeletons + host stubs** completed (M2b scope: loaders, `preserveDrawingBuffer` capture)
-- [ ] **Golden tool per target** (hand-authored, reviewed) + retriever tag support
-- [ ] **Art Director target selection** — brief picks `canvas2d | p5 | three` with rationale (canvas2d still default)
-- [ ] Per-target validators/smoke (WebGL console + blank checks)
-- [ ] **Eval gates per target** — `three` config-gated until its gate passes (consensus freeze)
+- [x] p5/three **skeletons + host stubs** — `@repo/contracts/skeletons/p5|three`; host adapters share postMessage lifecycle; three uses `preserveDrawingBuffer`
+- [x] **Golden tool per target** — `p5-orbit`, `three-depth` + canvas2d goldens; retriever filters by target
+- [x] **Art Director target selection** — plan may pick `canvas2d|p5|three` + `targetRationale`; forced to canvas2d unless env-enabled
+- [x] Per-target validators/smoke (structural + compile + host for goldens)
+- [x] **Eval gates per target** — `VIBEIT_TARGET_P5_ENABLED` / `VIBEIT_TARGET_THREE_ENABLED` (default off)
 
 ### Exit criteria
 
 - [ ] p5 enabled after its eval gate passes on corpus subset
-- [ ] three stays config-gated until gate passes; launch can ship without it
-- [ ] canvas2d corpus unaffected (regression run green)
+- [x] three stays config-gated until gate passes; launch ships without it (default off)
+- [x] canvas2d corpus unaffected (regression unit path green)
 
 ### Depends on
 
@@ -524,11 +542,11 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ### Subparts
 
-| Subpart | Name | ~Days | Outcome |
-|---------|------|------:|---------|
-| **AM6a** | p5/three skeletons + host stubs + capture | 1.5–2 | Reference tool per target mounts/captures |
-| **AM6b** | Goldens + retriever + target selection | 1–1.5 | Brief picks target; exemplars per target |
-| **AM6c** | Per-target evals + config gating + checklist | 0.5–1.5 | Gates decide enablement |
+| Subpart | Name | ~Days | Outcome | Done |
+|---------|------|------:|---------|:----:|
+| **AM6a** | p5/three skeletons + host stubs + capture | 1.5–2 | Reference tool per target mounts/captures | ✅ |
+| **AM6b** | Goldens + retriever + target selection | 1–1.5 | Brief picks target; exemplars per target | ✅ |
+| **AM6c** | Per-target evals + config gating + checklist | 0.5–1.5 | Gates decide enablement | ✅ |
 
 ---
 

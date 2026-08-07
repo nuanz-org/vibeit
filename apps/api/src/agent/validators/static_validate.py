@@ -1,14 +1,18 @@
 """
-Static validation for generated / hand-authored tool source (M3c).
+Static validation for generated / hand-authored tool source (M3c + AM6 targets).
 
 Fail closed: any forbidden pattern or missing contract surface → errors.
 Aligns with VibeTool hard rules (no parent window, no eval, no free npm, etc.).
+Target-aware: p5/three APIs only when target is p5/three.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
+
+TargetId = Literal["canvas2d", "p5", "three"]
 
 # Patterns that must never appear in creative / tool iframe code.
 _FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
@@ -25,7 +29,6 @@ _FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
     ("websocket", re.compile(r"\bWebSocket\b")),
     ("require_call", re.compile(r"\brequire\s*\(")),
     # Free-form package imports (allow @repo/contracts only)
-    # Block bare package imports; allow @repo/* and relative ./ ../
     (
         "npm_import",
         re.compile(
@@ -49,27 +52,44 @@ def _has_factory(code: str) -> bool:
         r"\bexport\s+(?:async\s+)?function\s+createTool\b",
         r"\bexport\s+const\s+createTool\b",
         r"\bcreateCanvas2dTool\s*\(",
+        r"\bcreateP5Tool\s*\(",
+        r"\bcreateThreeTool\s*\(",
         r"\bcreateTool\s*[:=]",
     )
     return any(re.search(p, code) for p in patterns)
 
 
 def _has_draw_surface(code: str) -> bool:
-    """canvas2d creative fill should define draw (or full VibeTool mount)."""
+    """Creative fill should define draw (or full VibeTool mount)."""
     return bool(
         re.search(r"\bdraw\s*\(", code)
         or re.search(r"\bmount\s*\(", code)
     )
 
 
-def static_validate_tool_source(code: str) -> StaticValidateResult:
+def _infer_target(code: str, target: str | None) -> TargetId:
+    if target in ("canvas2d", "p5", "three"):
+        return target  # type: ignore[return-value]
+    if re.search(r"createThreeTool|skeletons/three", code):
+        return "three"
+    if re.search(r"createP5Tool|skeletons/p5", code):
+        return "p5"
+    return "canvas2d"
+
+
+def static_validate_tool_source(
+    code: str,
+    *,
+    target: str | None = None,
+) -> StaticValidateResult:
     """
     Validate tool TypeScript/JavaScript source string.
 
-    Used for hand-authored fixtures (M3c) and model codegen (M3d+).
+    `target` selects which harness APIs are allowed (AM6).
     """
     errors: list[str] = []
     text = code or ""
+    tgt = _infer_target(text, target)
 
     if not text.strip():
         return StaticValidateResult(ok=False, errors=["code is empty"])
@@ -81,21 +101,43 @@ def static_validate_tool_source(code: str) -> StaticValidateResult:
         if pattern.search(text):
             errors.append(f"forbidden pattern: {name}")
 
-    # Soft: block p5/three runtime imports on ASAP path
+    # Block bare p5/three package imports — only @repo/contracts skeletons
     if re.search(r"""from\s+['"]p5['"]|from\s+['"]three['"]""", text):
-        errors.append("p5/three imports not allowed on ASAP canvas2d path")
+        errors.append(
+            "bare p5/three package imports not allowed — use @repo/contracts/skeletons/*"
+        )
 
     if not _has_factory(text):
         errors.append(
-            "missing tool factory — expected createTool / createSocialFrameTool / createCanvas2dTool"
+            "missing tool factory — expected createTool / createCanvas2dTool "
+            "/ createP5Tool / createThreeTool"
         )
 
     if not _has_draw_surface(text):
-        errors.append("missing draw() or mount() surface for canvas2d tool")
+        errors.append("missing draw() or mount() surface for tool")
 
-    # Target must not claim other runtimes in source comments-heavy code is ok;
-    # explicit three.js WebGLRenderer is a strong signal of wrong target.
-    if re.search(r"\bWebGLRenderer\b|\bTHREE\.", text):
-        errors.append("three.js APIs not allowed on ASAP canvas2d path")
+    # Target-specific wrong-API checks
+    if tgt == "canvas2d":
+        if re.search(r"\bWebGLRenderer\b|\bTHREE\.", text):
+            errors.append("three.js APIs not allowed on canvas2d path")
+        if re.search(r"createP5Tool|createThreeTool", text) and not re.search(
+            r"createCanvas2dTool", text
+        ):
+            # pure p5/three source labeled as canvas2d
+            if re.search(r"createP5Tool", text):
+                errors.append("createP5Tool used but target is canvas2d")
+            if re.search(r"createThreeTool", text):
+                errors.append("createThreeTool used but target is canvas2d")
+    elif tgt == "p5":
+        if re.search(r"\bWebGLRenderer\b|\bTHREE\.", text):
+            errors.append("three.js APIs not allowed on p5 path")
+        if not re.search(r"createP5Tool|createTool", text):
+            errors.append("p5 target expected createP5Tool harness")
+    elif tgt == "three":
+        # three stub may use WebGL APIs; block free three npm only (already covered)
+        if re.search(r"createP5Tool", text) and not re.search(
+            r"createThreeTool", text
+        ):
+            errors.append("createP5Tool used but target is three")
 
     return StaticValidateResult(ok=len(errors) == 0, errors=errors)

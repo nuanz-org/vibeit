@@ -208,11 +208,14 @@ def test_palette_roles_seed_flat_palette() -> None:
 
 def test_goldens_exist_and_pass_static() -> None:
     ids = list_goldens()
-    assert set(ids) == {"kinetic-type", "particle-field", "gradient-poster"}
-    assert len(GOLDEN_MANIFEST) == 3
+    # AM1 canvas2d goldens remain; AM6 adds p5/three
+    assert {"kinetic-type", "particle-field", "gradient-poster"}.issubset(set(ids))
+    assert len(GOLDEN_MANIFEST) >= 3
     for entry in GOLDEN_MANIFEST:
+        if entry.target != "canvas2d":
+            continue
         source = load_golden_source(entry)
-        result = static_validate_tool_source(source)
+        result = static_validate_tool_source(source, target="canvas2d")
         assert result.ok, f"{entry.id}: {result.errors}"
         assert "createCanvas2dTool" in source
         assert "export const createTool" in source

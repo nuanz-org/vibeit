@@ -23,6 +23,14 @@
     "./skeletons/canvas2d": {
       "types": "./src/skeletons/canvas2d.ts",
       "default": "./src/skeletons/canvas2d.ts"
+    },
+    "./skeletons/p5": {
+      "types": "./src/skeletons/p5.ts",
+      "default": "./src/skeletons/p5.ts"
+    },
+    "./skeletons/three": {
+      "types": "./src/skeletons/three.ts",
+      "default": "./src/skeletons/three.ts"
     }
   },
   "scripts": {

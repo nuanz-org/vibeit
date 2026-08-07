@@ -1,16 +1,19 @@
 """
-Golden library manifest (AM1).
+Golden library manifest (AM1 + AM6 multi-target).
 
-Each entry is a hand-authored canvas2d tool used as few-shot boilerplate.
-No LLM — plain file load + tags.
+Each entry is a hand-authored tool used as few-shot boilerplate.
+No LLM — plain file load + tags. Filter by `target` (canvas2d | p5 | three).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 _DIR = Path(__file__).resolve().parent
+
+GoldenTarget = Literal["canvas2d", "p5", "three"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +22,7 @@ class GoldenEntry:
     path: Path
     tags: frozenset[str]
     description: str
+    target: GoldenTarget = "canvas2d"
 
 
 GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
@@ -36,6 +40,7 @@ GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
             }
         ),
         description="Bold kinetic typography with easing and palette roles",
+        target="canvas2d",
     ),
     GoldenEntry(
         id="particle-field",
@@ -51,6 +56,7 @@ GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
             }
         ),
         description="Soft orbiting particle field with core glow",
+        target="canvas2d",
     ),
     GoldenEntry(
         id="gradient-poster",
@@ -66,6 +72,39 @@ GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
             }
         ),
         description="Full-bleed gradient poster with type hierarchy",
+        target="canvas2d",
+    ),
+    GoldenEntry(
+        id="p5-orbit",
+        path=_DIR / "p5-orbit.ts",
+        tags=frozenset(
+            {
+                "p5",
+                "orbit",
+                "particles",
+                "sketch",
+                "ellipse",
+                "motion",
+            }
+        ),
+        description="p5-style orbiting accent with soft field",
+        target="p5",
+    ),
+    GoldenEntry(
+        id="three-depth",
+        path=_DIR / "three-depth.ts",
+        tags=frozenset(
+            {
+                "three",
+                "webgl",
+                "depth",
+                "3d",
+                "shader",
+                "material",
+            }
+        ),
+        description="three-style WebGL depth pulse with palette roles",
+        target="three",
     ),
 )
 

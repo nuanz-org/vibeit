@@ -49,17 +49,19 @@ export const TARGET_REGISTRY: Record<TargetId, TargetDefinition> = {
   },
   p5: {
     id: "p5",
-    description: "Sketch-like motion, particles, type (p5.js)",
-    launchStatus: "named_only",
+    description: "Sketch-like motion, particles, type (p5-style harness; AM6 stub)",
+    launchStatus: "config_gated",
     asapPath: false,
-    libraries: "Allowlisted p5 bundle/CDN (full rules in M2b)",
+    libraries:
+      "@repo/contracts/skeletons/p5 (Canvas2D-backed stub; full p5 bundle later)",
   },
   three: {
     id: "three",
-    description: "3D / camera / materials (three.js)",
+    description: "3D / camera / materials (WebGL stub harness; AM6)",
     launchStatus: "config_gated",
     asapPath: false,
-    libraries: "Allowlisted three bundle (full rules in M2b; gated until eval threshold)",
+    libraries:
+      "@repo/contracts/skeletons/three (WebGL + preserveDrawingBuffer; full three.js later)",
   },
 };
 

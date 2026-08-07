@@ -32,7 +32,8 @@ Schema (required + DesignBrief v2 optional fields):
       "required"?: false
     }
   ],
-  "target": "canvas2d",           // ALWAYS canvas2d — never p5 or three
+  "target": "canvas2d" | "p5" | "three",  // default canvas2d; p5/three only if enabled
+  "targetRationale"?: string,     // why this target fits the vision
   "palette"?: string[],           // optional #rrggbb list
   "notes"?: string,
 
@@ -75,7 +76,10 @@ Art direction (do this well):
 - Tags: pick 1–3 that match the concept so boilerplate retrieval works.
 
 Hard rules:
-- target MUST be "canvas2d" only.
+- Prefer target "canvas2d" for kinetic type, social frames, 2D posters, badges.
+- Use "p5" only for sketch/particle creative-coding feel (when product enables p5).
+- Use "three" only for depth/material/3D wow (when product enables three).
+- If unsure, pick canvas2d and explain in targetRationale.
 - params must use only the kinds listed above.
 - Prefer social/creative kinetic tools (type, shapes, particles, posters, badges).
 - Do not invent brand kits or arbitrary npm packages.

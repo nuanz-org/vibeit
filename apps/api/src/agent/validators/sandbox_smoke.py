@@ -57,7 +57,10 @@ def _has_exported_factory(code: str) -> bool:
 
 
 def _has_harness_or_vibetool(code: str) -> bool:
-    if re.search(r"\bcreateCanvas2dTool\s*\(", code):
+    if re.search(
+        r"\bcreateCanvas2dTool\s*\(|\bcreateP5Tool\s*\(|\bcreateThreeTool\s*\(",
+        code,
+    ):
         return True
     required = (r"\bmount\s*\(", r"\bcaptureFrame\s*\(", r"\bdispose\s*\(")
     return all(re.search(p, code) for p in required)
@@ -70,7 +73,12 @@ def _draw_body_nontrivial(code: str) -> bool:
         code,
     )
     if not m:
-        return len(code) > 400 and "createCanvas2dTool" in code
+        return len(code) > 400 and bool(
+            re.search(
+                r"createCanvas2dTool|createP5Tool|createThreeTool",
+                code,
+            )
+        )
     body = m.group(1).strip()
     body = re.sub(r"//.*?$", "", body, flags=re.M)
     body = re.sub(r"/\*[\s\S]*?\*/", "", body)
@@ -80,14 +88,18 @@ def _draw_body_nontrivial(code: str) -> bool:
     return len(body) >= 20
 
 
-def run_structural_smoke(code: str) -> SandboxSmokeResult:
+def run_structural_smoke(
+    code: str,
+    *,
+    target: str | None = None,
+) -> SandboxSmokeResult:
     """
-    Structural sandbox smoke (M3c) — cheap pre-filter.
+    Structural sandbox smoke (M3c + AM6) — cheap pre-filter.
 
     Runs static validate first, then export/harness/draw checks.
     """
     errors: list[str] = []
-    static = static_validate_tool_source(code)
+    static = static_validate_tool_source(code, target=target)
     if not static.ok:
         errors.extend(f"static:{e}" for e in static.errors)
 
@@ -99,8 +111,8 @@ def run_structural_smoke(code: str) -> SandboxSmokeResult:
 
     if not _has_harness_or_vibetool(code):
         errors.append(
-            "smoke: expected createCanvas2dTool(...) or full VibeTool "
-            "mount/captureFrame/dispose"
+            "smoke: expected createCanvas2dTool / createP5Tool / createThreeTool "
+            "or full VibeTool mount/captureFrame/dispose"
         )
 
     if not _draw_body_nontrivial(code):
@@ -137,9 +149,13 @@ def run_sandbox_smoke(
     variance: float | None = None
     ran: list[str] = []
 
+    plan_target = None
+    if isinstance(plan, dict) and isinstance(plan.get("target"), str):
+        plan_target = plan["target"]
+
     if "structural" in ordered:
         ran.append("structural")
-        structural = run_structural_smoke(code)
+        structural = run_structural_smoke(code, target=plan_target)
         if not structural.ok:
             return SandboxSmokeResult(
                 ok=False,

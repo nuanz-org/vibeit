@@ -31,20 +31,22 @@ export const createTool = () =>
 Hard rules (fail if violated):
 - ONLY import from "@repo/contracts" or "@repo/contracts/..."
 - Do NOT use window.parent, window.top, eval, new Function, fetch, XMLHttpRequest, WebSocket, require
-- Do NOT import p5 or three
+- Do NOT import bare 'p5' or 'three' packages — use @repo/contracts/skeletons/*
 - Do NOT start your own requestAnimationFrame loop — harness owns the loop
-- Draw using harness-loaded c.images[slotId] for assets (crossOrigin already set)
-- Export createTool (or createSocialFrameTool) as shown
+- Export createTool as shown
 - Implement a non-trivial draw body that uses params (colors, title, motion)
 
-Craft guidance (AM1 — match brik-level intent on canvas2d):
+Target harness (match plan.target):
+- canvas2d (default): createCanvas2dTool from @repo/contracts/skeletons/canvas2d; draw(c) with c.ctx
+- p5: createP5Tool from @repo/contracts/skeletons/p5; draw(p) with p.background/fill/ellipse/text
+- three: createThreeTool from @repo/contracts/skeletons/three; draw(c) with c.gl / c.clear (WebGL)
+
+Craft guidance (AM1 — match brik-level intent):
 - Layer the scene: background → atmosphere → focal element → type/chrome.
 - Use plan.paletteRoles when present (bg / ink / accent / highlight); fall back to palette[].
-- Motion: prefer smooth sine / ease-out (0.5-0.5*cos) over linear; honor motionSpec.tempo/easing/loop.
-- Typography: one clear hierarchy (display + caption). Size from width; clamp min sizes.
-- Params drive look: every plan param name should affect draw (colors, speed, title, intensity).
-- Avoid flat single-shape stubs. Prefer gradients, soft shadows, vignettes, and secondary motion.
-- If exemplars are provided, learn composition and structure from them — do NOT copy titles/literals blindly.
+- Motion: prefer smooth sine / ease-out over linear; honor motionSpec when present.
+- Params drive look: every plan param name should affect draw.
+- If exemplars are provided, learn composition from them — do NOT copy titles/literals blindly.
 
 Match param schema names and asset slot ids from the plan JSON.
 """

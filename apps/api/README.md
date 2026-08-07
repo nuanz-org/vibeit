@@ -192,6 +192,18 @@ LLM_MODEL_VISION=google/gemini-2.5-flash   # default; multimodal style extract
 
 Style extract **soft-fails** (job continues unstyled) if images missing or vision errors.
 
+### AM6 multi-target (config-gated)
+
+```bash
+# Default: canvas2d only. Opt-in:
+VIBEIT_TARGET_P5_ENABLED=1
+VIBEIT_TARGET_THREE_ENABLED=1
+```
+
+Skeletons: `@repo/contracts/skeletons/p5` (Canvas2D-backed p5-like API) and
+`@repo/contracts/skeletons/three` (WebGL + `preserveDrawingBuffer`).  
+Goldens: `p5-orbit`, `three-depth`. Plan may set `target` + `targetRationale` only when enabled.
+
 Setup once:
 
 ```bash
