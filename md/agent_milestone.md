@@ -19,7 +19,7 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `dc95de9` (2026-08-07) |
 | **AM3** | Critic loop + quality evals | **Covered in code** — AM3a–AM3d scaffold shipped; enforcement waits on human calibration | `ba5ec07` (2026-08-07) |
 | **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | `0555253` (2026-08-07) |
-| **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | 2026-08-07 |
+| **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | `599ead3` (2026-08-07) |
 | AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
 | AM7 | Chat refine agents | **Not started** | — |
 
