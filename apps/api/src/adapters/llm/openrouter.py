@@ -1,7 +1,8 @@
 """
-OpenRouter chat completions adapter (M3b).
+OpenRouter chat completions adapter (M3b + AM4 multi-model).
 
-Only model allowed on ASAP path: deepseek/deepseek-v4-flash.
+Models must be on the AM4 role allowlist (see adapters.llm.router).
+Default remains deepseek/deepseek-v4-flash.
 """
 
 from __future__ import annotations
@@ -18,11 +19,12 @@ from adapters.llm.protocol import (
     LLMRequestError,
     TokenUsage,
 )
+from adapters.llm.router import FLASH_MODEL, assert_allowed_model
 
 OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Sole codegen model for M3 ASAP (user freeze).
-ASAP_CODEGEN_MODEL = "deepseek/deepseek-v4-flash"
+# Back-compat: Flash is the documented default / fallback.
+ASAP_CODEGEN_MODEL = FLASH_MODEL
 
 # DeepSeek V4 Flash is a reasoning model. Without this, it often spends the
 # entire max_tokens budget on message.reasoning and returns content=null with
@@ -138,17 +140,6 @@ def normalize_messages(
             content = str(m.get("content", ""))
             out.append({"role": role, "content": content})
     return out
-
-
-def assert_allowed_model(model: str) -> str:
-    """Reject any model other than deepseek/deepseek-v4-flash."""
-    mid = model.strip()
-    if mid != ASAP_CODEGEN_MODEL:
-        raise LLMConfigError(
-            f"model {mid!r} is not allowed on ASAP path; "
-            f"only {ASAP_CODEGEN_MODEL!r} is configured"
-        )
-    return mid
 
 
 class OpenRouterLLMClient:

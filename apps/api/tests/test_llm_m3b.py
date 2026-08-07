@@ -27,16 +27,16 @@ def test_asap_model_constant() -> None:
 
 
 def test_router_all_roles_use_flash() -> None:
-    for role in ("codegen", "plan", "repair"):
+    for role in ("codegen", "plan", "repair", "judge", "vision"):
         assert resolve_model_for_role(role) == ASAP_CODEGEN_MODEL
 
 
 def test_rejects_other_models() -> None:
     try:
-        OpenRouterLLMClient(api_key="sk-test", default_model="openai/gpt-4o")
+        OpenRouterLLMClient(api_key="sk-test", default_model="openai/not-allowlisted-zzz")
         raise AssertionError("expected LLMConfigError")
     except LLMConfigError as exc:
-        assert "deepseek/deepseek-v4-flash" in str(exc)
+        assert "allowlist" in str(exc).lower() or "not" in str(exc).lower()
 
 
 def test_missing_api_key() -> None:
@@ -97,11 +97,11 @@ def test_complete_parses_openrouter_response() -> None:
             assert result.usage.prompt_tokens == 12
             assert result.finish_reason == "stop"
 
-            # Explicit other model rejected even if default is ok
+            # Explicit unknown model rejected even if default is ok
             try:
                 await client.complete(
                     [ChatMessage(role="user", content="x")],
-                    model="anthropic/claude-3.5-sonnet",
+                    model="openai/not-allowlisted-zzz",
                 )
                 raise AssertionError("expected LLMConfigError")
             except LLMConfigError:

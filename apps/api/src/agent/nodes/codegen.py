@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
+from adapters.llm.router import resolve_model_for_role
+from core.config import get_settings
 from agent.codegen_parse import CodegenParseError, extract_typescript_module
 from agent.golden.retrieve import retrieve_goldens
 from agent.prompts.create_codegen import CODEGEN_SYSTEM_PROMPT, codegen_user_prompt
@@ -59,7 +61,15 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
     ]
 
     try:
-        completion = await llm.complete(messages, temperature=0.4, max_tokens=80_000)
+        codegen_model = resolve_model_for_role(
+            "codegen", configured=get_settings().llm_model_codegen
+        )
+        completion = await llm.complete(
+            messages,
+            model=codegen_model,
+            temperature=0.4,
+            max_tokens=80_000,
+        )
         code = extract_typescript_module(completion.text)
     except (CodegenParseError, LLMError) as exc:
         return {

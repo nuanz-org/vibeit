@@ -11,6 +11,7 @@ import os
 from typing import Any
 
 from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
+from adapters.llm.router import resolve_model_for_role
 from agent.critique_parse import (
     DEFAULT_CRITIC_THRESHOLD,
     CritiqueParseError,
@@ -18,6 +19,7 @@ from agent.critique_parse import (
 )
 from agent.prompts.critique import CRITIQUE_SYSTEM_PROMPT, critique_user_prompt
 from agent.state import CreateGraphState
+from core.config import get_settings
 
 
 def critic_threshold() -> float:
@@ -99,8 +101,12 @@ async def critique_node(
 
     tokens = int(state.get("llm_tokens_used") or 0)
     try:
+        judge_model = resolve_model_for_role(
+            "judge", configured=get_settings().llm_model_judge
+        )
         completion = await llm.complete(
             messages,
+            model=judge_model,
             temperature=0.2,
             max_tokens=4_000,
         )

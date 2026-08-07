@@ -155,6 +155,28 @@ Smoke pipeline (AM2): **structural → esbuild compile → param coverage → Pl
 
 After gates pass, **AM3 critic** scores craft (advisory by default). Set `VIBEIT_CRITIC_ENFORCED=1` only after calibration (`evals/create/calibration/`).
 
+### AM4 model routing
+
+Per-role models (default all Flash):
+
+```bash
+LLM_MODEL_PLAN=deepseek/deepseek-v4-flash
+LLM_MODEL_CODEGEN=deepseek/deepseek-v4-flash
+LLM_MODEL_REPAIR=deepseek/deepseek-v4-flash
+LLM_MODEL_JUDGE=deepseek/deepseek-v4-flash
+LLM_MODEL_VISION=deepseek/deepseek-v4-flash
+# LLM_ALLOWLIST_EXTRA=provider/extra-model
+```
+
+Codegen A/B shootout:
+
+```bash
+EVAL_LIVE=1 uv run python scripts/eval_create.py \
+  --ab-codegen deepseek/deepseek-v4-flash,anthropic/claude-sonnet-4.5 --limit 10
+```
+
+Decision record: `evals/create/model-ab/` (do not change defaults without a committed shootout).
+
 Setup once:
 
 ```bash

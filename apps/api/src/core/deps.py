@@ -8,8 +8,9 @@ from adapters.auth.better_auth import BetterAuthSessionValidator
 from adapters.db.repositories.assets import AssetsRepository
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
-from adapters.llm.openrouter import ASAP_CODEGEN_MODEL, OpenRouterLLMClient
+from adapters.llm.openrouter import OpenRouterLLMClient
 from adapters.llm.protocol import LLMClient, LLMConfigError
+from adapters.llm.router import assert_allowed_model
 from adapters.storage import create_storage
 from adapters.storage.protocol import ObjectStorage
 from core.config import Settings, get_settings
@@ -58,14 +59,14 @@ def get_assets_repo(pool=Depends(get_db_pool)) -> AssetsRepository:
 
 def get_llm_client(settings: Settings = Depends(get_settings)) -> LLMClient:
     """
-    OpenRouter client for Create agent nodes (M3b+).
+    OpenRouter client for Create agent nodes (M3b+ / AM4).
 
-    Requires OPENROUTER_API_KEY. Model is forced to deepseek/deepseek-v4-flash.
+    Requires OPENROUTER_API_KEY. Default model is per-role codegen assignment;
+    nodes pass role-specific models on complete().
     """
-    model = settings.llm_codegen_model or settings.llm_default_model
-    if model != ASAP_CODEGEN_MODEL:
-        # Soft-normalize: always use the ASAP-only model.
-        model = ASAP_CODEGEN_MODEL
+    model = assert_allowed_model(
+        settings.llm_model_codegen or settings.llm_default_model
+    )
     if not settings.openrouter_api_key:
         raise LLMConfigError(
             "OPENROUTER_API_KEY is missing — set it in the API environment "

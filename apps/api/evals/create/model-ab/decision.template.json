@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "status": "pending",
+  "date": "YYYY-MM-DD",
+  "shootout_report": "shootout-YYYYMMDD.json",
+  "defaults": {
+    "plan": "deepseek/deepseek-v4-flash",
+    "codegen": "deepseek/deepseek-v4-flash",
+    "repair": "deepseek/deepseek-v4-flash",
+    "judge": "deepseek/deepseek-v4-flash",
+    "vision": "deepseek/deepseek-v4-flash"
+  },
+  "codegen_candidates_tested": [],
+  "metrics": {
+    "first_pass_rate": null,
+    "after_repair_rate": null,
+    "mean_judge_score": null,
+    "approx_cost_cents_per_create": null,
+    "wall_seconds_mean": null
+  },
+  "decision": "Keep Flash until live shootout is committed.",
+  "fallback": "deepseek/deepseek-v4-flash",
+  "approved_by": null
+}

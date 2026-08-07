@@ -6,9 +6,11 @@ import json
 from typing import Any
 
 from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
+from adapters.llm.router import resolve_model_for_role
 from agent.codegen_parse import CodegenParseError, extract_typescript_module
 from agent.prompts.create_repair import REPAIR_SYSTEM_PROMPT, repair_user_prompt
 from agent.state import CreateGraphState
+from core.config import get_settings
 
 
 async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any]:
@@ -58,7 +60,15 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
 
     tokens = int(state.get("llm_tokens_used") or 0)
     try:
-        completion = await llm.complete(messages, temperature=0.25, max_tokens=80_000)
+        repair_model = resolve_model_for_role(
+            "repair", configured=get_settings().llm_model_repair
+        )
+        completion = await llm.complete(
+            messages,
+            model=repair_model,
+            temperature=0.25,
+            max_tokens=80_000,
+        )
         fixed = extract_typescript_module(completion.text)
         tokens += completion.usage.total_tokens
     except (CodegenParseError, LLMError) as exc:

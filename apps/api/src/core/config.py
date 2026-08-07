@@ -71,18 +71,26 @@ class Settings:
             o.strip() for o in raw_origins.split(",") if o.strip()
         )
 
-        # --- LLM / OpenRouter (M3b) ---
-        # ASAP: only deepseek/deepseek-v4-flash (enforced in adapters/llm).
+        # --- LLM / OpenRouter (M3b + AM4 per-role routing) ---
+        # Defaults: deepseek/deepseek-v4-flash per role until A/B decision changes them.
         self.openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "").strip()
-        self.llm_default_model: str = os.getenv(
-            "LLM_DEFAULT_MODEL",
-            "deepseek/deepseek-v4-flash",
+        _flash = "deepseek/deepseek-v4-flash"
+        self.llm_default_model: str = os.getenv("LLM_DEFAULT_MODEL", _flash).strip()
+        # Per-role models (AM4). LLM_MODEL_CODEGEN falls back to legacy LLM_CODEGEN_MODEL.
+        self.llm_model_plan: str = os.getenv("LLM_MODEL_PLAN", _flash).strip()
+        self.llm_model_codegen: str = (
+            os.getenv("LLM_MODEL_CODEGEN", "").strip()
+            or os.getenv("LLM_CODEGEN_MODEL", "").strip()
+            or self.llm_default_model
+            or _flash
+        )
+        self.llm_model_repair: str = os.getenv(
+            "LLM_MODEL_REPAIR", self.llm_model_codegen
         ).strip()
-        # Alias kept for clarity; must match llm_default_model on ASAP path.
-        self.llm_codegen_model: str = os.getenv(
-            "LLM_CODEGEN_MODEL",
-            self.llm_default_model,
-        ).strip()
+        self.llm_model_judge: str = os.getenv("LLM_MODEL_JUDGE", _flash).strip()
+        self.llm_model_vision: str = os.getenv("LLM_MODEL_VISION", _flash).strip()
+        # Back-compat alias
+        self.llm_codegen_model: str = self.llm_model_codegen
         self.llm_timeout_seconds: float = float(
             os.getenv("LLM_TIMEOUT_SECONDS", "60")
         )
@@ -92,6 +100,9 @@ class Settings:
             "http://localhost:3000",
         ).strip()
         self.llm_app_title: str = os.getenv("LLM_APP_TITLE", "Vibeit").strip()
+
+        # Fail loud at startup if any role model is not allowlisted
+        self._validate_llm_role_models()
 
         # --- Create agent budgets (M3e / M3f / AM2) ---
         self.create_repair_max: int = int(os.getenv("CREATE_REPAIR_MAX", "3"))
@@ -126,4 +137,29 @@ class Settings:
         # Rough cost estimate: integer cents per 1M tokens (default 15 ≈ $0.15/M)
         self.create_cost_cents_per_million_tokens: int = int(
             os.getenv("CREATE_COST_CENTS_PER_MILLION_TOKENS", "15")
+        )
+
+    def _validate_llm_role_models(self) -> None:
+        """AM4: misconfigured LLM_MODEL_* fails at Settings construction."""
+        from adapters.llm.router import validate_configured_models
+
+        validate_configured_models(
+            {
+                "plan": self.llm_model_plan,
+                "codegen": self.llm_model_codegen,
+                "repair": self.llm_model_repair,
+                "judge": self.llm_model_judge,
+                "vision": self.llm_model_vision,
+            }
+        )
+
+    def model_for_role(self, role: str) -> str:
+        """Resolve allowlisted model for an agent role (respects eval overrides)."""
+        from adapters.llm.router import LLMRole, resolve_model_for_role
+
+        key = f"llm_model_{role}"
+        configured = getattr(self, key, None)
+        return resolve_model_for_role(
+            role,  # type: ignore[arg-type]
+            configured=configured if isinstance(configured, str) else None,
         )

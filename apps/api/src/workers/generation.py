@@ -12,8 +12,9 @@ from typing import Any
 
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
-from adapters.llm.openrouter import ASAP_CODEGEN_MODEL, OpenRouterLLMClient
+from adapters.llm.openrouter import OpenRouterLLMClient
 from adapters.llm.protocol import LLMClient, LLMConfigError
+from adapters.llm.router import assert_allowed_model
 from agent.runner import run_create_with_repairs
 from agent.state import CreateGraphState
 from core.config import Settings, get_settings
@@ -23,9 +24,12 @@ from services.finalize_job import finalize_from_agent_state
 def _build_llm(settings: Settings) -> LLMClient:
     if not settings.openrouter_api_key:
         raise LLMConfigError("OPENROUTER_API_KEY missing for generation worker")
+    default = assert_allowed_model(
+        settings.llm_model_codegen or settings.llm_default_model
+    )
     return OpenRouterLLMClient(
         api_key=settings.openrouter_api_key,
-        default_model=ASAP_CODEGEN_MODEL,
+        default_model=default,
         timeout_seconds=settings.llm_timeout_seconds,
         http_referer=settings.llm_http_referer or None,
         app_title=settings.llm_app_title or "Vibeit",

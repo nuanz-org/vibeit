@@ -1,4 +1,4 @@
-"""LLM adapters (OpenRouter)."""
+"""LLM adapters (OpenRouter + AM4 role router)."""
 
 from adapters.llm.openrouter import ASAP_CODEGEN_MODEL, OpenRouterLLMClient
 from adapters.llm.protocol import (
@@ -10,10 +10,16 @@ from adapters.llm.protocol import (
     LLMRequestError,
     TokenUsage,
 )
-from adapters.llm.router import resolve_model_for_role
+from adapters.llm.router import (
+    FLASH_MODEL,
+    allowlist_for_role,
+    resolve_model_for_role,
+    validate_configured_models,
+)
 
 __all__ = [
     "ASAP_CODEGEN_MODEL",
+    "FLASH_MODEL",
     "ChatMessage",
     "LLMClient",
     "LLMCompletion",
@@ -22,5 +28,7 @@ __all__ = [
     "LLMRequestError",
     "OpenRouterLLMClient",
     "TokenUsage",
+    "allowlist_for_role",
     "resolve_model_for_role",
+    "validate_configured_models",
 ]

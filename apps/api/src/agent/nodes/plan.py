@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
+from adapters.llm.router import resolve_model_for_role
 from agent.plan_parse import PlanParseError, parse_asap_plan
 from agent.prompts.create_plan import PLAN_SYSTEM_PROMPT, plan_user_prompt
 from agent.state import CreateGraphState
+from core.config import get_settings
 
 
 async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any]:
@@ -58,7 +60,12 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
                 ]
                 temperature = 0.1
 
-            completion = await llm.complete(messages, temperature=temperature)
+            plan_model = resolve_model_for_role(
+                "plan", configured=get_settings().llm_model_plan
+            )
+            completion = await llm.complete(
+                messages, model=plan_model, temperature=temperature
+            )
             last_raw = completion.text
             plan = parse_asap_plan(completion.text)
             tokens += completion.usage.total_tokens

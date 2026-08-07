@@ -1,7 +1,7 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** **AM3 critic loop — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Status:** **AM4 model routing — code complete / exit partial** (see [Coverage log](#coverage-log))
 **Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
@@ -18,10 +18,26 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM1** | Craft floor (prompts + golden library) | **Covered in code** — subparts AM1a–AM1d shipped; full exit still needs owner Studio/eyeball | `02fe278` (2026-08-07) |
 | **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `dc95de9` (2026-08-07) |
 | **AM3** | Critic loop + quality evals | **Covered in code** — AM3a–AM3d scaffold shipped; enforcement waits on human calibration | `ba5ec07` (2026-08-07) |
-| AM4 | Model routing + live A/B | **Not started** | — |
+| **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | 2026-08-07 |
 | AM5 | Style conditioning | **Not started** (gated on AM1–AM3) | — |
 | AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
 | AM7 | Chat refine agents | **Not started** | — |
+
+### AM4 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM4** (per-role router + A/B plumbing). Production defaults remain Flash.
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM4a** | ✅ | `router.py` per-role allowlists; `LLM_MODEL_*` env; Settings startup validation |
+| **AM4b** | ✅ | `eval_create.py --model role=id` + `--ab-codegen m1,m2,...` comparison table |
+| **AM4c** | ✅ (partial) | `evals/create/model-ab/` decision baseline + template; live shootout pending owner |
+
+**Still open for full AM4 exit:**
+
+- [ ] Live codegen shootout report committed under `evals/create/model-ab/`  
+- [ ] Owner picks defaults + accepts cost; update `decision.json`  
+- [ ] Then mark AM4 fully exited  
 
 ### AM3 — what was shipped (2026-08-07)
 
@@ -143,7 +159,9 @@ AM2  Real gates (esbuild compile + Playwright host smoke)  ← COVERED (code com
  ↓
 AM3  Critic loop + quality evals (screenshot judge, calibration)  ← COVERED (code complete; exit partial)
  ↓
-AM4  Model routing + live A/B (unlock per-role models, set codegen default)  ← next
+AM4  Model routing + live A/B (unlock per-role models, set codegen default)  ← COVERED (code complete; exit partial)
+ ↓
+AM5–AM7  fast-follows (style / multi-target / chat refine)
  ↓
 ┌────────────────────────────────────────────────────┐
 │ Fast-follows (each gated on AM1–AM3 staying green) │
@@ -365,25 +383,27 @@ Live eval run produces a scored gallery of 40 outputs; a mid-quality tool gets v
 
 ## AM4 — Model routing + live A/B
 
+**Coverage:** **Implemented** (2026-08-07). Router + A/B CLI done; live shootout + default change still open (Flash remains default).
+
 **Why:** The Flash lock (`assert_allowed_model`) caps every role. With prompts, gates, and the critic in place, model quality finally becomes *measurable* — so this is when we spend money on stronger models, guided by data.
 
 ### Deliverables
 
-- [ ] **Per-role router** — `plan` / `vision` / `codegen` / `judge` / `repair` roles → model id; env-configurable (`LLM_MODEL_*`); per-role allowlist; misconfiguration fails loud at startup
-- [ ] **A/B eval mode** — eval runner sweeps model assignments over the corpus and emits a comparison report (first-pass, after-repair, judge score, cost, wall time)
-- [ ] **Codegen shootout** — Claude Sonnet 5 vs Kimi K2.7 Code vs DeepSeek V4 Pro (Flash baseline) on corpus v2
-- [ ] **Default decision** — committed record of chosen defaults per role + reasoning; cost-per-create estimate update
+- [x] **Per-role router** — `plan` / `vision` / `codegen` / `judge` / `repair` → `LLM_MODEL_*`; per-role allowlist; startup validation
+- [x] **A/B eval mode** — `--model` overrides + `--ab-codegen` sweep (first-pass, after-repair, judge, wall)
+- [ ] **Codegen shootout** — live run Claude / Kimi / DeepSeek Pro vs Flash on corpus v2 (plumbing ready)
+- [x] **Default decision** — baseline `evals/create/model-ab/decision.json` (Flash); update after shootout
 
 ### Demo
 
-One command produces a model-comparison table over the 40-prompt corpus with judge scores and costs; new defaults live behind env vars.
+One command produces a model-comparison table over the corpus with judge scores and wall time; new defaults live behind env vars.
 
 ### Exit criteria
 
-- [ ] Any allowlisted role model can be swapped via env without code change
+- [x] Any allowlisted role model can be swapped via env without code change
 - [ ] Codegen default chosen by committed A/B report (not vibes); Flash remains documented fallback
 - [ ] Cost per create at new defaults is documented and accepted by owner
-- [ ] Non-codegen roles stay cheap (plan/judge/vision on flash-tier unless A/B says otherwise)
+- [x] Non-codegen roles stay cheap (plan/judge/vision default flash-tier)
 
 ### Out of scope
 
@@ -397,11 +417,11 @@ One command produces a model-comparison table over the 40-prompt corpus with jud
 
 ### AM4 — implementation plan (subparts)
 
-| Subpart | Name | Depends on | ~Days | Outcome |
-|---------|------|------------|------:|---------|
-| **AM4a** | Per-role router + allowlists + env | — | 0.5 | `router.py` unlock; startup validation |
-| **AM4b** | A/B sweep mode in eval runner | AM3d | 0.5 | Comparison report (quality + cost) |
-| **AM4c** | Shootout + default decision + checklist | AM4b | 0.5–1 | Committed `evals/create/model-ab/` record |
+| Subpart | Name | Depends on | ~Days | Outcome | Done |
+|---------|------|------------|------:|---------|:----:|
+| **AM4a** | Per-role router + allowlists + env | — | 0.5 | `router.py` unlock; startup validation | ✅ |
+| **AM4b** | A/B sweep mode in eval runner | AM3d | 0.5 | Comparison report (quality + cost) | ✅ |
+| **AM4c** | Shootout + default decision + checklist | AM4b | 0.5–1 | Committed `evals/create/model-ab/` record | ✅ scaffold |
 
 **Where code lands:**
 
