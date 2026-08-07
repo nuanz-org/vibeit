@@ -1,11 +1,59 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** AM1 in progress (craft floor landed in code; owner eyeball + pre-baseline still open)
-**Date:** 2026-08-06
+**Status:** **AM1 craft floor — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
 **Prereq:** Core loop complete (M0–M8 ✅). This track is **M9-quality** work; AM5/AM6/AM7 are the agent-side deliverables of **M4 / M2b / M6**.
+
+---
+
+## Coverage log
+
+What has actually been implemented on this track (update when an AM lands).
+
+| Milestone | Name | Coverage | Commit / notes |
+|-----------|------|----------|----------------|
+| **AM1** | Craft floor (prompts + golden library) | **Covered in code** — subparts AM1a–AM1d shipped; full exit still needs owner Studio/eyeball | `02fe278` (2026-08-07) |
+| AM2 | Real gates (compile + host smoke) | **Not started** | — |
+| AM3 | Critic loop + quality evals | **Not started** | — |
+| AM4 | Model routing + live A/B | **Not started** | — |
+| AM5 | Style conditioning | **Not started** (gated on AM1–AM3) | — |
+| AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
+| AM7 | Chat refine agents | **Not started** | — |
+
+### AM1 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM1 only** (agent quality track start). Not M0 product milestones; not AM2+.
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM1a** | ✅ | DesignBrief v2 optional fields on `ToolPlan`; Python `plan_parse` (hex palette, ≥3 params, v2 fields); Art Director rewrite of `create_plan.py` |
+| **AM1b** | ✅ | 3 goldens (`kinetic-type`, `particle-field`, `gradient-poster`) + `golden/index.py` + tag retriever `retrieve.py` |
+| **AM1c** | ✅ | Craft guidance in `create_codegen.py` / `create_repair.py`; codegen node injects 1–2 exemplars |
+| **AM1d** | ✅ (partial exit) | Live Flash baseline `evals/create/baselines/am1-after.json` (8/10 first-pass); tests `test_agent_am1.py` |
+
+**Files touched (canonical):**
+
+| Area | Paths |
+|------|--------|
+| Schema | `packages/contracts/src/plan.ts`, `index.ts`, social-frame plan example |
+| Plan parse | `apps/api/src/agent/plan_parse.py` |
+| Prompts | `apps/api/src/agent/prompts/create_plan.py`, `create_codegen.py`, `create_repair.py` |
+| Pipeline | `apps/api/src/agent/nodes/codegen.py`, `state.py` |
+| Goldens | `apps/api/src/agent/golden/*` |
+| Tests | `apps/api/tests/test_agent_am1.py` |
+| Eval | `apps/api/evals/create/baselines/` |
+| Docs | this file, `md/agents.md`, `md/contracts/plan-json.md` |
+
+**App impact:** Create jobs use the new plan + craft prompts + golden few-shots automatically (no new UI). Expect often better composition/motion on Flash; not a new screen.
+
+**Still open for full AM1 exit:**
+
+- [ ] Mount 3 goldens in Studio + human design review  
+- [ ] Owner eyeball ≥7/10 corpus outputs “visibly better”  
+- [ ] Then mark AM1 fully exited and start **AM2**
 
 ---
 
@@ -23,9 +71,9 @@ Same conventions as [vibeit-milestones.md](./vibeit-milestones.md):
 **Principle:** Prompts and goldens before infra; gates before the critic; canvas2d quality proven before multi-target. **Every quality claim is backed by a live eval run** — mock eval is plumbing-only.
 
 ```
-AM1  Craft floor (prompts + golden library)          ← start here, no new infra
+AM1  Craft floor (prompts + golden library)          ← COVERED (code complete; exit partial)
  ↓
-AM2  Real gates (esbuild compile + Playwright host smoke)
+AM2  Real gates (esbuild compile + Playwright host smoke)  ← next
  ↓
 AM3  Critic loop + quality evals (screenshot judge, calibration)
  ↓
@@ -60,7 +108,9 @@ Numbers are planning aids, not commitments. Cut polish, not the path.
 
 ## AM1 — Craft floor (prompts + golden library)
 
-**Why:** Cheapest, highest-leverage quality work. Today the plan prompt is schema-only and codegen's only reference is a pulsing-circle stub. No new infrastructure required — pure prompt/schema/library work, runnable on the existing Flash lock.
+**Coverage:** **Implemented** (2026-08-07, commit `02fe278`). Subparts AM1a–AM1d done in code. Full milestone exit still needs owner Studio mount + eyeball (see Coverage log).
+
+**Why:** Cheapest, highest-leverage quality work. Before AM1 the plan prompt was schema-only and codegen's only reference was a pulsing-circle stub. No new infrastructure required — pure prompt/schema/library work, runnable on the existing Flash lock.
 
 ### Deliverables
 
@@ -94,12 +144,12 @@ Same 10 eval prompts through the live pipeline before vs after — visible compo
 
 ### AM1 — implementation plan (subparts)
 
-| Subpart | Name | Depends on | ~Days | Outcome |
-|---------|------|------------|------:|---------|
-| **AM1a** | DesignBrief v2 schema + Art Director prompt | — | 0.5–1 | Richer plan JSON; parser + fallbacks updated |
-| **AM1b** | Golden library (3 tools) + retriever | — (∥ AM1a) | 1–1.5 | Hand-authored exemplars + tag lookup, no LLM |
-| **AM1c** | Codegen + repair prompt upgrade | AM1a + AM1b | 0.5–1 | Craft guidance + exemplar injection in context |
-| **AM1d** | Live eval baseline + AM1 checklist | AM1c | 0.5 | Before/after Flash numbers committed |
+| Subpart | Name | Depends on | ~Days | Outcome | Done |
+|---------|------|------------|------:|---------|:----:|
+| **AM1a** | DesignBrief v2 schema + Art Director prompt | — | 0.5–1 | Richer plan JSON; parser + fallbacks updated | ✅ |
+| **AM1b** | Golden library (3 tools) + retriever | — (∥ AM1a) | 1–1.5 | Hand-authored exemplars + tag lookup, no LLM | ✅ |
+| **AM1c** | Codegen + repair prompt upgrade | AM1a + AM1b | 0.5–1 | Craft guidance + exemplar injection in context | ✅ |
+| **AM1d** | Live eval baseline + AM1 checklist | AM1c | 0.5 | Post-AM1 Flash numbers committed (no pre-AM1 live JSON in repo) | ✅ |
 
 **Where code lands:**
 
