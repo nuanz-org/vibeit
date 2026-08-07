@@ -19,6 +19,10 @@ JobPhase = Literal[
     "finalize",
 ]
 
+# AM7 — Control refine patch mode
+PatchMode = Literal["param", "code"]
+JobKind = Literal["create", "refine"]
+
 
 class CreateGraphState(TypedDict, total=False):
     """Mutable graph state passed between LangGraph nodes."""
@@ -85,6 +89,25 @@ class CreateGraphState(TypedDict, total=False):
     # AM1 — golden exemplars injected into codegen (ids only)
     golden_ids: NotRequired[list[str]]
 
+    # AM7 — Control refine (patch mode)
+    job_kind: NotRequired[JobKind | str]
+    chat_message: NotRequired[str]
+    base_version_id: NotRequired[str | None]
+    base_code: NotRequired[str]
+    base_plan: NotRequired[dict[str, Any] | None]
+    base_default_params: NotRequired[dict[str, Any]]
+    base_param_schema: NotRequired[list[Any]]
+    base_asset_slots: NotRequired[list[Any]]
+    base_critique_score: NotRequired[float | None]
+    patch_mode: NotRequired[PatchMode | str | None]
+    patch_route_rationale: NotRequired[str | None]
+    param_patch: NotRequired[dict[str, Any] | None]
+    default_params: NotRequired[dict[str, Any] | None]
+    param_schema: NotRequired[list[Any] | None]
+    asset_slots: NotRequired[list[Any] | None]
+    # True when param path used plan-model only (no codegen role call)
+    used_param_patch_only: NotRequired[bool]
+
 
 def initial_create_state(
     *,
@@ -123,4 +146,64 @@ def initial_create_state(
         error_message=None,
         ready_for_finalize=False,
         llm_tokens_used=0,
+        job_kind="create",
+    )
+
+
+def initial_refine_state(
+    *,
+    chat_message: str,
+    base_code: str,
+    base_plan: dict[str, Any] | None = None,
+    base_default_params: dict[str, Any] | None = None,
+    base_param_schema: list[Any] | None = None,
+    base_asset_slots: list[Any] | None = None,
+    base_critique_score: float | None = None,
+    base_version_id: str | None = None,
+    target: str = "canvas2d",
+    max_repairs: int = 3,
+    job_id: str | None = None,
+    tool_id: str | None = None,
+    patch_mode: PatchMode | str | None = None,
+) -> CreateGraphState:
+    """AM7 — seed state for Control refine from an existing tool version."""
+    defaults = dict(base_default_params or {})
+    schema = list(base_param_schema or [])
+    slots = list(base_asset_slots or [])
+    plan = base_plan if isinstance(base_plan, dict) else None
+    chat = (chat_message or "").strip()
+    return CreateGraphState(
+        vision_text=chat,
+        chat_message=chat,
+        use_fixture_code=False,
+        job_kind="refine",
+        base_version_id=base_version_id,
+        base_code=base_code,
+        base_plan=plan,
+        base_default_params=defaults,
+        base_param_schema=schema,
+        base_asset_slots=slots,
+        base_critique_score=base_critique_score,
+        patch_mode=patch_mode,
+        plan=plan,
+        code=base_code,
+        default_params=defaults,
+        param_schema=schema,
+        asset_slots=slots,
+        target=target or "canvas2d",
+        validation_errors=[],
+        validate_ok=False,
+        smoke_errors=[],
+        smoke_ok=False,
+        repair_count=0,
+        max_repairs=max_repairs,
+        best_valid_code=None,
+        job_id=job_id,
+        tool_id=tool_id,
+        phase="ingest",
+        error_code=None,
+        error_message=None,
+        ready_for_finalize=False,
+        llm_tokens_used=0,
+        used_param_patch_only=False,
     )

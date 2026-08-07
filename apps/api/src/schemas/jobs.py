@@ -73,6 +73,30 @@ class CreateJobResponse(CamelModel):
     user_id: str | None = Field(default=None, alias="userId")
 
 
+class RefineJobRequest(CamelModel):
+    """POST /api/v1/tools/{toolId}/refine body (AM7)."""
+
+    message: str = Field(min_length=1)
+    base_version_id: str | None = Field(default=None, alias="baseVersionId")
+
+
+class RefineBudgetFields(CamelModel):
+    refine_used: int = Field(alias="refineUsed")
+    refine_limit: int = Field(alias="refineLimit")
+
+
+class RefineJobResponse(CamelModel):
+    """POST refine accept response."""
+
+    job_id: str = Field(alias="jobId")
+    tool_id: str = Field(alias="toolId")
+    base_version_id: str = Field(alias="baseVersionId")
+    status: JobStatus
+    created_at: str = Field(alias="createdAt")
+    job_kind: str = Field(default="refine", alias="jobKind")
+    refine: RefineBudgetFields | None = None
+
+
 class JobStatusResponse(CamelModel):
     """GET /api/v1/jobs/:jobId poll response (M3)."""
 

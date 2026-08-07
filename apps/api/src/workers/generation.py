@@ -19,10 +19,11 @@ from adapters.llm.openrouter import OpenRouterLLMClient
 from adapters.llm.protocol import LLMClient, LLMConfigError
 from adapters.llm.router import assert_allowed_model
 from adapters.storage import create_storage
-from agent.runner import run_create_with_repairs
+from agent.runner import run_create_with_repairs, run_refine_with_repairs
 from agent.state import CreateGraphState
 from core.config import Settings, get_settings
 from services.finalize_job import finalize_from_agent_state
+from services.refine_job import base_version_payload
 
 
 def _build_llm(settings: Settings) -> LLMClient:
@@ -154,31 +155,81 @@ async def run_generation_job(
             getattr(settings, "create_repair_max", None) or job.repair_budget or 3
         )
 
-        insp_ids = _parse_inspiration_ids(job.inspiration_asset_ids)
-        insp_images: list[dict[str, Any]] = []
-        if not use_fixture_code and insp_ids:
-            try:
-                insp_images = await _load_inspiration_images(
-                    asset_ids=insp_ids,
-                    owner_user_id=job.owner_user_id,
-                    pool=pool,
-                    settings=settings,
-                )
-            except Exception as load_exc:  # noqa: BLE001 — soft fail style path
-                print(f"[worker] inspiration load failed: {load_exc}")
+        job_kind = getattr(job, "job_kind", None) or "create"
 
-        state = await run_create_with_repairs(
-            vision_text=job.vision_text,
-            llm=client,
-            use_fixture_code=use_fixture_code,
-            max_repairs=max_repairs,
-            wall_time_seconds=wall,
-            job_id=str(job.id),
-            tool_id=str(job.tool_id) if job.tool_id else None,
-            inspiration_asset_ids=insp_ids,
-            inspiration_images=insp_images,
-            on_phase=on_phase,
-        )
+        if job_kind == "refine":
+            if job.tool_id is None:
+                await jobs.update_job_status(
+                    job_id,
+                    status="failed",
+                    error_code="VALIDATION_FAILED",
+                    error_message="refine job missing tool_id",
+                    phase="finalize",
+                    clear_errors=True,
+                )
+                return
+            base_vid = getattr(job, "base_version_id", None)
+            if base_vid is not None:
+                version = await tools.get_tool_version(base_vid)
+            else:
+                version = await tools.get_latest_tool_version(job.tool_id)
+            if version is None or not (version.code or "").strip():
+                await jobs.update_job_status(
+                    job_id,
+                    status="failed",
+                    error_code="VALIDATION_FAILED",
+                    error_message="refine base version missing or empty",
+                    phase="finalize",
+                    clear_errors=True,
+                )
+                return
+            payload = base_version_payload(version)
+            refine_wall = float(
+                getattr(settings, "refine_wall_time_seconds", None) or wall
+            )
+            state = await run_refine_with_repairs(
+                chat_message=job.vision_text,
+                base_code=payload["base_code"],
+                llm=client,
+                base_plan=payload["base_plan"],
+                base_default_params=payload["base_default_params"],
+                base_param_schema=payload["base_param_schema"],
+                base_asset_slots=payload["base_asset_slots"],
+                base_version_id=payload["base_version_id"],
+                target=payload["target"],
+                max_repairs=max_repairs,
+                wall_time_seconds=refine_wall,
+                job_id=str(job.id),
+                tool_id=str(job.tool_id),
+                on_phase=on_phase,
+            )
+        else:
+            insp_ids = _parse_inspiration_ids(job.inspiration_asset_ids)
+            insp_images: list[dict[str, Any]] = []
+            if not use_fixture_code and insp_ids:
+                try:
+                    insp_images = await _load_inspiration_images(
+                        asset_ids=insp_ids,
+                        owner_user_id=job.owner_user_id,
+                        pool=pool,
+                        settings=settings,
+                    )
+                except Exception as load_exc:  # noqa: BLE001 — soft fail style path
+                    print(f"[worker] inspiration load failed: {load_exc}")
+
+            state = await run_create_with_repairs(
+                vision_text=job.vision_text,
+                llm=client,
+                use_fixture_code=use_fixture_code,
+                max_repairs=max_repairs,
+                wall_time_seconds=wall,
+                job_id=str(job.id),
+                tool_id=str(job.tool_id) if job.tool_id else None,
+                inspiration_asset_ids=insp_ids,
+                inspiration_images=insp_images,
+                on_phase=on_phase,
+            )
+
         await finalize_from_agent_state(
             job_id=job_id,
             state=state,

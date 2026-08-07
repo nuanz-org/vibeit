@@ -1,7 +1,7 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** **AM6 multi-target — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Status:** **AM7 chat refine — code complete / exit partial** (see [Coverage log](#coverage-log))
 **Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
@@ -21,7 +21,39 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | `0555253` (2026-08-07) |
 | **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | `599ead3` (2026-08-07) |
 | **AM6** | Multi-target goldens (p5/three) | **Covered in code** — skeletons + goldens + config gates; p5/three off by default | `6e3c6ce` (2026-08-07) |
-| AM7 | Chat refine agents | **Not started** | — |
+| **AM7** | Chat refine agents | **Covered in code** — AM7a–AM7b + budget scaffold; live Studio/demo exit open | (2026-08-07) |
+
+### AM7 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM7** (Control refine patch agents + Studio chat + budget). Reuses AM2 gates + AM3 critic with non-regression.
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM7a** | ✅ | Route param/code; param-patch + code-patch prompts/nodes; refine runner; gates + critic non-regression |
+| **AM7b** | ✅ | Studio refine chat panel; poll job; last-good client rollback (Undo) |
+| **AM7c** | ✅ (partial) | Per-tool refine budget + wall settings; unit tests `test_agent_am7.py`; [am7-demo-checklist.md](./am7-demo-checklist.md) |
+
+**Files touched (canonical):**
+
+| Area | Paths |
+|------|--------|
+| Route / parse | `apps/api/src/agent/refine_route.py`, `patch_parse.py` |
+| Prompts | `apps/api/src/agent/prompts/refine_param.py`, `refine_code.py` |
+| Nodes / runner | `apps/api/src/agent/nodes/refine_patch.py`, `runner.py`, `state.py` |
+| Graph | `apps/api/src/agent/graphs/control_refine.py` |
+| Job / worker | `services/refine_job.py`, `workers/generation.py`, `finalize_job.py`, `migrations/006_refine_jobs.sql` |
+| HTTP / schema | `api/v1/tools.py` POST `/{toolId}/refine`, `schemas/jobs.py`, jobs repo + `job_kind` / `base_version_id` |
+| Studio | `apps/web/features/studio/components/refine-chat-panel.tsx`, `studio-shell.tsx`, `lib/api/refine.ts` |
+| Tests / docs | `apps/api/tests/test_agent_am7.py`, `md/am7-demo-checklist.md`, this file |
+
+**App impact:** Generated-tool Studio gains a **Refine (chat)** section. Chat enqueues a refine job; on success a new `tool_versions` row is written and preview remounts. Failures keep last-good. Param-only chat uses plan-role model (no full codegen). Requires migration `006_refine_jobs.sql` + OpenRouter for live refine.
+
+**Still open for full AM7 exit:**
+
+- [ ] Live Studio demo: “make particles slower and add a subtitle” → valid version  
+- [ ] Owner confirms param-only path does not full-regen in logs  
+- [ ] Optional: committed refine eval corpus under `evals/create/`  
+- [ ] Then mark AM7 fully exited
 
 ### AM6 — what was shipped (2026-08-07)
 
@@ -552,20 +584,27 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ## AM7 — Chat refine agents — *M6 agent deliverable*
 
+**Coverage:** **Implemented** (2026-08-07). Subparts AM7a–AM7b done in code; AM7c budget + unit tests + checklist; live Studio demo exit open. See [Coverage log](#coverage-log) for commit hash + file map.
+
 **Why:** Structural/creative changes via chat need patch + re-preview, not sliders. Reuses AM1–AM3 machinery in patch mode.
 
 ### Deliverables
 
-- [ ] **Patch-mode Codegen** — chat (+ current source + brief) → param patch **or** code patch; param-only requests prefer param patches
-- [ ] **Refine loop** — patch → AM2 gates → AM3 critic (score must not regress vs current version)
-- [ ] **Studio chat UI** — refining states, failure messages, last-good rollback (version history thin)
-- [ ] Refine budget (per-session cap) + hard regen only on structural change (policy in prompt)
+- [x] **Patch-mode Codegen** — chat (+ current source + brief) → param patch **or** code patch; param-only requests prefer param patches
+- [x] **Refine loop** — patch → AM2 gates → AM3 critic (score must not regress vs current version)
+- [x] **Studio chat UI** — refining states, failure messages, last-good rollback (version history thin)
+- [x] Refine budget (per-tool rolling cap) + hard regen only on structural change (policy in prompt)
+
+### Demo
+
+In Studio on a generated tool: chat “make the particles slower and add a subtitle” → new version lands after gates, or clean failure with last-good kept. Param-only “make it slower” prefers param patch.
 
 ### Exit criteria
 
-- [ ] "make particles slower and add a subtitle" → valid new version or clean failure
-- [ ] Refine never lands a version with a lower judge score than the current one
-- [ ] Param-only requests don't burn a full codegen call
+- [ ] "make particles slower and add a subtitle" → valid new version or clean failure *(live Studio open)*
+- [x] Refine never lands a version with a lower judge score than the current one *(unit-tested non-regression)*
+- [x] Param-only requests don't burn a full codegen call *(route + `used_param_patch_only`)*
+- [x] Unit smokes green: `tests/test_agent_am7.py` · checklist [am7-demo-checklist.md](./am7-demo-checklist.md)
 
 ### Depends on
 
@@ -573,11 +612,11 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ### Subparts
 
-| Subpart | Name | ~Days | Outcome |
-|---------|------|------:|---------|
-| **AM7a** | Patch-mode prompts + param/code patch routing | 1–1.5 | Chat → minimal valid patch |
-| **AM7b** | Studio chat UI + rollback | 1–2 | Human path in Studio |
-| **AM7c** | Refine evals + budget + checklist | 0.75–1.5 | Numeric gates on refine corpus |
+| Subpart | Name | ~Days | Outcome | Done |
+|---------|------|------:|---------|:----:|
+| **AM7a** | Patch-mode prompts + param/code patch routing | 1–1.5 | Chat → minimal valid patch | ✅ |
+| **AM7b** | Studio chat UI + rollback | 1–2 | Human path in Studio | ✅ |
+| **AM7c** | Refine evals + budget + checklist | 0.75–1.5 | Numeric gates on refine corpus | partial |
 
 ---
 

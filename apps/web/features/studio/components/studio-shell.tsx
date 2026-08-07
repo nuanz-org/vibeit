@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
 
@@ -11,12 +11,21 @@ import { RuntimeHost, isRealUploadedAssetUrl } from "@/runtime";
 import type { StudioFixtureMeta } from "../fixtures";
 import { useStudioDraftPersist } from "../hooks/use-studio-draft-persist";
 import { useStudioRuntime } from "../hooks/use-studio-runtime";
+import {
+  asParams,
+  parseVersionAssetSlots,
+  parseVersionParamSchema,
+} from "../lib/version-metadata";
 import styles from "../styles.module.css";
 import { AssetSlotsPanel } from "./asset-slots-panel";
 import { EmptySlotsBanner } from "./empty-slots-banner";
 import { ExportPanel } from "./export-panel";
 import { ParamControls } from "./param-controls";
 import { PublishPanel } from "./publish-panel";
+import {
+  RefineChatPanel,
+  type RefineAppliedPayload,
+} from "./refine-chat-panel";
 import { SharePanel } from "./share-panel";
 import { ViewSourcePanel } from "./view-source-panel";
 
@@ -118,17 +127,48 @@ export function StudioShell({
         }
       : null,
   );
+  // AM7 — live version after refine (client-side last-good rollback)
+  const [liveSource, setLiveSource] = useState<string | null | undefined>(
+    sourceCode,
+  );
+  const [liveVersionId, setLiveVersionId] = useState<string | null | undefined>(
+    versionId,
+  );
+  const [liveDefaults, setLiveDefaults] = useState<ToolParams | null | undefined>(
+    versionDefaultParams,
+  );
+  const [liveParamSchema, setLiveParamSchema] = useState<
+    ParamSchema | null | undefined
+  >(versionParamSchema);
+  const [liveAssetSlots, setLiveAssetSlots] = useState<
+    AssetSlots | null | undefined
+  >(versionAssetSlots);
+  const [rollbackSnapshot, setRollbackSnapshot] = useState<{
+    sourceCode: string | null;
+    versionId: string | null;
+    defaultParams: ToolParams | null;
+    paramSchema: ParamSchema | null;
+    assetSlots: AssetSlots | null;
+  } | null>(null);
+  /** Bump after liveSource updates so remount sees the new module. */
+  const [remountToken, setRemountToken] = useState(0);
   const assetsSectionRef = useRef<HTMLElement | null>(null);
 
   const runtime = useStudioRuntime({
     runtimeToolId: fixture.runtimeToolId,
-    sourceCode,
-    versionDefaultParams,
-    versionParamSchema,
-    versionAssetSlots,
+    sourceCode: liveSource,
+    versionDefaultParams: liveDefaults,
+    versionParamSchema: liveParamSchema,
+    versionAssetSlots: liveAssetSlots,
     initialDraftParams,
     initialDraftAssets,
   });
+
+  useEffect(() => {
+    if (remountToken <= 0) return;
+    void runtime.remount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- remount only on token
+  }, [remountToken]);
 
   const persist = useStudioDraftPersist({
     toolId: persistToolId ?? null,
@@ -179,6 +219,37 @@ export function StudioShell({
     },
     [],
   );
+
+  const onRefineApplied = useCallback(
+    (payload: RefineAppliedPayload) => {
+      const v = payload.tool.latestVersion;
+      setRollbackSnapshot({
+        sourceCode: payload.previous.sourceCode,
+        versionId: payload.previous.versionId,
+        defaultParams: liveDefaults ?? null,
+        paramSchema: liveParamSchema ?? null,
+        assetSlots: liveAssetSlots ?? null,
+      });
+      setLiveSource(v?.code ?? null);
+      setLiveVersionId(v?.id ?? null);
+      setLiveDefaults(asParams(v?.defaultParams) ?? null);
+      setLiveParamSchema(parseVersionParamSchema(v?.paramSchema));
+      setLiveAssetSlots(parseVersionAssetSlots(v?.assetSlots));
+      setRemountToken((n) => n + 1);
+    },
+    [liveDefaults, liveParamSchema, liveAssetSlots],
+  );
+
+  const onRefineRollback = useCallback(() => {
+    if (!rollbackSnapshot) return;
+    setLiveSource(rollbackSnapshot.sourceCode);
+    setLiveVersionId(rollbackSnapshot.versionId);
+    setLiveDefaults(rollbackSnapshot.defaultParams);
+    setLiveParamSchema(rollbackSnapshot.paramSchema);
+    setLiveAssetSlots(rollbackSnapshot.assetSlots);
+    setRollbackSnapshot(null);
+    setRemountToken((n) => n + 1);
+  }, [rollbackSnapshot]);
 
   const statusClass =
     runtime.status === "ready" || runtime.mounted
@@ -333,6 +404,18 @@ export function StudioShell({
               />
             )}
           </section>
+
+          {persistToolId && isGenerated ? (
+            <RefineChatPanel
+              toolId={persistToolId}
+              versionId={liveVersionId}
+              sourceCode={liveSource}
+              disabled={runtime.busy}
+              onApplied={onRefineApplied}
+              onRollback={onRefineRollback}
+              canRollback={Boolean(rollbackSnapshot)}
+            />
+          ) : null}
 
           <section
             className={styles.section}
@@ -516,9 +599,9 @@ export function StudioShell({
             target={fixture.target}
             open={sourceOpen}
             onToggle={() => setSourceOpen((v) => !v)}
-            sourceCode={sourceCode}
+            sourceCode={liveSource}
             isGenerated={isGenerated}
-            versionId={versionId}
+            versionId={liveVersionId}
           />
 
           {runtime.error ? (

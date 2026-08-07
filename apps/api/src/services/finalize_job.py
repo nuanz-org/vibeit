@@ -72,13 +72,24 @@ async def finalize_from_agent_state(
 
     if success:
         assert_job_transition(job.status, "succeeded")
+        # AM7 refine may carry updated default_params without plan regen
+        defaults = state.get("default_params")
+        if not isinstance(defaults, dict):
+            defaults = _defaults_from_plan(plan)
+        param_schema = state.get("param_schema")
+        if not isinstance(param_schema, list):
+            param_schema = plan.get("params") if plan else []
+        asset_slots = state.get("asset_slots")
+        if not isinstance(asset_slots, list):
+            asset_slots = plan.get("assetSlots") if plan else []
+        target = (state.get("target") or "canvas2d") or "canvas2d"
         version = await tools.create_tool_version(
             tool_id=job.tool_id or state.get("tool_id"),  # type: ignore[arg-type]
-            target="canvas2d",
+            target=str(target),
             code=code,
-            param_schema=plan.get("params") if plan else [],
-            default_params=_defaults_from_plan(plan),
-            asset_slots=plan.get("assetSlots") if plan else [],
+            param_schema=param_schema or [],
+            default_params=defaults or {},
+            asset_slots=asset_slots or [],
             plan=plan,
         )
         updated = await jobs.update_job_status(

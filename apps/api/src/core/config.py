@@ -150,6 +150,21 @@ class Settings:
             os.getenv("CREATE_COST_CENTS_PER_MILLION_TOKENS", "15")
         )
 
+        # --- AM7 Control refine budgets ---
+        # Max refine enqueues per tool within the rolling window
+        self.refine_budget_per_tool: int = int(
+            os.getenv("VIBEIT_REFINE_BUDGET_PER_TOOL", "20")
+        )
+        self.refine_budget_window_hours: int = int(
+            os.getenv("VIBEIT_REFINE_BUDGET_WINDOW_HOURS", "24")
+        )
+        self.refine_wall_time_seconds: float = float(
+            os.getenv(
+                "VIBEIT_REFINE_WALL_TIME_SECONDS",
+                str(self.create_wall_time_seconds),
+            )
+        )
+
     def _validate_llm_role_models(self) -> None:
         """AM4: misconfigured LLM_MODEL_* fails at Settings construction."""
         from adapters.llm.router import validate_configured_models

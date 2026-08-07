@@ -95,6 +95,19 @@ def job_from_record(row: Any) -> GenerationJobRow:
         phase = row["phase"]
     except (KeyError, TypeError):
         phase = None
+    # AM7: job_kind / base_version_id (006_refine_jobs)
+    job_kind = "create"
+    try:
+        raw_kind = row["job_kind"]
+        if raw_kind:
+            job_kind = str(raw_kind)
+    except (KeyError, TypeError):
+        job_kind = "create"
+    base_version_id = None
+    try:
+        base_version_id = row["base_version_id"]
+    except (KeyError, TypeError):
+        base_version_id = None
     return GenerationJobRow(
         id=row["id"],
         owner_user_id=str(row["owner_user_id"]),
@@ -112,6 +125,8 @@ def job_from_record(row: Any) -> GenerationJobRow:
         phase=str(phase) if phase is not None else None,
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        job_kind=job_kind,
+        base_version_id=base_version_id,
     )
 
 

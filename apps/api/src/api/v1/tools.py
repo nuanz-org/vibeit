@@ -1,38 +1,50 @@
 """
-Tools HTTP surface (M3g + M5c + M7d + M8a + M8b + M8c).
+Tools HTTP surface (M3g + M5c + M7d + M8a + M8b + M8c + AM7 refine).
 
 GET  /api/v1/tools/{toolId}         — owner read + latest version + draft state
 PATCH /api/v1/tools/{toolId}/draft  — owner replace draft params / asset bindings
 POST /api/v1/tools/{toolId}/publish — owner publish (share + gallery gates + thumb)
+POST /api/v1/tools/{toolId}/refine  — owner chat refine (AM7)
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 
 from adapters.auth.types import AuthUser
 from adapters.db.repositories.assets import AssetsRepository
+from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.db.types import ToolRow
 from core.config import Settings, get_settings
-from core.deps import get_assets_repo, get_tools_repo
+from core.deps import get_assets_repo, get_jobs_repo, get_tools_repo
 from core.security import get_current_user
+from schemas.jobs import JobErrorBody, RefineBudgetFields, RefineJobRequest, RefineJobResponse
 from schemas.tools import (
     ToolDraftPatchRequest,
     ToolPublishRequest,
     ToolResponse,
     ToolVersionResponse,
 )
+from services.create_job import _utc_iso
 from services.public_tool import (
     PublicToolError,
     PublishGateError,
     publish_tool_for_share,
     unpublish_tool,
 )
+from services.refine_job import (
+    NoVersionError,
+    RefineBudgetExceededError,
+    ToolNotFoundError,
+    enqueue_refine_job,
+)
 from services.update_tool_draft import DraftValidationError, update_tool_draft
 from services.upload_asset import asset_public_url
+from workers.generation import run_generation_job
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -106,6 +118,94 @@ async def _latest_version_response(
         asset_slots=version.asset_slots,
         plan=version.plan,
         created_at=_utc_iso(version.created_at) or "",
+    )
+
+
+@router.post(
+    "/{tool_id}/refine",
+    response_model=RefineJobResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start a Control refine job (AM7 chat patch)",
+    responses={
+        429: {"model": JobErrorBody, "description": "Refine budget exceeded"},
+    },
+)
+async def refine_tool(
+    tool_id: str,
+    body: RefineJobRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user: AuthUser = Depends(get_current_user),
+    tools: ToolsRepository = Depends(get_tools_repo),
+    jobs: JobsRepository = Depends(get_jobs_repo),
+    settings: Settings = Depends(get_settings),
+) -> RefineJobResponse | JSONResponse:
+    """
+    Chat refine: enqueue patch job against the tool's latest (or base) version.
+    Client polls GET /jobs/{jobId} then reloads tool on success.
+    """
+    try:
+        result = await enqueue_refine_job(
+            owner_user_id=user.id,
+            tool_id=tool_id,
+            chat_message=body.message,
+            tools=tools,
+            jobs=jobs,
+            settings=settings,
+            base_version_id=body.base_version_id,
+        )
+    except ToolNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool not found",
+        ) from exc
+    except NoVersionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    except RefineBudgetExceededError as exc:
+        body_err = JobErrorBody(
+            error_code="QUOTA_EXCEEDED",
+            error_message=str(exc),
+        )
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content=body_err.model_dump(by_alias=True),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 — missing migration columns etc.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"refine unavailable: {exc}",
+        ) from exc
+
+    job = result.job
+    if settings.create_worker_enabled and settings.openrouter_api_key:
+        pool = getattr(request.app.state, "db_pool", None)
+        if pool is not None:
+            background_tasks.add_task(
+                run_generation_job,
+                str(job.id),
+                pool=pool,
+                settings=settings,
+            )
+
+    return RefineJobResponse(
+        job_id=str(job.id),
+        tool_id=str(result.tool.id),
+        base_version_id=str(result.base_version.id),
+        status=job.status,  # type: ignore[arg-type]
+        created_at=_utc_iso(job.created_at),
+        job_kind="refine",
+        refine=RefineBudgetFields(
+            refine_used=result.refine_used,
+            refine_limit=result.refine_limit,
+        ),
     )
 
 

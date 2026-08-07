@@ -62,6 +62,9 @@ class GenerationJobRow:
     phase: str | None
     created_at: datetime
     updated_at: datetime
+    # AM7 refine
+    job_kind: str = "create"
+    base_version_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)

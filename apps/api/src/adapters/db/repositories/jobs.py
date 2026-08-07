@@ -13,6 +13,14 @@ from adapters.db.types import GenerationJobRow
 _JOB_COLUMNS = """
     id, owner_user_id, tool_id, status, vision_text, inspiration_asset_ids,
     error_code, error_message, tokens_used, token_budget, cost_cents,
+    repair_budget, repairs_used, phase, created_at, updated_at,
+    job_kind, base_version_id
+"""
+
+# Pre-006 select list for tests against schemas without refine columns.
+_JOB_COLUMNS_LEGACY = """
+    id, owner_user_id, tool_id, status, vision_text, inspiration_asset_ids,
+    error_code, error_message, tokens_used, token_budget, cost_cents,
     repair_budget, repairs_used, phase, created_at, updated_at
 """
 
@@ -31,19 +39,25 @@ class JobsRepository:
         repair_budget: int = 3,
         status: str = "queued",
         token_budget: int | None = None,
+        job_kind: str = "create",
+        base_version_id: UUID | str | None = None,
     ) -> GenerationJobRow:
         if status not in JOB_STATUSES:
             raise ValueError(f"invalid job status: {status}")
+        if job_kind not in ("create", "refine"):
+            raise ValueError(f"invalid job_kind: {job_kind}")
         ids = inspiration_asset_ids or []
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 INSERT INTO generation_jobs (
                     owner_user_id, tool_id, status, vision_text,
-                    inspiration_asset_ids, repair_budget, token_budget
+                    inspiration_asset_ids, repair_budget, token_budget,
+                    job_kind, base_version_id
                 )
                 VALUES (
-                    $1, $2::uuid, $3, $4, $5::jsonb, $6, $7
+                    $1, $2::uuid, $3, $4, $5::jsonb, $6, $7,
+                    $8, $9::uuid
                 )
                 RETURNING {_JOB_COLUMNS}
                 """,
@@ -54,9 +68,35 @@ class JobsRepository:
                 json.dumps(ids),
                 repair_budget,
                 token_budget,
+                job_kind,
+                str(base_version_id) if base_version_id is not None else None,
             )
         assert row is not None
         return job_from_record(row)
+
+    async def count_refine_jobs_for_tool_since(
+        self,
+        *,
+        tool_id: UUID | str,
+        owner_user_id: str,
+        since_utc: Any,
+    ) -> int:
+        """AM7c: per-session/day refine budget for a tool."""
+        async with self._pool.acquire() as conn:
+            val = await conn.fetchval(
+                """
+                SELECT COUNT(*)::int
+                FROM generation_jobs
+                WHERE tool_id = $1::uuid
+                  AND owner_user_id = $2
+                  AND job_kind = 'refine'
+                  AND created_at >= $3
+                """,
+                str(tool_id),
+                owner_user_id,
+                since_utc,
+            )
+        return int(val or 0)
 
     async def get_job(self, job_id: UUID | str) -> GenerationJobRow | None:
         async with self._pool.acquire() as conn:

@@ -673,3 +673,37 @@ a.button {
   background: color-mix(in srgb, var(--foreground) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
 }
+
+/* AM7 — Control refine chat */
+.refineInput {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.refineInput:focus {
+  outline: 2px solid color-mix(in srgb, var(--foreground) 28%, transparent);
+  outline-offset: 1px;
+}
+
+.refineInput:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.refineActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+}
