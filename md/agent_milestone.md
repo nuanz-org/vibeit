@@ -21,7 +21,7 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | `0555253` (2026-08-07) |
 | **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | `599ead3` (2026-08-07) |
 | **AM6** | Multi-target goldens (p5/three) | **Covered in code** — skeletons + goldens + config gates; p5/three off by default | `6e3c6ce` (2026-08-07) |
-| **AM7** | Chat refine agents | **Covered in code** — AM7a–AM7b + budget scaffold; live Studio/demo exit open | (2026-08-07) |
+| **AM7** | Chat refine agents | **Covered in code** — AM7a–AM7b + budget scaffold; live Studio/demo exit open | `1046732` (2026-08-07) |
 
 ### AM7 — what was shipped (2026-08-07)
 
@@ -584,7 +584,7 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ## AM7 — Chat refine agents — *M6 agent deliverable*
 
-**Coverage:** **Implemented** (2026-08-07). Subparts AM7a–AM7b done in code; AM7c budget + unit tests + checklist; live Studio demo exit open. See [Coverage log](#coverage-log) for commit hash + file map.
+**Coverage:** **Implemented** (2026-08-07, commit `1046732`). Subparts AM7a–AM7b done in code; AM7c budget + unit tests + checklist; live Studio demo exit open. See [Coverage log](#coverage-log) for file map.
 
 **Why:** Structural/creative changes via chat need patch + re-preview, not sliders. Reuses AM1–AM3 machinery in patch mode.
 
