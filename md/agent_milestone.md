@@ -20,7 +20,7 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM3** | Critic loop + quality evals | **Covered in code** — AM3a–AM3d scaffold shipped; enforcement waits on human calibration | `ba5ec07` (2026-08-07) |
 | **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | `0555253` (2026-08-07) |
 | **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | `599ead3` (2026-08-07) |
-| **AM6** | Multi-target goldens (p5/three) | **Covered in code** — skeletons + goldens + config gates; p5/three off by default | 2026-08-07 |
+| **AM6** | Multi-target goldens (p5/three) | **Covered in code** — skeletons + goldens + config gates; p5/three off by default | `6e3c6ce` (2026-08-07) |
 | AM7 | Chat refine agents | **Not started** | — |
 
 ### AM6 — what was shipped (2026-08-07)
