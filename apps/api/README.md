@@ -153,6 +153,8 @@ cd apps/api && uv run python tests/test_agent_am2.py   # needs: uv run playwrigh
 
 Smoke pipeline (AM2): **structural → esbuild compile → param coverage → Playwright host** (runtime-frame). Screenshots land in `apps/api/.data/smoke/`. Fail closed if Node/esbuild/Playwright/Chromium missing.
 
+After gates pass, **AM3 critic** scores craft (advisory by default). Set `VIBEIT_CRITIC_ENFORCED=1` only after calibration (`evals/create/calibration/`).
+
 Setup once:
 
 ```bash

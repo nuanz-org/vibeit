@@ -21,6 +21,7 @@ Error prefixes you may see:
 - compile: — esbuild or allowlist failure (fix TS/syntax/import)
 - param_coverage: — plan param never referenced in source
 - host_smoke: — runtime throw, console error, blank canvas, captureFrame failure
+- critique: — design-quality fix from the Critic (composition, motion, palette, type, params)
 
 Craft preservation (AM1):
 - Fix only what the errors list requires.
@@ -28,6 +29,7 @@ Craft preservation (AM1):
 - Do not collapse a designed scene into a pulsing-circle stub unless the whole draw is invalid.
 - Keep param names and defaults aligned with the plan when plan JSON is provided.
 - For blank-canvas errors: ensure draw paints visible pixels (fill, type, shapes) every frame.
+- For critique: apply the ordered fix list; raise craft without breaking gates.
 
 Output ONLY the full fixed TypeScript module (no markdown fences, no commentary).
 """

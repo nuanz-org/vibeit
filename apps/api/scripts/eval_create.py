@@ -150,6 +150,27 @@ class EvalMockLLM:
                 usage=TokenUsage(total_tokens=25),
             )
 
+        # AM3 critic
+        if "Critic stage" in blob or "Score this tool" in blob:
+            # Deterministic mid-high score so mock path finalizes under advisory critic
+            critique = {
+                "overall": 4.0,
+                "scores": {
+                    "composition": 4,
+                    "motion": 4,
+                    "palette": 4,
+                    "typography": 4,
+                    "params": 4,
+                },
+                "summary": f"mock critique for {self.prompt_id}",
+                "fixes": [],
+            }
+            return LLMCompletion(
+                text=json.dumps(critique),
+                model=self.default_model,
+                usage=TokenUsage(total_tokens=30),
+            )
+
         # Repair or second codegen
         if "Repair stage" in blob or "Errors to fix" in blob:
             return LLMCompletion(
@@ -183,6 +204,12 @@ class PromptResult:
     first_pass: bool
     repair_count: int
     error: str | None = None
+    # AM3 quality
+    tier: str | None = None
+    critique_score: float | None = None
+    critique_ok: bool | None = None
+    screenshot_path: str | None = None
+    smoke_variance: float | None = None
 
 
 @dataclass
@@ -197,6 +224,9 @@ class EvalSummary:
     gate_after_repair: float
     gates_passed: bool
     results: list[PromptResult]
+    mean_judge_score: float | None = None
+    scored_count: int = 0
+    corpus_version: int | None = None
 
 
 def load_suite(path: Path = _PROMPTS_PATH) -> dict:
@@ -212,12 +242,14 @@ async def eval_one(
 ) -> PromptResult:
     pid = str(prompt["id"])
     vision = str(prompt["vision"])
+    tier = str(prompt["tier"]) if prompt.get("tier") else None
     try:
         state = await run_create_with_repairs(
             vision_text=vision,
             llm=llm,
             max_repairs=max_repairs,
             wall_time_seconds=wall_time,
+            job_id=f"eval-{pid}",
         )
         ok = bool(
             state.get("ready_for_finalize")
@@ -225,6 +257,7 @@ async def eval_one(
             and state.get("validate_ok")
         )
         repairs = int(state.get("repair_count") or 0)
+        score = state.get("critique_score")
         return PromptResult(
             id=pid,
             vision=vision,
@@ -232,6 +265,13 @@ async def eval_one(
             first_pass=ok and repairs == 0,
             repair_count=repairs,
             error=None if ok else (state.get("error_message") or "failed"),
+            tier=tier,
+            critique_score=float(score) if score is not None else None,
+            critique_ok=bool(state.get("critique_ok"))
+            if state.get("critique_ok") is not None
+            else None,
+            screenshot_path=state.get("smoke_screenshot_path"),
+            smoke_variance=state.get("smoke_variance"),
         )
     except Exception as exc:  # noqa: BLE001
         return PromptResult(
@@ -241,6 +281,7 @@ async def eval_one(
             first_pass=False,
             repair_count=0,
             error=str(exc),
+            tier=tier,
         )
 
 
@@ -249,12 +290,15 @@ async def run_eval(
     live: bool,
     max_repairs: int = 3,
     wall_time: float = 150.0,
+    limit: int | None = None,
 ) -> EvalSummary:
     suite = load_suite()
     gates = suite.get("gates") or {}
     gate_fp = float(gates.get("minFirstPassRate", 0.7))
     gate_ar = float(gates.get("minAfterRepairRate", 0.9))
     prompts: list[dict] = list(suite["prompts"])
+    if limit is not None and limit > 0:
+        prompts = prompts[:limit]
 
     results: list[PromptResult] = []
     for p in prompts:
@@ -285,6 +329,9 @@ async def run_eval(
     ar_rate = success / total if total else 0.0
     gates_ok = fp_rate >= gate_fp or ar_rate >= gate_ar
 
+    scored = [r.critique_score for r in results if r.critique_score is not None]
+    mean_score = sum(scored) / len(scored) if scored else None
+
     return EvalSummary(
         mode="live" if live else "mock",
         total=total,
@@ -296,11 +343,14 @@ async def run_eval(
         gate_after_repair=gate_ar,
         gates_passed=gates_ok,
         results=results,
+        mean_judge_score=mean_score,
+        scored_count=len(scored),
+        corpus_version=int(suite.get("version") or 1),
     )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="M3h Create eval runner")
+    parser = argparse.ArgumentParser(description="Create eval runner (M3h + AM3 quality)")
     parser.add_argument(
         "--live",
         action="store_true",
@@ -309,10 +359,20 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true", help="Print JSON summary")
     parser.add_argument("--max-repairs", type=int, default=3)
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Only run first N prompts (smoke subset)",
+    )
     args = parser.parse_args()
 
     summary = asyncio.run(
-        run_eval(live=args.live, max_repairs=args.max_repairs)
+        run_eval(
+            live=args.live,
+            max_repairs=args.max_repairs,
+            limit=args.limit,
+        )
     )
 
     if args.json:
@@ -330,7 +390,10 @@ def main() -> int:
             )
         )
     else:
-        print(f"Create eval ({summary.mode}) — {summary.total} prompts")
+        print(
+            f"Create eval ({summary.mode}) — {summary.total} prompts "
+            f"(corpus v{summary.corpus_version or '?'})"
+        )
         print(
             f"  first-pass:    {summary.first_pass}/{summary.total} "
             f"({summary.first_pass_rate:.0%})  gate≥{summary.gate_first_pass:.0%}"
@@ -339,12 +402,23 @@ def main() -> int:
             f"  after-repair:  {summary.success}/{summary.total} "
             f"({summary.after_repair_rate:.0%})  gate≥{summary.gate_after_repair:.0%}"
         )
+        if summary.mean_judge_score is not None:
+            print(
+                f"  mean judge:    {summary.mean_judge_score:.2f} "
+                f"({summary.scored_count} scored)"
+            )
         print(f"  gates:         {'PASS' if summary.gates_passed else 'FAIL'}")
         for r in summary.results:
             mark = "✓" if r.success else "✗"
             fp = "1st" if r.first_pass else f"r{r.repair_count}"
+            score = (
+                f"  j={r.critique_score:.1f}"
+                if r.critique_score is not None
+                else ""
+            )
+            tier = f" [{r.tier}]" if r.tier else ""
             err = f"  {r.error}" if r.error and not r.success else ""
-            print(f"  {mark} {r.id:16} {fp}{err}")
+            print(f"  {mark} {r.id:22} {fp}{score}{tier}{err}")
 
     return 0 if summary.gates_passed else 1
 

@@ -16,6 +16,17 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
     errors = list(state.get("validation_errors") or []) + list(
         state.get("smoke_errors") or []
     )
+    # AM3: critic-guided repairs inject ordered design fixes
+    for fix in state.get("critique_fixes") or []:
+        if isinstance(fix, str) and fix.strip():
+            errors.append(f"critique: {fix.strip()}")
+    if state.get("critique_ok") and state.get("critique_score") is not None:
+        score = state.get("critique_score")
+        thr = state.get("critic_threshold")
+        if thr is not None and score is not None and float(score) < float(thr):
+            errors.append(
+                f"critique: overall score {score} < threshold {thr} — raise design quality"
+            )
     if not errors:
         errors = [state.get("error_message") or "validation or smoke failed"]
 
@@ -68,6 +79,13 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
         "smoke_ok": False,
         "validation_errors": [],
         "smoke_errors": [],
+        # Reset critic so re-score happens after next smoke
+        "critique": None,
+        "critique_ok": False,
+        "critique_score": None,
+        "critique_fixes": [],
+        "critique_passes": False,
+        "critique_error": None,
         "error_code": None,
         "error_message": None,
         "ready_for_finalize": False,

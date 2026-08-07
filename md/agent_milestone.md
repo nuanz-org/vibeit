@@ -1,7 +1,7 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** **AM2 real gates — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Status:** **AM3 critic loop — code complete / exit partial** (see [Coverage log](#coverage-log))
 **Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
@@ -17,11 +17,43 @@ What has actually been implemented on this track (update when an AM lands).
 |-----------|------|----------|----------------|
 | **AM1** | Craft floor (prompts + golden library) | **Covered in code** — subparts AM1a–AM1d shipped; full exit still needs owner Studio/eyeball | `02fe278` (2026-08-07) |
 | **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `dc95de9` (2026-08-07) |
-| AM3 | Critic loop + quality evals | **Not started** | — |
+| **AM3** | Critic loop + quality evals | **Covered in code** — AM3a–AM3d scaffold shipped; enforcement waits on human calibration | 2026-08-07 |
 | AM4 | Model routing + live A/B | **Not started** | — |
 | AM5 | Style conditioning | **Not started** (gated on AM1–AM3) | — |
 | AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
 | AM7 | Chat refine agents | **Not started** | — |
+
+### AM3 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM3** (critic + corpus v2). Judge is **advisory by default** until calibration.
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM3a** | ✅ | Corpus v2: 44 prompts with `tier` + `aspect` + tags in `evals/create/prompts.json` |
+| **AM3b** | ✅ | `prompts/critique.py`, `critique_parse.py`, `nodes/critique.py` — Critique JSON + scores/fixes |
+| **AM3c** | ✅ | Runner: after smoke_ok → critique; low score + `VIBEIT_CRITIC_ENFORCED=1` → repair with fix list |
+| **AM3d** | ✅ (partial) | Calibration scaffold `evals/create/calibration/`; eval report has mean judge + per-prompt scores; tests `test_agent_am3.py` |
+
+**Files touched (canonical):**
+
+| Area | Paths |
+|------|--------|
+| Corpus | `apps/api/evals/create/prompts.json` (v2, 44 prompts) |
+| Critic | `agent/prompts/critique.py`, `critique_parse.py`, `nodes/critique.py` |
+| Runner / repair | `runner.py`, `nodes/repair.py`, `state.py`, `prompts/create_repair.py` |
+| Eval | `scripts/eval_create.py` (judge scores, `--limit`, corpus version) |
+| Calibration | `evals/create/calibration/README.md`, `human-scores.template.json` |
+| Tests | `apps/api/tests/test_agent_am3.py` |
+| Docs | this file |
+
+**App impact:** After gates pass, Create runs a critic LLM pass and stores scores. **Does not block finalize** unless `VIBEIT_CRITIC_ENFORCED=1` (post-calibration). Critic failure → gates-only finalize.
+
+**Still open for full AM3 exit:**
+
+- [ ] Owner rates ~20 outputs; Spearman ≥ 0.7 documented in calibration notes  
+- [ ] Set `VIBEIT_CRITIC_ENFORCED=1` only after calibration  
+- [ ] Live eval on full 44-prompt corpus with mean judge scores committed  
+- [ ] Then mark AM3 fully exited and start **AM4**
 
 ### AM2 — what was shipped (2026-08-07)
 
@@ -109,9 +141,9 @@ AM1  Craft floor (prompts + golden library)          ← COVERED (code complete;
  ↓
 AM2  Real gates (esbuild compile + Playwright host smoke)  ← COVERED (code complete; exit partial)
  ↓
-AM3  Critic loop + quality evals (screenshot judge, calibration)  ← next
+AM3  Critic loop + quality evals (screenshot judge, calibration)  ← COVERED (code complete; exit partial)
  ↓
-AM4  Model routing + live A/B (unlock per-role models, set codegen default)
+AM4  Model routing + live A/B (unlock per-role models, set codegen default)  ← next
  ↓
 ┌────────────────────────────────────────────────────┐
 │ Fast-follows (each gated on AM1–AM3 staying green) │
@@ -270,15 +302,17 @@ A deliberately broken (runtime-throwing) and a deliberately blank (clear-only) t
 
 ## AM3 — Critic loop + quality evals
 
+**Coverage:** **Implemented** (2026-08-07). AM3a–AM3c done; AM3d calibration scaffold done — human ratings + enforcement still open.
+
 **Why:** Gates so far answer "does it run". The critic answers "does it look designed" — the repair loop finally gets design failures to fix, and evals finally measure quality.
 
 ### Deliverables
 
-- [ ] **Eval corpus v2** — 10 → 40+ prompts across categories (kinetic type, particles, grids, badges, stories, posters) with difficulty tiers and expected-aspect tags
-- [ ] **Critic agent** — rubric prompt: scores 1–5 per axis (composition, motion design, palette discipline, typography, param usefulness) + ordered fix list; parses to Critique JSON
-- [ ] **Critic-in-loop** — overall < 3.5 → repair with fix list (counts against repair budget); ≥ 3.5 → finalize
-- [ ] **Human calibration** — owner rates ~20 outputs; judge correlation checked before judge gates the pipeline
-- [ ] **Quality eval report** — live eval emits per-prompt judge scores + screenshots, not just pass/fail
+- [x] **Eval corpus v2** — 10 → 44 prompts across categories with difficulty tiers and aspect tags
+- [x] **Critic agent** — rubric prompt + Critique JSON parse (composition, motion, palette, typography, params)
+- [x] **Critic-in-loop** — when `VIBEIT_CRITIC_ENFORCED=1`, overall < threshold → repair with fix list; default advisory
+- [x] **Human calibration** — scaffold + method in `evals/create/calibration/` (ratings pending owner)
+- [x] **Quality eval report** — eval emits per-prompt judge scores + screenshot paths + mean judge
 
 ### Demo
 
@@ -287,9 +321,9 @@ Live eval run produces a scored gallery of 40 outputs; a mid-quality tool gets v
 ### Exit criteria
 
 - [ ] Judge–human correlation acceptable on the 20-output calibration set (documented method, e.g. rank correlation ≥ 0.7)
-- [ ] Critic-guided repair measurably raises re-score (before/after in eval report)
-- [ ] Corpus committed with tiers; live eval runs end-to-end with screenshots
-- [ ] Judge failure/timeout degrades to gates-only finalize (never blocks the pipeline hard)
+- [ ] Critic-guided repair measurably raises re-score (before/after in eval report) — unit path covered when enforced
+- [x] Corpus committed with tiers; eval reports scores + screenshot paths
+- [x] Judge failure/timeout degrades to gates-only finalize (never blocks the pipeline hard)
 
 ### Out of scope
 
@@ -303,12 +337,12 @@ Live eval run produces a scored gallery of 40 outputs; a mid-quality tool gets v
 
 ### AM3 — implementation plan (subparts)
 
-| Subpart | Name | Depends on | ~Days | Outcome |
-|---------|------|------------|------:|---------|
-| **AM3a** | Eval corpus v2 (40+ prompts, tiers) | — (∥ AM2) | 0.5–1 | `evals/create/prompts.json` expanded |
-| **AM3b** | Critic node + rubric prompt + parse | AM2b | 0.75–1 | Critique JSON from screenshot + brief |
-| **AM3c** | Critic-in-loop + repair-on-critique | AM3b | 0.5–0.75 | Score threshold routes to repair/finalize |
-| **AM3d** | Calibration + quality report + checklist | AM3c | 0.5–1 | Judge trusted; eval report has scores |
+| Subpart | Name | Depends on | ~Days | Outcome | Done |
+|---------|------|------------|------:|---------|:----:|
+| **AM3a** | Eval corpus v2 (40+ prompts, tiers) | — (∥ AM2) | 0.5–1 | `evals/create/prompts.json` expanded | ✅ |
+| **AM3b** | Critic node + rubric prompt + parse | AM2b | 0.75–1 | Critique JSON from brief + code (+ smoke notes) | ✅ |
+| **AM3c** | Critic-in-loop + repair-on-critique | AM3b | 0.5–0.75 | Score threshold routes to repair/finalize | ✅ |
+| **AM3d** | Calibration + quality report + checklist | AM3c | 0.5–1 | Judge trusted; eval report has scores | ✅ scaffold |
 
 **Where code lands:**
 

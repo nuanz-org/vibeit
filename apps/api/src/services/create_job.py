@@ -170,17 +170,19 @@ def job_to_status_fields(
     """Map DB row → JobStatusResponse field dict (service layer)."""
     # Map graph phases onto M0e JobPhase where possible
     phase = job.phase
-    # AM2: smoke:compile / smoke:host are agent-internal; poll UX still "validate"
-    if phase in ("ingest", "smoke", "finalize") or (
+    # AM2/AM3: smoke:*, critique are agent-internal; poll UX still "validate"
+    if phase in ("ingest", "smoke", "critique", "finalize") or (
         isinstance(phase, str) and phase.startswith("smoke")
     ):
-        # not in public JobPhase union — coerce for poll UX
-        if isinstance(phase, str) and phase.startswith("smoke"):
+        if isinstance(phase, str) and (
+            phase.startswith("smoke") or phase == "critique"
+        ):
             phase_out = "validate"
         else:
             phase_out = {
                 "ingest": "plan",
                 "smoke": "validate",
+                "critique": "validate",
                 "finalize": "validate",
             }.get(phase, phase)
     else:

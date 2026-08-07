@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "rater": "owner",
+  "date": "YYYY-MM-DD",
+  "scale": "1=broken craft, 3=acceptable, 5=brik-level",
+  "ratings": []
+}

@@ -1,61 +1,323 @@
 {
-  "version": 1,
-  "milestone": "M3h",
+  "version": 2,
+  "milestone": "AM3a",
   "target": "canvas2d",
   "gates": {
     "minFirstPassRate": 0.7,
     "minAfterRepairRate": 0.9
   },
+  "qualityGates": {
+    "minMeanJudgeScore": 3.0,
+    "criticThreshold": 3.5
+  },
   "prompts": [
     {
       "id": "orb-pulse",
       "vision": "A purple pulsing orb with a bold white title on a dark background",
-      "tags": ["simple", "motion"]
+      "tags": ["simple", "motion"],
+      "tier": "easy",
+      "aspect": "1:1"
     },
     {
       "id": "social-9-16",
       "vision": "A kinetic 9:16 social frame with headline, accent color, and logo slot",
-      "tags": ["social", "assets"]
+      "tags": ["social", "assets"],
+      "tier": "medium",
+      "aspect": "9:16"
     },
     {
       "id": "gradient-wave",
       "vision": "Soft gradient waves drifting slowly with a short caption",
-      "tags": ["motion"]
+      "tags": ["motion", "gradient"],
+      "tier": "easy",
+      "aspect": "1:1"
     },
     {
       "id": "type-focus",
       "vision": "Bold kinetic typography that scales with a number intensity param",
-      "tags": ["type"]
+      "tags": ["kinetic-type", "type"],
+      "tier": "medium",
+      "aspect": "1:1"
     },
     {
       "id": "logo-badge",
       "vision": "Circular badge with logo in the center and ring accent animation",
-      "tags": ["assets"]
+      "tags": ["assets", "badge"],
+      "tier": "medium",
+      "aspect": "1:1"
     },
     {
       "id": "minimal-still",
       "vision": "Minimal still poster: solid color field, single word title, no motion",
-      "tags": ["simple"]
+      "tags": ["simple", "poster"],
+      "tier": "easy",
+      "aspect": "1:1"
     },
     {
       "id": "neon-grid",
       "vision": "Dark neon grid with cyan lines and a floating product title",
-      "tags": ["grid"]
+      "tags": ["grid", "neon"],
+      "tier": "medium",
+      "aspect": "1:1"
     },
     {
       "id": "soft-particles",
       "vision": "Soft floating dots orbiting a center point with speed control",
-      "tags": ["motion"]
+      "tags": ["particles", "motion"],
+      "tier": "medium",
+      "aspect": "1:1"
     },
     {
       "id": "story-slide",
       "vision": "Vertical story slide 9:16 with background color, subtitle, and logo mark",
-      "tags": ["social"]
+      "tags": ["social", "story"],
+      "tier": "medium",
+      "aspect": "9:16"
     },
     {
       "id": "brand-pulse",
       "vision": "Brand mark pulse: accent color blob behind a logo slot and short tagline",
-      "tags": ["assets", "brand"]
+      "tags": ["assets", "brand"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "kinetic-stack",
+      "vision": "Stacked kinetic headlines that stagger in on ease-out with a caption line",
+      "tags": ["kinetic-type", "type"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "type-outline",
+      "vision": "Outlined display type with animated stroke dash offset and solid fill accent",
+      "tags": ["kinetic-type", "type"],
+      "tier": "hard",
+      "aspect": "16:9"
+    },
+    {
+      "id": "marquee-strip",
+      "vision": "Horizontal marquee of repeated brand words scrolling under a hero word",
+      "tags": ["kinetic-type", "motion"],
+      "tier": "medium",
+      "aspect": "16:9"
+    },
+    {
+      "id": "particle-constellation",
+      "vision": "Constellation of particles connected by faint lines with a center glow",
+      "tags": ["particles", "grid"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "particle-rain",
+      "vision": "Gentle particle rain falling over a dark gradient with a title lockup",
+      "tags": ["particles", "motion"],
+      "tier": "medium",
+      "aspect": "9:16"
+    },
+    {
+      "id": "particle-burst",
+      "vision": "Burst of particles from a logo center that loop back in, with intensity param",
+      "tags": ["particles", "assets"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "poster-duotone",
+      "vision": "Bold duotone poster with oversized type, geometric shape, and two-color palette",
+      "tags": ["poster", "type"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "poster-editorial",
+      "vision": "Editorial poster layout: masthead, thin rules, body caption, accent bar",
+      "tags": ["poster", "type"],
+      "tier": "hard",
+      "aspect": "9:16"
+    },
+    {
+      "id": "poster-sunset",
+      "vision": "Gradient sunset poster with horizon line, sun disc, and serif title",
+      "tags": ["poster", "gradient"],
+      "tier": "easy",
+      "aspect": "1:1"
+    },
+    {
+      "id": "grid-modular",
+      "vision": "Modular grid of rounded tiles that pulse in a wave across the canvas",
+      "tags": ["grid", "motion"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "grid-isometric",
+      "vision": "Isometric grid of cubes with depth shading and a floating label",
+      "tags": ["grid"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "grid-scanlines",
+      "vision": "CRT scanline grid overlay with neon cursor and status text",
+      "tags": ["grid", "neon"],
+      "tier": "medium",
+      "aspect": "16:9"
+    },
+    {
+      "id": "badge-award",
+      "vision": "Metallic award badge with outer ring ticks, center monogram slot, and title",
+      "tags": ["badge", "assets"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "badge-sticker",
+      "vision": "Die-cut sticker badge with dashed border, emoji-free icon shape, and slogan",
+      "tags": ["badge"],
+      "tier": "easy",
+      "aspect": "1:1"
+    },
+    {
+      "id": "badge-seal",
+      "vision": "Wax-seal style circular seal with embossed look, year text, and logo slot",
+      "tags": ["badge", "brand"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "story-countdown",
+      "vision": "9:16 story with big countdown number, progress bar, and brand colors",
+      "tags": ["social", "story"],
+      "tier": "medium",
+      "aspect": "9:16"
+    },
+    {
+      "id": "story-quote",
+      "vision": "Quote card story: large quotation marks, short line, author name, soft bg",
+      "tags": ["social", "type"],
+      "tier": "easy",
+      "aspect": "9:16"
+    },
+    {
+      "id": "story-product",
+      "vision": "Product story frame with hero product zone (logo slot), price param, CTA bar",
+      "tags": ["social", "assets"],
+      "tier": "hard",
+      "aspect": "9:16"
+    },
+    {
+      "id": "wave-ribbon",
+      "vision": "Layered ribbon waves with palette roles and a floating caption",
+      "tags": ["motion", "gradient"],
+      "tier": "medium",
+      "aspect": "16:9"
+    },
+    {
+      "id": "orbit-rings",
+      "vision": "Concentric orbiting rings around a logo slot with speed and accent params",
+      "tags": ["motion", "assets"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "noise-field",
+      "vision": "Soft noise grain field with vignette and centered monogram title",
+      "tags": ["poster", "simple"],
+      "tier": "easy",
+      "aspect": "1:1"
+    },
+    {
+      "id": "split-diagonal",
+      "vision": "Diagonal split composition: two palette fields, type on the lighter side",
+      "tags": ["poster", "type"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "clock-soft",
+      "vision": "Soft analog clock face with palette accents and time-based second hand motion",
+      "tags": ["motion", "simple"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "equalizer-bars",
+      "vision": "Audio equalizer style bars reacting with a fake beat and track title param",
+      "tags": ["motion", "brand"],
+      "tier": "medium",
+      "aspect": "16:9"
+    },
+    {
+      "id": "map-pins",
+      "vision": "Abstract map grid with pulsing pin markers and a city name param",
+      "tags": ["grid", "motion"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "liquid-blob",
+      "vision": "Organic liquid blob morphing with palette roles and intensity control",
+      "tags": ["motion", "simple"],
+      "tier": "medium",
+      "aspect": "1:1"
+    },
+    {
+      "id": "frame-polaroid",
+      "vision": "Polaroid-style frame with image slot, handwritten caption, soft shadow",
+      "tags": ["assets", "social"],
+      "tier": "medium",
+      "aspect": "4:5"
+    },
+    {
+      "id": "ticker-news",
+      "vision": "News ticker bottom bar with scrolling headline over a still hero panel",
+      "tags": ["type", "motion"],
+      "tier": "medium",
+      "aspect": "16:9"
+    },
+    {
+      "id": "mandala-soft",
+      "vision": "Soft radial mandala pattern rotating slowly with accent and density params",
+      "tags": ["motion", "grid"],
+      "tier": "hard",
+      "aspect": "1:1"
+    },
+    {
+      "id": "chrome-wordmark",
+      "vision": "Chrome-like reflective wordmark with gradient sheen sweep and brand tagline",
+      "tags": ["type", "brand"],
+      "tier": "hard",
+      "aspect": "16:9"
+    },
+    {
+      "id": "confetti-celebrate",
+      "vision": "Celebration confetti burst looping with title and accent color params",
+      "tags": ["particles", "motion"],
+      "tier": "easy",
+      "aspect": "1:1"
+    },
+    {
+      "id": "weather-soft",
+      "vision": "Soft weather card: sky gradient, sun/cloud shapes, temperature number param",
+      "tags": ["simple", "motion"],
+      "tier": "easy",
+      "aspect": "1:1"
+    },
+    {
+      "id": "checklist-card",
+      "vision": "Checklist card UI: title, three param-driven lines, accent checkmarks animating in",
+      "tags": ["type", "simple"],
+      "tier": "medium",
+      "aspect": "9:16"
+    },
+    {
+      "id": "waveform-line",
+      "vision": "Single smooth waveform line across a dark field with amplitude and title params",
+      "tags": ["motion", "simple"],
+      "tier": "easy",
+      "aspect": "16:9"
     }
   ]
 }

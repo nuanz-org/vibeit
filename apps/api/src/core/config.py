@@ -105,6 +105,13 @@ class Settings:
         self.smoke_min_variance: float = float(
             os.getenv("VIBEIT_SMOKE_MIN_VARIANCE", "5")
         )
+        # AM3 critic — advisory until VIBEIT_CRITIC_ENFORCED after calibration
+        self.critic_threshold: float = float(
+            os.getenv("VIBEIT_CRITIC_THRESHOLD", "3.5")
+        )
+        self.critic_enforced: bool = os.getenv(
+            "VIBEIT_CRITIC_ENFORCED", ""
+        ).lower() in ("1", "true", "yes", "on")
         # When true, POST /jobs runs agent via BackgroundTasks (M3e default).
         self.create_worker_enabled: bool = os.getenv(
             "CREATE_WORKER_ENABLED", "true"

@@ -1,5 +1,5 @@
 """
-Sequential Create runner with repair loop (M3e).
+Sequential Create runner with repair loop (M3e + AM2 gates + AM3 critic).
 
 Used by the background worker so we can update job phase between steps.
 LangGraph graph remains available for lighter unit tests.
@@ -13,6 +13,7 @@ from typing import Any
 
 from adapters.llm.protocol import LLMClient
 from agent.nodes.codegen import codegen_node
+from agent.nodes.critique import critique_node
 from agent.nodes.ingest import ingest_node
 from agent.nodes.load_fixture import load_fixture_node
 from agent.nodes.plan import plan_node
@@ -46,6 +47,18 @@ def _timed_out(started: float, wall_seconds: float) -> bool:
     return (time.monotonic() - started) >= wall_seconds
 
 
+def _finalize_ok(state: CreateGraphState) -> CreateGraphState:
+    return _merge(
+        state,
+        {
+            "ready_for_finalize": True,
+            "error_code": None,
+            "error_message": None,
+            "phase": "finalize",
+        },
+    )
+
+
 async def run_create_with_repairs(
     *,
     vision_text: str,
@@ -59,10 +72,12 @@ async def run_create_with_repairs(
     on_phase: PhaseCallback | None = None,
 ) -> CreateGraphState:
     """
-    Full create pipeline with bounded repair.
+    Full create pipeline with bounded repair + optional critic loop (AM3).
 
     Success: ready_for_finalize=True, smoke_ok=True, validate_ok=True.
-    Exhaustion: ready_for_finalize=False; best_valid_code may be set for salvage.
+    Critic: advisory by default (VIBEIT_CRITIC_ENFORCED); failure degrades to
+    gates-only finalize. When enforced, overall < threshold triggers repair
+    with critique fixes (counts against repair budget).
     """
     started = time.monotonic()
     state = initial_create_state(
@@ -126,7 +141,7 @@ async def run_create_with_repairs(
     if state.get("error_code"):
         return state
 
-    # --- validate / smoke / repair loop ---
+    # --- validate / smoke / critique / repair loop ---
     while True:
         if _timed_out(started, wall_time_seconds):
             return _merge(
@@ -150,7 +165,6 @@ async def run_create_with_repairs(
                     "repair budget" in (state.get("error_message") or "")
                     or "repair LLM failed" in (state.get("error_message") or "")
                 ):
-                    # keep best_valid if any
                     return _merge(state, {"ready_for_finalize": False})
                 continue
             return _merge(
@@ -166,29 +180,44 @@ async def run_create_with_repairs(
         await _maybe_await(on_phase, "smoke", state)
         state = _merge(state, sandbox_smoke_node(state))
 
-        if state.get("smoke_ok"):
+        if not state.get("smoke_ok"):
+            if _can_repair(state) and llm is not None and not use_fixture_code:
+                await _maybe_await(on_phase, "repair", state)
+                state = _merge(state, await repair_node(state, llm=llm))
+                continue
             return _merge(
                 state,
                 {
-                    "ready_for_finalize": True,
-                    "error_code": None,
-                    "error_message": None,
-                    "phase": "finalize",
+                    "ready_for_finalize": False,
+                    "error_code": "GENERATION_FAILED",
+                    "error_message": state.get("error_message")
+                    or "sandbox smoke failed after repairs",
                 },
             )
 
-        # smoke failed but validate passed — best_valid already set
-        if _can_repair(state) and llm is not None and not use_fixture_code:
+        # --- AM3 critic (after gates pass) ---
+        # Fixture path: skip critic (no LLM design loop).
+        if use_fixture_code or llm is None:
+            return _finalize_ok(state)
+
+        await _maybe_await(on_phase, "critique", state)
+        state = _merge(state, await critique_node(state, llm=llm))
+
+        # Judge failure → gates-only finalize (never hard-fail the job)
+        if not state.get("critique_ok"):
+            return _finalize_ok(state)
+
+        passes = bool(state.get("critique_passes"))
+        enforced = bool(state.get("critic_enforced"))
+
+        if passes or not enforced:
+            return _finalize_ok(state)
+
+        # Enforced + below threshold → repair with fix list
+        if _can_repair(state) and not use_fixture_code:
             await _maybe_await(on_phase, "repair", state)
             state = _merge(state, await repair_node(state, llm=llm))
             continue
 
-        return _merge(
-            state,
-            {
-                "ready_for_finalize": False,
-                "error_code": "GENERATION_FAILED",
-                "error_message": state.get("error_message")
-                or "sandbox smoke failed after repairs",
-            },
-        )
+        # Budget exhausted while enforced: still deliver gated tool (soft quality miss)
+        return _finalize_ok(state)

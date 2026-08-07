@@ -8,7 +8,16 @@ from __future__ import annotations
 
 from typing import Any, Literal, NotRequired, TypedDict
 
-JobPhase = Literal["ingest", "plan", "codegen", "validate", "smoke", "repair", "finalize"]
+JobPhase = Literal[
+    "ingest",
+    "plan",
+    "codegen",
+    "validate",
+    "smoke",
+    "critique",
+    "repair",
+    "finalize",
+]
 
 
 class CreateGraphState(TypedDict, total=False):
@@ -36,6 +45,16 @@ class CreateGraphState(TypedDict, total=False):
     compiled_js: NotRequired[str | None]
     smoke_screenshot_path: NotRequired[str | None]
     smoke_variance: NotRequired[float | None]
+
+    # AM3 — critic / quality judge
+    critique: NotRequired[dict[str, Any] | None]
+    critique_ok: NotRequired[bool]
+    critique_score: NotRequired[float | None]
+    critique_fixes: NotRequired[list[str]]
+    critique_passes: NotRequired[bool]
+    critique_error: NotRequired[str | None]
+    critic_threshold: NotRequired[float]
+    critic_enforced: NotRequired[bool]
 
     # Repair / budgets (M3e fills these)
     repair_count: int
