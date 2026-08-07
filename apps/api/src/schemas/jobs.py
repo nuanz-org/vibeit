@@ -60,6 +60,8 @@ class CreateJobRequest(CamelModel):
         default=None,
         alias="clientMetadata",
     )
+    # Optional OpenRouter model id from Create picker (must be in LLM_MODELS_ALLOWED).
+    model: str | None = None
 
 
 class CreateJobResponse(CamelModel):

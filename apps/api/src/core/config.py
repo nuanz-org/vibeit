@@ -114,7 +114,10 @@ class Settings:
         ).strip()
         self.llm_app_title: str = os.getenv("LLM_APP_TITLE", "Vibeit").strip()
 
-        # Fail loud at startup if any role model is not allowlisted
+        # Product Create model menu (user-selectable). Empty env → built-in defaults.
+        raw_menu = os.getenv("LLM_MODELS_ALLOWED", "").strip()
+        self.llm_models_allowed_raw: str = raw_menu
+        # Resolve role models at startup (empty ids fail; any OpenRouter id ok)
         self._validate_llm_role_models()
 
         # --- Create agent budgets (M3e / M3f / AM2) ---
@@ -175,7 +178,7 @@ class Settings:
         )
 
     def _validate_llm_role_models(self) -> None:
-        """AM4: misconfigured LLM_MODEL_* fails at Settings construction."""
+        """AM4: empty LLM_MODEL_* fails at Settings construction; any model id ok."""
         from adapters.llm.router import validate_configured_models
 
         validate_configured_models(
@@ -189,8 +192,8 @@ class Settings:
         )
 
     def model_for_role(self, role: str) -> str:
-        """Resolve allowlisted model for an agent role (respects eval overrides)."""
-        from adapters.llm.router import LLMRole, resolve_model_for_role
+        """Resolve model for an agent role (respects eval overrides)."""
+        from adapters.llm.router import resolve_model_for_role
 
         key = f"llm_model_{role}"
         configured = getattr(self, key, None)
@@ -198,3 +201,9 @@ class Settings:
             role,  # type: ignore[arg-type]
             configured=configured if isinstance(configured, str) else None,
         )
+
+    def llm_model_catalog(self) -> dict:
+        """Create UI catalog: allowed models + default."""
+        from adapters.llm.router import public_model_catalog
+
+        return public_model_catalog(default_model=self.llm_model_codegen)

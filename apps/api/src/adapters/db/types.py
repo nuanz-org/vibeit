@@ -65,6 +65,8 @@ class GenerationJobRow:
     # AM7 refine
     job_kind: str = "create"
     base_version_id: UUID | None = None
+    # User-selected OpenRouter model for create plan/codegen/repair (007)
+    llm_model: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

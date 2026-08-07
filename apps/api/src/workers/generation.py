@@ -17,7 +17,11 @@ from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.llm.openrouter import OpenRouterLLMClient
 from adapters.llm.protocol import LLMClient, LLMConfigError
-from adapters.llm.router import assert_allowed_model
+from adapters.llm.router import (
+    assert_allowed_model,
+    reset_role_overrides,
+    set_role_overrides,
+)
 from adapters.storage import create_storage
 from agent.runner import run_create_with_repairs, run_refine_with_repairs
 from agent.state import CreateGraphState
@@ -137,6 +141,7 @@ async def run_generation_job(
             tokens_used=int(state.get("llm_tokens_used") or 0) or None,
         )
 
+    override_token = None
     try:
         client = llm
         if not use_fixture_code and client is None:
@@ -156,6 +161,15 @@ async def run_generation_job(
         )
 
         job_kind = getattr(job, "job_kind", None) or "create"
+
+        # User-selected Create model drives plan + codegen + repair for this job.
+        job_model = getattr(job, "llm_model", None)
+        if isinstance(job_model, str) and job_model.strip():
+            mid = job_model.strip()
+            print(f"[worker] job {job_id} llm_model={mid}")
+            override_token = set_role_overrides(
+                {"plan": mid, "codegen": mid, "repair": mid}
+            )
 
         if job_kind == "refine":
             if job.tool_id is None:
@@ -251,3 +265,6 @@ async def run_generation_job(
             )
         except Exception:  # noqa: BLE001
             pass
+    finally:
+        if override_token is not None:
+            reset_role_overrides(override_token)

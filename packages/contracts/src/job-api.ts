@@ -144,6 +144,11 @@ export interface CreateJobRequest {
    * Not required for generation; must not carry secrets.
    */
   clientMetadata?: Record<string, unknown>;
+  /**
+   * Optional OpenRouter model id from the Create picker.
+   * Must be in the server's LLM_MODELS_ALLOWED menu.
+   */
+  model?: string;
 }
 
 /** Immediate accept of a create job (usually status `queued`). */

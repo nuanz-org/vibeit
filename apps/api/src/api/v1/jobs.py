@@ -14,6 +14,8 @@ from fastapi.responses import JSONResponse
 from adapters.auth.types import AuthUser
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
+from adapters.llm.protocol import LLMConfigError
+from adapters.llm.router import assert_selectable_model
 from core.config import get_settings
 from core.deps import get_jobs_repo, get_tools_repo
 from core.security import get_current_user
@@ -67,11 +69,22 @@ async def create_job(
     Persists job + draft tool; enqueues worker when OpenRouter key is set.
     """
     settings = get_settings()
+    llm_model: str | None = None
+    if body.model is not None and str(body.model).strip():
+        try:
+            llm_model = assert_selectable_model(str(body.model))
+        except LLMConfigError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
+
     try:
         result = await enqueue_create_job(
             owner_user_id=user.id,
             vision_text=body.vision_text,
             inspiration_asset_ids=body.inspiration_asset_ids,
+            llm_model=llm_model,
             tools=tools,
             jobs=jobs,
             settings=settings,

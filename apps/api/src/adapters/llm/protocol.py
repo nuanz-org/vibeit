@@ -88,7 +88,7 @@ class LLMClient(Protocol):
         """
         Run a non-streaming chat completion.
 
-        `model` must be allowlisted (AM4) or omitted (uses client default).
+        `model` is any non-empty OpenRouter id, or omitted (uses client default).
         Message content may be multimodal parts (AM5 vision).
         """
         ...

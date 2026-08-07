@@ -36,6 +36,27 @@
   max-width: 100%;
 }
 
+.select {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.select:focus {
+  outline: 2px solid color-mix(in srgb, var(--foreground) 25%, transparent);
+  outline-offset: 1px;
+}
+
+.select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

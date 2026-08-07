@@ -155,18 +155,30 @@ Smoke pipeline (AM2): **structural → esbuild compile → param coverage → Pl
 
 After gates pass, **AM3 critic** scores craft (advisory by default). Set `VIBEIT_CRITIC_ENFORCED=1` only after calibration (`evals/create/calibration/`).
 
-### AM4 model routing
+### AM4 model routing + Create picker
 
-Per-role models (default all Flash):
+Per-role server defaults (env):
 
 ```bash
 LLM_MODEL_PLAN=deepseek/deepseek-v4-flash
 LLM_MODEL_CODEGEN=deepseek/deepseek-v4-flash
 LLM_MODEL_REPAIR=deepseek/deepseek-v4-flash
 LLM_MODEL_JUDGE=deepseek/deepseek-v4-flash
-LLM_MODEL_VISION=deepseek/deepseek-v4-flash
-# LLM_ALLOWLIST_EXTRA=provider/extra-model
+LLM_MODEL_VISION=google/gemini-2.5-flash
 ```
+
+Create UI model menu (user may only pick these):
+
+```bash
+# Optional full override of the picker list (comma-separated OpenRouter ids)
+# LLM_MODELS_ALLOWED=deepseek/deepseek-v4-flash,google/gemini-3.6-flash,anthropic/claude-sonnet-4.5
+# LLM_ALLOWLIST_EXTRA=provider/extra-model   # also widens default menu
+```
+
+- `GET /api/v1/llm/models` → `{ models, defaultModel }` for the Create dropdown  
+- `POST /api/v1/jobs` accepts optional `model` (must be in the menu)  
+- Per-model OpenRouter `reasoning` is applied automatically  
+  (DeepSeek → `effort: none`, Gemini 3.x → `enabled: true`)
 
 Codegen A/B shootout:
 

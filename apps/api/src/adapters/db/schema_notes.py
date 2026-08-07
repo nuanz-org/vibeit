@@ -16,6 +16,7 @@ M8a columns on tools: tags (text[]), published_version_id (FK → tool_versions)
 M8b columns on tools: gallery_ready (bool), export_smoke_at (timestamptz).
   published ≠ gallery: status=published enables /t share; gallery_ready after gates.
 AM7 columns on generation_jobs: job_kind (create|refine), base_version_id.
+007 columns on generation_jobs: llm_model (user-selected OpenRouter id).
 """
 
 from __future__ import annotations

@@ -36,16 +36,24 @@ def test_codegen_allowlist_includes_shootout_candidates() -> None:
     assert FLASH_MODEL in al
 
 
-def test_rejects_unknown_model_for_role() -> None:
+def test_accepts_any_openrouter_model_for_role() -> None:
+    assert assert_model_for_role("totally/fake-model-xyz", "codegen") == (
+        "totally/fake-model-xyz"
+    )
+    assert assert_model_for_role("google/gemini-3.6-flash", "plan") == (
+        "google/gemini-3.6-flash"
+    )
+
+
+def test_rejects_empty_model_for_role() -> None:
     try:
-        assert_model_for_role("totally/fake-model-xyz", "codegen")
+        assert_model_for_role("  ", "codegen")
         raise AssertionError("expected LLMConfigError")
     except LLMConfigError as exc:
-        assert "allowlisted" in str(exc).lower() or "not allowlisted" in str(exc)
+        assert "empty" in str(exc).lower()
 
 
 def test_client_accepts_allowlisted_non_flash() -> None:
-    # anthropic/claude-sonnet-4.5 is on codegen allowlist
     client = OpenRouterLLMClient(
         api_key="sk-test",
         default_model="anthropic/claude-sonnet-4.5",
@@ -53,12 +61,12 @@ def test_client_accepts_allowlisted_non_flash() -> None:
     assert client.default_model == "anthropic/claude-sonnet-4.5"
 
 
-def test_client_rejects_unknown_default() -> None:
-    try:
-        OpenRouterLLMClient(api_key="sk-test", default_model="openai/not-on-list-zzz")
-        raise AssertionError("expected LLMConfigError")
-    except LLMConfigError:
-        pass
+def test_client_accepts_any_openrouter_default() -> None:
+    client = OpenRouterLLMClient(
+        api_key="sk-test",
+        default_model="google/gemini-3.6-flash",
+    )
+    assert client.default_model == "google/gemini-3.6-flash"
 
 
 def test_overrides_context() -> None:
@@ -129,9 +137,10 @@ def test_extra_allowlist_env() -> None:
 if __name__ == "__main__":
     test_flash_default_all_roles()
     test_codegen_allowlist_includes_shootout_candidates()
-    test_rejects_unknown_model_for_role()
+    test_accepts_any_openrouter_model_for_role()
+    test_rejects_empty_model_for_role()
     test_client_accepts_allowlisted_non_flash()
-    test_client_rejects_unknown_default()
+    test_client_accepts_any_openrouter_default()
     test_overrides_context()
     test_parse_role_model_pairs()
     test_parse_role_model_pairs_bad_role()

@@ -5,6 +5,8 @@ export type CreateJobRequest = {
   visionText: string;
   inspirationAssetIds?: string[];
   clientMetadata?: Record<string, unknown>;
+  /** OpenRouter model id from Create picker (must be server-allowed). */
+  model?: string;
 };
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed";

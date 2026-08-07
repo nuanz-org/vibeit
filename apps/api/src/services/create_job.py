@@ -88,12 +88,14 @@ async def enqueue_create_job(
     repair_budget: int = DEFAULT_REPAIR_BUDGET,
     settings: Settings | None = None,
     skip_quota: bool = False,
+    llm_model: str | None = None,
 ) -> CreateJobResult:
     """
     Create draft tool + queued generation_jobs row.
 
     Prefer draft tool at enqueue so Studio tool id is stable before worker runs.
     Counts this enqueue against the daily quota (M3f) unless skip_quota=True.
+    Optional llm_model is the user-selected OpenRouter id for plan/codegen/repair.
     """
     vision = vision_text.strip()
     if not vision:
@@ -130,6 +132,7 @@ async def enqueue_create_job(
         repair_budget=repair_budget,
         status="queued",
         token_budget=token_budget,
+        llm_model=llm_model,
     )
 
     if settings is not None:

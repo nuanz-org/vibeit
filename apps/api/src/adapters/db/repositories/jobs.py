@@ -14,7 +14,7 @@ _JOB_COLUMNS = """
     id, owner_user_id, tool_id, status, vision_text, inspiration_asset_ids,
     error_code, error_message, tokens_used, token_budget, cost_cents,
     repair_budget, repairs_used, phase, created_at, updated_at,
-    job_kind, base_version_id
+    job_kind, base_version_id, llm_model
 """
 
 # Pre-006 select list for tests against schemas without refine columns.
@@ -41,23 +41,25 @@ class JobsRepository:
         token_budget: int | None = None,
         job_kind: str = "create",
         base_version_id: UUID | str | None = None,
+        llm_model: str | None = None,
     ) -> GenerationJobRow:
         if status not in JOB_STATUSES:
             raise ValueError(f"invalid job status: {status}")
         if job_kind not in ("create", "refine"):
             raise ValueError(f"invalid job_kind: {job_kind}")
         ids = inspiration_asset_ids or []
+        model = (llm_model or "").strip() or None
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 INSERT INTO generation_jobs (
                     owner_user_id, tool_id, status, vision_text,
                     inspiration_asset_ids, repair_budget, token_budget,
-                    job_kind, base_version_id
+                    job_kind, base_version_id, llm_model
                 )
                 VALUES (
                     $1, $2::uuid, $3, $4, $5::jsonb, $6, $7,
-                    $8, $9::uuid
+                    $8, $9::uuid, $10
                 )
                 RETURNING {_JOB_COLUMNS}
                 """,
@@ -70,6 +72,7 @@ class JobsRepository:
                 token_budget,
                 job_kind,
                 str(base_version_id) if base_version_id is not None else None,
+                model,
             )
         assert row is not None
         return job_from_record(row)

@@ -13,6 +13,10 @@ import {
   parseSalvageToolId,
   type QuotaFields,
 } from "@/lib/api/jobs";
+import {
+  fetchLlmModels,
+  type LlmModelOption,
+} from "@/lib/api/llm";
 
 import styles from "../styles.module.css";
 
@@ -24,11 +28,15 @@ const MAX_INSPIRATION = 4;
 /**
  * Create form: vision + optional inspiration images → job → poll → Studio.
  * AM5: inspirationAssetIds flow into style extract before plan.
+ * Model picker: GET /api/v1/llm/models → POST /jobs { model }.
  */
 export function CreateForm() {
   const router = useRouter();
   const [visionText, setVisionText] = useState(DEFAULT_VISION);
   const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
+  const [modelOptions, setModelOptions] = useState<LlmModelOption[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [modelsError, setModelsError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [quota, setQuota] = useState<QuotaFields | null>(null);
@@ -42,6 +50,33 @@ export function CreateForm() {
   const isFailed = status?.status === "failed";
 
   const resultQuery = useJobResult(jobId, Boolean(isSuccess));
+
+  // Load selectable models from server config
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const catalog = await fetchLlmModels();
+        if (cancelled) return;
+        setModelOptions(catalog.models ?? []);
+        const preferred =
+          catalog.defaultModel ||
+          catalog.models?.find((m) => m.default)?.id ||
+          catalog.models?.[0]?.id ||
+          "";
+        setSelectedModel(preferred);
+        setModelsError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setModelsError(
+          err instanceof Error ? err.message : "Could not load models",
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Keep quota from latest status
   useEffect(() => {
@@ -85,9 +120,11 @@ export function CreateForm() {
         visionText: vision,
         inspirationAssetIds:
           inspirationAssetIds.length > 0 ? inspirationAssetIds : undefined,
+        model: selectedModel.trim() || undefined,
         clientMetadata: {
           uiSource: "create-form-am5",
           inspirationCount: inspirationAssetIds.length,
+          model: selectedModel.trim() || undefined,
         },
       });
       setJobId(created.jobId);
@@ -134,6 +171,34 @@ export function CreateForm() {
             disabled={pending || generating}
             placeholder="Describe the living design tool you want…"
           />
+        </label>
+
+        <label className={styles.label}>
+          Model
+          <select
+            className={styles.select}
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            disabled={pending || generating || modelOptions.length === 0}
+          >
+            {modelOptions.length === 0 ? (
+              <option value="">Loading models…</option>
+            ) : (
+              modelOptions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                  {m.default ? " (default)" : ""}
+                </option>
+              ))
+            )}
+          </select>
+          <span className={styles.muted}>
+            OpenRouter model for plan + codegen + repair. Options come from
+            server config (LLM_MODELS_ALLOWED).
+          </span>
+          {modelsError ? (
+            <span className={styles.error}>{modelsError}</span>
+          ) : null}
         </label>
 
         <label className={styles.label}>

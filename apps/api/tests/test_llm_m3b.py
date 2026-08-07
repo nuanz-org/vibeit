@@ -31,12 +31,12 @@ def test_router_all_roles_use_flash() -> None:
         assert resolve_model_for_role(role) == ASAP_CODEGEN_MODEL
 
 
-def test_rejects_other_models() -> None:
-    try:
-        OpenRouterLLMClient(api_key="sk-test", default_model="openai/not-allowlisted-zzz")
-        raise AssertionError("expected LLMConfigError")
-    except LLMConfigError as exc:
-        assert "allowlist" in str(exc).lower() or "not" in str(exc).lower()
+def test_accepts_any_openrouter_model() -> None:
+    client = OpenRouterLLMClient(
+        api_key="sk-test",
+        default_model="openai/not-allowlisted-zzz",
+    )
+    assert client.default_model == "openai/not-allowlisted-zzz"
 
 
 def test_missing_api_key() -> None:
@@ -97,15 +97,43 @@ def test_complete_parses_openrouter_response() -> None:
             assert result.usage.prompt_tokens == 12
             assert result.finish_reason == "stop"
 
-            # Explicit unknown model rejected even if default is ok
-            try:
-                await client.complete(
-                    [ChatMessage(role="user", content="x")],
-                    model="openai/not-allowlisted-zzz",
+            # Explicit alternate model id is accepted (OpenRouter validates availability)
+            def handler_any(request: httpx.Request) -> httpx.Response:
+                body = request.read()
+                assert b"openai/gpt-4.1-mini" in body
+                return httpx.Response(
+                    200,
+                    json={
+                        "id": "gen-2",
+                        "model": "openai/gpt-4.1-mini",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "finish_reason": "stop",
+                                "message": {"role": "assistant", "content": "ok"},
+                            }
+                        ],
+                        "usage": {
+                            "prompt_tokens": 1,
+                            "completion_tokens": 1,
+                            "total_tokens": 2,
+                        },
+                    },
                 )
-                raise AssertionError("expected LLMConfigError")
-            except LLMConfigError:
-                pass
+
+            transport_any = httpx.MockTransport(handler_any)
+            async with httpx.AsyncClient(transport=transport_any) as http2:
+                client2 = OpenRouterLLMClient(
+                    api_key="sk-test-key",
+                    default_model=ASAP_CODEGEN_MODEL,
+                    client=http2,
+                )
+                alt = await client2.complete(
+                    [ChatMessage(role="user", content="x")],
+                    model="openai/gpt-4.1-mini",
+                )
+                assert alt.text == "ok"
+                assert alt.model == "openai/gpt-4.1-mini"
 
     asyncio.run(_run())
 
@@ -156,7 +184,7 @@ def test_dotenv_load_runs_without_error() -> None:
 if __name__ == "__main__":
     test_asap_model_constant()
     test_router_all_roles_use_flash()
-    test_rejects_other_models()
+    test_accepts_any_openrouter_model()
     test_missing_api_key()
     test_complete_parses_openrouter_response()
     test_complete_http_error()

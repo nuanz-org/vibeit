@@ -2,24 +2,29 @@
 Per-role model router (AM4).
 
 Roles: plan / codegen / repair / judge / vision
-Each role has an allowlist; configured model must be on that list (fail loud).
-Defaults remain deepseek/deepseek-v4-flash until a committed A/B decision changes them.
+
+Server/env may use any non-empty OpenRouter model id.
+User-facing Create selection is restricted to LLM_MODELS_ALLOWED (product menu).
+
+Request shaping (reasoning, timeouts) lives in adapters.llm.profiles.
 
 Env (see also core.config.Settings):
   LLM_MODEL_PLAN / LLM_MODEL_CODEGEN / LLM_MODEL_REPAIR / LLM_MODEL_JUDGE / LLM_MODEL_VISION
-  LLM_ALLOWLIST_EXTRA — comma-separated models added to every role allowlist
-  LLM_ALLOWLIST_CODEGEN — optional full override of codegen allowlist (comma-separated)
+  LLM_MODELS_ALLOWED — comma-separated OpenRouter ids for the Create model picker
+  LLM_ALLOWLIST_EXTRA — merged into role candidate sets + selectable menu
+  LLM_ALLOWLIST_CODEGEN — optional override of codegen candidate set
 """
 
 from __future__ import annotations
 
 import contextvars
 import os
-from typing import Iterable, Literal
+from typing import Any, Iterable, Literal
 
 from adapters.llm.protocol import LLMConfigError
+from adapters.llm.profiles import label_for_model
 
-# Flash baseline — always allowed, always the documented fallback.
+# Flash baseline — documented default / fallback.
 FLASH_MODEL = "deepseek/deepseek-v4-flash"
 # Back-compat alias used across the codebase.
 ASAP_CODEGEN_MODEL = FLASH_MODEL
@@ -27,8 +32,7 @@ ASAP_CODEGEN_MODEL = FLASH_MODEL
 LLMRole = Literal["plan", "codegen", "repair", "judge", "vision"]
 ALL_ROLES: tuple[LLMRole, ...] = ("plan", "codegen", "repair", "judge", "vision")
 
-# Shootout / upgrade candidates (OpenRouter ids). Extend via LLM_ALLOWLIST_EXTRA.
-# Names track product doc AM4; adjust if OpenRouter renames.
+# Default Create menu + shootout candidates (OpenRouter ids).
 _CODEGEN_CANDIDATES = frozenset(
     {
         FLASH_MODEL,
@@ -41,6 +45,7 @@ _CODEGEN_CANDIDATES = frozenset(
         "moonshotai/kimi-k2",
         "google/gemini-2.5-flash",
         "google/gemini-2.5-pro",
+        "google/gemini-3.6-flash",
         "openai/gpt-4.1-mini",
         "openai/gpt-4.1",
     }
@@ -51,6 +56,7 @@ _CHEAP_CANDIDATES = frozenset(
         FLASH_MODEL,
         "deepseek/deepseek-chat",
         "google/gemini-2.5-flash",
+        "google/gemini-3.6-flash",
         "openai/gpt-4.1-mini",
         "anthropic/claude-3.5-sonnet",
     }
@@ -80,6 +86,16 @@ _DEFAULT_BY_ROLE: dict[LLMRole, str] = {
     "vision": FLASH_MODEL,
 }
 
+# Preferred Create menu order when LLM_MODELS_ALLOWED is unset.
+_DEFAULT_SELECTABLE_ORDER: tuple[str, ...] = (
+    FLASH_MODEL,
+    "google/gemini-3.6-flash",
+    "google/gemini-2.5-flash",
+    "anthropic/claude-sonnet-4.5",
+    "openai/gpt-4.1-mini",
+    "deepseek/deepseek-v4-pro",
+)
+
 # Per-async-task overrides for eval A/B sweeps (role → model id).
 _role_overrides: contextvars.ContextVar[dict[str, str] | None] = contextvars.ContextVar(
     "llm_role_overrides",
@@ -92,12 +108,28 @@ def _parse_csv_models(raw: str) -> frozenset[str]:
     return frozenset(parts)
 
 
+def _parse_csv_models_ordered(raw: str) -> tuple[str, ...]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for p in raw.split(","):
+        mid = p.strip()
+        if not mid or mid in seen:
+            continue
+        seen.add(mid)
+        out.append(mid)
+    return tuple(out)
+
+
 def _extra_allowlist() -> frozenset[str]:
     return _parse_csv_models(os.getenv("LLM_ALLOWLIST_EXTRA", ""))
 
 
 def allowlist_for_role(role: LLMRole) -> frozenset[str]:
-    """Return the effective allowlist for a role (env can widen)."""
+    """
+    Return documented candidate models for a role (advisory + menu source).
+
+    Env role models may still use ids outside this set; user selection cannot.
+    """
     extra = _extra_allowlist()
     env_key = f"LLM_ALLOWLIST_{role.upper()}"
     raw = os.getenv(env_key, "").strip()
@@ -110,41 +142,107 @@ def allowlist_for_role(role: LLMRole) -> frozenset[str]:
 
 
 def all_allowed_models() -> frozenset[str]:
+    """Union of documented candidate sets."""
     models: set[str] = set()
     for role in ALL_ROLES:
         models |= set(allowlist_for_role(role))
     return frozenset(models)
 
 
-def assert_model_for_role(model: str, role: LLMRole) -> str:
+def selectable_models() -> tuple[str, ...]:
+    """
+    Ordered OpenRouter ids the Create UI may offer.
+
+    LLM_MODELS_ALLOWED=comma,list — full override of the menu.
+    Otherwise: default order ∩ known candidates, plus LLM_ALLOWLIST_EXTRA.
+    """
+    raw = os.getenv("LLM_MODELS_ALLOWED", "").strip()
+    if raw:
+        ordered = _parse_csv_models_ordered(raw)
+        return ordered if ordered else (FLASH_MODEL,)
+
+    extra = _extra_allowlist()
+    known = all_allowed_models() | extra
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for mid in _DEFAULT_SELECTABLE_ORDER:
+        if mid in known and mid not in seen:
+            ordered.append(mid)
+            seen.add(mid)
+    for mid in sorted(known):
+        if mid not in seen:
+            ordered.append(mid)
+            seen.add(mid)
+    return tuple(ordered) if ordered else (FLASH_MODEL,)
+
+
+def selectable_model_set() -> frozenset[str]:
+    return frozenset(selectable_models())
+
+
+def assert_selectable_model(model: str) -> str:
+    """Validate a user-selected Create model against the product menu."""
     mid = (model or "").strip()
     if not mid:
-        raise LLMConfigError(f"empty model id for role {role!r}")
-    allowed = allowlist_for_role(role)
+        raise LLMConfigError("empty model id")
+    allowed = selectable_model_set()
     if mid not in allowed:
         sample = ", ".join(sorted(allowed)[:8])
         more = "" if len(allowed) <= 8 else f" … (+{len(allowed) - 8} more)"
         raise LLMConfigError(
-            f"model {mid!r} is not allowlisted for role {role!r}. "
-            f"Allowed (sample): {sample}{more}. "
-            f"Add via LLM_ALLOWLIST_{role.upper()} or LLM_ALLOWLIST_EXTRA."
+            f"model {mid!r} is not in LLM_MODELS_ALLOWED. "
+            f"Allowed (sample): {sample}{more}."
         )
+    return mid
+
+
+def public_model_catalog(*, default_model: str | None = None) -> dict[str, Any]:
+    """
+    Wire shape for GET /api/v1/llm/models.
+
+    {
+      "models": [{"id", "label", "default"}],
+      "defaultModel": "..."
+    }
+    """
+    menu = selectable_models()
+    preferred = (default_model or "").strip() or env_model_for_role("codegen")
+    if preferred not in menu:
+        preferred = menu[0]
+    models = [
+        {
+            "id": mid,
+            "label": label_for_model(mid),
+            "default": mid == preferred,
+        }
+        for mid in menu
+    ]
+    return {"models": models, "defaultModel": preferred}
+
+
+def assert_model_for_role(model: str, role: LLMRole) -> str:
+    """
+    Normalize a model id for a role.
+
+    Any non-empty OpenRouter model id is accepted for server/env roles.
+    """
+    mid = (model or "").strip()
+    if not mid:
+        raise LLMConfigError(f"empty model id for role {role!r}")
+    if role not in ALL_ROLES:
+        raise LLMConfigError(f"unknown LLM role {role!r}")
     return mid
 
 
 def assert_allowed_model(model: str) -> str:
     """
-    Accept any model on any role allowlist (client default / free complete()).
+    Normalize a model id for client default / free complete().
 
-    Prefer assert_model_for_role when the call site knows the role.
+    Any non-empty OpenRouter model id is accepted (profiles shape the request).
     """
     mid = (model or "").strip()
-    if mid not in all_allowed_models():
-        raise LLMConfigError(
-            f"model {mid!r} is not on any role allowlist. "
-            f"Flash fallback: {FLASH_MODEL!r}. "
-            f"Extend with LLM_ALLOWLIST_EXTRA=..."
-        )
+    if not mid:
+        raise LLMConfigError("empty model id")
     return mid
 
 
@@ -176,7 +274,8 @@ def resolve_model_for_role(
     """
     Map role → OpenRouter model id.
 
-    Priority: context overrides → configured arg → env/default → allowlist check.
+    Priority: context overrides → configured arg → env/default.
+    Any non-empty model id is accepted.
     """
     if role not in ALL_ROLES:
         raise LLMConfigError(f"unknown LLM role {role!r}")
@@ -191,7 +290,7 @@ def resolve_model_for_role(
 
 def set_role_overrides(overrides: dict[str, str] | None) -> contextvars.Token:
     """
-    Set per-role model overrides for the current context (eval A/B).
+    Set per-role model overrides for the current context (eval A/B + job model).
 
     Returns a Token for reset_role_overrides.
     """
@@ -214,9 +313,9 @@ def validate_configured_models(
     models: dict[str, str] | None = None,
 ) -> dict[LLMRole, str]:
     """
-    Validate role → model map (startup). Returns resolved map.
+    Resolve role → model map (startup). Returns resolved map.
 
-    Raises LLMConfigError on any invalid assignment.
+    Raises LLMConfigError only for empty model ids or unknown roles.
     """
     resolved: dict[LLMRole, str] = {}
     src = models or {r: env_model_for_role(r) for r in ALL_ROLES}

@@ -108,6 +108,14 @@ def job_from_record(row: Any) -> GenerationJobRow:
         base_version_id = row["base_version_id"]
     except (KeyError, TypeError):
         base_version_id = None
+    # 007_job_llm_model
+    llm_model = None
+    try:
+        raw_model = row["llm_model"]
+        if raw_model:
+            llm_model = str(raw_model).strip() or None
+    except (KeyError, TypeError):
+        llm_model = None
     return GenerationJobRow(
         id=row["id"],
         owner_user_id=str(row["owner_user_id"]),
@@ -127,6 +135,7 @@ def job_from_record(row: Any) -> GenerationJobRow:
         updated_at=row["updated_at"],
         job_kind=job_kind,
         base_version_id=base_version_id,
+        llm_model=llm_model,
     )
 
 

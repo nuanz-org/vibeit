@@ -1,7 +1,8 @@
 """
 OpenRouter chat completions adapter (M3b + AM4 multi-model).
 
-Models must be on the AM4 role allowlist (see adapters.llm.router).
+Any non-empty OpenRouter model id is accepted (see adapters.llm.router).
+Per-model request shaping (reasoning, timeouts) via adapters.llm.profiles.
 Default remains deepseek/deepseek-v4-flash.
 """
 
@@ -19,6 +20,7 @@ from adapters.llm.protocol import (
     LLMRequestError,
     TokenUsage,
 )
+from adapters.llm.profiles import profile_for_model, reasoning_payload_for_model
 from adapters.llm.router import FLASH_MODEL, assert_allowed_model
 
 OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -26,9 +28,7 @@ OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Back-compat: Flash is the documented default / fallback.
 ASAP_CODEGEN_MODEL = FLASH_MODEL
 
-# DeepSeek V4 Flash is a reasoning model. Without this, it often spends the
-# entire max_tokens budget on message.reasoning and returns content=null with
-# finish_reason=length (see empty codegen failures). "none" forces answer tokens.
+# Legacy alias — DeepSeek Flash profile still uses this shape.
 DEFAULT_REASONING: dict[str, Any] = {"effort": "none"}
 
 # Debug prints (request/response) — set False to silence.
@@ -240,13 +240,16 @@ class OpenRouterLLMClient:
         timeout_seconds: float | None = None,
     ) -> LLMCompletion:
         model_id = assert_allowed_model(model or self._default_model)
+        profile = profile_for_model(model_id)
         payload: dict[str, Any] = {
             "model": model_id,
             "messages": normalize_messages(messages),
             "stream": False,
-            # Prevent reasoning-only completions that leave content empty.
-            "reasoning": dict(DEFAULT_REASONING),
         }
+        # Per-model reasoning: DeepSeek → effort none; Gemini 3.x → enabled true.
+        reasoning = reasoning_payload_for_model(model_id)
+        if reasoning is not None:
+            payload["reasoning"] = dict(reasoning)
         if temperature is not None:
             payload["temperature"] = temperature
         if max_tokens is not None:
@@ -255,7 +258,12 @@ class OpenRouterLLMClient:
             payload["response_format"] = response_format
 
         client = await self._get_client()
-        timeout = timeout_seconds if timeout_seconds is not None else self._timeout
+        if timeout_seconds is not None:
+            timeout = timeout_seconds
+        elif profile.timeout_seconds is not None:
+            timeout = float(profile.timeout_seconds)
+        else:
+            timeout = self._timeout
 
         _debug_print_request(self._base_url, payload, timeout)
 
@@ -336,7 +344,7 @@ class OpenRouterLLMClient:
                     "OpenRouter returned empty content: entire max_tokens budget "
                     f"spent on reasoning (finish_reason={finish!r}, "
                     f"reasoning_tokens={reasoning_tokens}, max_tokens={max_tokens}). "
-                    "Increase max_tokens or disable reasoning.",
+                    "Increase max_tokens or lower reasoning effort for this model.",
                     status_code=res.status_code,
                 )
             raise LLMRequestError(
