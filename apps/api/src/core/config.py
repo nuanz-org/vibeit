@@ -88,7 +88,11 @@ class Settings:
             "LLM_MODEL_REPAIR", self.llm_model_codegen
         ).strip()
         self.llm_model_judge: str = os.getenv("LLM_MODEL_JUDGE", _flash).strip()
-        self.llm_model_vision: str = os.getenv("LLM_MODEL_VISION", _flash).strip()
+        # Prefer multimodal for AM5 style extract; override via env. Flash remains fallback.
+        self.llm_model_vision: str = os.getenv(
+            "LLM_MODEL_VISION",
+            "google/gemini-2.5-flash",
+        ).strip()
         # Back-compat alias
         self.llm_codegen_model: str = self.llm_model_codegen
         self.llm_timeout_seconds: float = float(

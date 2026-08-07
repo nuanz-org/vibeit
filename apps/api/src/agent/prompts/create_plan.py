@@ -83,8 +83,23 @@ Hard rules:
 """
 
 
-def plan_user_prompt(vision_text: str) -> str:
+def plan_user_prompt(
+    vision_text: str,
+    *,
+    style_notes: dict | None = None,
+) -> str:
+    style_block = ""
+    if isinstance(style_notes, dict) and style_notes:
+        import json
+
+        style_block = (
+            "\nStyle notes from inspiration images (INTERPRET only — never copy "
+            "logos/marks/unique art; use palette roles, mood, composition patterns):\n"
+            f"{json.dumps(style_notes, indent=2)[:4000]}\n"
+            "Seed paletteRoles / motionSpec / composition from these notes when they fit the vision.\n"
+        )
     return (
-        f"Vision:\n{vision_text.strip()}\n\n"
+        f"Vision:\n{vision_text.strip()}\n"
+        f"{style_block}\n"
         "Return the DesignBrief / ToolPlan JSON now — art-direct the tool, do not write code."
     )

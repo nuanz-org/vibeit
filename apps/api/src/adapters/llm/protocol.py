@@ -77,7 +77,7 @@ class LLMClient(Protocol):
 
     async def complete(
         self,
-        messages: list[ChatMessage] | list[dict[str, str]],
+        messages: list[ChatMessage] | list[dict[str, Any]],
         *,
         model: str | None = None,
         temperature: float | None = None,
@@ -88,6 +88,7 @@ class LLMClient(Protocol):
         """
         Run a non-streaming chat completion.
 
-        `model` must be the ASAP-allowed model or omitted (uses default).
+        `model` must be allowlisted (AM4) or omitted (uses client default).
+        Message content may be multimodal parts (AM5 vision).
         """
         ...

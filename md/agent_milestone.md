@@ -1,7 +1,7 @@
 # Vibeit — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
-**Status:** **AM4 model routing — code complete / exit partial** (see [Coverage log](#coverage-log))
+**Status:** **AM5 style conditioning — code complete / exit partial** (see [Coverage log](#coverage-log))
 **Date:** 2026-08-06 · **Last progress:** 2026-08-07
 **Goal:** Raise Create output from "valid canvas2d tool" to **brik.space-level art-directed tools** by splitting Create into role-specialized agents with real gates.
 
@@ -19,9 +19,25 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM2** | Real gates (compile + host smoke) | **Covered in code** — AM2a–AM2d shipped; full exit needs live eval wall-time tune + corpus green | `dc95de9` (2026-08-07) |
 | **AM3** | Critic loop + quality evals | **Covered in code** — AM3a–AM3d scaffold shipped; enforcement waits on human calibration | `ba5ec07` (2026-08-07) |
 | **AM4** | Model routing + live A/B | **Covered in code** — router + eval A/B; defaults still Flash until live shootout | `0555253` (2026-08-07) |
-| AM5 | Style conditioning | **Not started** (gated on AM1–AM3) | — |
+| **AM5** | Style conditioning | **Covered in code** — style extract + Create upload wiring; live styled eval open | 2026-08-07 |
 | AM6 | Multi-target goldens (p5/three) | **Not started** (gated on AM1–AM3) | — |
 | AM7 | Chat refine agents | **Not started** | — |
+
+### AM5 — what was shipped (2026-08-07)
+
+**Milestone covered:** **AM5** (inspiration → StyleNotes → plan/codegen). Soft-fail if no images / vision errors.
+
+| Subpart | Status | What landed |
+|---------|--------|-------------|
+| **AM5a** | ✅ | `style_extract` prompt/parse/node; multimodal OpenRouter messages; vision role model |
+| **AM5b** | ✅ | Create form multi-file upload → `inspirationAssetIds`; worker loads assets → runner |
+| **AM5c** | ✅ (partial) | Plan/codegen consume style notes; copyright rule; unit tests; live styled eval open |
+
+**Still open for full AM5 exit:**
+
+- [ ] Live styled vs unstyled judge comparison on a few prompts  
+- [ ] Owner calibration: no 1:1 recreation of references  
+- [ ] Prefer `LLM_MODEL_VISION=google/gemini-2.5-flash` (default) for extract quality  
 
 ### AM4 — what was shipped (2026-08-07)
 
@@ -443,15 +459,17 @@ One command produces a model-comparison table over the corpus with judge scores 
 
 ## AM5 — Style conditioning (inspiration images) — *M4 agent deliverable*
 
+**Coverage:** **Implemented** (2026-08-07). Unit path green; live styled eval + human copyright review open.
+
 **Why:** Brik's art-directed look comes heavily from reference conditioning. This wires the upload path (exists since M1e) into generation via a vision model.
 
 ### Deliverables
 
-- [ ] **Vision role** in router (from AM4a — cheap multimodal default: Gemini Flash)
-- [ ] **Style Extract agent** — inspiration images → style notes JSON (palette with roles, mood/energy, composition patterns, typography feel, motion hints); **interpret, never copy** (consensus copyright rule)
-- [ ] **Create UI wiring** — optional inspiration upload on `/create` (asset ids already supported in `CreateJobRequest`)
-- [ ] **Brief conditioning** — Art Director consumes style notes; defaults (palette/params) influenced by references
-- [ ] **Evals** — corpus adds styled prompts with reference images; vision-only path regression-checked
+- [x] **Vision role** in router (AM4a) — default `LLM_MODEL_VISION=google/gemini-2.5-flash`
+- [x] **Style Extract agent** — inspiration images → StyleNotes JSON; interpret, never copy
+- [x] **Create UI wiring** — optional multi-image upload on `/create` → `inspirationAssetIds`
+- [x] **Brief conditioning** — plan + codegen consume style notes for palette/mood/composition
+- [ ] **Evals** — styled prompts with reference images in live corpus (unit coverage only so far)
 
 ### Demo
 
@@ -459,10 +477,10 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ### Exit criteria
 
-- [ ] Style extract produces valid notes on the test image set
+- [x] Style extract produces valid notes on unit fixtures (`test_agent_am5.py`)
 - [ ] Styled runs score ≥ unstyled baseline from judge on matching prompts
-- [ ] Vision-only Create passes existing corpus unchanged
-- [ ] Copyright rule in prompt; no 1:1 recreation observed in calibration review
+- [x] Vision-only / no-image Create path unchanged (unit + soft-fail)
+- [x] Copyright rule in prompt; [ ] no 1:1 recreation observed in calibration review
 
 ### Out of scope
 
@@ -474,11 +492,11 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 ### Subparts
 
-| Subpart | Name | ~Days | Outcome |
-|---------|------|------:|---------|
-| **AM5a** | Vision role + style-extract node + prompt | 0.75–1 | Notes JSON from uploaded images |
-| **AM5b** | Create UI upload + ingest wiring | 0.5–1 | Images flow from `/create` into the graph |
-| **AM5c** | Brief conditioning + evals + checklist | 0.75–1 | Styled defaults; corpus extended |
+| Subpart | Name | ~Days | Outcome | Done |
+|---------|------|------:|---------|:----:|
+| **AM5a** | Vision role + style-extract node + prompt | 0.75–1 | Notes JSON from uploaded images | ✅ |
+| **AM5b** | Create UI upload + ingest wiring | 0.5–1 | Images flow from `/create` into the graph | ✅ |
+| **AM5c** | Brief conditioning + evals + checklist | 0.75–1 | Styled defaults; corpus extended | ✅ partial |
 
 ---
 

@@ -7,14 +7,18 @@ Updates job status/phase while running the repair-capable agent runner.
 
 from __future__ import annotations
 
+import base64
+import json
 import traceback
 from typing import Any
 
+from adapters.db.repositories.assets import AssetsRepository
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.llm.openrouter import OpenRouterLLMClient
 from adapters.llm.protocol import LLMClient, LLMConfigError
 from adapters.llm.router import assert_allowed_model
+from adapters.storage import create_storage
 from agent.runner import run_create_with_repairs
 from agent.state import CreateGraphState
 from core.config import Settings, get_settings
@@ -34,6 +38,60 @@ def _build_llm(settings: Settings) -> LLMClient:
         http_referer=settings.llm_http_referer or None,
         app_title=settings.llm_app_title or "Vibeit",
     )
+
+
+def _parse_inspiration_ids(raw: Any) -> list[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except json.JSONDecodeError:
+            return [raw] if raw.strip() else []
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for item in raw:
+        if isinstance(item, str) and item.strip():
+            out.append(item.strip())
+    return out[:4]
+
+
+async def _load_inspiration_images(
+    *,
+    asset_ids: list[str],
+    owner_user_id: str,
+    pool: Any,
+    settings: Settings,
+) -> list[dict[str, Any]]:
+    """Load inspiration assets as base64 payloads for style extract (AM5)."""
+    if not asset_ids:
+        return []
+    assets = AssetsRepository(pool)
+    storage = create_storage(
+        backend=settings.storage_backend,
+        local_root=settings.storage_local_root,
+        public_base_url=settings.api_public_base_url,
+    )
+    images: list[dict[str, Any]] = []
+    for aid in asset_ids[:4]:
+        row = await assets.get_asset_for_owner(aid, owner_user_id=owner_user_id)
+        if row is None or row.kind != "inspiration":
+            continue
+        obj = await storage.get_object(row.storage_key)
+        if not obj:
+            continue
+        data, content_type = obj
+        if not data:
+            continue
+        images.append(
+            {
+                "asset_id": str(row.id),
+                "content_type": content_type or row.content_type or "image/png",
+                "base64": base64.b64encode(data).decode("ascii"),
+            }
+        )
+    return images
 
 
 async def run_generation_job(
@@ -96,6 +154,19 @@ async def run_generation_job(
             getattr(settings, "create_repair_max", None) or job.repair_budget or 3
         )
 
+        insp_ids = _parse_inspiration_ids(job.inspiration_asset_ids)
+        insp_images: list[dict[str, Any]] = []
+        if not use_fixture_code and insp_ids:
+            try:
+                insp_images = await _load_inspiration_images(
+                    asset_ids=insp_ids,
+                    owner_user_id=job.owner_user_id,
+                    pool=pool,
+                    settings=settings,
+                )
+            except Exception as load_exc:  # noqa: BLE001 — soft fail style path
+                print(f"[worker] inspiration load failed: {load_exc}")
+
         state = await run_create_with_repairs(
             vision_text=job.vision_text,
             llm=client,
@@ -104,6 +175,8 @@ async def run_generation_job(
             wall_time_seconds=wall,
             job_id=str(job.id),
             tool_id=str(job.tool_id) if job.tool_id else None,
+            inspiration_asset_ids=insp_ids,
+            inspiration_images=insp_images,
             on_phase=on_phase,
         )
         await finalize_from_agent_state(

@@ -19,6 +19,7 @@ from agent.nodes.load_fixture import load_fixture_node
 from agent.nodes.plan import plan_node
 from agent.nodes.repair import repair_node
 from agent.nodes.sandbox_smoke import sandbox_smoke_node
+from agent.nodes.style_extract import style_extract_node
 from agent.nodes.validate import validate_node
 from agent.state import CreateGraphState, initial_create_state
 
@@ -69,15 +70,19 @@ async def run_create_with_repairs(
     wall_time_seconds: float = 120.0,
     job_id: str | None = None,
     tool_id: str | None = None,
+    inspiration_asset_ids: list[str] | None = None,
+    inspiration_images: list[dict[str, Any]] | None = None,
     on_phase: PhaseCallback | None = None,
 ) -> CreateGraphState:
     """
-    Full create pipeline with bounded repair + optional critic loop (AM3).
+    Full create pipeline with bounded repair + optional critic loop (AM3)
+    + optional style extract from inspiration images (AM5).
 
     Success: ready_for_finalize=True, smoke_ok=True, validate_ok=True.
     Critic: advisory by default (VIBEIT_CRITIC_ENFORCED); failure degrades to
     gates-only finalize. When enforced, overall < threshold triggers repair
     with critique fixes (counts against repair budget).
+    Style extract: soft-fail — missing/failed vision never blocks Create.
     """
     started = time.monotonic()
     state = initial_create_state(
@@ -87,6 +92,8 @@ async def run_create_with_repairs(
         max_repairs=max_repairs,
         job_id=job_id,
         tool_id=tool_id,
+        inspiration_asset_ids=inspiration_asset_ids,
+        inspiration_images=inspiration_images,
     )
 
     # --- ingest ---
@@ -103,6 +110,24 @@ async def run_create_with_repairs(
                 "ready_for_finalize": False,
             },
         )
+
+    # --- AM5 style extract (optional; before plan) ---
+    if (
+        not use_fixture_code
+        and llm is not None
+        and (state.get("inspiration_images") or state.get("inspiration_asset_ids"))
+    ):
+        await _maybe_await(on_phase, "style_extract", state)
+        state = _merge(state, await style_extract_node(state, llm=llm))
+        if _timed_out(started, wall_time_seconds):
+            return _merge(
+                state,
+                {
+                    "error_code": "TIMEOUT",
+                    "error_message": f"wall time exceeded ({wall_time_seconds}s)",
+                    "ready_for_finalize": False,
+                },
+            )
 
     # --- plan ---
     await _maybe_await(on_phase, "plan", state)

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { JobProgress } from "@/features/create/components/job-progress";
 import { useJob, useJobResult } from "@/features/jobs/hooks/use-job";
+import { uploadAsset } from "@/lib/api/assets";
 import {
   CreateJobApiError,
   createJob,
@@ -18,12 +19,16 @@ import styles from "../styles.module.css";
 const DEFAULT_VISION =
   "A kinetic 9:16 social frame with a bold headline, purple accent pulse, and a logo slot";
 
+const MAX_INSPIRATION = 4;
+
 /**
- * M3g Create form: vision → job → poll → Studio (or salvage).
+ * Create form: vision + optional inspiration images → job → poll → Studio.
+ * AM5: inspirationAssetIds flow into style extract before plan.
  */
 export function CreateForm() {
   const router = useRouter();
   const [visionText, setVisionText] = useState(DEFAULT_VISION);
+  const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [quota, setQuota] = useState<QuotaFields | null>(null);
@@ -69,9 +74,21 @@ export function CreateForm() {
     setQuotaBlocked(false);
 
     try {
+      // AM5: upload inspiration images first (optional)
+      const inspirationAssetIds: string[] = [];
+      for (const file of inspirationFiles.slice(0, MAX_INSPIRATION)) {
+        const asset = await uploadAsset(file, "inspiration");
+        if (asset?.id) inspirationAssetIds.push(asset.id);
+      }
+
       const created = await createJob({
         visionText: vision,
-        clientMetadata: { uiSource: "create-form-m3g" },
+        inspirationAssetIds:
+          inspirationAssetIds.length > 0 ? inspirationAssetIds : undefined,
+        clientMetadata: {
+          uiSource: "create-form-am5",
+          inspirationCount: inspirationAssetIds.length,
+        },
       });
       setJobId(created.jobId);
       if (created.quota) setQuota(created.quota);
@@ -95,6 +112,7 @@ export function CreateForm() {
     setSubmitError(null);
     setSalvageToolId(null);
     setPending(false);
+    setInspirationFiles([]);
   }
 
   const generating = Boolean(jobId) && !isSuccess && !isFailed;
@@ -116,6 +134,28 @@ export function CreateForm() {
             disabled={pending || generating}
             placeholder="Describe the living design tool you want…"
           />
+        </label>
+
+        <label className={styles.label}>
+          Inspiration images (optional)
+          <input
+            className={styles.fileInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            disabled={pending || generating}
+            onChange={(e) => {
+              const list = e.target.files ? Array.from(e.target.files) : [];
+              setInspirationFiles(list.slice(0, MAX_INSPIRATION));
+            }}
+          />
+          <span className={styles.muted}>
+            Up to {MAX_INSPIRATION} PNG/JPEG/WebP. Style is interpreted only —
+            never copied 1:1.
+            {inspirationFiles.length
+              ? ` · ${inspirationFiles.length} selected`
+              : null}
+          </span>
         </label>
 
         {quota ? (

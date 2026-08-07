@@ -177,6 +177,21 @@ EVAL_LIVE=1 uv run python scripts/eval_create.py \
 
 Decision record: `evals/create/model-ab/` (do not change defaults without a committed shootout).
 
+### AM5 style conditioning
+
+Optional inspiration images on Create:
+
+1. UI uploads `kind=inspiration` assets  
+2. Job stores `inspirationAssetIds`  
+3. Worker loads bytes → style extract (vision model) → StyleNotes  
+4. Plan + codegen condition on notes (**interpret, never copy**)
+
+```bash
+LLM_MODEL_VISION=google/gemini-2.5-flash   # default; multimodal style extract
+```
+
+Style extract **soft-fails** (job continues unstyled) if images missing or vision errors.
+
 Setup once:
 
 ```bash

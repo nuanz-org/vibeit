@@ -54,15 +54,36 @@ def _debug_print_request(url: str, payload: dict[str, Any], timeout: float) -> N
     slim_msgs = []
     for m in msgs:
         content = m.get("content") if isinstance(m, dict) else None
-        slim_msgs.append(
-            {
-                "role": m.get("role") if isinstance(m, dict) else None,
-                "content_len": len(content) if isinstance(content, str) else None,
-                "content_preview": _preview_text(
-                    content if isinstance(content, str) else None
-                ),
-            }
-        )
+        if isinstance(content, list):
+            text_bits = []
+            n_images = 0
+            for p in content:
+                if isinstance(p, dict) and p.get("type") == "text":
+                    text_bits.append(str(p.get("text") or ""))
+                elif isinstance(p, dict) and p.get("type") == "image_url":
+                    n_images += 1
+            preview = _preview_text(" ".join(text_bits)) + (
+                f" [+{n_images} image(s)]" if n_images else ""
+            )
+            slim_msgs.append(
+                {
+                    "role": m.get("role") if isinstance(m, dict) else None,
+                    "content_len": sum(len(t) for t in text_bits),
+                    "content_preview": preview,
+                    "multimodal": True,
+                    "image_parts": n_images,
+                }
+            )
+        else:
+            slim_msgs.append(
+                {
+                    "role": m.get("role") if isinstance(m, dict) else None,
+                    "content_len": len(content) if isinstance(content, str) else None,
+                    "content_preview": _preview_text(
+                        content if isinstance(content, str) else None
+                    ),
+                }
+            )
     dump = {
         "url": url,
         "timeout_s": timeout,
@@ -129,16 +150,26 @@ def _debug_print_response(status: int, data: dict[str, Any] | None, raw_text: st
 
 
 def normalize_messages(
-    messages: list[ChatMessage] | list[dict[str, str]],
-) -> list[dict[str, str]]:
-    out: list[dict[str, str]] = []
+    messages: list[ChatMessage] | list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Normalize chat messages for OpenRouter.
+
+    Content may be a string (text) or a list of multimodal parts
+    (e.g. text + image_url) for vision / style extract (AM5).
+    """
+    out: list[dict[str, Any]] = []
     for m in messages:
         if isinstance(m, ChatMessage):
             out.append({"role": m.role, "content": m.content})
         else:
             role = str(m.get("role", "user"))
-            content = str(m.get("content", ""))
-            out.append({"role": role, "content": content})
+            content = m.get("content", "")
+            # Preserve multimodal content arrays as-is
+            if isinstance(content, list):
+                out.append({"role": role, "content": content})
+            else:
+                out.append({"role": role, "content": str(content)})
     return out
 
 
@@ -200,7 +231,7 @@ class OpenRouterLLMClient:
 
     async def complete(
         self,
-        messages: list[ChatMessage] | list[dict[str, str]],
+        messages: list[ChatMessage] | list[dict[str, Any]],
         *,
         model: str | None = None,
         temperature: float | None = None,

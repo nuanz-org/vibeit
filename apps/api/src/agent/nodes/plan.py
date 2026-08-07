@@ -32,9 +32,15 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
         }
 
     vision = (state.get("vision_text") or "").strip()
+    style_notes = (
+        state.get("style_notes") if isinstance(state.get("style_notes"), dict) else None
+    )
     base_messages = [
         ChatMessage(role="system", content=PLAN_SYSTEM_PROMPT),
-        ChatMessage(role="user", content=plan_user_prompt(vision)),
+        ChatMessage(
+            role="user",
+            content=plan_user_prompt(vision, style_notes=style_notes),
+        ),
     ]
 
     last_err: str | None = None

@@ -79,12 +79,21 @@ def codegen_user_prompt(
     vision_text: str,
     plan: dict[str, Any],
     exemplars: list[dict[str, Any]] | None = None,
+    style_notes: dict[str, Any] | None = None,
 ) -> str:
     plan_json = json.dumps(plan, indent=2)
     exemplar_block = _format_exemplars(exemplars)
+    style_block = ""
+    if isinstance(style_notes, dict) and style_notes:
+        style_block = (
+            "\nStyle notes (interpret only — echo palette/mood/motion feel, "
+            "never recreate reference pixels or logos):\n"
+            f"{json.dumps(style_notes, indent=2)[:3000]}\n"
+        )
     return (
         f"Vision:\n{vision_text.strip()}\n\n"
         f"Plan JSON (DesignBrief):\n{plan_json}\n"
+        f"{style_block}"
         f"{exemplar_block}\n"
         "Write the full TypeScript module now — craft a layered, param-driven canvas2d tool."
     )

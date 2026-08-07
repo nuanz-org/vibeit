@@ -29,6 +29,14 @@ class CreateGraphState(TypedDict, total=False):
     use_fixture_code: bool
     fixture_name: NotRequired[str]
 
+    # AM5 — inspiration style conditioning
+    inspiration_asset_ids: NotRequired[list[str]]
+    # Preloaded images: {asset_id?, content_type, base64}
+    inspiration_images: NotRequired[list[dict[str, Any]]]
+    style_notes: NotRequired[dict[str, Any] | None]
+    style_extract_ok: NotRequired[bool]
+    style_extract_error: NotRequired[str | None]
+
     # Artifacts
     plan: dict[str, Any] | None
     code: str
@@ -87,11 +95,17 @@ def initial_create_state(
     max_repairs: int = 3,
     job_id: str | None = None,
     tool_id: str | None = None,
+    inspiration_asset_ids: list[str] | None = None,
+    inspiration_images: list[dict[str, Any]] | None = None,
 ) -> CreateGraphState:
     return CreateGraphState(
         vision_text=vision_text,
         use_fixture_code=use_fixture_code,
         fixture_name=fixture_name,
+        inspiration_asset_ids=list(inspiration_asset_ids or []),
+        inspiration_images=list(inspiration_images or []),
+        style_notes=None,
+        style_extract_ok=False,
         plan=None,
         code=code,
         target="canvas2d",

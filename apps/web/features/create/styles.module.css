@@ -30,6 +30,12 @@
   outline-offset: 1px;
 }
 
+.fileInput {
+  font: inherit;
+  font-size: 0.875rem;
+  max-width: 100%;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

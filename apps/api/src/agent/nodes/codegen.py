@@ -56,6 +56,9 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
                 vision_text=vision,
                 plan=plan,
                 exemplars=exemplars or None,
+                style_notes=state.get("style_notes")
+                if isinstance(state.get("style_notes"), dict)
+                else None,
             ),
         ),
     ]
