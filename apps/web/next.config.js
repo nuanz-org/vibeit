@@ -5,6 +5,24 @@ const nextConfig = {
   // esbuild is a native server dependency used by /api/runtime/compile
   serverExternalPackages: ["esbuild"],
   /**
+   * Proxy FastAPI under the web origin so browser calls are same-origin
+   * (no CORS). Only /api/v1/* — Next still owns /api/auth and /api/runtime/*.
+   *
+   * Override with API_INTERNAL_URL (server-only). Defaults to 127.0.0.1:8000.
+   */
+  async rewrites() {
+    const api = (
+      process.env.API_INTERNAL_URL ||
+      "http://127.0.0.1:8000"
+    ).replace(/\/$/, "");
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${api}/api/v1/:path*`,
+      },
+    ];
+  },
+  /**
    * Sandboxed runtime iframe uses sandbox="allow-scripts" without allow-same-origin,
    * so its origin is opaque ("null"). runtime-frame.html loads the adapter as
    * <script type="module" src="/runtime-frame.js"> — module scripts require CORS.

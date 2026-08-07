@@ -68,8 +68,17 @@ class Settings:
             "http://localhost:3000,http://127.0.0.1:3000",
         )
         self.storage_cors_origins: tuple[str, ...] = tuple(
-            o.strip() for o in raw_origins.split(",") if o.strip()
+            o.strip().rstrip("/") for o in raw_origins.split(",") if o.strip()
         )
+        # Optional extra origins for API CORSMiddleware (credentials include).
+        # Falls back to storage list when unset.
+        raw_api_cors = os.getenv("CORS_ORIGINS", "").strip()
+        if raw_api_cors:
+            self.cors_origins: tuple[str, ...] = tuple(
+                o.strip().rstrip("/") for o in raw_api_cors.split(",") if o.strip()
+            )
+        else:
+            self.cors_origins = self.storage_cors_origins
 
         # --- LLM / OpenRouter (M3b + AM4 per-role routing) ---
         # Defaults: deepseek/deepseek-v4-flash per role until A/B decision changes them.

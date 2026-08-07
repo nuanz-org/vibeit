@@ -7,6 +7,26 @@ from adapters.storage import create_storage
 from api.v1.router import api_v1_router
 from core.config import get_settings
 
+# Browser origins that may call the API cross-origin (credentials: include).
+# Prefer STORAGE_CORS_ORIGINS / CORS_ORIGINS env; always include local dev hosts.
+_DEFAULT_WEB_ORIGINS = (
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+)
+
+
+def _cors_allow_origins() -> list[str]:
+    settings = get_settings()
+    # Reuse storage CORS allowlist so one env covers web + assets.
+    from_settings = list(getattr(settings, "storage_cors_origins", ()) or ())
+    extras = list(getattr(settings, "cors_origins", ()) or ())
+    merged: list[str] = []
+    for o in (*from_settings, *extras, *_DEFAULT_WEB_ORIGINS):
+        o = (o or "").strip().rstrip("/")
+        if o and o not in merged:
+            merged.append(o)
+    return merged
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,6 +56,8 @@ async def lifespan(app: FastAPI):
         print(f"[api] storage not available: {exc}")
         app.state.storage = None
 
+    print(f"[api] CORS allow_origins={_cors_allow_origins()!r}")
+
     yield
 
     if pool is not None:
@@ -46,13 +68,11 @@ app = FastAPI(title="Vibeit API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(api_v1_router)
