@@ -27,6 +27,32 @@ export const socialFrameToolPlan = createAsapToolPlan({
   palette: ["#0b0b12", "#7c5cff", "#f5f5f7"],
   notes:
     "ASAP path: target fixed to canvas2d. Codegen fills CREATIVE_FILL only; harness from createCanvas2dTool.",
+  // DesignBrief v2 (AM1) — optional art direction
+  composition: {
+    layers: ["bg photo/color", "vignette", "accent orb", "logo", "headline"],
+    focalPoints: ["center mark", "headline"],
+    grid: "centered column 9:16",
+  },
+  paletteRoles: {
+    bg: "#0b0b12",
+    ink: "#f5f5f7",
+    accent: "#7c5cff",
+  },
+  motionSpec: {
+    summary: "Gentle pulse / optional drift",
+    easing: "sine",
+    tempo: "medium",
+    loop: "seamless",
+  },
+  typography: {
+    scale: "display headline + footer label",
+    hierarchy: ["display", "label"],
+  },
+  controlSurface: {
+    intent: "Tune color, speed, and headline for social export",
+    primaryParams: ["title", "accent", "speed", "motionPreset"],
+  },
+  tags: ["social", "badge", "kinetic-type"],
 }) satisfies AsapToolPlan;
 
 /** Same fixture typed as general ToolPlan (multi-target union). */

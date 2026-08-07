@@ -1,0 +1,93 @@
+{
+  "mode": "live",
+  "total": 10,
+  "success": 8,
+  "first_pass": 8,
+  "first_pass_rate": 0.8,
+  "after_repair_rate": 0.8,
+  "gate_first_pass": 0.7,
+  "gate_after_repair": 0.9,
+  "gates_passed": true,
+  "results": [
+    {
+      "id": "orb-pulse",
+      "vision": "A purple pulsing orb with a bold white title on a dark background",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "social-9-16",
+      "vision": "A kinetic 9:16 social frame with headline, accent color, and logo slot",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "gradient-wave",
+      "vision": "Soft gradient waves drifting slowly with a short caption",
+      "success": false,
+      "first_pass": false,
+      "repair_count": 0,
+      "error": "wall time exceeded (90.0s)"
+    },
+    {
+      "id": "type-focus",
+      "vision": "Bold kinetic typography that scales with a number intensity param",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "logo-badge",
+      "vision": "Circular badge with logo in the center and ring accent animation",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "minimal-still",
+      "vision": "Minimal still poster: solid color field, single word title, no motion",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "neon-grid",
+      "vision": "Dark neon grid with cyan lines and a floating product title",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "soft-particles",
+      "vision": "Soft floating dots orbiting a center point with speed control",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "story-slide",
+      "vision": "Vertical story slide 9:16 with background color, subtitle, and logo mark",
+      "success": true,
+      "first_pass": true,
+      "repair_count": 0,
+      "error": null
+    },
+    {
+      "id": "brand-pulse",
+      "vision": "Brand mark pulse: accent color blob behind a logo slot and short tagline",
+      "success": false,
+      "first_pass": false,
+      "repair_count": 0,
+      "error": "codegen failed: OpenRouter returned non-JSON body"
+    }
+  ]
+}

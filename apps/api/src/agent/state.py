@@ -49,6 +49,9 @@ class CreateGraphState(TypedDict, total=False):
     # Usage (M3d+)
     llm_tokens_used: NotRequired[int]
 
+    # AM1 — golden exemplars injected into codegen (ids only)
+    golden_ids: NotRequired[list[str]]
+
 
 def initial_create_state(
     *,

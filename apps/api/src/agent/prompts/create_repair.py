@@ -1,4 +1,4 @@
-"""Repair-node system prompt (M3e)."""
+"""Repair-node system prompt (M3e + AM1 craft preservation)."""
 
 from __future__ import annotations
 
@@ -13,6 +13,12 @@ Hard rules (must keep):
 - No p5 or three
 - Non-trivial draw() using c.ctx / c.params / c.images / c.time
 - Harness owns rAF — do not start your own loop
+
+Craft preservation (AM1):
+- Fix only what the errors list requires.
+- Preserve composition layers, palette roles, easing/motion, and param surface.
+- Do not collapse a designed scene into a pulsing-circle stub unless the whole draw is invalid.
+- Keep param names and defaults aligned with the plan when plan JSON is provided.
 
 Output ONLY the full fixed TypeScript module (no markdown fences, no commentary).
 """
@@ -32,5 +38,5 @@ def repair_user_prompt(
         f"{plan_block}\n"
         f"Errors to fix:\n{err}\n\n"
         f"Current source:\n{code}\n\n"
-        "Return the complete fixed module."
+        "Return the complete fixed module. Preserve craft; fix only the listed errors."
     )

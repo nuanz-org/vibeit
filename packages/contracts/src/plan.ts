@@ -1,8 +1,11 @@
 /**
- * Plan JSON schema (M0d).
+ * Plan JSON schema (M0d + AM1 DesignBrief v2).
  *
  * Structured plan the Create agent produces *before* codegen into a target skeleton.
  * ASAP critical path always sets `target: "canvas2d"`.
+ *
+ * DesignBrief v2 (AM1) adds optional art-direction fields while remaining
+ * backward compatible with M0d ToolPlan consumers.
  *
  * Linkage:
  * - Plan → codegen fills canvas2d creative body (M3) via M0c skeleton
@@ -25,6 +28,62 @@ import { ASAP_TARGET, type TargetId } from "./targets";
 export type PlanAspect = "1:1" | "9:16" | "16:9" | "4:5" | (string & {});
 
 // ---------------------------------------------------------------------------
+// DesignBrief v2 (AM1) — optional art-direction fields
+// ---------------------------------------------------------------------------
+
+/** Scene structure for codegen craft (layers, focal points, optional grid). */
+export interface PlanComposition {
+  /** Ordered layer descriptions from back to front. */
+  layers?: readonly string[];
+  /** Primary visual anchors (e.g. "center orb", "bottom headline"). */
+  focalPoints?: readonly string[];
+  /** Optional layout grid note (e.g. "centered column", "rule of thirds"). */
+  grid?: string;
+}
+
+/**
+ * Palette with semantic roles. Prefer `#rrggbb` hex.
+ * Complements flat `palette?: string[]` (which remains for simple hints).
+ */
+export interface PlanPaletteRoles {
+  bg?: string;
+  ink?: string;
+  accent?: string;
+  highlight?: string;
+}
+
+/** Structured motion intent beyond free-text `motion`. */
+export interface PlanMotionSpec {
+  /** Short motion summary (may mirror `motion`). */
+  summary?: string;
+  /** Easing feel, e.g. "ease-out", "smoothstep", "springy". */
+  easing?: string;
+  /** Tempo label or relative rate, e.g. "slow", "medium", "1.2". */
+  tempo?: string;
+  /** Loop behavior, e.g. "seamless", "pingpong", "once". */
+  loop?: string;
+}
+
+/** Type hierarchy hints for kinetic type / posters. */
+export interface PlanTypography {
+  /** Scale description, e.g. "display 72 / body 14" or "hero + caption". */
+  scale?: string;
+  /** Named levels, e.g. ["display", "label"]. */
+  hierarchy?: readonly string[];
+}
+
+/**
+ * Which params matter most to the user — control-surface intent.
+ * Does not replace `params`; guides codegen defaults and prominence.
+ */
+export interface PlanControlSurface {
+  /** Free-text intent for the control panel. */
+  intent?: string;
+  /** Param names the user should tweak first. */
+  primaryParams?: readonly string[];
+}
+
+// ---------------------------------------------------------------------------
 // ToolPlan
 // ---------------------------------------------------------------------------
 
@@ -35,7 +94,8 @@ export type PlanAspect = "1:1" | "9:16" | "16:9" | "4:5" | (string & {});
  * - Exactly **one** `target` (never mix runtimes in one plan)
  * - ASAP path: `target` must be `"canvas2d"` (`ASAP_TARGET`)
  * - `params` / `assetSlots` follow M0b conventions
- * - No brand kit object — palette hints are optional strings only
+ * - No brand kit object — palette hints are optional strings / roles only
+ * - DesignBrief v2 fields are optional; parsers must accept legacy plans
  */
 export interface ToolPlan {
   /** Short description of the tool idea (from vision text). */
@@ -44,12 +104,16 @@ export interface ToolPlan {
   /** Output aspect, e.g. `1:1`, `9:16`, `16:9`. */
   aspect: PlanAspect;
 
-  /** Motion style / energy notes for codegen (free text). */
+  /**
+   * Motion style / energy notes for codegen (free text).
+   * Prefer also filling `motionSpec` when art-directing (AM1).
+   */
   motion: string;
 
   /**
    * Param fields the tool will expose (M0b shape).
    * Becomes `getParamSchema()` + informs `getDefaultParams()`.
+   * Art Director gate: prefer ≥3 params.
    */
   params: ParamSchema;
 
@@ -73,6 +137,29 @@ export interface ToolPlan {
 
   /** Freeform agent notes (debug, constraints, style keywords). */
   notes?: string;
+
+  // --- DesignBrief v2 (AM1) optional art direction ---
+
+  /** Composition structure (layers, focal points, grid). */
+  composition?: PlanComposition;
+
+  /** Semantic palette roles (bg / ink / accent / highlight). */
+  paletteRoles?: PlanPaletteRoles;
+
+  /** Structured motion (easing, tempo, loop). */
+  motionSpec?: PlanMotionSpec;
+
+  /** Typography scale / hierarchy. */
+  typography?: PlanTypography;
+
+  /** Control-surface intent + primary param names. */
+  controlSurface?: PlanControlSurface;
+
+  /**
+   * Retrieval tags for golden / boilerplate matching (AM1).
+   * e.g. "kinetic-type", "particles", "gradient", "poster".
+   */
+  tags?: readonly string[];
 }
 
 /**

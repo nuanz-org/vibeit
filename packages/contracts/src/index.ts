@@ -46,9 +46,18 @@ export {
 } from "./targets";
 export type { TargetDefinition, TargetId, TargetLaunchStatus } from "./targets";
 
-// M0d — Plan JSON
+// M0d + AM1 DesignBrief v2 — Plan JSON
 export { createAsapToolPlan, isAsapToolPlan } from "./plan";
-export type { AsapToolPlan, PlanAspect, ToolPlan } from "./plan";
+export type {
+  AsapToolPlan,
+  PlanAspect,
+  PlanComposition,
+  PlanControlSurface,
+  PlanMotionSpec,
+  PlanPaletteRoles,
+  PlanTypography,
+  ToolPlan,
+} from "./plan";
 
 // M0e — Job API shapes
 export {

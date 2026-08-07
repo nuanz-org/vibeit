@@ -1,9 +1,9 @@
 # Plan JSON schema
 
-**Milestone:** M0d  
+**Milestone:** M0d + **AM1 DesignBrief v2**  
 **TS source of truth:** `@repo/contracts` → `packages/contracts/src/plan.ts`  
 **Example:** `@repo/contracts/examples/canvas2d-social-frame-plan` · [`examples/canvas2d-social-frame-plan.json`](./examples/canvas2d-social-frame-plan.json)  
-**Related:** [targets.md](./targets.md) · [param-schema.md](./param-schema.md) · [skeletons/canvas2d.md](./skeletons/canvas2d.md)
+**Related:** [targets.md](./targets.md) · [param-schema.md](./param-schema.md) · [skeletons/canvas2d.md](./skeletons/canvas2d.md) · [agent_milestone.md](../agent_milestone.md)
 
 ---
 
@@ -32,16 +32,24 @@ Plan answers: *what are we building, at what aspect, with what motion, params, s
 | `concept` | **yes** | string | Short description of the tool idea |
 | `aspect` | **yes** | string | e.g. `1:1`, `9:16`, `16:9`, `4:5` |
 | `motion` | **yes** | string | Motion style / energy notes for codegen |
-| `params` | **yes** | `ParamSchema` | M0b param fields the tool will expose |
+| `params` | **yes** | `ParamSchema` | M0b param fields; Art Director prefers **≥3** |
 | `assetSlots` | **yes** | `AssetSlots` | May be `[]` |
 | `target` | **yes** | `TargetId` | **ASAP: always `"canvas2d"`** |
-| `palette` | no | `string[]` | Optional color hints (`#rrggbb`); not a brand kit |
+| `palette` | no | `string[]` | Optional `#rrggbb` hints; not a brand kit |
 | `notes` | no | string | Freeform agent notes |
+| `composition` | no | object | AM1: `layers`, `focalPoints`, `grid` |
+| `paletteRoles` | no | object | AM1: `bg` / `ink` / `accent` / `highlight` hex |
+| `motionSpec` | no | object | AM1: `summary`, `easing`, `tempo`, `loop` |
+| `typography` | no | object | AM1: `scale`, `hierarchy` |
+| `controlSurface` | no | object | AM1: `intent`, `primaryParams` |
+| `tags` | no | `string[]` | AM1: golden retrieval tags |
+
+Legacy plans without DesignBrief v2 fields remain valid. Python `plan_parse.normalize_asap_plan` accepts both.
 
 ### TypeScript
 
 ```ts
-import type { ToolPlan, AsapToolPlan } from "@repo/contracts";
+import type { ToolPlan, AsapToolPlan, PlanComposition } from "@repo/contracts";
 import {
   ASAP_TARGET,
   createAsapToolPlan,
@@ -57,6 +65,13 @@ interface ToolPlan {
   target: TargetId
   palette?: readonly string[]
   notes?: string
+  // DesignBrief v2 (AM1) — all optional
+  composition?: PlanComposition
+  paletteRoles?: { bg?: string; ink?: string; accent?: string; highlight?: string }
+  motionSpec?: { summary?: string; easing?: string; tempo?: string; loop?: string }
+  typography?: { scale?: string; hierarchy?: readonly string[] }
+  controlSurface?: { intent?: string; primaryParams?: readonly string[] }
+  tags?: readonly string[]
 }
 ```
 
@@ -129,11 +144,12 @@ import { socialFrameToolPlan } from "@repo/contracts/examples/canvas2d-social-fr
 ## Authoring / agent checklist
 
 1. `target` is a valid `TargetId`; on ASAP path it is `"canvas2d"`.  
-2. `params` entries use only M0b kinds.  
+2. `params` entries use only M0b kinds (prefer ≥3).  
 3. Every `assetRef.assetSlotId` exists in `assetSlots`.  
 4. `assetSlots` may be empty; do not invent a brand kit.  
-5. `motion` is concrete enough for codegen (not just `"cool"`).  
+5. `motion` is concrete enough for codegen (not just `"cool"`); prefer `motionSpec` too.  
 6. `concept` is one clear idea (one tool, not a multi-screen app).  
+7. Fill DesignBrief v2 fields when art-directing (composition, paletteRoles, tags).  
 
 ---
 
