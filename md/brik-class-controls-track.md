@@ -1,13 +1,13 @@
 # Brik-class controls & creation track
 
-**Status doc** for the workstream that closes the gap with Brik.space (sectioned controllers, clarify → multi-variant params, interactive tools, optional real Three.js).
+**Status doc** for the workstream that closes the gap with Brik.space (sectioned controllers, clarify → multi-variant params, interactive tools, real Three.js, **vision-faithful craft**).
 
 | | |
 |--|--|
-| **Owner track** | Track A (canvas2d + process) first · Track B (real Three.js) later |
+| **Owner track** | Track A (canvas2d + process) · Track B (real Three.js) · **Track C (craft fidelity / brief lock)** |
 | **Started** | 2026-08-08 |
-| **Last updated** | 2026-08-08 (B5) |
-| **Session plan** | Grok plan mode artifact (A1–A8 / B1–B5); this file is the **repo source of truth** for status |
+| **Last updated** | 2026-08-08 (Track C opened) |
+| **Session plan** | Grok plan mode artifact (A1–A8 / B1–B5 / C1–C7); this file is the **repo source of truth** for status |
 
 ---
 
@@ -28,8 +28,9 @@ They are **PR / milestone labels** for this track only (not old AM1/AM2 agent mi
 | **PR-A7** | Media library | Stock image picker for asset slots |
 | **PR-A8** | Eval corpus | Quality metrics for control density |
 | **PR-B1…B5** | Real Three.js track | Vendored three, real harness, agent target, gates |
+| **PR-C1…C7** | Craft fidelity (Track C / “track 3”) | Brief lock, emblem defaults, goldens, motion, critic |
 
-They were introduced in the implementation plan for “Brik-class control surfaces & interactive tools,” then refined after capturing Brik’s Kinetic Cube Logo flow.
+They were introduced in the implementation plan for “Brik-class control surfaces & interactive tools,” then refined after capturing Brik’s Kinetic Cube Logo flow and a **sweeping-arc emblem** side-by-side (Vibeit vs Brik).
 
 ### What does “A1 and A2 completed” mean?
 
@@ -54,6 +55,8 @@ Correct reading after A1–A6:
 | Pointer-driven canvas2d effects | **Harness + proximity golden** | — |
 | Sectioned Control UI | **Yes** | — |
 | Clarify → “all options” as enums | **Yes** | — |
+| First screenshot matches written vision (no invented brand/HUD) | **No** — needs **Track C** | Track C |
+
 ---
 
 ## Background (what we learned from Brik)
@@ -71,6 +74,22 @@ Correct reading after A1–A6:
 - Brief chooses **Three.js**; coding agent uses three boilerplate + esm.sh three.
 - Combinatorial axes: Final Shape × Assembly Style × Material (+ colors, loop, easing).
 
+### Capture 3 — Sweeping arc emblem (canvas2d craft fidelity) — *Track C seed*
+
+**Vision (shared):**  
+*Looping animation of a circular emblem built from 8 thin arcs sweeping in and aligning into a ring, smooth ease-in-out motion, soft gradient background shifting from deep blue to mint green, 4-second loop.*
+
+| | **Brik** | **Vibeit (observed)** |
+|--|----------|----------------------|
+| Background | Soft full-bleed blue → mint gradient | Dark void + neon HUD stack |
+| Emblem | Thin light arcs, quiet ring, large negative space | Dense radar / sci-fi rings + grid + bloom |
+| Copy | None (vision has no wordmark) | Invented **ECLIPSE** / SYS.LOCK chrome |
+| Motion read | Choreographed assemble → ring | Often perpetual spiral / HUD spin |
+| Canvas | Wide flat stage (~1200×800) | Phone bezel preview (presentation choice) |
+| Controllers | Geometry + choreography + gradient colors (high leverage, fewer knobs) | Richer sections (Content / Structure / Motion / Look) but defaults pull off-brief |
+
+**Honest read:** Track A **control UI** works (collapsible groups, segmented enums, sliders). The gap to Brik is **creative fidelity** — Brik stayed on-brief; Vibeit upgraded the brief into a different product (HUD lock). Track C is **not** “more sliders”; it is plan defaults, goldens, no invented copy, motion assemble-to-ring, and critic penalties for clutter.
+
 ### Architecture decisions (locked)
 
 1. Stay on **VibeTool modules** + harness + iframe (do not copy freeform Brik globals / open esm.sh).
@@ -78,6 +97,7 @@ Correct reading after A1–A6:
 3. Clarify answers become **dimensions** (enums), not only a rewritten vision string.
 4. **No traditional OS/container sandbox** — keep iframe + allowlist; Track B vendors three inside the product.
 5. **Track A first** (process + controls on canvas2d); **Track B** for real three.js.
+6. **Track C** (craft fidelity): controls can be richer than Brik; **defaults + first screenshot must match the written vision** (no invented brand/HUD when brief is minimal).
 
 ---
 
@@ -105,6 +125,31 @@ Correct reading after A1–A6:
 | **B3** | Frame + Studio mount for `three` | **Done** (2026-08-08) | version.target → mount (Studio + public) |
 | **B4** | Agent target policy + three prompts | **Done** (2026-08-08) | Policy + plan/codegen/repair when enabled |
 | **B5** | Three eval gates | **Done** (2026-08-08) | Offline suite green; default still off |
+
+### Track C — craft fidelity / brief lock (“track 3”)
+
+**Status:** Not started (opened 2026-08-08 from Capture 3 side-by-side).  
+**Depends on:** Track A foundation (A1–A6) — already done. Independent of Track B.
+
+| PR | Name | Status | Notes |
+|----|------|--------|-------|
+| **C1** | Vision lock in plan / clarify | Not started | Map brief → required params + defaults; no invented copy |
+| **C2** | Emblem control surface defaults | Not started | Brik-like knobs first; Look modes optional, low defaults |
+| **C3** | Sweeping-arc emblem golden | Not started | Few-shot: gradient + 8 thin arcs + assemble-to-ring |
+| **C4** | Codegen motion craft | Not started | ease-in-out, loop phase, stagger, hold-at-ring |
+| **C5** | Critic fidelity axes | Not started | Penalize HUD clutter / ignored gradient / invented text |
+| **C6** | Studio stage framing (optional) | Not started | Flat stage vs phone bezel by aspect |
+| **C7** | Fidelity eval / smoke vision | Not started | Fixed vision checklist vs Brik-class bar |
+
+**Priority order for implementation**
+
+1. **C1** Plan/codegen fidelity — no invented brand; gradient + 8 arcs + 4s as hard defaults from vision  
+2. **C3** Golden for gradient sweeping-ring emblem (few-shot)  
+3. **C2** Default control surface for emblem / motion-ring class  
+4. **C4** Motion easing + assemble-to-ring craft  
+5. **C5** Critic penalties for brief violations  
+6. **C6** Studio stage framing (optional)  
+7. **C7** Eval / regression smoke for the Capture 3 vision  
 
 ---
 
@@ -480,39 +525,145 @@ Correct reading after A1–A6:
 - `uv run python scripts/eval_three.py` → 15/15 PASS
 - `uv run python tests/test_track_b5_three_gates.py`
 
+### Track C — opened (not coded yet)
+
+**Why:** After A1–A6, Studio shows Brik-like **sections**, but Create can still invent a different product than the vision (e.g. HUD + wordmark instead of soft gradient + 8 arcs). That is a craft/fidelity track, not a missing Control UI track.
+
+**What to land (see checklist C1–C7)** — no implementation yet; this section is the design freeze for Track C.
+
+---
+
+## Track C — craft fidelity detail (design freeze)
+
+### Reference vision (Capture 3)
+
+```text
+Looping animation of a circular emblem built from 8 thin arcs sweeping in and
+aligning into a ring, smooth ease-in-out motion, soft gradient background
+shifting from deep blue to mint green, 4-second loop
+```
+
+### Brief → required plan surface
+
+| Brief item | Plan / param expectation |
+|------------|---------------------------|
+| soft gradient deep blue → mint | Required `gradientStart` / `gradientEnd` (or paletteRoles); defaults match vision hexes |
+| 8 arcs | `arcCount` default **8**, range ~4–16 |
+| thin arcs | Low `strokeWidth` default |
+| align into a ring | End-state / assembly = closed ring (not permanent HUD) |
+| 4s loop | `loopDuration` default **4** |
+| ease-in-out | `motionSpec` + codegen smoothstep / ease-in-out |
+| no logo copy in brief | **No** center title / brand chrome unless vision says so |
+
+### Controller guidance (Brik-like leverage vs optional Look)
+
+**Emphasize (high leverage):**
+
+| Control | Why |
+|---------|-----|
+| Arc count | Geometry of the emblem |
+| Ring radius | Scale in frame |
+| Stroke width | “Thin arcs” |
+| Arc length / gap | Open vs closed ring |
+| Loop duration | Explicit 4s |
+| Sweep / stagger | “Sweeping in” choreography |
+| Rotation amount | Spin vs settle |
+| Arc color | Usually white / light |
+| Gradient start / end | Blue → mint |
+| Gradient shift speed | Soft living background |
+
+**Optional secondary (mode, not default product):**
+
+- Arc rendering (Clean / Filament / Dual Neon / Dotted) — default **Clean Line**
+- Glow bloom — default **low** (0–0.2) for minimal briefs
+- Gradient aura presets — OK as shortcuts; custom start/end wins
+- Center text — **empty by default** when vision has no wordmark
+
+**Suggested sections:**
+
+```text
+Emblem     — count, radius, stroke, arc length, style
+Motion     — loop duration, sweep, rotation, stagger, easing
+Background — gradient start/end, shift speed
+Accent     — arc color, optional bloom (low default)
+Content    — only if text is in the brief
+```
+
+### Visual craft bar (codegen / golden)
+
+1. Full-bleed soft gradient — not dark plate + neon stack  
+2. One ring system (~8 arcs) — not many concentric HUD layers  
+3. White / near-white thin strokes; optional slight blur  
+4. Assembly story: dispersed → ease-in-out → settle into ring; loop may reverse or re-sweep  
+5. Large negative space around the ring  
+6. No type unless requested  
+7. Aspect: square or 16:9 stage for emblem posters; phone frame is presentation, not art direction  
+
+### Motion craft bar
+
+- Normalized loop `t = (time % loopDur) / loopDur`  
+- Ease-in-out on arc angle / radius / opacity  
+- Stagger by arc index (cascading join)  
+- Optional hold at “closed ring” before restart  
+- Avoid constant full-speed spiral as default  
+
+### “Is this Brik-class?” checklist (Capture 3)
+
+- [ ] Background is soft blue→mint (or user-tunable to that)  
+- [ ] ~8 thin light arcs, not a radar stack  
+- [ ] Loop feels ease-in-out, ~4s  
+- [ ] First load needs **no** text to look complete  
+- [ ] Controllers change geometry / motion / colors first; neon/HUD is a mode, not the default  
+
+### C1–C7 acceptance sketches
+
+| PR | Acceptance (sketch) |
+|----|---------------------|
+| **C1** | Plan from Capture 3 vision includes arcCount=8, loopDuration=4, gradient ends, empty/absent text; codegen system/user forbids invented wordmarks when vision has none |
+| **C2** | Emblem-class plans use Emblem/Motion/Background sections; Look neon enums optional with low defaults |
+| **C3** | Golden `sweeping-arc-emblem` (or similar) registers, compiles, retrieves on gradient/ring/arc tags |
+| **C4** | Codegen prompt requires ease-in-out + assemble-to-ring for emblem motions |
+| **C5** | Critic scores low for invented copy, missing gradient, HUD clutter on minimal ring briefs |
+| **C6** | Studio can present flat stage for non-9:16 (optional polish) |
+| **C7** | Fixed vision smoke or checklist documents pass/fail vs Capture 3 bar |
+
 ---
 
 ## Capability matrix (honest)
 
-| Capability | Today (after A1–A6) | Track A complete | Track B complete |
-|------------|---------------------|------------------|------------------|
-| Param `group` / `uiHint` in schema | Yes | Yes | Yes |
-| Plan `controlSurface.sections` | Yes | Yes | Yes |
-| `c.pointer` in canvas2d | Yes | Yes | N/A (three has own input) |
-| `drawImageCover` | Yes | Yes | Optional |
-| Clarify questions in Create | Yes (`planMode`) | Yes | Yes |
-| “All three options” → enums | Yes (forced into plan) | Yes | Yes |
-| Codegen multi-branch enums | Prompted + goldens | Strong | Strong + three |
-| Studio collapsible sections | **Yes** | Yes | Yes |
-| Image library | No | Optional (A7) | Optional |
-| Real Three.js Scene / renderer / camera | **Yes** (B2 harness) | Yes | Yes |
-| Real materials / mesh craft in goldens | **Yes** (`three-depth`) | Yes | Yes |
-| Studio/public mount uses `version.target` | **Yes** (B3) | Yes | Yes |
-| Agent three prompts + vision preference | **Yes** when env-enabled (B4) | Yes | Yes |
-| Three offline eval gates | **Yes** (B5 green) | Yes | Yes |
-| Three default-on in prod | **No** (opt-in env after green gates) | Optional | Opt-in |
-| OrbitControls product re-export | No | Optional | Optional |
-| three.js supply (product pin) | **Yes** — npm `0.185.1` (B1) | Yes | Yes |
-| Open esm.sh from tool code | Forbidden | Forbidden | Still forbidden (vendored) |
+| Capability | Today | Track A | Track B | Track C |
+|------------|-------|---------|---------|---------|
+| Param `group` / `uiHint` in schema | Yes | Yes | Yes | Yes |
+| Plan `controlSurface.sections` | Yes | Yes | Yes | Yes |
+| `c.pointer` in canvas2d | Yes | Yes | N/A | Yes |
+| `drawImageCover` | Yes | Yes | Optional | Yes |
+| Clarify questions in Create | Yes (`planMode`) | Yes | Yes | Yes |
+| “All three options” → enums | Yes | Yes | Yes | Yes |
+| Codegen multi-branch enums | Prompted + goldens | Strong | Strong + three | Strong |
+| Studio collapsible sections | **Yes** | Yes | Yes | Yes |
+| Image library | No | Optional (A7) | Optional | Optional |
+| Real Three.js Scene / renderer / camera | **Yes** (B2) | — | Yes | — |
+| Real materials / mesh craft in goldens | **Yes** (`three-depth`) | — | Yes | — |
+| Studio/public mount uses `version.target` | **Yes** (B3) | — | Yes | — |
+| Agent three prompts + vision preference | Env-enabled (B4) | — | Yes | — |
+| Three offline eval gates | **Yes** (B5) | — | Yes | — |
+| Three default-on in prod | No (opt-in) | — | Opt-in | — |
+| three.js supply (product pin) | **Yes** `0.185.1` | — | Yes | — |
+| Open esm.sh from tool code | Forbidden | Forbidden | Forbidden | Forbidden |
+| First screenshot matches minimal vision | **Weak** | — | — | **Target** |
+| No invented brand copy by default | **Weak** | — | — | **Target** |
+| Emblem assemble-to-ring + soft gradient craft | **Weak** | Partial | — | **Target** |
+| Emblem-class control defaults (Brik leverage) | Partial | Partial | — | **Target** |
 
 ---
 
 ## Recommended next steps
 
-1. Opt-in three for demos: `VIBEIT_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
-2. Optional live Create smoke (kinetic / chroma cube logo vision)  
-3. **A7** media library / **A8** eval when needed  
-4. Optional OrbitControls product re-export
+1. **Track C** — start **C1** (vision lock) then **C3** (sweeping-arc golden)  
+2. Opt-in three for demos: `VIBEIT_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
+3. Optional live Create smoke (kinetic / chroma cube logo vision)  
+4. **A7** media library / **A8** eval when needed  
+5. Optional OrbitControls product re-export
 
 ---
 
@@ -540,4 +691,5 @@ After each PR in this track:
 3. Refresh the capability matrix if needed  
 4. Bump **Last updated** at the top  
 
-Do **not** renumber A1–A8 / B1–B5 mid-flight without a note — other chats may refer to them.
+Do **not** renumber A1–A8 / B1–B5 / C1–C7 mid-flight without a note — other chats may refer to them.  
+**Track C** = craft fidelity (“track 3”); do not confuse with Track B three.js.
