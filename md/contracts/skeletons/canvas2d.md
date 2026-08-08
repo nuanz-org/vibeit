@@ -60,6 +60,16 @@ interface Canvas2dCreative {
 | `assets` | Slot id → URL/ref |
 | `images` | Slot id → loaded `HTMLImageElement` or `null` |
 | `time`, `delta` | Seconds since mount / since last frame |
+| `pointer` | `{ x, y, isOver }` in CSS px — harness-tracked pointer (hover/touch) |
+
+Helpers exported from the same module:
+
+| Helper | Meaning |
+|--------|---------|
+| `drawImageCover(ctx, img, x, y, w, h)` | Object-fit cover draw |
+| `drawImageContain(ctx, img, x, y, w, h)` | Object-fit contain draw |
+
+Do **not** start your own `requestAnimationFrame` loop or attach document-level pointer listeners — use `c.pointer` each frame.
 
 ---
 

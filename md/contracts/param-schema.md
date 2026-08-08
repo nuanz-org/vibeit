@@ -41,6 +41,8 @@ Common:
 | `label` | no | UI label; default to `name` |
 | `description` | no | Help text |
 | `default` | yes\* | Required for all kinds except `assetRef` (optional there) |
+| `group` | no | Section title for Studio Control (e.g. `"Distortion Effect"`) |
+| `uiHint` | no | `"slider"` \| `"segmented"` \| `"select"` \| `"switch"` \| `"hidden"` |
 
 Per kind:
 
@@ -56,7 +58,16 @@ Per kind:
 Example entries:
 
 ```json
-{ "name": "speed", "kind": "number", "label": "Motion speed", "default": 1, "min": 0, "max": 3, "step": 0.05 }
+{
+  "name": "speed",
+  "kind": "number",
+  "label": "Motion speed",
+  "default": 1,
+  "min": 0,
+  "max": 3,
+  "step": 0.05,
+  "group": "Motion"
+}
 ```
 
 ```json
@@ -65,6 +76,8 @@ Example entries:
   "kind": "enum",
   "label": "Motion",
   "default": "pulse",
+  "group": "Motion",
+  "uiHint": "segmented",
   "options": [
     { "value": "pulse", "label": "Pulse" },
     { "value": "drift", "label": "Drift" },

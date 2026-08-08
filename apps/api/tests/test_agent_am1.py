@@ -206,6 +206,73 @@ def test_palette_roles_seed_flat_palette() -> None:
     assert "#abcdef" in plan["palette"]
 
 
+def test_param_group_ui_hint_and_control_sections() -> None:
+    data = {
+        "concept": "Proximity pixel card",
+        "aspect": "1:1",
+        "motion": "pointer distance pixelation",
+        "params": [
+            {
+                "name": "maxPixelation",
+                "kind": "number",
+                "label": "Max Pixelation",
+                "default": 40,
+                "min": 2,
+                "max": 80,
+                "group": "Interaction & Distortion",
+                "uiHint": "slider",
+            },
+            {
+                "name": "finalShape",
+                "kind": "enum",
+                "default": "hexagon",
+                "group": "Logo Form",
+                "uiHint": "segmented",
+                "options": [
+                    {"value": "hexagon", "label": "Hexagon Ring"},
+                    {"value": "isometric", "label": "Isometric Block"},
+                ],
+            },
+            {
+                "name": "bg",
+                "kind": "color",
+                "default": "#0b0b12",
+                "group": "Environment",
+                "uiHint": "not-a-hint",
+            },
+        ],
+        "assetSlots": [],
+        "target": "canvas2d",
+        "controlSurface": {
+            "intent": "playable multi-axis card",
+            "primaryParams": ["maxPixelation", "finalShape"],
+            "sections": [
+                {
+                    "id": "interaction",
+                    "label": "Interaction & Distortion",
+                    "paramNames": ["maxPixelation"],
+                },
+                {
+                    "id": "logo",
+                    "label": "Logo Form",
+                    "paramNames": ["finalShape"],
+                },
+                {"id": "empty", "label": "Empty", "paramNames": []},
+            ],
+        },
+    }
+    plan = normalize_asap_plan(data)
+    by_name = {p["name"]: p for p in plan["params"]}
+    assert by_name["maxPixelation"]["group"] == "Interaction & Distortion"
+    assert by_name["maxPixelation"]["uiHint"] == "slider"
+    assert by_name["finalShape"]["uiHint"] == "segmented"
+    assert "uiHint" not in by_name["bg"]
+    sections = plan["controlSurface"]["sections"]
+    assert len(sections) == 2
+    assert sections[0]["id"] == "interaction"
+    assert sections[0]["paramNames"] == ["maxPixelation"]
+
+
 def test_goldens_exist_and_pass_static() -> None:
     ids = list_goldens()
     # AM1 canvas2d goldens remain; AM6 adds p5/three

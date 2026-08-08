@@ -41,7 +41,7 @@ Plan answers: *what are we building, at what aspect, with what motion, params, s
 | `paletteRoles` | no | object | AM1: `bg` / `ink` / `accent` / `highlight` hex |
 | `motionSpec` | no | object | AM1: `summary`, `easing`, `tempo`, `loop` |
 | `typography` | no | object | AM1: `scale`, `hierarchy` |
-| `controlSurface` | no | object | AM1: `intent`, `primaryParams` |
+| `controlSurface` | no | object | AM1+: `intent`, `primaryParams`, optional `sections[]` |
 | `tags` | no | `string[]` | AM1: golden retrieval tags |
 
 Legacy plans without DesignBrief v2 fields remain valid. Python `plan_parse.normalize_asap_plan` accepts both.
@@ -70,7 +70,11 @@ interface ToolPlan {
   paletteRoles?: { bg?: string; ink?: string; accent?: string; highlight?: string }
   motionSpec?: { summary?: string; easing?: string; tempo?: string; loop?: string }
   typography?: { scale?: string; hierarchy?: readonly string[] }
-  controlSurface?: { intent?: string; primaryParams?: readonly string[] }
+  controlSurface?: {
+    intent?: string
+    primaryParams?: readonly string[]
+    sections?: readonly { id: string; label: string; paramNames: readonly string[] }[]
+  }
   tags?: readonly string[]
 }
 ```

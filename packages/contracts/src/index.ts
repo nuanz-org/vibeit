@@ -31,6 +31,7 @@ export type {
   ParamFieldBase,
   ParamFieldKind,
   ParamSchema,
+  ParamUiHint,
   ParamValueForKind,
   TextParamField,
 } from "./param-schema";
@@ -52,6 +53,7 @@ export type {
   AsapToolPlan,
   PlanAspect,
   PlanComposition,
+  PlanControlSection,
   PlanControlSurface,
   PlanMotionSpec,
   PlanPaletteRoles,

@@ -73,6 +73,19 @@ export interface PlanTypography {
 }
 
 /**
+ * Optional layout section for Studio Control (mirrors param `group` strings).
+ * `params` remain the source of truth; sections are Art Director layout hints.
+ */
+export interface PlanControlSection {
+  /** Stable id, e.g. "content", "interaction". */
+  id: string;
+  /** Section heading shown in Control UI. */
+  label: string;
+  /** Param `name`s in this section (must exist on `params` when present). */
+  paramNames: readonly string[];
+}
+
+/**
  * Which params matter most to the user — control-surface intent.
  * Does not replace `params`; guides codegen defaults and prominence.
  */
@@ -81,6 +94,11 @@ export interface PlanControlSurface {
   intent?: string;
   /** Param names the user should tweak first. */
   primaryParams?: readonly string[];
+  /**
+   * Ordered sections for the Edit Controllers panel.
+   * Prefer also setting `group` on each param field.
+   */
+  sections?: readonly PlanControlSection[];
 }
 
 // ---------------------------------------------------------------------------

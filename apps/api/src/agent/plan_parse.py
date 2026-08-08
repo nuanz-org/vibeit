@@ -15,6 +15,9 @@ from agent.target_policy import ASAP_TARGET, resolve_plan_target
 _PARAM_KINDS = frozenset(
     {"color", "number", "text", "enum", "boolean", "assetRef"}
 )
+_PARAM_UI_HINTS = frozenset(
+    {"slider", "segmented", "select", "switch", "hidden"}
+)
 _HEX_RE = re.compile(r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 
 
@@ -170,6 +173,54 @@ def _normalize_typography(raw: Any) -> dict[str, Any] | None:
     return out or None
 
 
+def _normalize_param_entry(raw: dict[str, Any]) -> dict[str, Any] | None:
+    """Keep known param fields; strip invalid group / uiHint."""
+    name = str(raw.get("name") or "").strip()
+    kind = str(raw.get("kind") or "").strip()
+    if not name or kind not in _PARAM_KINDS:
+        return None
+    entry = dict(raw)
+    entry["name"] = name
+    entry["kind"] = kind
+
+    group = raw.get("group")
+    if group is not None and str(group).strip():
+        entry["group"] = str(group).strip()[:80]
+    else:
+        entry.pop("group", None)
+
+    ui_hint = raw.get("uiHint") or raw.get("ui_hint")
+    if ui_hint is not None and str(ui_hint).strip() in _PARAM_UI_HINTS:
+        entry["uiHint"] = str(ui_hint).strip()
+    else:
+        entry.pop("uiHint", None)
+        entry.pop("ui_hint", None)
+
+    return entry
+
+
+def _normalize_control_sections(raw: Any) -> list[dict[str, Any]] | None:
+    if not isinstance(raw, list):
+        return None
+    sections: list[dict[str, Any]] = []
+    for item in raw[:12]:
+        if not isinstance(item, dict):
+            continue
+        sid = str(item.get("id") or "").strip()
+        label = str(item.get("label") or sid).strip()
+        names = _normalize_string_list(item.get("paramNames"), limit=16)
+        if not sid or not label or not names:
+            continue
+        sections.append(
+            {
+                "id": sid[:64],
+                "label": label[:80],
+                "paramNames": names,
+            }
+        )
+    return sections or None
+
+
 def _normalize_control_surface(raw: Any) -> dict[str, Any] | None:
     if not isinstance(raw, dict):
         return None
@@ -180,6 +231,9 @@ def _normalize_control_surface(raw: Any) -> dict[str, Any] | None:
     primary = _normalize_string_list(raw.get("primaryParams"), limit=8)
     if primary:
         out["primaryParams"] = primary
+    sections = _normalize_control_sections(raw.get("sections"))
+    if sections:
+        out["sections"] = sections
     return out or None
 
 
@@ -203,11 +257,9 @@ def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
         for p in params:
             if not isinstance(p, dict):
                 continue
-            name = str(p.get("name") or "").strip()
-            kind = str(p.get("kind") or "").strip()
-            if not name or kind not in _PARAM_KINDS:
-                continue
-            cleaned_params.append(p)
+            entry = _normalize_param_entry(p)
+            if entry is not None:
+                cleaned_params.append(entry)
         params = cleaned_params or _default_params(concept)
 
     params = _ensure_min_params(params, concept, minimum=3)

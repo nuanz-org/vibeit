@@ -20,6 +20,17 @@ export type ParamFieldKind =
   | "boolean"
   | "assetRef";
 
+/**
+ * Optional Studio widget hint (Brik-class control surfaces).
+ * When omitted, Studio infers from `kind` (number→slider, boolean→switch, etc.).
+ */
+export type ParamUiHint =
+  | "slider"
+  | "segmented"
+  | "select"
+  | "switch"
+  | "hidden";
+
 /** Shared fields on every param schema entry. */
 export interface ParamFieldBase {
   /** Stable key; must match keys in `ToolParams` / `getDefaultParams()`. */
@@ -28,6 +39,13 @@ export interface ParamFieldBase {
   label?: string;
   /** Optional help text under the control. */
   description?: string;
+  /**
+   * Control panel section title (e.g. "Distortion Effect", "Card Styling").
+   * Studio groups fields by this string when present.
+   */
+  group?: string;
+  /** Prefer a specific widget when `kind` alone is ambiguous. */
+  uiHint?: ParamUiHint;
 }
 
 /** CSS-friendly color string. Prefer `#rrggbb` or `#rrggbbaa` for MVP. */

@@ -41,6 +41,17 @@ export interface Canvas2dHarnessOptions {
 }
 
 /**
+ * Pointer state in CSS pixels relative to the canvas element (not device pixels).
+ * Updated by the harness — do not attach your own document listeners.
+ */
+export interface Canvas2dPointer {
+  x: number;
+  y: number;
+  /** True while the pointer is over the canvas (mouse/touch). */
+  isOver: boolean;
+}
+
+/**
  * Read-only frame state passed to creative `draw` / hooks.
  * Mutate `ctx` (the 2D context) only — do not replace `canvas` or break out of iframe.
  */
@@ -63,6 +74,84 @@ export interface Canvas2dDrawContext {
   time: number;
   /** Seconds since previous frame. */
   delta: number;
+  /**
+   * Latest pointer position (harness-tracked). Defaults off-canvas when idle.
+   * Use for hover distance, spotlight, distortion falloff, etc.
+   */
+  pointer: Canvas2dPointer;
+}
+
+// ---------------------------------------------------------------------------
+// Drawing helpers (safe for creative fill)
+// ---------------------------------------------------------------------------
+
+/**
+ * Draw an image covering a rectangle (object-fit: cover), centered.
+ * Prefer this over manual drawImage math for photo/card tools.
+ */
+export function drawImageCover(
+  ctx: CanvasRenderingContext2D,
+  img: CanvasImageSource,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  if (w <= 0 || h <= 0) return;
+  const iw =
+    "naturalWidth" in img && typeof img.naturalWidth === "number" && img.naturalWidth > 0
+      ? img.naturalWidth
+      : "width" in img && typeof img.width === "number"
+        ? img.width
+        : 0;
+  const ih =
+    "naturalHeight" in img && typeof img.naturalHeight === "number" && img.naturalHeight > 0
+      ? img.naturalHeight
+      : "height" in img && typeof img.height === "number"
+        ? img.height
+        : 0;
+  if (iw <= 0 || ih <= 0) return;
+
+  const scale = Math.max(w / iw, h / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const dx = x + (w - dw) / 2;
+  const dy = y + (h - dh) / 2;
+  ctx.drawImage(img, dx, dy, dw, dh);
+}
+
+/**
+ * Draw an image contained in a rectangle (object-fit: contain), centered.
+ */
+export function drawImageContain(
+  ctx: CanvasRenderingContext2D,
+  img: CanvasImageSource,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  if (w <= 0 || h <= 0) return;
+  const iw =
+    "naturalWidth" in img && typeof img.naturalWidth === "number" && img.naturalWidth > 0
+      ? img.naturalWidth
+      : "width" in img && typeof img.width === "number"
+        ? img.width
+        : 0;
+  const ih =
+    "naturalHeight" in img && typeof img.naturalHeight === "number" && img.naturalHeight > 0
+      ? img.naturalHeight
+      : "height" in img && typeof img.height === "number"
+        ? img.height
+        : 0;
+  if (iw <= 0 || ih <= 0) return;
+
+  const scale = Math.min(w / iw, h / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const dx = x + (w - dw) / 2;
+  const dy = y + (h - dh) / 2;
+  ctx.drawImage(img, dx, dy, dw, dh);
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +263,8 @@ export function createCanvas2dTool(
   let dpr = 1;
   let resizeObserver: ResizeObserver | null = null;
   let loadGeneration = 0;
+  const pointer: Canvas2dPointer = { x: -9999, y: -9999, isOver: false };
+  let pointerCleanup: (() => void) | null = null;
 
   function buildDrawContext(now: number): Canvas2dDrawContext {
     if (!canvas || !ctx) {
@@ -192,6 +283,58 @@ export function createCanvas2dTool(
       images,
       time,
       delta,
+      pointer: { x: pointer.x, y: pointer.y, isOver: pointer.isOver },
+    };
+  }
+
+  function readPointerFromEvent(e: PointerEvent | Touch): void {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cssW = rect.width || width || 1;
+    const cssH = rect.height || height || 1;
+    // Map client coords into layout CSS size used by draw (width/height).
+    pointer.x = ((e.clientX - rect.left) / cssW) * width;
+    pointer.y = ((e.clientY - rect.top) / cssH) * height;
+  }
+
+  function attachPointerListeners(el: HTMLCanvasElement): void {
+    const onMove = (e: PointerEvent) => {
+      readPointerFromEvent(e);
+      pointer.isOver = true;
+    };
+    const onEnter = (e: PointerEvent) => {
+      readPointerFromEvent(e);
+      pointer.isOver = true;
+    };
+    const onLeave = () => {
+      pointer.isOver = false;
+    };
+    const onDown = (e: PointerEvent) => {
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      readPointerFromEvent(e);
+      pointer.isOver = true;
+    };
+    const onUp = (e: PointerEvent) => {
+      readPointerFromEvent(e);
+    };
+
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerenter", onEnter);
+    el.addEventListener("pointerleave", onLeave);
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointerup", onUp);
+    el.style.touchAction = "none";
+
+    pointerCleanup = () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerenter", onEnter);
+      el.removeEventListener("pointerleave", onLeave);
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointerup", onUp);
     };
   }
 
@@ -298,8 +441,12 @@ export function createCanvas2dTool(
       mounted = true;
       startMs = performance.now();
       lastMs = 0;
+      pointer.x = -9999;
+      pointer.y = -9999;
+      pointer.isOver = false;
 
       layout();
+      attachPointerListeners(canvas);
       // Await asset loads so capture after mount can include real uploaded logos (M2a6).
       await reloadImages(assets);
 
@@ -358,6 +505,11 @@ export function createCanvas2dTool(
       raf = 0;
       resizeObserver?.disconnect();
       resizeObserver = null;
+      pointerCleanup?.();
+      pointerCleanup = null;
+      pointer.x = -9999;
+      pointer.y = -9999;
+      pointer.isOver = false;
       try {
         creative.dispose?.();
       } catch {
