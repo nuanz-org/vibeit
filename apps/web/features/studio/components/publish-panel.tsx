@@ -209,11 +209,8 @@ export function PublishPanel({
   if (fixtureMode || !toolId || !publicId) {
     return (
       <section className={styles.section} aria-label="Publish">
-        <h2 className={styles.sectionTitle}>Publish to gallery</h2>
-        <p className={styles.muted}>
-          Gallery publish is available for generated tools. Fixture Studio is
-          local only — create a tool from vision first.
-        </p>
+        <h2 className={styles.sectionTitle}>Publish</h2>
+        <p className={styles.muted}>Gallery publish is for generated tools.</p>
       </section>
     );
   }
@@ -223,12 +220,7 @@ export function PublishPanel({
 
   return (
     <section className={styles.section} aria-label="Publish to gallery">
-      <h2 className={styles.sectionTitle}>Publish to gallery</h2>
-      <p className={styles.muted}>
-        Share (above) only makes a private-or-public link.{" "}
-        <strong>Publish to gallery</strong> runs quality gates, needs a title +
-        thumbnail, and lists the tool for others to browse.
-      </p>
+      <h2 className={styles.sectionTitle}>Publish</h2>
 
       <div className={styles.actions} style={{ marginBottom: "0.75rem" }}>
         {inGallery ? (

@@ -1,0 +1,467 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { UserMenu } from "@/features/auth/components/user-menu";
+import { ClarifyPanel } from "@/features/create/components/clarify-panel";
+import { JobProgress } from "@/features/create/components/job-progress";
+import {
+  PlaygroundShell,
+  playgroundStyles as pg,
+} from "@/features/playground/components/playground-shell";
+import {
+  jobQueryKey,
+  useJob,
+  useJobResult,
+} from "@/features/jobs/hooks/use-job";
+import { uploadAsset } from "@/lib/api/assets";
+import {
+  CreateJobApiError,
+  createJob,
+  parseSalvageToolId,
+  submitClarify,
+  type ClarifyAnswerValue,
+  type QuotaFields,
+} from "@/lib/api/jobs";
+import {
+  fetchLlmModels,
+  type LlmModelOption,
+} from "@/lib/api/llm";
+
+import styles from "../styles.module.css";
+
+const MAX_INSPIRATION = 4;
+
+export type CreatePlaygroundProps = {
+  userName?: string | null;
+  userEmail?: string | null;
+};
+
+/**
+ * Brickspace-class Create: chat-first vision composer + empty stage.
+ */
+export function CreatePlayground({
+  userName,
+  userEmail,
+}: CreatePlaygroundProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [visionText, setVisionText] = useState("");
+  const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
+  const [modelOptions, setModelOptions] = useState<LlmModelOption[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [modelsError, setModelsError] = useState<string | null>(null);
+  const [planMode, setPlanMode] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [quota, setQuota] = useState<QuotaFields | null>(null);
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [clarifyPending, setClarifyPending] = useState(false);
+  const [salvageToolId, setSalvageToolId] = useState<string | null>(null);
+  const [lastSubmitted, setLastSubmitted] = useState<string | null>(null);
+
+  const jobQuery = useJob(jobId);
+  const status = jobQuery.data;
+  const isSuccess = status?.status === "succeeded";
+  const isFailed = status?.status === "failed";
+  const isAwaitingClarify = status?.status === "awaiting_clarify";
+
+  const resultQuery = useJobResult(jobId, Boolean(isSuccess));
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const catalog = await fetchLlmModels();
+        if (cancelled) return;
+        setModelOptions(catalog.models ?? []);
+        const preferred =
+          catalog.defaultModel ||
+          catalog.models?.find((m) => m.default)?.id ||
+          catalog.models?.[0]?.id ||
+          "";
+        setSelectedModel(preferred);
+        setModelsError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setModelsError(
+          err instanceof Error ? err.message : "Could not load models",
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status?.quota) setQuota(status.quota);
+  }, [status?.quota]);
+
+  useEffect(() => {
+    if (!isSuccess || !resultQuery.data) return;
+    const toolId = resultQuery.data.toolId;
+    router.push(`/studio/${encodeURIComponent(toolId)}`);
+  }, [isSuccess, resultQuery.data, router]);
+
+  useEffect(() => {
+    if (!isFailed) return;
+    const id = parseSalvageToolId(status?.errorMessage);
+    setSalvageToolId(id);
+  }, [isFailed, status?.errorMessage]);
+
+  async function onSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
+    const vision = visionText.trim();
+    if (!vision) return;
+
+    setPending(true);
+    setSubmitError(null);
+    setJobId(null);
+    setSalvageToolId(null);
+    setQuotaBlocked(false);
+    setLastSubmitted(vision);
+
+    try {
+      const inspirationAssetIds: string[] = [];
+      for (const file of inspirationFiles.slice(0, MAX_INSPIRATION)) {
+        const asset = await uploadAsset(file, "inspiration");
+        if (asset?.id) inspirationAssetIds.push(asset.id);
+      }
+
+      const created = await createJob({
+        visionText: vision,
+        inspirationAssetIds:
+          inspirationAssetIds.length > 0 ? inspirationAssetIds : undefined,
+        model: selectedModel.trim() || undefined,
+        planMode: planMode || undefined,
+        clientMetadata: {
+          uiSource: "create-playground",
+          inspirationCount: inspirationAssetIds.length,
+          model: selectedModel.trim() || undefined,
+          planMode,
+        },
+      });
+      setJobId(created.jobId);
+      if (created.quota) setQuota(created.quota);
+      setVisionText("");
+      setInspirationFiles([]);
+    } catch (err) {
+      if (err instanceof CreateJobApiError) {
+        setSubmitError(err.message);
+        if (err.quota) setQuota(err.quota);
+        if (err.errorCode === "QUOTA_EXCEEDED" || err.status === 429) {
+          setQuotaBlocked(true);
+        }
+      } else {
+        setSubmitError(err instanceof Error ? err.message : "Create failed");
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function onClarifySubmit(
+    answers: Record<string, ClarifyAnswerValue>,
+  ) {
+    if (!jobId) return;
+    setClarifyPending(true);
+    setSubmitError(null);
+    try {
+      await submitClarify(jobId, { answers, buildNow: true });
+      await queryClient.invalidateQueries({ queryKey: jobQueryKey(jobId) });
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Could not submit answers",
+      );
+    } finally {
+      setClarifyPending(false);
+    }
+  }
+
+  function reset() {
+    setJobId(null);
+    setSubmitError(null);
+    setSalvageToolId(null);
+    setPending(false);
+    setClarifyPending(false);
+    setInspirationFiles([]);
+    setLastSubmitted(null);
+  }
+
+  const generating =
+    Boolean(jobId) && !isSuccess && !isFailed && !isAwaitingClarify;
+  const overQuota =
+    quotaBlocked ||
+    (quota != null && quota.createsUsed >= quota.createsLimit);
+  const canSend =
+    Boolean(visionText.trim()) &&
+    !pending &&
+    !generating &&
+    !isAwaitingClarify &&
+    !overQuota;
+
+  const greetingName =
+    userName?.trim() ||
+    (userEmail ? userEmail.split("@")[0] : null) ||
+    null;
+
+  const chat = (
+    <div className={pg.chatBody}>
+      <div className={pg.chatCard}>
+        <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
+          <h2 className={pg.panelTitle}>Create</h2>
+          {jobId ? (
+            <button
+              type="button"
+              className={pg.btnGhost}
+              style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
+              onClick={reset}
+            >
+              New vision
+            </button>
+          ) : null}
+        </div>
+
+        <div className={pg.chatScroll}>
+          <div className={pg.greeting}>
+            <p className={pg.greetingTitle}>
+              {greetingName
+                ? `Hi ${greetingName}, what do you want to build?`
+                : "What do you want to build?"}
+            </p>
+            <p className={pg.greetingSub}>
+              Describe a living design tool — motion, brand mark, social frame.
+            </p>
+          </div>
+
+          {lastSubmitted ? (
+            <div className={styles.msgUser}>
+              <p>{lastSubmitted}</p>
+            </div>
+          ) : null}
+
+          {jobId && !isAwaitingClarify ? (
+            <JobProgress status={status} jobId={jobId} />
+          ) : null}
+
+          {jobId && isAwaitingClarify && status?.clarify ? (
+            <ClarifyPanel
+              clarify={status.clarify}
+              pending={clarifyPending}
+              onSubmit={(answers) => void onClarifySubmit(answers)}
+            />
+          ) : null}
+
+          {submitError ? <p className={styles.error}>{submitError}</p> : null}
+          {jobQuery.isError ? (
+            <p className={styles.error}>
+              {jobQuery.error instanceof Error
+                ? jobQuery.error.message
+                : "Failed to poll job status"}
+            </p>
+          ) : null}
+          {isSuccess && resultQuery.isLoading ? (
+            <p className={pg.muted}>Opening Studio…</p>
+          ) : null}
+          {isSuccess && resultQuery.isError ? (
+            <p className={styles.error}>
+              Job succeeded but result could not be loaded.
+            </p>
+          ) : null}
+          {isFailed ? (
+            <div>
+              <p className={styles.error}>
+                {status?.errorMessage || "Generation failed"}
+              </p>
+              {salvageToolId ? (
+                <p className={pg.muted}>
+                  Salvage draft ready.{" "}
+                  <Link
+                    href={`/studio/${encodeURIComponent(salvageToolId)}`}
+                    className={styles.link}
+                  >
+                    Open in Studio
+                  </Link>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <form
+          className={pg.chatComposer}
+          onSubmit={(e) => void onSubmit(e)}
+        >
+          <textarea
+            className={pg.composerInput}
+            value={visionText}
+            onChange={(e) => setVisionText(e.target.value)}
+            rows={4}
+            required
+            disabled={pending || generating || isAwaitingClarify}
+            placeholder="Describe the living design tool you want…"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (canSend) void onSubmit();
+              }
+            }}
+          />
+          <div className={pg.composerFooter}>
+            <div className={pg.composerMeta}>
+              <label className={pg.attachBtn}>
+                +
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  multiple
+                  disabled={pending || generating || isAwaitingClarify}
+                  onChange={(e) => {
+                    const list = e.target.files
+                      ? Array.from(e.target.files)
+                      : [];
+                    setInspirationFiles(list.slice(0, MAX_INSPIRATION));
+                  }}
+                />
+              </label>
+              {inspirationFiles.length > 0 ? (
+                <span className={pg.muted}>
+                  {inspirationFiles.length} image
+                  {inspirationFiles.length > 1 ? "s" : ""}
+                </span>
+              ) : null}
+              <select
+                className={pg.selectCompact}
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={
+                  pending || generating || modelOptions.length === 0
+                }
+                title="Model"
+              >
+                {modelOptions.length === 0 ? (
+                  <option value="">Models…</option>
+                ) : (
+                  modelOptions.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))
+                )}
+              </select>
+              <label
+                className={pg.muted}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={planMode}
+                  disabled={
+                    pending ||
+                    generating ||
+                    isAwaitingClarify ||
+                    Boolean(jobId)
+                  }
+                  onChange={(e) => setPlanMode(e.target.checked)}
+                />
+                Plan
+              </label>
+            </div>
+            <div className={pg.composerActions}>
+              {quota ? (
+                <span className={pg.muted}>
+                  {quota.createsUsed}/{quota.createsLimit}
+                </span>
+              ) : null}
+              <button
+                type="submit"
+                className={pg.btnSend}
+                disabled={!canSend}
+                aria-label={
+                  pending
+                    ? "Starting"
+                    : generating
+                      ? "Generating"
+                      : overQuota
+                        ? "Quota reached"
+                        : "Generate tool"
+                }
+              >
+                <SendIcon />
+              </button>
+            </div>
+          </div>
+          {modelsError ? (
+            <p className={styles.error}>{modelsError}</p>
+          ) : null}
+        </form>
+      </div>
+    </div>
+  );
+
+  const stage = (
+    <div className={pg.stageInner}>
+      <div className={pg.emptyStage}>
+        <p className={pg.emptyStageTitle}>
+          {generating
+            ? "Building your tool…"
+            : isAwaitingClarify
+              ? "Answer a few questions"
+              : isSuccess
+                ? "Opening Studio…"
+                : "Your tool will appear here"}
+        </p>
+        <p className={pg.emptyStageHint}>
+          {generating
+            ? "Plan → code → validate. Hang tight."
+            : "Describe a vision in chat to generate a live design tool."}
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <PlaygroundShell
+      title="New tool"
+      headerMeta={
+        generating ? (
+          <span className={`${pg.chip} ${pg.chipWarn}`}>generating</span>
+        ) : null
+      }
+      headerActions={
+        <>
+          <Link href="/gallery" className={`${pg.btn} ${pg.btnGhost}`}>
+            Gallery
+          </Link>
+          <UserMenu />
+        </>
+      }
+      chat={chat}
+      stage={stage}
+    />
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M8 12.5V3.5M8 3.5L4 7.5M8 3.5L12 7.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

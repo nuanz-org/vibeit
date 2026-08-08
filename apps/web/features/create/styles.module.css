@@ -301,3 +301,18 @@
 .debugBody {
   margin-top: 1rem;
 }
+
+/* Create playground message bubble */
+.msgUser {
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  align-self: flex-end;
+  max-width: 100%;
+}
+
+.msgUser p {
+  margin: 0;
+}

@@ -78,12 +78,6 @@ export function ExportPanel({
   return (
     <section className={styles.section} aria-label="Export">
       <h2 className={styles.sectionTitle}>Export</h2>
-      <p className={styles.muted}>
-        Client-side only. PNG always works. Short video is WebM (best on
-        Chromium); if MediaRecorder fails we download a PNG sequence ZIP
-        instead. Default clip: {RECORD_VIDEO_DEFAULT_SECONDS}s. See{" "}
-        <code>md/export-browser-support.md</code>.
-      </p>
       <div className={styles.actions}>
         <button
           type="button"
@@ -176,35 +170,17 @@ export function ExportPanel({
           </p>
         </div>
       ) : null}
-      {!mediaRecorderSupported ? (
+      {lastAt || lastVideoAt || lastSequenceAt ? (
         <p className={styles.muted}>
-          MediaRecorder not detected — video button uses PNG-sequence fallback.
-        </p>
-      ) : null}
-      {lastAt ? (
-        <p className={styles.muted}>
-          Last PNG {new Date(lastAt).toLocaleTimeString()}
-          {lastByteLength != null ? ` · ~${lastByteLength} bytes` : null}
-        </p>
-      ) : null}
-      {lastVideoAt ? (
-        <p className={styles.muted}>
-          Last video {new Date(lastVideoAt).toLocaleTimeString()}
-          {lastVideoDurationSeconds != null
-            ? ` · ${lastVideoDurationSeconds}s`
+          {lastAt
+            ? `PNG ${new Date(lastAt).toLocaleTimeString()}`
             : null}
-          {lastVideoByteLength != null
-            ? ` · ~${lastVideoByteLength} bytes`
+          {lastVideoAt
+            ? `${lastAt ? " · " : ""}Video ${new Date(lastVideoAt).toLocaleTimeString()}`
             : null}
-        </p>
-      ) : null}
-      {lastSequenceAt ? (
-        <p className={styles.muted}>
-          Last sequence {new Date(lastSequenceAt).toLocaleTimeString()}
-          {lastSequenceFrameCount != null
-            ? ` · ${lastSequenceFrameCount} frames`
+          {lastSequenceAt
+            ? `${lastAt || lastVideoAt ? " · " : ""}Seq ${new Date(lastSequenceAt).toLocaleTimeString()}`
             : null}
-          {lastSequenceAsFallback ? " · video fallback" : null}
         </p>
       ) : null}
     </section>

@@ -106,11 +106,7 @@ export function SharePanel({
     return (
       <section className={styles.section} aria-label="Share">
         <h2 className={styles.sectionTitle}>Share</h2>
-        <p className={styles.muted}>
-          Share links are available for generated tools with a{" "}
-          <code>publicId</code>. Fixture Studio is local only — create a tool
-          from vision to share.
-        </p>
+        <p className={styles.muted}>Share is available on generated tools.</p>
       </section>
     );
   }
@@ -118,19 +114,9 @@ export function SharePanel({
   return (
     <section className={styles.section} aria-label="Share">
       <h2 className={styles.sectionTitle}>Share</h2>
-      {!isPublished ? (
-        <p className={styles.muted}>
-          Link is <strong>private</strong> until you make it public. Anonymous
-          visitors get 404 until then. This is a thin share link only — use{" "}
-          <strong>Publish to gallery</strong> below to list it publicly.
-        </p>
-      ) : (
-        <p className={styles.muted}>
-          Public link is live — anyone with the URL can open the interactive
-          tool (no Studio controls). Gallery listing is separate (see Publish
-          below).
-        </p>
-      )}
+      <p className={styles.muted}>
+        {isPublished ? "Public link is live." : "Private until you make it public."}
+      </p>
 
       <div className={styles.actions}>
         {!isPublished ? (
@@ -219,10 +205,6 @@ export function SharePanel({
             {copied === "embed" ? "Copied" : "Copy embed"}
           </button>
         </div>
-        <p className={styles.muted}>
-          Default 360×640 iframe. Allow <code>autoplay</code> /{" "}
-          <code>fullscreen</code> as needed for motion tools.
-        </p>
       </div>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}

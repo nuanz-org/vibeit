@@ -70,10 +70,10 @@ export function EmptySlotsBanner({
       : "Personalize with your assets";
 
   const detail = isLogoLike
-    ? "Upload a logo into the empty slot — motion keeps running with a placeholder until you do."
+    ? "Placeholder until you upload."
     : emptyCount === 1
-      ? `The “${label}” slot is empty. Upload an image to personalize this tool.`
-      : `${emptyCount} asset slots are empty. Start with “${label}”.`;
+      ? `“${label}” is empty.`
+      : `${emptyCount} empty slots — start with “${label}”.`;
 
   return (
     <div

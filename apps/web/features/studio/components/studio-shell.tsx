@@ -6,6 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
 
 import { UserMenu } from "@/features/auth/components/user-menu";
+import {
+  PlaygroundShell,
+  playgroundStyles as pg,
+} from "@/features/playground/components/playground-shell";
 import { RuntimeHost, isRealUploadedAssetUrl } from "@/runtime";
 
 import type { StudioFixtureMeta } from "../fixtures";
@@ -62,6 +66,8 @@ export type StudioShellProps = {
   initialThumbnailUrl?: string | null;
 };
 
+type DrawerKind = "export" | "publish" | null;
+
 function saveStatusLabel(
   status: ReturnType<typeof useStudioDraftPersist>["status"],
   enabled: boolean,
@@ -82,7 +88,7 @@ function saveStatusLabel(
 }
 
 /**
- * Studio shell (M2a5–M5e Control + M7a–M7c export + M7f share).
+ * Studio shell — Brickspace-class Chat | Preview | Controls.
  */
 export function StudioShell({
   fixture,
@@ -106,6 +112,7 @@ export function StudioShell({
 }: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
+  const [drawer, setDrawer] = useState<DrawerKind>(null);
   /** M7f: update badge after thin publish without full reload. */
   const [liveToolStatus, setLiveToolStatus] = useState<string | null>(
     toolStatus ?? null,
@@ -134,9 +141,9 @@ export function StudioShell({
   const [liveVersionId, setLiveVersionId] = useState<string | null | undefined>(
     versionId,
   );
-  const [liveDefaults, setLiveDefaults] = useState<ToolParams | null | undefined>(
-    versionDefaultParams,
-  );
+  const [liveDefaults, setLiveDefaults] = useState<
+    ToolParams | null | undefined
+  >(versionDefaultParams);
   const [liveParamSchema, setLiveParamSchema] = useState<
     ParamSchema | null | undefined
   >(versionParamSchema);
@@ -182,10 +189,7 @@ export function StudioShell({
 
   /** Filename base: publicId → tool id → fixture id (M7a). */
   const exportFilenameBase =
-    publicId?.trim() ||
-    persistToolId?.trim() ||
-    fixture.toolId ||
-    "tool";
+    publicId?.trim() || persistToolId?.trim() || fixture.toolId || "tool";
 
   const displayStatus = liveToolStatus ?? toolStatus ?? null;
   const isFixtureOnly = !persistToolId || !publicId;
@@ -255,316 +259,204 @@ export function StudioShell({
 
   const statusClass =
     runtime.status === "ready" || runtime.mounted
-      ? styles.badgeReady
+      ? pg.chipLive
       : runtime.status === "error"
-        ? styles.badgeError
-        : styles.badgeLoading;
+        ? pg.chipError
+        : pg.chipWarn;
 
   const saveLabel = saveStatusLabel(persist.status, persist.enabled);
-  const saveBadgeClass =
+  const saveChipClass =
     persist.status === "saved"
-      ? styles.badgeReady
+      ? pg.chipLive
       : persist.status === "error"
-        ? styles.badgeError
+        ? pg.chipError
         : persist.status === "saving" || persist.status === "dirty"
-          ? styles.badgeLoading
-          : styles.badge;
+          ? pg.chipWarn
+          : pg.chip;
 
-  return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <div className={styles.headerMeta}>
-          <Link href="/" className={styles.brand}>
-            Vibeit
-          </Link>
-          <span className={styles.badge}>Studio</span>
-          <Link
-            href="/gallery"
-            style={{
-              fontSize: "0.8rem",
-              opacity: 0.65,
-              textDecoration: "underline",
-              color: "inherit",
-            }}
-          >
-            Gallery
-          </Link>
-          {displayStatus ? (
-            <span
-              className={`${styles.badge} ${
-                displayStatus === "published"
-                  ? styles.badgeReady
-                  : styles.badgeLoading
-              }`}
-              title="Tool row status"
-            >
-              {displayStatus}
-            </span>
-          ) : null}
-          <span className={`${styles.badge} ${statusClass}`}>
-            {runtime.mounted
-              ? "live"
-              : runtime.status === "ready"
-                ? "ready"
-                : runtime.status}
-          </span>
-          {saveLabel ? (
-            <span className={`${styles.badge} ${saveBadgeClass}`}>
-              {saveLabel}
-            </span>
-          ) : null}
-          {runtime.m2aCaptureProved ? (
-            <span className={`${styles.badge} ${styles.badgeReady}`}>
-              M2a capture ✓
-            </span>
-          ) : runtime.hasRealAsset ? (
-            <span className={`${styles.badge} ${styles.badgeLoading}`}>
-              real asset bound
-            </span>
-          ) : null}
-        </div>
-        <div className={styles.headerMeta}>
-          <button
-            type="button"
-            className={styles.linkButton}
-            disabled={!runtime.mounted || runtime.busy}
-            onClick={() => void runtime.downloadPng(exportFilenameBase)}
-            title={
-              runtime.mounted
-                ? "Download PNG of the current preview"
-                : "Wait until the tool is live"
-            }
-          >
-            Download PNG
-          </button>
-          {persist.enabled ? (
-            <button
-              type="button"
-              className={styles.linkButton}
-              disabled={
-                persist.status === "saving" ||
-                persist.status === "idle" ||
-                persist.status === "saved"
-              }
-              onClick={() => persist.saveNow()}
-              title="Save draft params + assets now"
-            >
-              Save now
-            </button>
-          ) : null}
-          <Link href="/create" className={styles.linkButton}>
-            Create
-          </Link>
-          <UserMenu />
-        </div>
-      </header>
+  const headerMeta = (
+    <>
+      {displayStatus ? (
+        <span
+          className={`${pg.chip} ${
+            displayStatus === "published" ? pg.chipLive : pg.chipWarn
+          }`}
+        >
+          {displayStatus}
+        </span>
+      ) : null}
+      <span className={`${pg.chip} ${statusClass}`}>
+        {runtime.mounted
+          ? "live"
+          : runtime.status === "ready"
+            ? "ready"
+            : runtime.status}
+      </span>
+      {saveLabel ? (
+        <span className={`${pg.chip} ${saveChipClass}`}>{saveLabel}</span>
+      ) : null}
+    </>
+  );
 
-      <div className={styles.body}>
-        <aside className={styles.sidebar}>
-          <div>
-            <h1 className={styles.sidebarTitle}>{fixture.label}</h1>
-            <p className={styles.sidebarDesc}>{fixture.description}</p>
-            {publicId ? (
-              <p className={styles.muted} style={{ marginTop: 8 }}>
-                publicId <code>{publicId}</code>
-                {versionId ? (
-                  <>
-                    {" "}
-                    · version <code>{versionId.slice(0, 8)}…</code>
-                  </>
-                ) : null}
-              </p>
-            ) : null}
-            {persist.enabled ? (
-              <p className={styles.muted} style={{ marginTop: 6 }}>
-                Changes auto-save to your draft (no regenerate).
-                {persist.lastSavedAt
-                  ? ` Last saved ${new Date(persist.lastSavedAt).toLocaleTimeString()}.`
-                  : null}
-              </p>
-            ) : (
-              <p className={styles.muted} style={{ marginTop: 6 }}>
-                Fixture mode — personalization is local only (not persisted).
-              </p>
-            )}
-          </div>
+  const headerActions = (
+    <>
+      <Link href="/gallery" className={`${pg.btn} ${pg.btnGhost}`}>
+        Gallery
+      </Link>
+      <Link href="/create" className={`${pg.btn} ${pg.btnGhost}`}>
+        Create
+      </Link>
+      {persist.enabled ? (
+        <button
+          type="button"
+          className={pg.btn}
+          disabled={
+            persist.status === "saving" ||
+            persist.status === "idle" ||
+            persist.status === "saved"
+          }
+          onClick={() => persist.saveNow()}
+        >
+          Save
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className={pg.btn}
+        onClick={() => setDrawer("publish")}
+      >
+        Publish
+      </button>
+      <button
+        type="button"
+        className={`${pg.btn} ${pg.btnAccent}`}
+        disabled={!runtime.mounted || runtime.busy}
+        onClick={() => setDrawer("export")}
+      >
+        Export
+      </button>
+      <UserMenu />
+    </>
+  );
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Control</h2>
-            {runtime.mounted && runtime.paramSchema.length === 0 ? (
-              <p className={styles.muted}>
-                No param schema for this tool — preview still runs.
-              </p>
-            ) : (
-              <ParamControls
-                schema={runtime.paramSchema}
-                params={runtime.params}
-                onChange={runtime.setParam}
-                onResetDefaults={runtime.resetParams}
-                onFocusAssetSlot={focusAssetSlot}
-                disabled={!runtime.mounted || runtime.busy}
-              />
-            )}
-          </section>
+  const chat = (
+    <RefineChatPanel
+      consoleLayout
+      toolId={persistToolId}
+      versionId={liveVersionId}
+      sourceCode={liveSource}
+      disabled={runtime.busy}
+      onApplied={onRefineApplied}
+      onRollback={onRefineRollback}
+      canRollback={Boolean(rollbackSnapshot)}
+      toolLabel={fixture.label}
+    />
+  );
 
-          {persistToolId && isGenerated ? (
-            <RefineChatPanel
-              toolId={persistToolId}
-              versionId={liveVersionId}
-              sourceCode={liveSource}
-              disabled={runtime.busy}
-              onApplied={onRefineApplied}
-              onRollback={onRefineRollback}
-              canRollback={Boolean(rollbackSnapshot)}
+  const stage = (
+    <div className={pg.stageInner}>
+      {runtime.error && !runtime.mounted ? (
+        <div className={styles.errorBanner}>{runtime.error}</div>
+      ) : null}
+      <div className={pg.frame}>
+        <RuntimeHost
+          ref={runtime.hostRef}
+          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+          onReady={(msg) => {
+            void runtime.onReady(msg);
+          }}
+          onStatusChange={runtime.onStatusChange}
+          onBridgeError={runtime.onBridgeError}
+        />
+      </div>
+    </div>
+  );
+
+  const controls = (
+    <>
+      <div className={pg.panelHeader}>
+        <h2 className={pg.panelTitle}>Controls</h2>
+      </div>
+      <div className={pg.panelScroll}>
+        <section className={styles.section}>
+          {runtime.mounted && runtime.paramSchema.length === 0 ? (
+            <p className={styles.muted}>No controls for this tool.</p>
+          ) : (
+            <ParamControls
+              schema={runtime.paramSchema}
+              params={runtime.params}
+              onChange={runtime.setParam}
+              onResetDefaults={runtime.resetParams}
+              onFocusAssetSlot={focusAssetSlot}
+              disabled={!runtime.mounted || runtime.busy}
             />
-          ) : null}
+          )}
+        </section>
 
-          <section
-            className={styles.section}
-            ref={assetsSectionRef}
-            id="studio-assets"
-          >
-            <h2 className={styles.sectionTitle}>Assets</h2>
-            {runtime.mounted && runtime.assetSlots.length > 0 ? (
-              <EmptySlotsBanner
-                slots={runtime.assetSlots}
-                assets={runtime.assets}
-                onFocusSlot={focusAssetSlot}
-              />
-            ) : null}
-            <p className={styles.muted}>
-              Empty slots use a generated placeholder — preview never crashes.
-              Uploads are http URLs with CORS (needed for capture).
-            </p>
-            <AssetSlotsPanel
+        <section
+          className={styles.section}
+          ref={assetsSectionRef}
+          id="studio-assets"
+        >
+          <h2 className={styles.sectionTitle}>Assets</h2>
+          {runtime.mounted && runtime.assetSlots.length > 0 ? (
+            <EmptySlotsBanner
               slots={runtime.assetSlots}
               assets={runtime.assets}
-              onAssetUrl={runtime.setAsset}
-              disabled={!runtime.mounted || runtime.busy}
-              highlightSlotId={focusSlotId}
-              toolId={persistToolId ?? null}
+              onFocusSlot={focusAssetSlot}
             />
-            {runtime.hasRealAsset ? (
-              <p className={styles.okText}>
-                Real upload bound
-                {Object.entries(runtime.assets)
-                  .filter(([, ref]) => {
-                    const u =
-                      typeof ref === "string" ? ref : ref && "url" in ref
+          ) : null}
+          <AssetSlotsPanel
+            slots={runtime.assetSlots}
+            assets={runtime.assets}
+            onAssetUrl={runtime.setAsset}
+            disabled={!runtime.mounted || runtime.busy}
+            highlightSlotId={focusSlotId}
+            toolId={persistToolId ?? null}
+          />
+          {runtime.hasRealAsset ? (
+            <p className={styles.okText}>
+              Upload bound
+              {Object.entries(runtime.assets)
+                .filter(([, ref]) => {
+                  const u =
+                    typeof ref === "string"
+                      ? ref
+                      : ref && "url" in ref
                         ? ref.url
                         : null;
-                    return isRealUploadedAssetUrl(u);
-                  })
-                  .map(([id]) => ` · ${id}`)
-                  .join("")}
-              </p>
-            ) : runtime.mounted && runtime.assetSlots.length > 0 ? (
-              <p className={styles.muted}>
-                No http storage asset yet — empty slots stay on placeholders.
-              </p>
-            ) : null}
-          </section>
-
-          <ExportPanel
-            mounted={runtime.mounted}
-            busy={runtime.busy}
-            filenameBase={exportFilenameBase}
-            onDownloadPng={runtime.downloadPng}
-            onDownloadVideo={runtime.downloadVideo}
-            onDownloadPngSequence={runtime.downloadPngSequence}
-            mediaRecorderSupported={runtime.mediaRecorderSupported}
-            recordSecondsLeft={runtime.recordSecondsLeft}
-            sequenceProgress={runtime.sequenceProgress}
-            lastByteLength={runtime.lastCapture?.byteLength}
-            lastAt={runtime.lastCapture?.at}
-            lastVideoAt={runtime.lastVideoExport?.at}
-            lastVideoByteLength={runtime.lastVideoExport?.byteLength}
-            lastVideoDurationSeconds={runtime.lastVideoExport?.durationSeconds}
-            lastSequenceAt={runtime.lastSequenceExport?.at}
-            lastSequenceFrameCount={runtime.lastSequenceExport?.frameCount}
-            lastSequenceAsFallback={
-              runtime.lastSequenceExport?.usedAsVideoFallback
-            }
-            onSaveGalleryThumbnail={
-              persistToolId
-                ? async () => {
-                    const result =
-                      await runtime.captureAndUploadThumbnail(persistToolId);
-                    setGalleryThumb({
-                      assetId: result.assetId,
-                      url: result.url,
-                      at: new Date().toISOString(),
-                    });
-                  }
-                : undefined
-            }
-            lastThumbnailUrl={galleryThumb?.url}
-            lastThumbnailAt={galleryThumb?.at}
-          />
-
-          <SharePanel
-            publicId={publicId}
-            toolId={persistToolId}
-            status={displayStatus}
-            title={initialTitle ?? fixture.label}
-            onPublished={onPublished}
-            fixtureMode={isFixtureOnly}
-          />
-
-          <PublishPanel
-            toolId={persistToolId}
-            publicId={publicId}
-            status={displayStatus}
-            galleryReady={liveGalleryReady}
-            initialTitle={initialTitle ?? fixture.label}
-            initialDescription={initialDescription ?? fixture.description}
-            initialTags={initialTags}
-            thumbnailAssetId={galleryThumb?.assetId ?? initialThumbnailAssetId}
-            thumbnailUrl={galleryThumb?.url ?? initialThumbnailUrl}
-            mounted={runtime.mounted}
-            busy={runtime.busy}
-            exportSmokeProved={Boolean(
-              runtime.lastCapture?.byteLength || galleryThumb,
-            )}
-            onCaptureThumbnail={
-              persistToolId
-                ? async () => {
-                    const result =
-                      await runtime.captureAndUploadThumbnail(persistToolId);
-                    setGalleryThumb({
-                      assetId: result.assetId,
-                      url: result.url,
-                      at: new Date().toISOString(),
-                    });
-                    return { assetId: result.assetId, url: result.url };
-                  }
-                : undefined
-            }
-            onToolUpdated={onToolUpdated}
-            fixtureMode={isFixtureOnly}
-          />
-
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Capture (M2a6)</h2>
-            <p className={styles.muted}>
-              Dev / exit gates — prefer{" "}
-              <strong>Download PNG</strong> above for product export.
+                  return isRealUploadedAssetUrl(u);
+                })
+                .map(([id]) => ` · ${id}`)
+                .join("")}
             </p>
+          ) : null}
+        </section>
+
+        <ViewSourcePanel
+          toolId={fixture.toolId}
+          target={fixture.target}
+          open={sourceOpen}
+          onToggle={() => setSourceOpen((v) => !v)}
+          sourceCode={liveSource}
+          isGenerated={isGenerated}
+          versionId={liveVersionId}
+        />
+
+        <details className={styles.advancedDetails}>
+          <summary>Advanced</summary>
+          <div className={styles.advancedBody}>
             <div className={styles.actions}>
               <button
                 type="button"
-                className={`${styles.button} ${styles.buttonPrimary}`}
+                className={styles.button}
                 disabled={
                   !runtime.mounted || runtime.busy || !runtime.hasRealAsset
                 }
                 onClick={() => void runtime.proveRealAssetCapture()}
-                title={
-                  runtime.hasRealAsset
-                    ? "Capture PNG with real uploaded asset (M2a exit)"
-                    : "Upload a studio image first"
-                }
+                title="Prove real-asset PNG capture"
               >
-                Prove real-asset PNG
+                Prove PNG
               </button>
               <button
                 type="button"
@@ -572,7 +464,7 @@ export function StudioShell({
                 disabled={!runtime.mounted || runtime.busy}
                 onClick={() => void runtime.capturePng()}
               >
-                Capture PNG
+                Capture
               </button>
               <button
                 type="button"
@@ -583,77 +475,165 @@ export function StudioShell({
                 Remount
               </button>
             </div>
-            {runtime.lastCapture ? (
-              <p className={styles.muted}>
-                Last capture:{" "}
-                {runtime.lastCapture.usedRealAsset
-                  ? `real asset (${runtime.lastCapture.realAssetSlotId})`
-                  : "no real asset"}
-                {runtime.lastCapture.byteLength != null
-                  ? ` · ~${runtime.lastCapture.byteLength} bytes`
-                  : null}
-              </p>
-            ) : null}
-          </section>
-
-          <ViewSourcePanel
-            toolId={fixture.toolId}
-            target={fixture.target}
-            open={sourceOpen}
-            onToggle={() => setSourceOpen((v) => !v)}
-            sourceCode={liveSource}
-            isGenerated={isGenerated}
-            versionId={liveVersionId}
-          />
-
-          {runtime.error ? (
-            <p className={styles.errorText}>{runtime.error}</p>
-          ) : null}
-          {persist.error ? (
-            <p className={styles.errorText}>Draft save: {persist.error}</p>
-          ) : null}
-        </aside>
-
-        <main className={styles.preview}>
-          {runtime.error && !runtime.mounted ? (
-            <div className={styles.errorBanner}>{runtime.error}</div>
-          ) : null}
-          <div className={styles.previewStage}>
-            <div className={styles.frameWrap}>
-              <RuntimeHost
-                ref={runtime.hostRef}
-                onReady={(msg) => {
-                  void runtime.onReady(msg);
-                }}
-                onStatusChange={runtime.onStatusChange}
-                onBridgeError={runtime.onBridgeError}
-              />
-            </div>
-          </div>
-          {runtime.capturePreviewUrl ? (
-            <div className={styles.captureRow}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={runtime.capturePreviewUrl}
-                alt="Captured PNG preview"
-                className={styles.captureThumb}
-              />
-              <div>
-                <p className={styles.muted}>
-                  {runtime.lastCapture?.usedRealAsset
-                    ? "Captured with real uploaded asset (untainted canvas path)."
-                    : "Captured without a real storage asset — not M2a exit."}
-                </p>
-                {runtime.lastCapture?.realAssetUrl ? (
-                  <p className={styles.urlMono}>
-                    {runtime.lastCapture.realAssetUrl}
-                  </p>
-                ) : null}
+            {runtime.capturePreviewUrl ? (
+              <div className={styles.captureRow} style={{ padding: 0 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={runtime.capturePreviewUrl}
+                  alt="Captured PNG"
+                  className={styles.captureThumb}
+                />
               </div>
-            </div>
-          ) : null}
-        </main>
+            ) : null}
+          </div>
+        </details>
+
+        {runtime.error ? (
+          <p className={styles.errorText}>{runtime.error}</p>
+        ) : null}
+        {persist.error ? (
+          <p className={styles.errorText}>Draft save: {persist.error}</p>
+        ) : null}
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      <PlaygroundShell
+        title={fixture.label}
+        headerMeta={headerMeta}
+        headerActions={headerActions}
+        chat={chat}
+        stage={stage}
+        controls={controls}
+      />
+
+      {drawer ? (
+        <>
+          <button
+            type="button"
+            className={pg.drawerBackdrop}
+            aria-label="Close panel"
+            onClick={() => setDrawer(null)}
+          />
+          <aside
+            className={pg.drawer}
+            role="dialog"
+            aria-modal="true"
+            aria-label={drawer === "export" ? "Export" : "Publish"}
+          >
+            <div className={pg.drawerHeader}>
+              <h2 className={pg.drawerTitle}>
+                {drawer === "export" ? "Export" : "Publish & share"}
+              </h2>
+              <button
+                type="button"
+                className={pg.btn}
+                onClick={() => setDrawer(null)}
+              >
+                Close
+              </button>
+            </div>
+            <div className={pg.drawerBody}>
+              {drawer === "export" ? (
+                <ExportPanel
+                  mounted={runtime.mounted}
+                  busy={runtime.busy}
+                  filenameBase={exportFilenameBase}
+                  onDownloadPng={runtime.downloadPng}
+                  onDownloadVideo={runtime.downloadVideo}
+                  onDownloadPngSequence={runtime.downloadPngSequence}
+                  mediaRecorderSupported={runtime.mediaRecorderSupported}
+                  recordSecondsLeft={runtime.recordSecondsLeft}
+                  sequenceProgress={runtime.sequenceProgress}
+                  lastByteLength={runtime.lastCapture?.byteLength}
+                  lastAt={runtime.lastCapture?.at}
+                  lastVideoAt={runtime.lastVideoExport?.at}
+                  lastVideoByteLength={runtime.lastVideoExport?.byteLength}
+                  lastVideoDurationSeconds={
+                    runtime.lastVideoExport?.durationSeconds
+                  }
+                  lastSequenceAt={runtime.lastSequenceExport?.at}
+                  lastSequenceFrameCount={runtime.lastSequenceExport?.frameCount}
+                  lastSequenceAsFallback={
+                    runtime.lastSequenceExport?.usedAsVideoFallback
+                  }
+                  onSaveGalleryThumbnail={
+                    persistToolId
+                      ? async () => {
+                          const result =
+                            await runtime.captureAndUploadThumbnail(
+                              persistToolId,
+                            );
+                          setGalleryThumb({
+                            assetId: result.assetId,
+                            url: result.url,
+                            at: new Date().toISOString(),
+                          });
+                        }
+                      : undefined
+                  }
+                  lastThumbnailUrl={galleryThumb?.url}
+                  lastThumbnailAt={galleryThumb?.at}
+                />
+              ) : (
+                <>
+                  <SharePanel
+                    publicId={publicId}
+                    toolId={persistToolId}
+                    status={displayStatus}
+                    title={initialTitle ?? fixture.label}
+                    onPublished={onPublished}
+                    fixtureMode={isFixtureOnly}
+                  />
+                  <PublishPanel
+                    toolId={persistToolId}
+                    publicId={publicId}
+                    status={displayStatus}
+                    galleryReady={liveGalleryReady}
+                    initialTitle={initialTitle ?? fixture.label}
+                    initialDescription={
+                      initialDescription ?? fixture.description
+                    }
+                    initialTags={initialTags}
+                    thumbnailAssetId={
+                      galleryThumb?.assetId ?? initialThumbnailAssetId
+                    }
+                    thumbnailUrl={galleryThumb?.url ?? initialThumbnailUrl}
+                    mounted={runtime.mounted}
+                    busy={runtime.busy}
+                    exportSmokeProved={Boolean(
+                      runtime.lastCapture?.byteLength || galleryThumb,
+                    )}
+                    onCaptureThumbnail={
+                      persistToolId
+                        ? async () => {
+                            const result =
+                              await runtime.captureAndUploadThumbnail(
+                                persistToolId,
+                              );
+                            setGalleryThumb({
+                              assetId: result.assetId,
+                              url: result.url,
+                              at: new Date().toISOString(),
+                            });
+                            return {
+                              assetId: result.assetId,
+                              url: result.url,
+                            };
+                          }
+                        : undefined
+                    }
+                    onToolUpdated={onToolUpdated}
+                    fixtureMode={isFixtureOnly}
+                  />
+                </>
+              )}
+            </div>
+          </aside>
+        </>
+      ) : null}
+    </>
   );
 }
