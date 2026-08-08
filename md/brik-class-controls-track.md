@@ -4,10 +4,11 @@
 
 | | |
 |--|--|
-| **Owner track** | Track A (canvas2d + process) · Track B (real Three.js) · **Track C (craft fidelity / brief lock)** |
+| **Owner track** | Track A (canvas2d + process) · Track B (real Three.js) · Track C (craft fidelity) · **Track D (perf craft — experimental)** |
 | **Started** | 2026-08-08 |
-| **Last updated** | 2026-08-08 (Track C opened) |
-| **Session plan** | Grok plan mode artifact (A1–A8 / B1–B5 / C1–C7); this file is the **repo source of truth** for status |
+| **Last updated** | 2026-08-08 (Track D experimental landed) |
+| **Session plan** | Grok plan mode artifact (A1–A8 / B1–B5 / C1–C7) + experimental perf craft; this file is the **repo source of truth** for status |
+| **Experimental** | **Track D (perf craft)** is experimental — thresholds, helpers, and lint rules may tighten or roll back without a major version bump |
 
 ---
 
@@ -29,6 +30,7 @@ They are **PR / milestone labels** for this track only (not old AM1/AM2 agent mi
 | **PR-A8** | Eval corpus | Quality metrics for control density |
 | **PR-B1…B5** | Real Three.js track | Vendored three, real harness, agent target, gates |
 | **PR-C1…C7** | Craft fidelity (Track C / “track 3”) | Brief lock, emblem defaults, goldens, motion, critic |
+| **PR-D1** (**experimental**) | Perf craft: soft-glow helpers + lint + neon-trail golden | Keep kinetic/glow tools interactive on retina Studio |
 
 They were introduced in the implementation plan for “Brik-class control surfaces & interactive tools,” then refined after capturing Brik’s Kinetic Cube Logo flow and a **sweeping-arc emblem** side-by-side (Vibeit vs Brik).
 
@@ -654,16 +656,41 @@ Content    — only if text is in the brief
 | No invented brand copy by default | **Weak** | — | — | **Target** |
 | Emblem assemble-to-ring + soft gradient craft | **Weak** | Partial | — | **Target** |
 | Emblem-class control defaults (Brik leverage) | Partial | Partial | — | **Target** |
+| Soft-glow helpers + `perf:` lint (Track D) | **Yes (experimental)** | — | — | — |
+| Neon-trail efficient golden | **Yes (experimental)** | — | — | — |
+| Studio rAF-coalesced param updates | **Yes** | — | — | — |
+
+---
+
+## Track D — perf craft (**experimental**)
+
+**Status:** Landed as an **experimental** slice (2026-08-08). Not a frozen product contract.
+
+Goal: stop Studio lag on neon/trail/particle tools without banning legitimate still craft.
+
+| Piece | What shipped | Experimental note |
+|-------|--------------|-------------------|
+| `strokeSoftGlow` / `fillSoftDisc` | canvas2d helpers (multi-width alpha, no `shadowBlur`) | API surface may gain opts or rename |
+| `maxDpr` default **2** | canvas2d / p5 / three harness + runtime-frame | Was effective cap 3; tune if export sharpness regresses |
+| `perf_lint` | Flags `shadowBlur` / `filter` **inside** loops (`perf:` errors) | Heuristic brace matcher — false positives/negatives possible |
+| Prompts | `perf_craft.py` injected into plan/codegen/repair/refine/critique | Copy may change as we learn from live Create |
+| Golden `neon-trail` | Few-shot efficient infinity glow | Tags/retrieval weights may adjust |
+| Studio param coalesce | rAF-batch `updateParams` while sliders stay snappy | Host-only; no contract change |
+
+**Not experimental forever:** if live eval stays green for a milestone, promote helpers into the stable canvas2d docs checklist and drop the experimental banner here.
+
+**Out of scope for D1:** WebGL bloom paths, worker offload, automatic rewrite of all old goldens.
 
 ---
 
 ## Recommended next steps
 
 1. **Track C** — start **C1** (vision lock) then **C3** (sweeping-arc golden)  
-2. Opt-in three for demos: `VIBEIT_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
-3. Optional live Create smoke (kinetic / chroma cube logo vision)  
-4. **A7** media library / **A8** eval when needed  
-5. Optional OrbitControls product re-export
+2. Smoke **Track D** live: glow/trail vision → confirm no `perf:` false-fail storm; retina Studio stays interactive  
+3. Opt-in three for demos: `VIBEIT_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
+4. Optional live Create smoke (kinetic / chroma cube logo vision)  
+5. **A7** media library / **A8** eval when needed  
+6. Optional OrbitControls product re-export
 
 ---
 
@@ -675,7 +702,7 @@ Content    — only if text is in the brief
 | `md/agent_milestone.md` | Older AM1–AM7 quality milestones (different numbering) |
 | `md/contracts/param-schema.md` | Param kinds + group/uiHint |
 | `md/contracts/plan-json.md` | ToolPlan + controlSurface |
-| `md/contracts/skeletons/canvas2d.md` | Harness + pointer |
+| `md/contracts/skeletons/canvas2d.md` | Harness + pointer + experimental soft-glow helpers |
 | `md/contracts/skeletons/three.md` | B1 vendor pin + three harness roadmap |
 | `md/contracts/targets.md` | canvas2d ASAP; three config-gated |
 | `md/agents.md` | Agent specialization map |
@@ -692,4 +719,5 @@ After each PR in this track:
 4. Bump **Last updated** at the top  
 
 Do **not** renumber A1–A8 / B1–B5 / C1–C7 mid-flight without a note — other chats may refer to them.  
-**Track C** = craft fidelity (“track 3”); do not confuse with Track B three.js.
+**Track C** = craft fidelity (“track 3”); do not confuse with Track B three.js.  
+**Track D** = perf craft (**experimental**); may change without renumbering A/B/C.

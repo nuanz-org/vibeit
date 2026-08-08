@@ -124,6 +124,12 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
 
   /** Cache compiled ESM by source hash (avoid recompile on remount). */
   const compileCacheRef = useRef<{ key: string; js: string } | null>(null);
+  /**
+   * Coalesce host.updateParams to one postMessage per animation frame.
+   * React param state still updates immediately so sliders stay snappy.
+   */
+  const pendingParamsRef = useRef<ToolParams | null>(null);
+  const paramsRafRef = useRef<number | null>(null);
 
   const [status, setStatus] = useState<RuntimeHostStatus>("idle");
   const [ready, setReady] = useState<ReadyMessage | null>(null);
@@ -161,6 +167,42 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     byteLength: number;
     usedAsVideoFallback: boolean;
   } | null>(null);
+
+  const flushParamsToHost = useCallback(() => {
+    paramsRafRef.current = null;
+    const next = pendingParamsRef.current;
+    pendingParamsRef.current = null;
+    if (!next) return;
+    const host = hostRef.current;
+    if (!host?.isReady()) return;
+    void host.updateParams(next).catch((err) => {
+      setError(formatErr(err));
+    });
+  }, []);
+
+  const scheduleParamsToHost = useCallback(
+    (next: ToolParams) => {
+      pendingParamsRef.current = next;
+      if (paramsRafRef.current != null) return;
+      if (typeof requestAnimationFrame === "undefined") {
+        flushParamsToHost();
+        return;
+      }
+      paramsRafRef.current = requestAnimationFrame(() => {
+        flushParamsToHost();
+      });
+    },
+    [flushParamsToHost],
+  );
+
+  /** Force any coalesced params through before capture/export/remount. */
+  const flushPendingParamsNow = useCallback(() => {
+    if (paramsRafRef.current != null) {
+      cancelAnimationFrame(paramsRafRef.current);
+      paramsRafRef.current = null;
+    }
+    flushParamsToHost();
+  }, [flushParamsToHost]);
 
   const resolveModuleSource = useCallback(async (): Promise<
     string | undefined
@@ -266,30 +308,26 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     setError(`${err.code}: ${err.message}`);
   }, []);
 
-  const applyParams = useCallback((next: ToolParams) => {
-    setError(null);
-    setParams(next);
-    const host = hostRef.current;
-    if (host?.isReady()) {
-      void host.updateParams(next).catch((err) => {
-        setError(formatErr(err));
-      });
-    }
-  }, []);
-
-  const setParam = useCallback((name: string, value: unknown) => {
-    setParams((prev) => {
-      const next = { ...prev, [name]: value };
+  const applyParams = useCallback(
+    (next: ToolParams) => {
       setError(null);
-      const host = hostRef.current;
-      if (host?.isReady()) {
-        void host.updateParams(next).catch((err) => {
-          setError(formatErr(err));
-        });
-      }
-      return next;
-    });
-  }, []);
+      setParams(next);
+      scheduleParamsToHost(next);
+    },
+    [scheduleParamsToHost],
+  );
+
+  const setParam = useCallback(
+    (name: string, value: unknown) => {
+      setParams((prev) => {
+        const next = { ...prev, [name]: value };
+        setError(null);
+        scheduleParamsToHost(next);
+        return next;
+      });
+    },
+    [scheduleParamsToHost],
+  );
 
   /** M5a: restore getDefaultParams() bag and push to host (live, no remount). */
   const resetParams = useCallback(() => {
@@ -337,6 +375,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     setError(null);
     setBusy(true);
     try {
+      flushPendingParamsNow();
       const host = hostRef.current;
       if (!host) throw new Error("Host not ready");
       await waitForPaintFrames();
@@ -359,7 +398,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     } finally {
       setBusy(false);
     }
-  }, [applyCaptureResult]);
+  }, [applyCaptureResult, flushPendingParamsNow]);
 
   /**
    * M8c — captureFrame → PNG blob → upload kind=thumb for gallery.
@@ -370,6 +409,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       setError(null);
       setBusy(true);
       try {
+        flushPendingParamsNow();
         const host = hostRef.current;
         if (!host?.isReady()) {
           throw new Error("Host not ready — wait until the tool is live");
@@ -422,7 +462,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
         setBusy(false);
       }
     },
-    [applyCaptureResult],
+    [applyCaptureResult, flushPendingParamsNow],
   );
 
   /**
@@ -436,6 +476,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       setError(null);
       setBusy(true);
       try {
+        flushPendingParamsNow();
         const host = hostRef.current;
         if (!host?.isReady()) {
           throw new Error("Host not ready — wait until the tool is live");
@@ -476,10 +517,11 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
         setBusy(false);
       }
     },
-    [applyCaptureResult],
+    [applyCaptureResult, flushPendingParamsNow],
   );
 
   const captureOnePngBlob = useCallback(async (): Promise<Blob> => {
+    flushPendingParamsNow();
     const host = hostRef.current;
     if (!host?.isReady()) {
       throw new Error("Host not ready — wait until the tool is live");
@@ -492,7 +534,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       throw new Error("PNG blob empty — possible tainted canvas");
     }
     return blob;
-  }, []);
+  }, [flushPendingParamsNow]);
 
   /**
    * M7c — sample PNG frames over ~durationSeconds, download as ZIP.
@@ -581,6 +623,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
 
       setBusy(true);
       setRecordSecondsLeft(seconds);
+      flushPendingParamsNow();
 
       const tick = window.setInterval(() => {
         setRecordSecondsLeft((prev) => {
@@ -644,7 +687,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
         }
       }
     },
-    [downloadPngSequence],
+    [downloadPngSequence, flushPendingParamsNow],
   );
 
   const proveRealAssetCapture = useCallback(async () => {
@@ -697,6 +740,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     setError(null);
     setBusy(true);
     try {
+      flushPendingParamsNow();
       const host = hostRef.current;
       if (!host) return;
       const opts = hydrateOptsRef.current;
@@ -730,7 +774,7 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
     } finally {
       setBusy(false);
     }
-  }, [params, resolveModuleSource]);
+  }, [params, resolveModuleSource, flushPendingParamsNow]);
 
   return {
     hostRef,

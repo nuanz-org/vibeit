@@ -59,6 +59,26 @@ GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
         target="canvas2d",
     ),
     GoldenEntry(
+        id="neon-trail",
+        path=_DIR / "neon-trail.ts",
+        tags=frozenset(
+            {
+                "glow",
+                "trail",
+                "neon",
+                "loop",
+                "logo",
+                "kinetic",
+                "infinity",
+                "bloom",
+                "lemniscate",
+                "motion",
+            }
+        ),
+        description="Efficient neon trail (single-path multi-width glow, no per-segment blur)",
+        target="canvas2d",
+    ),
+    GoldenEntry(
         id="gradient-poster",
         path=_DIR / "gradient-poster.ts",
         tags=frozenset(

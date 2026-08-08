@@ -21,6 +21,10 @@ export type P5Aspect = "1:1" | "9:16" | "16:9" | "4:5";
 export interface P5HarnessOptions {
   aspect?: P5Aspect | string;
   autoDpr?: boolean;
+  /**
+   * Cap on devicePixelRatio when autoDpr is on. Default **2**.
+   */
+  maxDpr?: number;
 }
 
 /** p5-flavored draw context (Canvas2D-backed stub). */
@@ -84,6 +88,10 @@ export function createP5Tool(
 ): VibeTool {
   const aspect = options.aspect ?? "1:1";
   const autoDpr = options.autoDpr !== false;
+  const maxDpr = Math.max(
+    1,
+    Number.isFinite(options.maxDpr as number) ? Number(options.maxDpr) : 2,
+  );
 
   let root: HTMLElement | null = null;
   let canvas: HTMLCanvasElement | null = null;
@@ -188,7 +196,7 @@ export function createP5Tool(
     } else if (rect.width > 0 && rect.height <= 1) {
       cssH = Math.max(1, Math.round((cssW * ar.h) / ar.w));
     }
-    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, 3) : 1;
+    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, maxDpr) : 1;
     width = cssW;
     height = cssH;
     canvas.style.width = `${cssW}px`;

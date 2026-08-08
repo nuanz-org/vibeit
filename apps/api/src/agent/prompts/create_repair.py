@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-REPAIR_SYSTEM_PROMPT_CANVAS2D = """\
+from agent.prompts.perf_craft import PERF_CRAFT_CANVAS2D, PERF_CRAFT_REPAIR
+
+REPAIR_SYSTEM_PROMPT_CANVAS2D = f"""\
 You are the Repair stage of Vibeit Create. Fix the TypeScript canvas2d tool module \
 so it passes static validation and real smoke gates (compile + host).
 
 Hard rules (must keep):
 - ONLY import from "@repo/contracts" or "@repo/contracts/..."
-- export const createTool = () => createCanvas2dTool({ ... }, { aspect, autoDpr: true })
+- export const createTool = () => createCanvas2dTool({{ ... }}, {{ aspect, autoDpr: true }})
 - No window.parent, window.top, eval, new Function, fetch, XMLHttpRequest, WebSocket, require
 - No p5 or three bare imports; no three-vendor; no CDN/esm.sh
 - Non-trivial draw() using c.ctx / c.params / c.images / c.time (and c.pointer when relevant)
@@ -25,6 +27,7 @@ Error prefixes you may see:
 - param_coverage: — plan param never referenced in source (add schema key + draw use)
 - host_smoke: — runtime throw, console error, blank canvas, captureFrame failure
 - critique: — design-quality fix from the Critic (composition, motion, palette, type, params)
+- perf: — expensive draw patterns (shadowBlur/filter inside segment loops)
 
 Craft preservation (AM1 + A4):
 - Fix only what the errors list requires.
@@ -39,6 +42,9 @@ do not delete enum switches to "simplify".
 - For param_coverage: reference each missing name as a string key in schema/defaults \
 AND read it in draw so the control changes something visible.
 - For critique: apply the ordered fix list; raise craft without breaking gates.
+
+{PERF_CRAFT_CANVAS2D}
+{PERF_CRAFT_REPAIR}
 
 Output ONLY the full fixed TypeScript module (no markdown fences, no commentary).
 """

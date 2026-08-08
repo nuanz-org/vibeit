@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from agent.prompts.perf_craft import PERF_CRAFT_CANVAS2D, PERF_CRAFT_LIGHT
+
 _HARD_RULES = """\
 Hard rules (fail if violated):
 - ONLY import from "@repo/contracts" or "@repo/contracts/..."
@@ -45,7 +47,7 @@ Required shape:
 ```ts
 import {{ createCanvas2dTool }} from "@repo/contracts/skeletons/canvas2d";
 // Optional helpers when the plan needs them:
-// import {{ drawImageCover, drawImageContain }} from "@repo/contracts/skeletons/canvas2d";
+// import {{ drawImageCover, drawImageContain, strokeSoftGlow, fillSoftDisc }} from "@repo/contracts/skeletons/canvas2d";
 
 export const createTool = () =>
   createCanvas2dTool(
@@ -70,11 +72,14 @@ Craft guidance (AM1):
 - Motion: prefer smooth sine / ease-out over linear; honor motionSpec when present.
 - If exemplars are provided, learn composition from them — do NOT copy titles/literals blindly.
 
+{PERF_CRAFT_CANVAS2D}
+
 {_MULTI_AXIS}
 
 Pointer / image helpers (when interactive or image slots):
 - `c.pointer` = {{ x, y, isOver }} in CSS px — use for proximity, spotlight, distortion falloff.
 - Prefer `drawImageCover(ctx, img, x, y, w, h)` / `drawImageContain` over manual drawImage scaling.
+- Prefer `strokeSoftGlow` / `fillSoftDisc` for neon trails and head flares (no per-segment shadowBlur).
 - Do not attach your own pointer listeners — harness owns them.
 
 Match param schema names and asset slot ids from the plan JSON exactly.
@@ -134,6 +139,8 @@ Craft guidance (AM1 + B4 three):
 - PaletteRoles: map bg → setBackground; accent → material color; ink → emissive/rim light.
 - If exemplars are provided, match three craft quality — adapt, do not copy literals blindly.
 
+{PERF_CRAFT_LIGHT}
+
 {_MULTI_AXIS}
 
 Match param schema names and asset slot ids from the plan JSON exactly.
@@ -164,6 +171,8 @@ export const createTool = () =>
 
 {_HARD_RULES}
 - p5: createP5Tool from @repo/contracts/skeletons/p5; draw(p) with p.background/fill/ellipse/text
+
+{PERF_CRAFT_LIGHT}
 
 {_MULTI_AXIS}
 

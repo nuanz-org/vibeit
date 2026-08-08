@@ -12,6 +12,8 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from agent.validators.perf_lint import lint_draw_performance
+
 TargetId = Literal["canvas2d", "p5", "three"]
 
 # Patterns that must never appear in creative / tool iframe code.
@@ -134,6 +136,10 @@ def static_validate_tool_source(
 
     if not _has_draw_surface(text):
         errors.append("missing draw() or mount() surface for tool")
+
+    # Canvas draw cost anti-patterns (repair sees `perf:` prefix)
+    if tgt in ("canvas2d", "p5"):
+        errors.extend(lint_draw_performance(text))
 
     # Target-specific wrong-API checks
     if tgt == "canvas2d":

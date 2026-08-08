@@ -80,7 +80,12 @@ Art direction:
 - Motion: specify easing + tempo + loop. Prefer smooth sine / ease-out over linear.
 - Type: hierarchy (display vs caption). One hero message.
 - Tags: 1–3 that match concept (kinetic-type, particles, gradient, poster, logo, loop, \
-parametric, interaction, card, three, material, cube, mesh).
+parametric, interaction, card, three, material, cube, mesh, glow, trail, neon).
+
+Performance-aware plan defaults:
+- Particle / density number params: default ≤ 48, max ≤ 100 (not 200+).
+- Glow / intensity params: default mid-range (~0.5–0.85); max ≤ 1.5.
+- Describe glow as soft multi-pass look — codegen must not rely on per-segment shadowBlur.
 
 Param density & multi-axis (A4 — critical):
 - Simple stills/posters: **3–6** params is fine.

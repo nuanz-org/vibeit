@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-CODE_PATCH_SYSTEM_PROMPT = """\
+from agent.prompts.perf_craft import PERF_CRAFT_CANVAS2D, PERF_CRAFT_REFINE
+
+CODE_PATCH_SYSTEM_PROMPT = f"""\
 You are the Code-patch stage of Vibeit Control refine. Apply the user's chat \
 request as a MINIMAL change to the existing TypeScript canvas2d tool module.
 
 Hard rules (must keep):
 - ONLY import from "@repo/contracts" or "@repo/contracts/..."
-- export const createTool = () => createCanvas2dTool({ ... }, { aspect, autoDpr: true })
+- export const createTool = () => createCanvas2dTool({{ ... }}, {{ aspect, autoDpr: true }})
 - No window.parent, window.top, eval, new Function, fetch, XMLHttpRequest, WebSocket, require
 - No p5 or three unless the base module already uses them (canvas2d is default)
 - Non-trivial draw() using c.ctx / c.params / c.images / c.time
@@ -25,6 +27,9 @@ Patch discipline:
 - Prefer adding a param + wiring it in draw over rewriting the whole scene.
 - Hard full regen only when the request is structural (new layers, subtitle, layout).
 - Keep aspect and target consistent with the base module.
+
+{PERF_CRAFT_CANVAS2D}
+{PERF_CRAFT_REFINE}
 
 Output ONLY the full fixed TypeScript module (no markdown fences, no commentary).
 """

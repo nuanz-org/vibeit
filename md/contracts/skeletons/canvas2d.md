@@ -68,6 +68,15 @@ Helpers exported from the same module:
 |--------|---------|
 | `drawImageCover(ctx, img, x, y, w, h)` | Object-fit cover draw |
 | `drawImageContain(ctx, img, x, y, w, h)` | Object-fit contain draw |
+| `strokeSoftGlow(ctx, path, opts)` | Neon multi-width alpha strokes (**no** `shadowBlur`) |
+| `fillSoftDisc(ctx, x, y, r, color, opts?)` | Soft radial head/spark disc without blur |
+
+### Performance craft (codegen + hand tools)
+
+- Cap backing store with harness `maxDpr` (default **2** when `autoDpr` is on).
+- Prefer **one path + `strokeSoftGlow`** for trails; never `shadowBlur` inside per-segment loops.
+- Particle defaults ≤ 48 (max ≤ 100); trail samples ~40–80.
+- Drive glow via alpha/width, not segment count × blur.
 
 Do **not** start your own `requestAnimationFrame` loop or attach document-level pointer listeners — use `c.pointer` each frame.
 

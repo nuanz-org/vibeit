@@ -38,6 +38,11 @@ export interface Canvas2dHarnessOptions {
   aspect?: Canvas2dAspect | string;
   /** Scale backing store by devicePixelRatio (default true). */
   autoDpr?: boolean;
+  /**
+   * Cap on devicePixelRatio when autoDpr is on. Default **2** (was effective 3).
+   * Lower = less GPU fill cost on retina; export still sharp enough for Studio.
+   */
+  maxDpr?: number;
 }
 
 /**
@@ -154,6 +159,89 @@ export function drawImageContain(
   ctx.drawImage(img, dx, dy, dw, dh);
 }
 
+export type SoftGlowStrokeOpts = {
+  /** Core stroke color (CSS). */
+  color: string;
+  /** Core line width in CSS px. */
+  lineWidth: number;
+  /** Glow strength 0–1+ (scales outer widths + alpha). Default 0.85. */
+  intensity?: number;
+  /** Number of width layers including core. Default 3. */
+  layers?: number;
+  /** lineCap for all layers. Default "round". */
+  lineCap?: CanvasLineCap;
+  /** lineJoin for all layers. Default "round". */
+  lineJoin?: CanvasLineJoin;
+  /** Optional composite for the whole glow group (e.g. "lighter"). */
+  composite?: GlobalCompositeOperation;
+};
+
+/**
+ * Neon-style glow via multi-width alpha strokes — **no shadowBlur**.
+ * Call after building a path (`beginPath`…`lineTo`… or `Path2D`).
+ * Prefer this over per-segment `shadowBlur` loops (huge canvas2d cost).
+ */
+export function strokeSoftGlow(
+  ctx: CanvasRenderingContext2D,
+  path: Path2D | null | undefined,
+  opts: SoftGlowStrokeOpts,
+): void {
+  const intensity = Math.max(0, Number(opts.intensity ?? 0.85));
+  const layers = Math.max(1, Math.min(5, Math.floor(opts.layers ?? 3)));
+  const coreW = Math.max(0.5, opts.lineWidth);
+  const lineCap = opts.lineCap ?? "round";
+  const lineJoin = opts.lineJoin ?? "round";
+
+  ctx.save();
+  if (opts.composite) {
+    ctx.globalCompositeOperation = opts.composite;
+  }
+  ctx.strokeStyle = opts.color;
+  ctx.lineCap = lineCap;
+  ctx.lineJoin = lineJoin;
+
+  // Outer soft layers first, core last.
+  for (let i = layers - 1; i >= 0; i -= 1) {
+    const t = layers === 1 ? 1 : 1 - i / (layers - 1); // 0 outer → 1 core
+    const widthMult = 1 + (1 - t) * 2.4 * intensity;
+    const alpha = (0.12 + 0.88 * Math.pow(t, 1.4)) * Math.min(1.2, intensity);
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.lineWidth = coreW * widthMult;
+    if (path) ctx.stroke(path);
+    else ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/**
+ * Soft radial disc (head flare / spark) without shadowBlur.
+ */
+export function fillSoftDisc(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  color: string,
+  opts?: { alpha?: number; composite?: GlobalCompositeOperation },
+): void {
+  const r = Math.max(0.5, radius);
+  const alpha = Math.min(1, Math.max(0, opts?.alpha ?? 1));
+  ctx.save();
+  if (opts?.composite) {
+    ctx.globalCompositeOperation = opts.composite;
+  }
+  ctx.globalAlpha = alpha;
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+  grad.addColorStop(0, color);
+  grad.addColorStop(0.45, color);
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
 // Creative fill contract (what the model / hand author implements)
 // ---------------------------------------------------------------------------
@@ -246,6 +334,10 @@ export function createCanvas2dTool(
 ): VibeTool {
   const aspect = options.aspect ?? "1:1";
   const autoDpr = options.autoDpr !== false;
+  const maxDpr = Math.max(
+    1,
+    Number.isFinite(options.maxDpr as number) ? Number(options.maxDpr) : 2,
+  );
 
   let root: HTMLElement | null = null;
   let canvas: HTMLCanvasElement | null = null;
@@ -355,7 +447,7 @@ export function createCanvas2dTool(
       cssW = Math.max(1, Math.round((cssH * aspectRatio.w) / aspectRatio.h));
     }
 
-    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, 3) : 1;
+    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, maxDpr) : 1;
     width = cssW;
     height = cssH;
 

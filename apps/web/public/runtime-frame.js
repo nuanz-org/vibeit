@@ -114,6 +114,10 @@ function parseAspect(aspect) {
 function createCanvas2dTool(creative, options = {}) {
   const aspect = options.aspect ?? "1:1";
   const autoDpr = options.autoDpr !== false;
+  const maxDpr = Math.max(
+    1,
+    Number.isFinite(options.maxDpr) ? Number(options.maxDpr) : 2
+  );
   let root2 = null;
   let canvas = null;
   let ctx = null;
@@ -211,7 +215,7 @@ function createCanvas2dTool(creative, options = {}) {
     } else if (rect.height > 0 && rect.width <= 1) {
       cssW = Math.max(1, Math.round(cssH * aspectRatio.w / aspectRatio.h));
     }
-    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, 3) : 1;
+    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, maxDpr) : 1;
     width = cssW;
     height = cssH;
     canvas.style.width = `${cssW}px`;

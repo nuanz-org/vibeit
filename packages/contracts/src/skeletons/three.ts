@@ -34,6 +34,10 @@ export interface ThreeHarnessOptions {
   aspect?: ThreeAspect | string;
   autoDpr?: boolean;
   /**
+   * Cap on devicePixelRatio when autoDpr is on. Default **2**.
+   */
+  maxDpr?: number;
+  /**
    * Vertical FOV for the default PerspectiveCamera (degrees). Default 45.
    */
   fov?: number;
@@ -124,6 +128,10 @@ export function createThreeTool(
 ): VibeTool {
   const aspect = options.aspect ?? "1:1";
   const autoDpr = options.autoDpr !== false;
+  const maxDpr = Math.max(
+    1,
+    Number.isFinite(options.maxDpr as number) ? Number(options.maxDpr) : 2,
+  );
   const autoRender = options.autoRender !== false;
   const fov = options.fov ?? 45;
 
@@ -235,7 +243,7 @@ export function createThreeTool(
       cssW = 360;
       cssH = Math.max(1, Math.round((360 * ar.h) / ar.w));
     }
-    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, 3) : 1;
+    dpr = autoDpr ? Math.min(window.devicePixelRatio || 1, maxDpr) : 1;
     width = cssW;
     height = cssH;
     canvas.style.width = `${cssW}px`;

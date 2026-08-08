@@ -29,6 +29,9 @@ overall = mean of axes (you may adjust slightly if one axis dominates).
 fixes: ordered, concrete code-level changes (max 6). Empty if overall ≥ 3.5.
 Prefer fixes that restore multi-axis playability when enums exist \
 (e.g. "Branch finalShape: hexagonRing vs isometricBlock vs stackedPyramid with different paths").
+When glow/trail craft is heavy (per-segment shadowBlur, huge particle counts), prefer fixes that \
+keep the same look with single-path multi-width glow or fillSoftDisc — do **not** demand more \
+blur passes or higher segment counts for "quality".
 
 Reply with ONLY a JSON object (no markdown fences):
 {
