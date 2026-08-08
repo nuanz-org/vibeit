@@ -5,12 +5,12 @@ import type { JobStatusResponse } from "@/lib/api/jobs";
 import styles from "../styles.module.css";
 
 const PHASE_LABEL: Record<string, string> = {
+  clarify: "Clarifying",
   plan: "Planning",
   codegen: "Generating code",
   validate: "Validating",
   repair: "Repairing",
 };
-
 export function JobProgress({
   status,
   jobId,
@@ -55,11 +55,12 @@ export function JobProgress({
                 ? "100%"
                 : st === "failed"
                   ? "100%"
-                  : st === "running"
-                    ? "60%"
-                    : "20%",
-            opacity: st === "failed" ? 0.45 : 1,
-          }}
+                  : st === "awaiting_clarify"
+                    ? "40%"
+                    : st === "running"
+                      ? "60%"
+                      : "20%",
+            opacity: st === "failed" ? 0.45 : 1,          }}
         />
       </div>
     </div>

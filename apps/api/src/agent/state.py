@@ -10,6 +10,7 @@ from typing import Any, Literal, NotRequired, TypedDict
 
 JobPhase = Literal[
     "ingest",
+    "clarify",
     "plan",
     "codegen",
     "validate",
@@ -18,7 +19,6 @@ JobPhase = Literal[
     "repair",
     "finalize",
 ]
-
 # AM7 — Control refine patch mode
 PatchMode = Literal["param", "code"]
 JobKind = Literal["create", "refine"]
@@ -32,6 +32,12 @@ class CreateGraphState(TypedDict, total=False):
     # When True, skip LLM and use injected/fixture code (M3c)
     use_fixture_code: bool
     fixture_name: NotRequired[str]
+
+    # A3 planMode clarify
+    plan_mode: NotRequired[bool]
+    clarify_result: NotRequired[dict[str, Any] | None]
+    clarify_payload: NotRequired[dict[str, Any] | None]
+    clarify_questions: NotRequired[list[dict[str, Any]]]
 
     # AM5 — inspiration style conditioning
     inspiration_asset_ids: NotRequired[list[str]]
@@ -120,6 +126,8 @@ def initial_create_state(
     tool_id: str | None = None,
     inspiration_asset_ids: list[str] | None = None,
     inspiration_images: list[dict[str, Any]] | None = None,
+    plan_mode: bool = False,
+    clarify_result: dict[str, Any] | None = None,
 ) -> CreateGraphState:
     return CreateGraphState(
         vision_text=vision_text,
@@ -129,6 +137,8 @@ def initial_create_state(
         inspiration_images=list(inspiration_images or []),
         style_notes=None,
         style_extract_ok=False,
+        plan_mode=plan_mode,
+        clarify_result=clarify_result,
         plan=None,
         code=code,
         target="canvas2d",
@@ -148,7 +158,6 @@ def initial_create_state(
         llm_tokens_used=0,
         job_kind="create",
     )
-
 
 def initial_refine_state(
     *,

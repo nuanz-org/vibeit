@@ -61,7 +61,7 @@ export type {
   ToolPlan,
 } from "./plan";
 
-// M0e — Job API shapes
+// M0e + A3 — Job API shapes (incl. planMode clarify)
 export {
   GENERATION_JOB_COLUMN_MAP,
   JOB_API_ROUTE_SKETCH,
@@ -69,12 +69,21 @@ export {
   JOB_ERROR_CODE_MEANING,
   JOB_PHASES,
   JOB_STATUSES,
+  isJobPollPaused,
   isTerminalJobStatus,
   jobMayBecomePublished,
 } from "./job-api";
 export type {
+  ClarifyAnswerValue,
+  ClarifyForcedEnum,
+  ClarifyJobRequest,
+  ClarifyJobResponse,
+  ClarifyOption,
+  ClarifyQuestion,
+  ClarifyResult,
   CreateJobRequest,
   CreateJobResponse,
+  JobClarifyState,
   JobErrorBody,
   JobErrorCode,
   JobPhase,
@@ -85,7 +94,6 @@ export type {
   RepairBudgetFields,
   TerminalJobStatus,
 } from "./job-api";
-
 // M0f — Capture + CORS provisional policy
 export {
   ASSET_CROSS_ORIGIN,

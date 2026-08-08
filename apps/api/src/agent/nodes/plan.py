@@ -6,6 +6,7 @@ from typing import Any
 
 from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
 from adapters.llm.router import resolve_model_for_role
+from agent.clarify_parse import merge_forced_enums_into_plan
 from agent.plan_parse import PlanParseError, parse_asap_plan
 from agent.prompts.create_plan import PLAN_SYSTEM_PROMPT, plan_user_prompt
 from agent.state import CreateGraphState
@@ -15,6 +16,7 @@ from core.config import get_settings
 async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any]:
     """
     Call LLM for plan JSON. On fixture path, synthesize a tiny plan without LLM.
+    A3: inject clarify transcript + merge forcedEnums into params after parse.
     """
     if state.get("use_fixture_code"):
         return {
@@ -35,14 +37,22 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
     style_notes = (
         state.get("style_notes") if isinstance(state.get("style_notes"), dict) else None
     )
+    clarify_result = (
+        state.get("clarify_result")
+        if isinstance(state.get("clarify_result"), dict)
+        else None
+    )
     base_messages = [
         ChatMessage(role="system", content=PLAN_SYSTEM_PROMPT),
         ChatMessage(
             role="user",
-            content=plan_user_prompt(vision, style_notes=style_notes),
+            content=plan_user_prompt(
+                vision,
+                style_notes=style_notes,
+                clarify_result=clarify_result,
+            ),
         ),
     ]
-
     last_err: str | None = None
     last_raw = ""
     tokens = int(state.get("llm_tokens_used") or 0)
@@ -74,6 +84,11 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
             )
             last_raw = completion.text
             plan = parse_asap_plan(completion.text)
+            # A3: hard-merge forced enums so axes survive plan LLM collapse
+            if clarify_result:
+                forced = clarify_result.get("forcedEnums")
+                if isinstance(forced, list) and forced:
+                    plan = merge_forced_enums_into_plan(plan, forced)
             tokens += completion.usage.total_tokens
             tgt = plan.get("target") if isinstance(plan.get("target"), str) else "canvas2d"
             return {

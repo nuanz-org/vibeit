@@ -20,6 +20,8 @@ from core.config import get_settings
 from core.deps import get_jobs_repo, get_tools_repo
 from core.security import get_current_user
 from schemas.jobs import (
+    ClarifyJobRequest,
+    ClarifyJobResponse,
     CreateJobRequest,
     CreateJobResponse,
     JobErrorBody,
@@ -27,6 +29,11 @@ from schemas.jobs import (
     JobStatusResponse,
     QuotaFields,
     RepairBudgetFields,
+)
+from services.clarify_job import (
+    ClarifyNotReadyError,
+    ClarifyValidationError,
+    submit_clarify_answers,
 )
 from services.create_job import (
     JobNotFoundError,
@@ -41,7 +48,6 @@ from services.create_job import (
 )
 from services.quota import get_quota_snapshot, quota_to_wire
 from workers.generation import run_generation_job
-
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
@@ -85,6 +91,7 @@ async def create_job(
             vision_text=body.vision_text,
             inspiration_asset_ids=body.inspiration_asset_ids,
             llm_model=llm_model,
+            plan_mode=bool(body.plan_mode),
             tools=tools,
             jobs=jobs,
             settings=settings,
@@ -127,6 +134,7 @@ async def create_job(
         status=job.status,  # type: ignore[arg-type]
         created_at=_utc_iso(job.created_at),
         user_id=user.id,
+        plan_mode=bool(job.plan_mode),
         quota=QuotaFields(**quota_to_wire(result.quota)),
     )
 
@@ -172,6 +180,71 @@ async def get_job_status(
         quota=QuotaFields(**quota_raw) if quota_raw else None,
     )
 
+
+@router.post(
+    "/{job_id}/clarify",
+    response_model=ClarifyJobResponse,
+    summary="Submit planMode clarify answers (A3)",
+)
+async def post_job_clarify(
+    job_id: str,
+    body: ClarifyJobRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user: AuthUser = Depends(get_current_user),
+    jobs: JobsRepository = Depends(get_jobs_repo),
+) -> ClarifyJobResponse:
+    """
+    Fold answers into forced enum axes and re-queue the job for build.
+    Only valid when status is awaiting_clarify.
+    """
+    settings = get_settings()
+    try:
+        job = await submit_clarify_answers(
+            job_id=job_id,
+            owner_user_id=user.id,
+            answers=body.answers,
+            jobs=jobs,
+            build_now=bool(body.build_now),
+        )
+    except JobNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        ) from exc
+    except ClarifyNotReadyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    except ClarifyValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    if (
+        body.build_now
+        and job.status == "queued"
+        and settings.create_worker_enabled
+        and settings.openrouter_api_key
+    ):
+        pool = getattr(request.app.state, "db_pool", None)
+        if pool is not None:
+            background_tasks.add_task(
+                run_generation_job,
+                str(job.id),
+                pool=pool,
+                settings=settings,
+            )
+
+    clarify = job.clarify if isinstance(job.clarify, dict) else None
+    return ClarifyJobResponse(
+        job_id=str(job.id),
+        status=job.status,  # type: ignore[arg-type]
+        clarify=clarify,
+        updated_at=_utc_iso(job.updated_at),
+    )
 
 @router.get(
     "/{job_id}/result",

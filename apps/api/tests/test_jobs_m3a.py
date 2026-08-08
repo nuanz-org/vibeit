@@ -31,6 +31,9 @@ def test_illegal_transitions() -> None:
     assert_job_transition("queued", "running")
     assert_job_transition("running", "succeeded")
     assert_job_transition("running", "failed")
+    # A3 clarify pause
+    assert_job_transition("running", "awaiting_clarify")
+    assert_job_transition("awaiting_clarify", "queued")
     try:
         assert_job_transition("succeeded", "running")
         raise AssertionError("expected IllegalJobTransition")
@@ -41,7 +44,11 @@ def test_illegal_transitions() -> None:
         raise AssertionError("expected IllegalJobTransition")
     except IllegalJobTransition:
         pass
-
+    try:
+        assert_job_transition("awaiting_clarify", "succeeded")
+        raise AssertionError("expected IllegalJobTransition")
+    except IllegalJobTransition:
+        pass
 
 def test_create_job_unauthorized() -> None:
     app.dependency_overrides[get_db_pool] = lambda: object()

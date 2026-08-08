@@ -116,6 +116,19 @@ def job_from_record(row: Any) -> GenerationJobRow:
             llm_model = str(raw_model).strip() or None
     except (KeyError, TypeError):
         llm_model = None
+    # 008_job_clarify
+    plan_mode = False
+    try:
+        plan_mode = bool(row["plan_mode"])
+    except (KeyError, TypeError):
+        plan_mode = False
+    clarify: Any = {}
+    try:
+        clarify = _json_value(row["clarify"]) or {}
+    except (KeyError, TypeError):
+        clarify = {}
+    if not isinstance(clarify, dict):
+        clarify = {}
     return GenerationJobRow(
         id=row["id"],
         owner_user_id=str(row["owner_user_id"]),
@@ -136,8 +149,9 @@ def job_from_record(row: Any) -> GenerationJobRow:
         job_kind=job_kind,
         base_version_id=base_version_id,
         llm_model=llm_model,
+        plan_mode=plan_mode,
+        clarify=clarify,
     )
-
 
 def asset_from_record(row: Any) -> AssetRow:
     return AssetRow(

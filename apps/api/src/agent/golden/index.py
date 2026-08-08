@@ -74,6 +74,55 @@ GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
         description="Full-bleed gradient poster with type hierarchy",
         target="canvas2d",
     ),
+    # A5 — Brik-class craft exemplars
+    GoldenEntry(
+        id="proximity-pixel-card",
+        path=_DIR / "proximity-pixel-card.ts",
+        tags=frozenset(
+            {
+                "card",
+                "proximity",
+                "pixel",
+                "pixelation",
+                "distortion",
+                "interaction",
+                "pointer",
+                "hover",
+                "image",
+                "photo",
+                "parametric",
+            }
+        ),
+        description=(
+            "Proximity card: pointer falloff → pixelation/warp, image cover, "
+            "grouped Content/Distortion/Interaction/Card controls"
+        ),
+        target="canvas2d",
+    ),
+    GoldenEntry(
+        id="kinetic-logo-2d",
+        path=_DIR / "kinetic-logo-2d.ts",
+        tags=frozenset(
+            {
+                "logo",
+                "loop",
+                "parametric",
+                "kinetic",
+                "isometric",
+                "cube",
+                "enum",
+                "shape",
+                "assembly",
+                "material",
+                "wordmark",
+            }
+        ),
+        description=(
+            "Kinetic logo 2d: shape × assembly × material enums, "
+            "normalized loop phase, isometric/flat multi-variant branches"
+        ),
+        target="canvas2d",
+    ),
     GoldenEntry(
         id="p5-orbit",
         path=_DIR / "p5-orbit.ts",

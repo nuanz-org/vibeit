@@ -1,13 +1,19 @@
 /**
- * Job API shapes (M0e).
+ * Job API shapes (M0e + A3 planMode clarify).
  *
  * Create-job / status / result / error / quota DTOs for M1a stubs and M3 worker.
  * TS is source of truth; Python Pydantic mirrors can land with M1a.
  *
- * Status machine: queued → running → succeeded | failed
+ * Status machine:
+ * ```
+ * queued → running → succeeded
+ *                  ↘ failed
+ *                  ↘ awaiting_clarify → queued  (planMode answers → resume build)
+ * ```
  * Invariant: failed never becomes ready/published.
  *
  * Transport MVP: client polls GET status (SSE optional later).
+ * Pause at `awaiting_clarify` until POST /jobs/:id/clarify.
  *
  * Docs: md/contracts/job-api.md
  */
@@ -19,30 +25,46 @@ import type { TargetId } from "./targets";
 // ---------------------------------------------------------------------------
 
 /**
- * Terminal-aware job lifecycle.
+ * Terminal-aware job lifecycle (+ A3 clarify pause).
  *
  * ```
  * queued → running → succeeded
  *                  ↘ failed
+ *                  ↘ awaiting_clarify → queued → running → …
  * ```
  *
  * Invariant: **`failed` never becomes ready/published.**
  * Only `succeeded` may attach a publishable tool version.
+ * `awaiting_clarify` is a **pause** (not terminal): worker stopped; user answers.
  */
-export type JobStatus = "queued" | "running" | "succeeded" | "failed";
+export type JobStatus =
+  | "queued"
+  | "running"
+  | "awaiting_clarify"
+  | "succeeded"
+  | "failed";
 
 export const JOB_STATUSES = [
   "queued",
   "running",
+  "awaiting_clarify",
   "succeeded",
   "failed",
 ] as const satisfies readonly JobStatus[];
 
-/** Terminal states (no further worker progress). */
+/** Terminal states (no further worker progress without a new job). */
 export type TerminalJobStatus = "succeeded" | "failed";
 
 export function isTerminalJobStatus(status: JobStatus): status is TerminalJobStatus {
   return status === "succeeded" || status === "failed";
+}
+
+/**
+ * Whether the client should stop auto-polling (terminal or needs user input).
+ * Resume polling after POST clarify re-queues the job.
+ */
+export function isJobPollPaused(status: JobStatus): boolean {
+  return isTerminalJobStatus(status) || status === "awaiting_clarify";
 }
 
 /**
@@ -55,17 +77,17 @@ export function jobMayBecomePublished(status: JobStatus): boolean {
 
 /**
  * Coarse worker phase while `status === "running"` (optional on poll).
- * Aligns with Create graph stages (M3).
+ * Aligns with Create graph stages (M3). A3 adds `clarify`.
  */
-export type JobPhase = "plan" | "codegen" | "validate" | "repair";
+export type JobPhase = "clarify" | "plan" | "codegen" | "validate" | "repair";
 
 export const JOB_PHASES = [
+  "clarify",
   "plan",
   "codegen",
   "validate",
   "repair",
 ] as const satisfies readonly JobPhase[];
-
 // ---------------------------------------------------------------------------
 // Error codes (provisional — extend later, do not bikeshed)
 // ---------------------------------------------------------------------------
@@ -149,6 +171,11 @@ export interface CreateJobRequest {
    * Must be in the server's LLM_MODELS_ALLOWED menu.
    */
   model?: string;
+  /**
+   * A3: when true, worker runs clarify first and pauses at `awaiting_clarify`
+   * with questions. Default false keeps single-shot Create.
+   */
+  planMode?: boolean;
 }
 
 /** Immediate accept of a create job (usually status `queued`). */
@@ -159,10 +186,100 @@ export interface CreateJobResponse {
   createdAt: string;
   /** Echo quota after accept when available. */
   quota?: QuotaFields;
+  /** Echo of planMode request flag. */
+  planMode?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// A3 — Clarify (planMode)
+// ---------------------------------------------------------------------------
+
+/** One option on a clarify question chip. */
+export interface ClarifyOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+/** Agent-proposed question shown in Create UI. */
+export interface ClarifyQuestion {
+  /** Stable id (also preferred param name when axis). */
+  id: string;
+  prompt: string;
+  options: ClarifyOption[];
+  /** Allow multi-select answers. */
+  multiSelect?: boolean;
+  /** Offer "All options" → full enum param. Default true when options ≥ 2. */
+  allowAllOptions?: boolean;
+  /** Optional group label for Studio (e.g. "Shape", "Material"). */
+  group?: string;
 }
 
 /**
- * GET job status — poll until terminal.
+ * Answer value for one question id.
+ * - string: single option value or free text
+ * - string[]: multi-select values
+ * - { type: "all_options" }: expose full option list as enum
+ */
+export type ClarifyAnswerValue =
+  | string
+  | string[]
+  | { type: "all_options" };
+
+/** Forced enum axis derived from clarify answers (fed into plan). */
+export interface ClarifyForcedEnum {
+  name: string;
+  label: string;
+  options: Array<{ value: string; label: string }>;
+  default: string;
+  group?: string;
+  sourceQuestionId: string;
+}
+
+/** Structured outcome after answers are normalized. */
+export interface ClarifyResult {
+  /** Human-readable Q&A transcript for plan/codegen. */
+  transcript: string;
+  /** Enum params the plan **must** include (do not collapse). */
+  forcedEnums: ClarifyForcedEnum[];
+  /** Single-choice / free-text notes locked into the brief. */
+  lockedNotes: string[];
+  /** Optional one-line summary for "Build it" UI. */
+  summary?: string;
+}
+
+/** Persisted + polled clarify bag on the job. */
+export interface JobClarifyState {
+  understanding?: string;
+  questions?: ClarifyQuestion[];
+  /** Raw answers as submitted (before/after normalize). */
+  answers?: Record<string, ClarifyAnswerValue>;
+  result?: ClarifyResult;
+  /** True when user submitted answers and build may proceed. */
+  answered?: boolean;
+}
+
+/**
+ * POST /jobs/:jobId/clarify — submit answers and resume build.
+ */
+export interface ClarifyJobRequest {
+  answers: Record<string, ClarifyAnswerValue>;
+  /**
+   * When true (default), re-queue the job for plan → codegen after normalize.
+   * When false, store answers only (future approval step).
+   */
+  buildNow?: boolean;
+}
+
+export interface ClarifyJobResponse {
+  jobId: string;
+  status: JobStatus;
+  clarify?: JobClarifyState;
+  updatedAt?: string;
+}
+
+/**
+ * GET job status — poll until terminal or awaiting_clarify.
  * SSE is optional later; MVP is refetchInterval polling.
  */
 export interface JobStatusResponse {
@@ -187,8 +304,14 @@ export interface JobStatusResponse {
    * Only true when status === "succeeded".
    */
   resultReady?: boolean;
+  /** True when this job was started with planMode. */
+  planMode?: boolean;
+  /**
+   * A3: present when status is awaiting_clarify (questions) or after answers.
+   * Clients render chips from `clarify.questions`.
+   */
+  clarify?: JobClarifyState;
 }
-
 /**
  * GET job result — success payload only.
  * Call when status is succeeded (or resultReady).
@@ -221,20 +344,22 @@ export interface JobErrorBody {
 // ---------------------------------------------------------------------------
 
 /**
- * Route sketch for M1a/M3 (paths may be prefixed with /api/v1):
+ * Route sketch for M1a/M3/A3 (paths may be prefixed with /api/v1):
  *
  * | Method | Path | Body / response |
  * |--------|------|-----------------|
  * | POST | /jobs | CreateJobRequest → CreateJobResponse |
  * | GET | /jobs/:jobId | → JobStatusResponse |
  * | GET | /jobs/:jobId/result | → JobResultResponse (succeeded only) |
+ * | POST | /jobs/:jobId/clarify | ClarifyJobRequest → ClarifyJobResponse |
  *
- * Auth: session required on all three. Unauthenticated → 401 UNAUTHORIZED.
+ * Auth: session required. Unauthenticated → 401 UNAUTHORIZED.
  */
 export const JOB_API_ROUTE_SKETCH = {
   create: "POST /api/v1/jobs",
   status: "GET /api/v1/jobs/:jobId",
   result: "GET /api/v1/jobs/:jobId/result",
+  clarify: "POST /api/v1/jobs/:jobId/clarify",
 } as const;
 
 // ---------------------------------------------------------------------------

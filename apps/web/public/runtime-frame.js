@@ -130,6 +130,8 @@ function createCanvas2dTool(creative, options = {}) {
   let dpr = 1;
   let resizeObserver = null;
   let loadGeneration = 0;
+  const pointer = { x: -9999, y: -9999, isOver: false };
+  let pointerCleanup = null;
   function buildDrawContext(now) {
     if (!canvas || !ctx) {
       throw new Error("canvas2d harness: not mounted");
@@ -146,7 +148,53 @@ function createCanvas2dTool(creative, options = {}) {
       assets,
       images,
       time,
-      delta
+      delta,
+      pointer: { x: pointer.x, y: pointer.y, isOver: pointer.isOver }
+    };
+  }
+  function readPointerFromEvent(e) {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cssW = rect.width || width || 1;
+    const cssH = rect.height || height || 1;
+    pointer.x = (e.clientX - rect.left) / cssW * width;
+    pointer.y = (e.clientY - rect.top) / cssH * height;
+  }
+  function attachPointerListeners(el) {
+    const onMove = (e) => {
+      readPointerFromEvent(e);
+      pointer.isOver = true;
+    };
+    const onEnter = (e) => {
+      readPointerFromEvent(e);
+      pointer.isOver = true;
+    };
+    const onLeave = () => {
+      pointer.isOver = false;
+    };
+    const onDown = (e) => {
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+      }
+      readPointerFromEvent(e);
+      pointer.isOver = true;
+    };
+    const onUp = (e) => {
+      readPointerFromEvent(e);
+    };
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerenter", onEnter);
+    el.addEventListener("pointerleave", onLeave);
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointerup", onUp);
+    el.style.touchAction = "none";
+    pointerCleanup = () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerenter", onEnter);
+      el.removeEventListener("pointerleave", onLeave);
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointerup", onUp);
     };
   }
   function layout() {
@@ -237,7 +285,11 @@ function createCanvas2dTool(creative, options = {}) {
       mounted = true;
       startMs = performance.now();
       lastMs = 0;
+      pointer.x = -9999;
+      pointer.y = -9999;
+      pointer.isOver = false;
       layout();
+      attachPointerListeners(canvas);
       await reloadImages(assets);
       if (typeof ResizeObserver !== "undefined") {
         resizeObserver = new ResizeObserver(() => layout());
@@ -285,6 +337,11 @@ function createCanvas2dTool(creative, options = {}) {
       raf = 0;
       resizeObserver?.disconnect();
       resizeObserver = null;
+      pointerCleanup?.();
+      pointerCleanup = null;
+      pointer.x = -9999;
+      pointer.y = -9999;
+      pointer.isOver = false;
       try {
         creative.dispose?.();
       } catch {

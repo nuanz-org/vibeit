@@ -3,14 +3,22 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
+import { ClarifyPanel } from "@/features/create/components/clarify-panel";
 import { JobProgress } from "@/features/create/components/job-progress";
-import { useJob, useJobResult } from "@/features/jobs/hooks/use-job";
+import {
+  jobQueryKey,
+  useJob,
+  useJobResult,
+} from "@/features/jobs/hooks/use-job";
 import { uploadAsset } from "@/lib/api/assets";
 import {
   CreateJobApiError,
   createJob,
   parseSalvageToolId,
+  submitClarify,
+  type ClarifyAnswerValue,
   type QuotaFields,
 } from "@/lib/api/jobs";
 import {
@@ -29,28 +37,32 @@ const MAX_INSPIRATION = 4;
  * Create form: vision + optional inspiration images → job → poll → Studio.
  * AM5: inspirationAssetIds flow into style extract before plan.
  * Model picker: GET /api/v1/llm/models → POST /jobs { model }.
+ * A3: planMode → clarify questions → Build it → resume pipeline.
  */
 export function CreateForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [visionText, setVisionText] = useState(DEFAULT_VISION);
   const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
   const [modelOptions, setModelOptions] = useState<LlmModelOption[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [planMode, setPlanMode] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [quota, setQuota] = useState<QuotaFields | null>(null);
   const [quotaBlocked, setQuotaBlocked] = useState(false);
   const [pending, setPending] = useState(false);
+  const [clarifyPending, setClarifyPending] = useState(false);
   const [salvageToolId, setSalvageToolId] = useState<string | null>(null);
 
   const jobQuery = useJob(jobId);
   const status = jobQuery.data;
   const isSuccess = status?.status === "succeeded";
   const isFailed = status?.status === "failed";
+  const isAwaitingClarify = status?.status === "awaiting_clarify";
 
   const resultQuery = useJobResult(jobId, Boolean(isSuccess));
-
   // Load selectable models from server config
   useEffect(() => {
     let cancelled = false;
@@ -121,10 +133,12 @@ export function CreateForm() {
         inspirationAssetIds:
           inspirationAssetIds.length > 0 ? inspirationAssetIds : undefined,
         model: selectedModel.trim() || undefined,
+        planMode: planMode || undefined,
         clientMetadata: {
-          uiSource: "create-form-am5",
+          uiSource: "create-form-a3",
           inspirationCount: inspirationAssetIds.length,
           model: selectedModel.trim() || undefined,
+          planMode,
         },
       });
       setJobId(created.jobId);
@@ -144,19 +158,39 @@ export function CreateForm() {
     }
   }
 
+  async function onClarifySubmit(
+    answers: Record<string, ClarifyAnswerValue>,
+  ) {
+    if (!jobId) return;
+    setClarifyPending(true);
+    setSubmitError(null);
+    try {
+      await submitClarify(jobId, { answers, buildNow: true });
+      // Resume polling after re-queue
+      await queryClient.invalidateQueries({ queryKey: jobQueryKey(jobId) });
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Could not submit answers",
+      );
+    } finally {
+      setClarifyPending(false);
+    }
+  }
+
   function reset() {
     setJobId(null);
     setSubmitError(null);
     setSalvageToolId(null);
     setPending(false);
+    setClarifyPending(false);
     setInspirationFiles([]);
   }
 
-  const generating = Boolean(jobId) && !isSuccess && !isFailed;
+  const generating =
+    Boolean(jobId) && !isSuccess && !isFailed && !isAwaitingClarify;
   const overQuota =
     quotaBlocked ||
     (quota != null && quota.createsUsed >= quota.createsLimit);
-
   return (
     <div className={styles.form}>
       <form onSubmit={(e) => void onSubmit(e)} className={styles.form}>
@@ -168,7 +202,7 @@ export function CreateForm() {
             onChange={(e) => setVisionText(e.target.value)}
             rows={5}
             required
-            disabled={pending || generating}
+            disabled={pending || generating || isAwaitingClarify}
             placeholder="Describe the living design tool you want…"
           />
         </label>
@@ -208,7 +242,7 @@ export function CreateForm() {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             multiple
-            disabled={pending || generating}
+            disabled={pending || generating || isAwaitingClarify}
             onChange={(e) => {
               const list = e.target.files ? Array.from(e.target.files) : [];
               setInspirationFiles(list.slice(0, MAX_INSPIRATION));
@@ -223,8 +257,24 @@ export function CreateForm() {
           </span>
         </label>
 
-        {quota ? (
-          <p className={styles.quota}>
+        <label className={styles.checkboxRow}>
+          <input
+            type="checkbox"
+            checked={planMode}
+            disabled={pending || generating || isAwaitingClarify || Boolean(jobId)}
+            onChange={(e) => setPlanMode(e.target.checked)}
+          />
+          <span>
+            Plan with me
+            <span className={styles.muted}>
+              {" "}
+              — short clarify questions first; “All options” becomes Studio enum
+              controls
+            </span>
+          </span>
+        </label>
+
+        {quota ? (          <p className={styles.quota}>
             Creates today: {quota.createsUsed}/{quota.createsLimit}
             {quota.resetsAt ? ` · resets ${quota.resetsAt}` : null}
           </p>
@@ -251,7 +301,9 @@ export function CreateForm() {
                 ? "Generating…"
                 : overQuota
                   ? "Quota reached"
-                  : "Generate tool"}
+                  : planMode
+                    ? "Plan with me"
+                    : "Generate tool"}
           </button>
           {jobId ? (
             <button
@@ -267,12 +319,19 @@ export function CreateForm() {
 
       {submitError ? <p className={styles.error}>{submitError}</p> : null}
 
-      {jobId ? (
+      {jobId && !isAwaitingClarify ? (
         <JobProgress status={status} jobId={jobId} />
       ) : null}
 
-      {jobQuery.isError ? (
-        <p className={styles.error}>
+      {jobId && isAwaitingClarify && status?.clarify ? (
+        <ClarifyPanel
+          clarify={status.clarify}
+          pending={clarifyPending}
+          onSubmit={(answers) => void onClarifySubmit(answers)}
+        />
+      ) : null}
+
+      {jobQuery.isError ? (        <p className={styles.error}>
           {jobQuery.error instanceof Error
             ? jobQuery.error.message
             : "Failed to poll job status"}

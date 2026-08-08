@@ -10,15 +10,16 @@ import {
   type JobStatusResponse,
 } from "@/lib/api/jobs";
 
-const TERMINAL: JobStatus[] = ["succeeded", "failed"];
+/** Stop auto-poll on terminal or when user must answer clarify. */
+const POLL_PAUSED: JobStatus[] = ["succeeded", "failed", "awaiting_clarify"];
 
 export function jobQueryKey(jobId: string | null) {
   return ["jobs", jobId] as const;
 }
 
 /**
- * Poll job status until terminal (M3g).
- * refetchInterval: 1.2s while queued/running; stop when succeeded/failed.
+ * Poll job status until terminal or awaiting_clarify (M3g + A3).
+ * refetchInterval: 1.2s while queued/running; stop when succeeded/failed/awaiting_clarify.
  */
 export function useJob(jobId: string | null) {
   return useQuery({
@@ -27,12 +28,11 @@ export function useJob(jobId: string | null) {
     enabled: Boolean(jobId),
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      if (!status || TERMINAL.includes(status)) return false;
+      if (!status || POLL_PAUSED.includes(status)) return false;
       return 1200;
     },
   });
 }
-
 export function useJobResult(jobId: string | null, enabled: boolean) {
   return useQuery({
     queryKey: [...jobQueryKey(jobId), "result"] as const,

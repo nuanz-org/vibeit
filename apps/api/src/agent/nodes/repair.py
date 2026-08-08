@@ -43,8 +43,8 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
             "ready_for_finalize": False,
         }
 
-    plan = state.get("plan")
-    plan_json = json.dumps(plan, indent=2) if isinstance(plan, dict) else None
+    plan = state.get("plan") if isinstance(state.get("plan"), dict) else None
+    plan_json = json.dumps(plan, indent=2) if plan is not None else None
     messages = [
         ChatMessage(role="system", content=REPAIR_SYSTEM_PROMPT),
         ChatMessage(
@@ -54,6 +54,7 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
                 code=code,
                 errors=errors,
                 plan_json=plan_json,
+                plan=plan,
             ),
         ),
     ]

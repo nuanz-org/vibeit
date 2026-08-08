@@ -17,14 +17,16 @@
 
 ## Param field kinds (MVP)
 
-| Kind | Purpose | Example keys | Control widget |
+| Kind | Purpose | Example keys | Control widget (Studio A6) |
 |------|---------|--------------|----------------|
 | `color` | Palette overrides | `bg`, `fg`, `accent` | Color picker |
-| `number` | Speed, intensity, scale | `speed`, `intensity` | Slider or numeric input (`min` / `max` / `step`) |
+| `number` | Speed, intensity, scale | `speed`, `intensity` | Slider (`min` / `max` / `step`) |
 | `text` | Labels, headlines | `title` | Text field (`maxLength?`) |
-| `enum` | Discrete modes | `layout`, `motionPreset` | Select / segmented control |
-| `boolean` | Simple toggles | `showGrid` | Switch / checkbox |
-| `assetRef` | Points at a named asset slot | `logoSlot` | Focus / deep-link to Assets panel for that slot |
+| `enum` | Discrete modes | `layout`, `motionPreset` | **Segmented** if ≤4 options or `uiHint: "segmented"`; else select |
+| `boolean` | Simple toggles | `showGrid` | Switch |
+| `assetRef` | Points at a named asset slot | `logoSlot` | Focus / deep-link to Assets panel (may sit inside a `group`) |
+
+**Sections:** when any param sets `group`, Studio renders **collapsible sections** ordered by first appearance of each group title. Fields without `group` land in **Params**. With no groups, legacy buckets **Colors / Params / Linked slots** remain. `uiHint: "hidden"` omits the field from the panel.
 
 Closed set: do not invent new kinds on the ASAP path without updating this contract.
 

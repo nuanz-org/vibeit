@@ -78,11 +78,14 @@ async def run_create_with_repairs(
     tool_id: str | None = None,
     inspiration_asset_ids: list[str] | None = None,
     inspiration_images: list[dict[str, Any]] | None = None,
+    plan_mode: bool = False,
+    clarify_result: dict[str, Any] | None = None,
     on_phase: PhaseCallback | None = None,
 ) -> CreateGraphState:
     """
     Full create pipeline with bounded repair + optional critic loop (AM3)
-    + optional style extract from inspiration images (AM5).
+    + optional style extract from inspiration images (AM5)
+    + optional A3 clarify_result (forced enums + transcript) into plan.
 
     Success: ready_for_finalize=True, smoke_ok=True, validate_ok=True.
     Critic: advisory by default (VIBEIT_CRITIC_ENFORCED); failure degrades to
@@ -100,8 +103,9 @@ async def run_create_with_repairs(
         tool_id=tool_id,
         inspiration_asset_ids=inspiration_asset_ids,
         inspiration_images=inspiration_images,
+        plan_mode=plan_mode,
+        clarify_result=clarify_result,
     )
-
     # --- ingest ---
     await _maybe_await(on_phase, "ingest", state)
     state = _merge(state, ingest_node(state))

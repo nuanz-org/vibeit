@@ -48,6 +48,11 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
         # Goldens missing on disk should not hard-fail codegen
         exemplars = []
 
+    clarify_result = (
+        state.get("clarify_result")
+        if isinstance(state.get("clarify_result"), dict)
+        else None
+    )
     messages = [
         ChatMessage(role="system", content=CODEGEN_SYSTEM_PROMPT),
         ChatMessage(
@@ -59,6 +64,7 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
                 style_notes=state.get("style_notes")
                 if isinstance(state.get("style_notes"), dict)
                 else None,
+                clarify_result=clarify_result,
             ),
         ),
     ]

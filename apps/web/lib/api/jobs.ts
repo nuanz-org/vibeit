@@ -1,21 +1,74 @@
 import { getApiBaseUrl } from "./config";
 
-/** M0e CreateJobRequest (wire camelCase). */
+/** M0e + A3 CreateJobRequest (wire camelCase). */
 export type CreateJobRequest = {
   visionText: string;
   inspirationAssetIds?: string[];
   clientMetadata?: Record<string, unknown>;
   /** OpenRouter model id from Create picker (must be server-allowed). */
   model?: string;
+  /** A3: run clarify interview before plan/codegen. */
+  planMode?: boolean;
 };
 
-export type JobStatus = "queued" | "running" | "succeeded" | "failed";
-export type JobPhase = "plan" | "codegen" | "validate" | "repair";
+export type JobStatus =
+  | "queued"
+  | "running"
+  | "awaiting_clarify"
+  | "succeeded"
+  | "failed";
+
+export type JobPhase = "clarify" | "plan" | "codegen" | "validate" | "repair";
 
 export type QuotaFields = {
   createsUsed: number;
   createsLimit: number;
   resetsAt?: string;
+};
+
+export type ClarifyOption = {
+  value: string;
+  label: string;
+  description?: string;
+};
+
+export type ClarifyQuestion = {
+  id: string;
+  prompt: string;
+  options: ClarifyOption[];
+  multiSelect?: boolean;
+  allowAllOptions?: boolean;
+  group?: string;
+};
+
+export type ClarifyAnswerValue =
+  | string
+  | string[]
+  | { type: "all_options" };
+
+export type ClarifyForcedEnum = {
+  name: string;
+  label: string;
+  options: Array<{ value: string; label: string }>;
+  default: string;
+  group?: string;
+  sourceQuestionId: string;
+};
+
+export type ClarifyResult = {
+  transcript: string;
+  forcedEnums: ClarifyForcedEnum[];
+  lockedNotes: string[];
+  summary?: string;
+};
+
+export type JobClarifyState = {
+  understanding?: string;
+  questions?: ClarifyQuestion[];
+  answers?: Record<string, ClarifyAnswerValue>;
+  result?: ClarifyResult;
+  answered?: boolean;
+  skipReason?: string;
 };
 
 /** M0e CreateJobResponse (+ optional debug userId). */
@@ -25,6 +78,7 @@ export type CreateJobResponse = {
   createdAt: string;
   userId?: string;
   quota?: QuotaFields;
+  planMode?: boolean;
 };
 
 export type JobStatusResponse = {
@@ -45,6 +99,20 @@ export type JobStatusResponse = {
     wallTimeUsedMs?: number | null;
   } | null;
   quota?: QuotaFields | null;
+  planMode?: boolean | null;
+  clarify?: JobClarifyState | null;
+};
+
+export type ClarifyJobRequest = {
+  answers: Record<string, ClarifyAnswerValue>;
+  buildNow?: boolean;
+};
+
+export type ClarifyJobResponse = {
+  jobId: string;
+  status: JobStatus;
+  clarify?: JobClarifyState | null;
+  updatedAt?: string | null;
 };
 
 export type JobResultResponse = {
@@ -119,6 +187,40 @@ export async function createJob(
   }
 
   return res.json() as Promise<CreateJobResponse>;
+}
+
+/** POST /api/v1/jobs/{jobId}/clarify — A3 answers → resume build. */
+export async function submitClarify(
+  jobId: string,
+  body: ClarifyJobRequest,
+): Promise<ClarifyJobResponse> {
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/jobs/${encodeURIComponent(jobId)}/clarify`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let message = `Clarify failed (${res.status})${text ? `: ${text}` : ""}`;
+    try {
+      const parsed = JSON.parse(text) as {
+        detail?: string;
+        errorMessage?: string;
+      };
+      if (parsed.errorMessage) message = parsed.errorMessage;
+      else if (typeof parsed.detail === "string") message = parsed.detail;
+    } catch {
+      /* plain */
+    }
+    throw new CreateJobApiError(message, { status: res.status });
+  }
+
+  return res.json() as Promise<ClarifyJobResponse>;
 }
 
 /** Parse salvage tool id from failed job errorMessage (M3e). */

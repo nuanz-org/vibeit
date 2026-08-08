@@ -275,9 +275,10 @@ def test_param_group_ui_hint_and_control_sections() -> None:
 
 def test_goldens_exist_and_pass_static() -> None:
     ids = list_goldens()
-    # AM1 canvas2d goldens remain; AM6 adds p5/three
+    # AM1 canvas2d goldens remain; A5 adds proximity + kinetic-logo-2d; AM6 adds p5/three
     assert {"kinetic-type", "particle-field", "gradient-poster"}.issubset(set(ids))
-    assert len(GOLDEN_MANIFEST) >= 3
+    assert {"proximity-pixel-card", "kinetic-logo-2d"}.issubset(set(ids))
+    assert len(GOLDEN_MANIFEST) >= 5
     for entry in GOLDEN_MANIFEST:
         if entry.target != "canvas2d":
             continue
@@ -304,6 +305,18 @@ def test_retrieve_matches_tags() -> None:
     )
     assert poster_hits[0].id == "gradient-poster"
 
+    # A5 tag retrieval
+    card_hits = retrieve_goldens(
+        {"concept": "proximity pixel card", "tags": ["card", "interaction"]},
+        limit=1,
+    )
+    assert card_hits[0].id == "proximity-pixel-card"
+    logo_hits = retrieve_goldens(
+        {"concept": "kinetic logo loop", "tags": ["logo", "loop", "parametric"]},
+        limit=1,
+    )
+    assert logo_hits[0].id == "kinetic-logo-2d"
+
     # always at least one
     fallback = retrieve_goldens({"concept": "zzzz unknown xyz"}, limit=2)
     assert len(fallback) == 2
@@ -313,6 +326,9 @@ def test_codegen_prompt_includes_craft_and_exemplars() -> None:
     assert "Layer the scene" in CODEGEN_SYSTEM_PROMPT
     assert "preserve" in REPAIR_SYSTEM_PROMPT.lower() or "Preserve" in REPAIR_SYSTEM_PROMPT
     assert "Art Director" in PLAN_SYSTEM_PROMPT or "Plan stage" in PLAN_SYSTEM_PROMPT
+    # A4 multi-axis craft remains in system prompts
+    assert "enum" in CODEGEN_SYSTEM_PROMPT.lower()
+    assert "group" in PLAN_SYSTEM_PROMPT
 
     exemplars = [
         {

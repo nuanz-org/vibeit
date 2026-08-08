@@ -11,8 +11,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-JobStatus = Literal["queued", "running", "succeeded", "failed"]
-JobPhase = Literal["plan", "codegen", "validate", "repair"]
+JobStatus = Literal[
+    "queued",
+    "running",
+    "awaiting_clarify",
+    "succeeded",
+    "failed",
+]
+JobPhase = Literal["clarify", "plan", "codegen", "validate", "repair"]
 JobErrorCode = Literal[
     "UNAUTHORIZED",
     "QUOTA_EXCEEDED",
@@ -21,7 +27,6 @@ JobErrorCode = Literal[
     "TIMEOUT",
     "INTERNAL",
 ]
-
 
 class CamelModel(BaseModel):
     """Base model: accept snake_case or camelCase, serialize camelCase."""
@@ -62,6 +67,8 @@ class CreateJobRequest(CamelModel):
     )
     # Optional OpenRouter model id from Create picker (must be in LLM_MODELS_ALLOWED).
     model: str | None = None
+    # A3: opt-in clarify interview before plan/codegen.
+    plan_mode: bool = Field(default=False, alias="planMode")
 
 
 class CreateJobResponse(CamelModel):
@@ -71,8 +78,25 @@ class CreateJobResponse(CamelModel):
     status: JobStatus
     created_at: str = Field(alias="createdAt")
     quota: QuotaFields | None = None
+    plan_mode: bool | None = Field(default=None, alias="planMode")
     # Stub-only debug aid (not in TS CreateJobResponse). Remove before external beta.
     user_id: str | None = Field(default=None, alias="userId")
+
+
+class ClarifyJobRequest(CamelModel):
+    """POST /api/v1/jobs/{jobId}/clarify body (A3)."""
+
+    answers: dict[str, Any]
+    build_now: bool = Field(default=True, alias="buildNow")
+
+
+class ClarifyJobResponse(CamelModel):
+    """POST clarify accept — usually re-queued for build."""
+
+    job_id: str = Field(alias="jobId")
+    status: JobStatus
+    clarify: dict[str, Any] | None = None
+    updated_at: str | None = Field(default=None, alias="updatedAt")
 
 
 class RefineJobRequest(CamelModel):
@@ -100,7 +124,7 @@ class RefineJobResponse(CamelModel):
 
 
 class JobStatusResponse(CamelModel):
-    """GET /api/v1/jobs/:jobId poll response (M3)."""
+    """GET /api/v1/jobs/:jobId poll response (M3 + A3)."""
 
     job_id: str = Field(alias="jobId")
     status: JobStatus
@@ -112,6 +136,8 @@ class JobStatusResponse(CamelModel):
     repair: RepairBudgetFields | None = None
     updated_at: str | None = Field(default=None, alias="updatedAt")
     result_ready: bool | None = Field(default=None, alias="resultReady")
+    plan_mode: bool | None = Field(default=None, alias="planMode")
+    clarify: dict[str, Any] | None = None
 
 
 class JobResultResponse(CamelModel):

@@ -89,6 +89,7 @@ async def enqueue_create_job(
     settings: Settings | None = None,
     skip_quota: bool = False,
     llm_model: str | None = None,
+    plan_mode: bool = False,
 ) -> CreateJobResult:
     """
     Create draft tool + queued generation_jobs row.
@@ -96,6 +97,7 @@ async def enqueue_create_job(
     Prefer draft tool at enqueue so Studio tool id is stable before worker runs.
     Counts this enqueue against the daily quota (M3f) unless skip_quota=True.
     Optional llm_model is the user-selected OpenRouter id for plan/codegen/repair.
+    A3: plan_mode=True → worker runs clarify first and may pause at awaiting_clarify.
     """
     vision = vision_text.strip()
     if not vision:
@@ -133,8 +135,8 @@ async def enqueue_create_job(
         status="queued",
         token_budget=token_budget,
         llm_model=llm_model,
+        plan_mode=bool(plan_mode),
     )
-
     if settings is not None:
         quota_after = await get_quota_snapshot(
             owner_user_id=owner_user_id,
@@ -191,6 +193,13 @@ def job_to_status_fields(
     else:
         phase_out = phase
 
+    clarify = job.clarify if isinstance(job.clarify, dict) else {}
+    # Map internal clarify phase onto wire JobPhase
+    if phase_out == "clarify" or (
+        isinstance(job.phase, str) and job.phase == "clarify"
+    ):
+        phase_out = "clarify"
+
     return {
         "job_id": str(job.id),
         "status": job.status,
@@ -209,8 +218,9 @@ def job_to_status_fields(
         },
         "updated_at": _utc_iso(job.updated_at),
         "result_ready": job_result_ready(job.status),
+        "plan_mode": bool(job.plan_mode),
+        "clarify": clarify if clarify else None,
     }
-
 
 async def get_job_result_for_owner(
     *,

@@ -67,7 +67,9 @@ class GenerationJobRow:
     base_version_id: UUID | None = None
     # User-selected OpenRouter model for create plan/codegen/repair (007)
     llm_model: str | None = None
-
+    # A3 planMode clarify (008)
+    plan_mode: bool = False
+    clarify: Any = None
 
 @dataclass(frozen=True, slots=True)
 class AssetRow:

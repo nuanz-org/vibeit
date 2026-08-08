@@ -23,13 +23,15 @@ No real worker, DB, or rate-limit middleware in M0e — types + docs only.
 
 ```text
 queued ──► running ──► succeeded
-                   └──► failed
+                   ├──► failed
+                   └──► awaiting_clarify ──► queued  (A3 planMode answers → resume)
 ```
 
 | Status | Meaning |
 |--------|---------|
 | `queued` | Accepted; not started (or waiting for worker) |
-| `running` | Plan / codegen / validate / repair in progress |
+| `running` | Clarify / plan / codegen / validate / repair in progress |
+| `awaiting_clarify` | **A3 pause** — questions ready; worker stopped until answers |
 | `succeeded` | Tool version ready — **only** path that may publish later |
 | `failed` | Terminal failure |
 
@@ -39,25 +41,25 @@ queued ──► running ──► succeeded
    `jobMayBecomePublished(status)` is true only for `"succeeded"`.  
 2. Terminal states do not leave the machine (`succeeded` / `failed` stay put).  
 3. `resultReady` on status may be `true` only when `status === "succeeded"`.  
-4. Failed jobs **must not** return a publishable `JobResultResponse`.
+4. Failed jobs **must not** return a publishable `JobResultResponse`.  
+5. `awaiting_clarify` is **not** terminal — client stops auto-poll (`isJobPollPaused`) until `POST …/clarify` re-queues the job.
 
-Helpers: `isTerminalJobStatus`, `jobMayBecomePublished`.
-
+Helpers: `isTerminalJobStatus`, `isJobPollPaused`, `jobMayBecomePublished`.
 ---
 
 ## Running phases (optional)
 
-While `status === "running"`, `phase` may be:
+While `status === "running"` (or during clarify), `phase` may be:
 
 | Phase | Stage |
 |-------|--------|
+| `clarify` | A3 planMode interview (before plan) |
 | `plan` | Structured `ToolPlan` (M0d) |
 | `codegen` | Fill canvas2d skeleton (M0c) |
 | `validate` | Contract / runtime checks |
 | `repair` | Bounded repair attempt |
 
 MVP clients may ignore `phase` and only watch `status`.
-
 ---
 
 ## Error codes (provisional)
@@ -84,6 +86,8 @@ Extend later; do not bikeshed renames on the ASAP path.
 | `visionText` | yes | User prompt |
 | `inspirationAssetIds` | no | Asset ids from prior upload |
 | `clientMetadata` | no | jsonb-friendly bag; no secrets |
+| `model?` | no | OpenRouter model id (must be allowlisted) |
+| `planMode?` | no | **A3** — when true, clarify first; may pause at `awaiting_clarify` |
 
 ### `CreateJobResponse` — accept job
 
@@ -93,21 +97,42 @@ Extend later; do not bikeshed renames on the ASAP path.
 | `status` | Usually `queued` |
 | `createdAt` | ISO-8601 |
 | `quota?` | Snapshot after accept |
+| `planMode?` | Echo of request flag |
 
 ### `JobStatusResponse` — poll
 
 | Field | Notes |
 |-------|--------|
 | `jobId` | |
-| `status` | Status machine |
-| `phase?` | plan / codegen / validate / repair |
+| `status` | Status machine (incl. `awaiting_clarify`) |
+| `phase?` | clarify / plan / codegen / validate / repair |
 | `progress?` | Fraction **0–1** |
 | `errorCode?` / `errorMessage?` | On failure |
 | `quota?` | `createsUsed`, `createsLimit`, `resetsAt?` |
 | `repair?` | `maxRepairs`, `repairsUsed`, token/wall budgets |
 | `updatedAt?` | ISO-8601 |
 | `resultReady?` | Only when succeeded |
+| `planMode?` | Whether this job used planMode |
+| `clarify?` | A3 bag: `understanding`, `questions[]`, `result`, `answered` |
 
+### A3 clarify
+
+| Method | Path | Body / response |
+|--------|------|-----------------|
+| `POST` | `/api/v1/jobs/:jobId/clarify` | `ClarifyJobRequest` → `ClarifyJobResponse` |
+
+**`ClarifyJobRequest`:** `answers: { [questionId]: string | string[] | { type: "all_options" } }`, optional `buildNow` (default true).
+
+**Answer → plan axes:**
+
+| Answer | Outcome |
+|--------|---------|
+| `{ type: "all_options" }` | Forced **enum** with full question options |
+| Multi-select list | Forced enum with selected options |
+| Single option value | Forced enum (full options) with that default + locked note |
+| Free text | Locked notes + transcript only |
+
+When `buildNow: true`, job returns to `queued` and the worker resumes plan → codegen with `clarify.result` (forced enums hard-merged into plan params).
 ### `JobResultResponse` — success only
 
 | Field | Notes |
@@ -136,12 +161,12 @@ HTTP/error envelope: `errorCode`, `errorMessage`, optional `jobId`, `quota`.
 | `POST` | `/api/v1/jobs` | `CreateJobResponse` |
 | `GET` | `/api/v1/jobs/:jobId` | `JobStatusResponse` |
 | `GET` | `/api/v1/jobs/:jobId/result` | `JobResultResponse` (succeeded only) |
+| `POST` | `/api/v1/jobs/:jobId/clarify` | `ClarifyJobResponse` (A3) |
 
-- **Auth required** on all three (Better Auth session → API). Unauthenticated → **401** + `UNAUTHORIZED`.  
-- **Polling:** Create UI uses `refetchInterval` (or equivalent) on status until `isTerminalJobStatus`.  
+- **Auth required** on all routes (Better Auth session → API). Unauthenticated → **401** + `UNAUTHORIZED`.  
+- **Polling:** Create UI uses `refetchInterval` on status until `isJobPollPaused` (terminal **or** `awaiting_clarify`). Resume after clarify.  
 - **SSE:** optional later — do not block M1/M3 on streams.  
 - Result endpoint: **404** or **409** if job not succeeded (implementation choice in M1a/M3; contract forbids a fake success body).
-
 ```ts
 import type {
   CreateJobRequest,

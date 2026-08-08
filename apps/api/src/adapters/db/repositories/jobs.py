@@ -14,7 +14,7 @@ _JOB_COLUMNS = """
     id, owner_user_id, tool_id, status, vision_text, inspiration_asset_ids,
     error_code, error_message, tokens_used, token_budget, cost_cents,
     repair_budget, repairs_used, phase, created_at, updated_at,
-    job_kind, base_version_id, llm_model
+    job_kind, base_version_id, llm_model, plan_mode, clarify
 """
 
 # Pre-006 select list for tests against schemas without refine columns.
@@ -42,6 +42,8 @@ class JobsRepository:
         job_kind: str = "create",
         base_version_id: UUID | str | None = None,
         llm_model: str | None = None,
+        plan_mode: bool = False,
+        clarify: dict[str, Any] | None = None,
     ) -> GenerationJobRow:
         if status not in JOB_STATUSES:
             raise ValueError(f"invalid job status: {status}")
@@ -49,17 +51,18 @@ class JobsRepository:
             raise ValueError(f"invalid job_kind: {job_kind}")
         ids = inspiration_asset_ids or []
         model = (llm_model or "").strip() or None
+        clarify_payload = clarify if isinstance(clarify, dict) else {}
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 INSERT INTO generation_jobs (
                     owner_user_id, tool_id, status, vision_text,
                     inspiration_asset_ids, repair_budget, token_budget,
-                    job_kind, base_version_id, llm_model
+                    job_kind, base_version_id, llm_model, plan_mode, clarify
                 )
                 VALUES (
                     $1, $2::uuid, $3, $4, $5::jsonb, $6, $7,
-                    $8, $9::uuid, $10
+                    $8, $9::uuid, $10, $11, $12::jsonb
                 )
                 RETURNING {_JOB_COLUMNS}
                 """,
@@ -73,10 +76,11 @@ class JobsRepository:
                 job_kind,
                 str(base_version_id) if base_version_id is not None else None,
                 model,
+                bool(plan_mode),
+                json.dumps(clarify_payload),
             )
         assert row is not None
         return job_from_record(row)
-
     async def count_refine_jobs_for_tool_since(
         self,
         *,
@@ -231,6 +235,78 @@ class JobsRepository:
                 repairs_used,
                 tokens_used,
             )
+        return job_from_record(row) if row else None
+
+    async def update_job_clarify(
+        self,
+        job_id: UUID | str,
+        *,
+        clarify: dict[str, Any],
+        status: str | None = None,
+        phase: str | None = None,
+        clear_phase: bool = False,
+        tokens_used: int | None = None,
+        clear_errors: bool = False,
+    ) -> GenerationJobRow | None:
+        """A3: persist clarify payload and optional status/phase transition."""
+        if status is not None and status not in JOB_STATUSES:
+            raise ValueError(f"invalid job status: {status}")
+        payload = clarify if isinstance(clarify, dict) else {}
+        phase_value: str | None
+        if clear_phase:
+            phase_value = None
+        else:
+            phase_value = phase
+        async with self._pool.acquire() as conn:
+            if status is not None:
+                row = await conn.fetchrow(
+                    f"""
+                    UPDATE generation_jobs
+                    SET
+                        clarify = $2::jsonb,
+                        status = $3,
+                        phase = CASE
+                            WHEN $7::bool THEN NULL
+                            WHEN $4::text IS NOT NULL THEN $4
+                            ELSE phase
+                        END,
+                        tokens_used = COALESCE($5, tokens_used),
+                        error_code = CASE WHEN $6 THEN NULL ELSE error_code END,
+                        error_message = CASE WHEN $6 THEN NULL ELSE error_message END,
+                        updated_at = now()
+                    WHERE id = $1::uuid
+                    RETURNING {_JOB_COLUMNS}
+                    """,
+                    str(job_id),
+                    json.dumps(payload),
+                    status,
+                    phase_value,
+                    tokens_used,
+                    clear_errors,
+                    clear_phase,
+                )
+            else:
+                row = await conn.fetchrow(
+                    f"""
+                    UPDATE generation_jobs
+                    SET
+                        clarify = $2::jsonb,
+                        phase = CASE
+                            WHEN $5::bool THEN NULL
+                            WHEN $3::text IS NOT NULL THEN $3
+                            ELSE phase
+                        END,
+                        tokens_used = COALESCE($4, tokens_used),
+                        updated_at = now()
+                    WHERE id = $1::uuid
+                    RETURNING {_JOB_COLUMNS}
+                    """,
+                    str(job_id),
+                    json.dumps(payload),
+                    phase_value,
+                    tokens_used,
+                    clear_phase,
+                )
         return job_from_record(row) if row else None
 
     async def count_jobs_for_owner_since(
