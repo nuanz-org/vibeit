@@ -76,6 +76,12 @@ _PROFILES: dict[str, ModelProfile] = {
         label="Claude 3.5 Sonnet",
         reasoning=None,
     ),
+    "anthropic/claude-sonnet-5": ModelProfile(
+        model_id="anthropic/claude-sonnet-5",
+        label="Claude Sonnet 5",
+        reasoning={"enabled": True},
+        timeout_seconds=120.0,
+    ),
     "openai/gpt-4.1": ModelProfile(
         model_id="openai/gpt-4.1",
         label="GPT-4.1",
@@ -86,6 +92,12 @@ _PROFILES: dict[str, ModelProfile] = {
         label="GPT-4.1 Mini",
         reasoning=None,
     ),
+    "openai/gpt-5.6-luna-pro": ModelProfile(
+        model_id="openai/gpt-5.6-luna-pro",
+        label="GPT-5.6 Luna Pro",
+        reasoning={"enabled": True},
+        timeout_seconds=120.0,
+    ),
     "moonshotai/kimi-k2.5": ModelProfile(
         model_id="moonshotai/kimi-k2.5",
         label="Kimi K2.5",
@@ -94,6 +106,36 @@ _PROFILES: dict[str, ModelProfile] = {
     "moonshotai/kimi-k2": ModelProfile(
         model_id="moonshotai/kimi-k2",
         label="Kimi K2",
+        reasoning=None,
+    ),
+    "moonshotai/kimi-k3": ModelProfile(
+        model_id="moonshotai/kimi-k3",
+        label="Kimi K3",
+        reasoning={"enabled": True},
+        timeout_seconds=120.0,
+    ),
+    "meta/muse-spark-1.2": ModelProfile(
+        model_id="meta/muse-spark-1.2",
+        label="Muse Spark 1.2",
+        reasoning={"effort": "medium"},
+        timeout_seconds=120.0,
+    ),
+    "x-ai/grok-4.5": ModelProfile(
+        model_id="x-ai/grok-4.5",
+        label="Grok 4.5",
+        reasoning={"enabled": True},
+        timeout_seconds=120.0,
+    ),
+    "z-ai/glm-5.2": ModelProfile(
+        model_id="z-ai/glm-5.2",
+        label="GLM 5.2",
+        reasoning={"enabled": True},
+        timeout_seconds=120.0,
+    ),
+    "openrouter/fusion": ModelProfile(
+        model_id="openrouter/fusion",
+        label="OpenRouter",
+        # Fusion router: omit reasoning; upstream models shape their own.
         reasoning=None,
     ),
 }

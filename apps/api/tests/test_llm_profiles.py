@@ -47,6 +47,40 @@ def test_selectable_includes_gemini_and_flash() -> None:
     assert "google/gemini-3.6-flash" in menu
 
 
+def test_selectable_includes_product_menu_models() -> None:
+    menu = selectable_models()
+    for mid in (
+        "openrouter/fusion",
+        "x-ai/grok-4.5",
+        "anthropic/claude-sonnet-5",
+        "openai/gpt-5.6-luna-pro",
+        "moonshotai/kimi-k3",
+        "z-ai/glm-5.2",
+        "meta/muse-spark-1.2",
+    ):
+        assert mid in menu
+    # Preferred order: product models first, then Flash.
+    assert menu.index("openrouter/fusion") < menu.index(FLASH_MODEL)
+    assert menu.index("x-ai/grok-4.5") < menu.index(FLASH_MODEL)
+
+
+def test_new_menu_profiles_reasoning() -> None:
+    assert reasoning_payload_for_model("meta/muse-spark-1.2") == {
+        "effort": "medium"
+    }
+    assert reasoning_payload_for_model("moonshotai/kimi-k3") == {"enabled": True}
+    assert reasoning_payload_for_model("openai/gpt-5.6-luna-pro") == {
+        "enabled": True
+    }
+    assert reasoning_payload_for_model("x-ai/grok-4.5") == {"enabled": True}
+    assert reasoning_payload_for_model("anthropic/claude-sonnet-5") == {
+        "enabled": True
+    }
+    assert reasoning_payload_for_model("z-ai/glm-5.2") == {"enabled": True}
+    assert reasoning_payload_for_model("openrouter/fusion") is None
+    assert profile_for_model("openrouter/fusion").label == "OpenRouter"
+
+
 def test_assert_selectable_rejects_unknown() -> None:
     try:
         assert_selectable_model("totally/not-on-menu-xyz")
@@ -60,6 +94,11 @@ def test_assert_selectable_accepts_gemini() -> None:
         assert_selectable_model("google/gemini-3.6-flash")
         == "google/gemini-3.6-flash"
     )
+
+
+def test_assert_selectable_accepts_product_models() -> None:
+    assert assert_selectable_model("x-ai/grok-4.5") == "x-ai/grok-4.5"
+    assert assert_selectable_model("openrouter/fusion") == "openrouter/fusion"
 
 
 def test_public_catalog_shape() -> None:
@@ -187,8 +226,11 @@ if __name__ == "__main__":
     test_gemini_36_profile_enables_reasoning()
     test_gemini3_heuristic()
     test_selectable_includes_gemini_and_flash()
+    test_selectable_includes_product_menu_models()
+    test_new_menu_profiles_reasoning()
     test_assert_selectable_rejects_unknown()
     test_assert_selectable_accepts_gemini()
+    test_assert_selectable_accepts_product_models()
     test_public_catalog_shape()
     test_env_models_allowed_override()
     test_openrouter_sends_gemini_reasoning_enabled()

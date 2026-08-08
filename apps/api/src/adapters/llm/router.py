@@ -41,13 +41,20 @@ _CODEGEN_CANDIDATES = frozenset(
         "anthropic/claude-sonnet-4.5",
         "anthropic/claude-sonnet-4",
         "anthropic/claude-3.5-sonnet",
+        "anthropic/claude-sonnet-5",
         "moonshotai/kimi-k2.5",
         "moonshotai/kimi-k2",
+        "moonshotai/kimi-k3",
         "google/gemini-2.5-flash",
         "google/gemini-2.5-pro",
         "google/gemini-3.6-flash",
         "openai/gpt-4.1-mini",
         "openai/gpt-4.1",
+        "openai/gpt-5.6-luna-pro",
+        "meta/muse-spark-1.2",
+        "x-ai/grok-4.5",
+        "z-ai/glm-5.2",
+        "openrouter/fusion",
     }
 )
 
@@ -87,13 +94,16 @@ _DEFAULT_BY_ROLE: dict[LLMRole, str] = {
 }
 
 # Preferred Create menu order when LLM_MODELS_ALLOWED is unset.
+# Product picker: models the Create UI should surface first.
 _DEFAULT_SELECTABLE_ORDER: tuple[str, ...] = (
+    "openrouter/fusion",
+    "x-ai/grok-4.5",
+    "anthropic/claude-sonnet-5",
+    "openai/gpt-5.6-luna-pro",
+    "moonshotai/kimi-k3",
+    "z-ai/glm-5.2",
+    "meta/muse-spark-1.2",
     FLASH_MODEL,
-    "google/gemini-3.6-flash",
-    "google/gemini-2.5-flash",
-    "anthropic/claude-sonnet-4.5",
-    "openai/gpt-4.1-mini",
-    "deepseek/deepseek-v4-pro",
 )
 
 # Per-async-task overrides for eval A/B sweeps (role → model id).

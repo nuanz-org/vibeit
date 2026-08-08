@@ -171,14 +171,20 @@ Create UI model menu (user may only pick these):
 
 ```bash
 # Optional full override of the picker list (comma-separated OpenRouter ids)
-# LLM_MODELS_ALLOWED=deepseek/deepseek-v4-flash,google/gemini-3.6-flash,anthropic/claude-sonnet-4.5
+# LLM_MODELS_ALLOWED=openrouter/fusion,x-ai/grok-4.5,anthropic/claude-sonnet-5,openai/gpt-5.6-luna-pro,moonshotai/kimi-k3,z-ai/glm-5.2,meta/muse-spark-1.2
 # LLM_ALLOWLIST_EXTRA=provider/extra-model   # also widens default menu
 ```
+
+Default Create menu (preferred order) includes:
+`openrouter/fusion` (label **OpenRouter**), `x-ai/grok-4.5`, `anthropic/claude-sonnet-5`,
+`openai/gpt-5.6-luna-pro`, `moonshotai/kimi-k3`, `z-ai/glm-5.2`, `meta/muse-spark-1.2`,
+plus Flash fallback.
 
 - `GET /api/v1/llm/models` → `{ models, defaultModel }` for the Create dropdown  
 - `POST /api/v1/jobs` accepts optional `model` (must be in the menu)  
 - Per-model OpenRouter `reasoning` is applied automatically  
-  (DeepSeek → `effort: none`, Gemini 3.x → `enabled: true`)
+  (DeepSeek → `effort: none`; Grok/Claude 5/Kimi K3/GLM/Luna → `enabled: true`;
+  Muse Spark → `effort: medium`; Fusion omits reasoning)
 
 Codegen A/B shootout:
 
