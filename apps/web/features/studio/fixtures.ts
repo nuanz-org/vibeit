@@ -1,9 +1,11 @@
 /**
- * Studio fixture registry (M2a5).
+ * Studio fixture registry (M2a5 + B3 multi-target mount).
  *
  * Parent never imports tool factories for execution — the sandboxed frame
  * loads the reference tool. This map is metadata for routing + chrome only.
  */
+
+import type { TargetId } from "@repo/contracts";
 
 export type StudioFixtureMeta = {
   /** URL segment: /studio/[toolId] */
@@ -12,7 +14,8 @@ export type StudioFixtureMeta = {
   runtimeToolId: string;
   label: string;
   description: string;
-  target: "canvas2d";
+  /** Runtime target passed on mount (canvas2d | p5 | three). */
+  target: TargetId;
 };
 
 export const STUDIO_FIXTURES: Record<string, StudioFixtureMeta> = {

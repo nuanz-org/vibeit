@@ -34,8 +34,8 @@ Do **not** add frameworks ad hoc (`react`, `svg`, …) on the ASAP path. Extendi
 | Target | ASAP path | Launch status | Libraries |
 |--------|-----------|---------------|-----------|
 | `canvas2d` | **Yes — required** | `required` | Browser Canvas 2D only |
-| `p5` | No | `named_only` (until **M2b**) | Allowlisted p5 bundle/CDN |
-| `three` | No | `config_gated` (after evals) | Allowlisted three bundle |
+| `p5` | No | `config_gated` | Canvas2D-backed stub harness (full p5 later) |
+| `three` | No | `config_gated` | **B1–B5:** real harness + agent path; offline gates green via `scripts/eval_three.py`; enable with `VIBEIT_TARGET_THREE_ENABLED=1` — see [skeletons/three.md](./skeletons/three.md) |
 
 | Status | Meaning |
 |--------|---------|
@@ -78,4 +78,5 @@ Until multi-target agent work lands, **always canvas2d**.
 |----------|------|
 | TS registry | `packages/contracts/src/targets.ts` |
 | canvas2d skeleton | `md/contracts/skeletons/canvas2d.md` + `packages/contracts/src/skeletons/canvas2d.ts` |
+| three skeleton + vendor pin (B1) | `md/contracts/skeletons/three.md` + `packages/contracts/src/skeletons/three{,-vendor}.ts` |
 | Plan `target` field | **M0d** ✅ [plan-json.md](./plan-json.md) |

@@ -57,11 +57,12 @@ export const TARGET_REGISTRY: Record<TargetId, TargetDefinition> = {
   },
   three: {
     id: "three",
-    description: "3D / camera / materials (WebGL stub harness; AM6)",
+    description:
+      "3D / camera / materials (B2: real three harness; three@0.185.1 product-vendored, no CDN)",
     launchStatus: "config_gated",
     asapPath: false,
     libraries:
-      "@repo/contracts/skeletons/three (WebGL + preserveDrawingBuffer; full three.js later)",
+      "createThreeTool + THREE from @repo/contracts/skeletons/three (Scene/WebGLRenderer/Camera; pin three@0.185.1)",
   },
 };
 

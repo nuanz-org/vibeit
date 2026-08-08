@@ -219,8 +219,19 @@ VIBEIT_TARGET_THREE_ENABLED=1
 ```
 
 Skeletons: `@repo/contracts/skeletons/p5` (Canvas2D-backed p5-like API) and
-`@repo/contracts/skeletons/three` (WebGL + `preserveDrawingBuffer`).  
+`@repo/contracts/skeletons/three` (**B2** real Scene/WebGLRenderer/Camera harness).  
+**B1:** npm pin `three@0.185.1` via `three-vendor` (no CDN). Creative imports
+`createThreeTool` / `THREE` only from the skeleton path.  
+**B4:** when three is enabled, plan/codegen/repair use three craft prompts; vision
+heuristics may soft-upgrade `target` to `three` for materials / cube-logo / WebGL visions.  
+**B5:** offline gates before enabling in an environment:
+
+```bash
+uv run python scripts/eval_three.py   # exit 0 = recommend VIBEIT_TARGET_THREE_ENABLED=1
+```
+
 Goldens: `p5-orbit`, `three-depth`. Plan may set `target` + `targetRationale` only when enabled.
+Default remains off even when gates are green (operator opt-in).
 
 Setup once:
 

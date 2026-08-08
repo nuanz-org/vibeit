@@ -1,6 +1,8 @@
-"""Plan-node system prompt (M3d + AM1 Art Director / DesignBrief v2 + A4 multi-axis)."""
+"""Plan-node system prompt (M3d + AM1 Art Director / DesignBrief v2 + A4 multi-axis + B4 three)."""
 
 from __future__ import annotations
+
+from agent.target_policy import enabled_targets_prompt_block
 
 PLAN_SYSTEM_PROMPT = """\
 You are the Plan stage (Art Director) of Vibeit Create. Given a user vision, you \
@@ -35,7 +37,7 @@ Schema (required + DesignBrief v2 + A4 control fields):
       "required"?: false
     }
   ],
-  "target": "canvas2d" | "p5" | "three",  // default canvas2d; p5/three only if enabled
+  "target": "canvas2d" | "p5" | "three",  // only pick enabled targets (see user prompt)
   "targetRationale"?: string,
   "palette"?: string[],
   "notes"?: string,
@@ -77,7 +79,8 @@ Art direction:
 - Palette: 3–4 roles max. High contrast ink-on-bg; accent for kinetic energy only.
 - Motion: specify easing + tempo + loop. Prefer smooth sine / ease-out over linear.
 - Type: hierarchy (display vs caption). One hero message.
-- Tags: 1–3 that match concept (kinetic-type, particles, gradient, poster, logo, loop, parametric, interaction, card).
+- Tags: 1–3 that match concept (kinetic-type, particles, gradient, poster, logo, loop, \
+parametric, interaction, card, three, material, cube, mesh).
 
 Param density & multi-axis (A4 — critical):
 - Simple stills/posters: **3–6** params is fine.
@@ -88,7 +91,7 @@ Param density & multi-axis (A4 — critical):
 with 2–5 options each; every option must be a distinct visual mode codegen will branch on.
 - Cap enum options at **5** per param (avoid combinatorial explosion in labels).
 - **group** is required on rich tools (≥6 params OR any enum axis): use short section \
-names like "Content", "Shape", "Motion", "Interaction", "Look", "Card".
+names like "Content", "Shape", "Motion", "Interaction", "Look", "Card", "Material".
 - **uiHint**: segmented for small enums (≤4 options), select for larger enums, \
 slider for numbers, switch for booleans.
 - controlSurface.sections should list the same groups and paramNames when you set group.
@@ -99,15 +102,26 @@ Clarify / forced enums (A3→A4):
 the same name, full options, and the given default. Do **not** collapse to one locked look.
 - Plan composition and motion so **every enum branch is visually distinct** when coded.
 
+Target selection (B4 — critical):
+- Prefer target "canvas2d" for kinetic type, social frames, 2D posters, badges, flat/isometric logos.
+- Prefer target "three" (when enabled) for real 3D materials, depth, cube logos with mesh/lighting, \
+frosted glass, multi-axis shape×assembly×material that need MeshStandardMaterial branches, \
+orbit-style camera, WebGL showpieces (Brik Kinetic / Chroma Cube Logo class).
+- Prefer "p5" (when enabled) only for sketch / particle creative-coding looks.
+- Always set targetRationale when target is not canvas2d.
+- Never invent targets outside the enabled list in the user message.
+
 Hard rules:
-- Prefer target "canvas2d" for kinetic type, social frames, 2D posters, badges, isometric logos.
-- Use "p5" / "three" only when product enables them and the vision truly needs them.
-- If unsure, pick canvas2d and explain in targetRationale.
 - params must use only the kinds listed above.
-- Prefer social/creative kinetic tools (type, shapes, particles, posters, badges, logos).
+- Prefer social/creative kinetic tools (type, shapes, particles, posters, badges, logos, 3D marks).
 - Do not invent brand kits or arbitrary npm packages.
 - Output valid JSON only.
 """
+
+
+def plan_system_prompt() -> str:
+    """System prompt + live enabled-target policy (B4)."""
+    return PLAN_SYSTEM_PROMPT + "\n" + enabled_targets_prompt_block() + "\n"
 
 
 def plan_user_prompt(
@@ -153,10 +167,17 @@ def plan_user_prompt(
             )
         clarify_block += "---\n"
 
+    target_block = (
+        "\n--- Target policy (B4) ---\n"
+        f"{enabled_targets_prompt_block()}\n"
+        "---\n"
+    )
+
     return (
         f"Vision:\n{vision_text.strip()}\n"
         f"{style_block}"
-        f"{clarify_block}\n"
+        f"{clarify_block}"
+        f"{target_block}\n"
         "Return the DesignBrief / ToolPlan JSON now — art-direct a playable multi-axis "
-        "tool when the vision is parametric; do not write code."
+        "tool when the vision is parametric; pick the correct target; do not write code."
     )

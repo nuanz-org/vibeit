@@ -566,6 +566,7 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 
 - [ ] p5 enabled after its eval gate passes on corpus subset
 - [x] three stays config-gated until gate passes; launch ships without it (default off)
+- [x] **B5** offline three gates: `uv run python scripts/eval_three.py` (15/15) — recommend env enable, do not auto-enable
 - [x] canvas2d corpus unaffected (regression unit path green)
 
 ### Depends on

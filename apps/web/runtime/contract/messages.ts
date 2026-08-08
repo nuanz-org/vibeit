@@ -80,8 +80,11 @@ export interface ToolIntrospection {
 // Parent → iframe commands
 // ---------------------------------------------------------------------------
 
-/** Max compiled ESM length accepted on mount (enforced in adapter, not guard). */
-export const RUNTIME_MODULE_SOURCE_MAX_CHARS = 500_000;
+/**
+ * Max compiled ESM length accepted on mount (enforced in adapter, not guard).
+ * Raised in B2 for product-vendored three bundled into tool modules.
+ */
+export const RUNTIME_MODULE_SOURCE_MAX_CHARS = 1_500_000;
 
 export interface MountCommand extends RuntimeMessageBase {
   type: "mount";

@@ -1,9 +1,9 @@
 /**
- * Target loaders (M2a3+ / AM6 stubs).
+ * Target loaders (M2a3+ / Track B).
  *
- * canvas2d is the ASAP path. p5 / three host adapters share the same
- * postMessage lifecycle; skeletons use Canvas2D / WebGL stubs until full
- * allowlisted p5/three bundles land (M2b+).
+ * One frame adapter mounts all targets via moduleSource. p5/three named
+ * exports alias the shared adapter (postMessage lifecycle identical).
+ * Real three harness: @repo/contracts/skeletons/three (B2).
  */
 
 export {

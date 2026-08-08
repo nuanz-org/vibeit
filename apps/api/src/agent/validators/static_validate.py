@@ -101,10 +101,29 @@ def static_validate_tool_source(
         if pattern.search(text):
             errors.append(f"forbidden pattern: {name}")
 
-    # Block bare p5/three package imports — only @repo/contracts skeletons
-    if re.search(r"""from\s+['"]p5['"]|from\s+['"]three['"]""", text):
+    # Block bare p5/three package imports (incl. subpaths) — harness skeletons only
+    if re.search(
+        r"""from\s+['"]p5(?:/[^'"]*)?['"]|from\s+['"]three(?:/[^'"]*)?['"]""",
+        text,
+    ):
         errors.append(
             "bare p5/three package imports not allowed — use @repo/contracts/skeletons/*"
+        )
+
+    # B1: product-vendored three pin is harness-only (not creative tool source)
+    if re.search(r"@repo/contracts/skeletons/three-vendor", text):
+        errors.append(
+            "three-vendor is product-only — tool code must use "
+            "@repo/contracts/skeletons/three (createThreeTool)"
+        )
+
+    # Remote CDN / esm.sh style imports (defense beyond npm_import)
+    if re.search(
+        r"""from\s+['"]https?://|import\s*\(\s*['"]https?://""",
+        text,
+    ):
+        errors.append(
+            "remote module URLs not allowed — three is product-vendored (no CDN/esm.sh)"
         )
 
     if not _has_factory(text):

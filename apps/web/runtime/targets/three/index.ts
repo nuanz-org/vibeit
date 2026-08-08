@@ -1,8 +1,8 @@
 /**
- * three target host stub (AM6a).
+ * three target host (AM6 lifecycle · B2 harness · B3 Studio/public mount).
  *
- * Same postMessage lifecycle as canvas2d. Tools use createThreeTool
- * (WebGL + preserveDrawingBuffer). Full three.js bundle is M2b+.
+ * Same postMessage lifecycle as canvas2d. Studio/public pass target:"three"
+ * + moduleSource; frame blob-imports createThreeTool tools.
  */
 
 export {

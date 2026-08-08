@@ -156,6 +156,8 @@ export function StudioShell({
 
   const runtime = useStudioRuntime({
     runtimeToolId: fixture.runtimeToolId,
+    // B3: honor fixture/version target (canvas2d | p5 | three)
+    target: fixture.target,
     sourceCode: liveSource,
     versionDefaultParams: liveDefaults,
     versionParamSchema: liveParamSchema,

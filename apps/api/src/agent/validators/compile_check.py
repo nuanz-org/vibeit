@@ -21,7 +21,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[5]
 _DEFAULT_WEB_ROOT = _REPO_ROOT / "apps" / "web"
 _CLI_REL = Path("runtime") / "compile" / "cli-compile.mjs"
 
-COMPILED_JS_MAX_CHARS = 500_000
+# Raised in B2 so product-vendored three (bundled tool ESM) fits
+COMPILED_JS_MAX_CHARS = 1_500_000
 _DEFAULT_TIMEOUT_S = 45.0
 
 

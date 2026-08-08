@@ -19,7 +19,8 @@ import * as esbuild from "esbuild";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appsWebRoot = path.resolve(__dirname, "../..");
 
-const COMPILED_JS_MAX_CHARS = 500_000;
+// Raised in B2 for product-vendored three bundled into tool ESM
+const COMPILED_JS_MAX_CHARS = 1_500_000;
 const TOOL_SOURCE_MAX_CHARS = 400_000;
 
 /** Mirror allowlist.ts / static_validate (fail closed before esbuild). */
@@ -55,9 +56,26 @@ function allowlist(source) {
   for (const { name, pattern } of FORBIDDEN) {
     if (pattern.test(source)) errors.push(`forbidden pattern: ${name}`);
   }
-  if (/from\s+['"]p5['"]|from\s+['"]three['"]/.test(source)) {
+  if (
+    /from\s+['"]p5(?:\/[^'"]*)?['"]|from\s+['"]three(?:\/[^'"]*)?['"]/.test(
+      source,
+    )
+  ) {
     errors.push(
       "bare p5/three package imports not allowed — use @repo/contracts/skeletons/*",
+    );
+  }
+  if (/@repo\/contracts\/skeletons\/three-vendor/.test(source)) {
+    errors.push(
+      "three-vendor is product-only — tool code must use @repo/contracts/skeletons/three (createThreeTool)",
+    );
+  }
+  if (
+    /from\s+['"]https?:\/\//.test(source) ||
+    /import\s*\(\s*['"]https?:\/\//.test(source)
+  ) {
+    errors.push(
+      "remote module URLs not allowed — three is product-vendored (no CDN/esm.sh)",
     );
   }
   return errors.length ? { ok: false, errors } : { ok: true };
@@ -82,6 +100,7 @@ async function compile(source) {
         sourcefile: "tool-module.ts",
       },
       bundle: true,
+      minify: true,
       write: false,
       format: "esm",
       platform: "browser",

@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { getPublicTool } from "@/lib/api/tools";
 
+import { resolveRuntimeTarget } from "@/features/studio/lib/resolve-runtime-target";
 import { asParams } from "@/features/studio/lib/version-metadata";
 
 import styles from "../styles.module.css";
@@ -64,12 +65,14 @@ export function PublicToolLoader({ publicId }: { publicId: string }) {
   }
 
   const defaultParams = asParams(tool.version.defaultParams);
+  const target = resolveRuntimeTarget(tool.version.target);
 
   return (
     <PublicToolShell
       publicId={tool.publicId}
       title={tool.title}
       description={tool.description}
+      target={target}
       defaultParams={defaultParams}
     />
   );

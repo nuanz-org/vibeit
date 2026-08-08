@@ -6,7 +6,7 @@
 |--|--|
 | **Owner track** | Track A (canvas2d + process) first · Track B (real Three.js) later |
 | **Started** | 2026-08-08 |
-| **Last updated** | 2026-08-08 (A6) |
+| **Last updated** | 2026-08-08 (B5) |
 | **Session plan** | Grok plan mode artifact (A1–A8 / B1–B5); this file is the **repo source of truth** for status |
 
 ---
@@ -42,7 +42,7 @@ They were introduced in the implementation plan for “Brik-class control surfac
 | Studio shows multi-section controllers like Brik | **Yes** — collapsible `group` sections |
 | Agent designs multi-variant enums from clarify answers | **Yes** (A3 + A4 + A5 kinetic golden) |
 | Create flow asks clarify questions | **Yes** — opt-in **Plan with me** (`planMode`) |
-| Real Three.js / frosted glass / OrbitControls | **No** — needs **Track B** |
+| Real Three.js materials / Scene harness | **Track B complete (B1–B5)** — enable via env after offline gates |
 | Multi-variant controls *end-to-end* (canvas2d) | **Yes** (process + UI; quality depends on LLM) |
 
 Correct reading after A1–A6:
@@ -100,11 +100,11 @@ Correct reading after A1–A6:
 
 | PR | Name | Status | Notes |
 |----|------|--------|-------|
-| **B1** | Design freeze: vendored three, not CDN | Not started | CSP + pin version |
-| **B2** | Real three harness (scene/renderer/camera) | Not started | Replace stub WebGL-only harness |
-| **B3** | Frame + Studio mount for `three` | Not started | |
-| **B4** | Agent target policy + three prompts | Not started | |
-| **B5** | Three eval gates | Not started | Config-gated until green |
+| **B1** | Design freeze: vendored three, not CDN | **Done** (2026-08-08) | Pin `three@0.185.1`; CSP unchanged |
+| **B2** | Real three harness (scene/renderer/camera) | **Done** (2026-08-08) | Scene/WebGLRenderer/Camera + auto-render |
+| **B3** | Frame + Studio mount for `three` | **Done** (2026-08-08) | version.target → mount (Studio + public) |
+| **B4** | Agent target policy + three prompts | **Done** (2026-08-08) | Policy + plan/codegen/repair when enabled |
+| **B5** | Three eval gates | **Done** (2026-08-08) | Offline suite green; default still off |
 
 ---
 
@@ -292,6 +292,194 @@ Correct reading after A1–A6:
 - `uv run python tests/test_studio_a6_group_params.py`
 - `apps/web` `tsc --noEmit`
 
+### B1 — Design freeze: vendored three, not CDN (2026-08-08)
+
+**Why:** Brik loads three from esm.sh; Vibeit must keep iframe CSP + allowlist. Before a real harness (B2), freeze **supply** (pin + import surface) so product code never opens a CDN hole.
+
+**What landed**
+
+- Exact npm pin: `three@0.185.1` on `@repo/contracts` (lockfile-managed)
+- Product vendor module: `@repo/contracts/skeletons/three-vendor` → `THREE`, `THREE_VIBEIT_PIN`
+- Design doc: `md/contracts/skeletons/three.md` (who may import what, CSP, compile-size note for B2)
+- Allowlist / static validate: block bare `three` / `three/*`, tool use of `three-vendor`, remote `https://` module URLs
+- Codegen prompt: no CDN / three-vendor / bare three
+- CSP **unchanged** — already forbids remote scripts (`script-src 'self' blob:`, `connect-src 'none'`)
+- Stub harness **not** wired to real three yet (that is **B2**)
+
+**Files**
+
+- `packages/contracts/package.json` (+ lockfile)
+- `packages/contracts/src/skeletons/three-vendor.ts`
+- `packages/contracts/src/skeletons/three.ts` (comments)
+- `packages/contracts/src/targets.ts`
+- `apps/web/runtime/compile/allowlist.ts`, `cli-compile.mjs`
+- `apps/web/runtime/targets/three/index.ts`, `runtime/README.md`
+- `apps/web/public/runtime-frame.js` (regenerated registry string)
+- `apps/api/src/agent/validators/static_validate.py`
+- `apps/api/src/agent/prompts/create_codegen.py`
+- `apps/api/tests/test_track_b1_three_vendor.py`
+- `md/contracts/skeletons/three.md`, `targets.md`, `runtime-host.md`
+
+**What users still cannot do**
+
+- Real Three.js Scene / materials / OrbitControls (**B2**)
+- Studio-worthy 3D tools from Create (**B2–B4**)
+- Enable `three` by default (**B5** eval)
+
+**Verification**
+
+- `uv run python tests/test_track_b1_three_vendor.py`
+- `packages/contracts` `tsc --noEmit`
+- three-depth golden still compiles (stub path)
+
+### B2 — Real three harness (2026-08-08)
+
+**Why:** B1 only pinned supply. Creative tools still used raw WebGL; Brik-class materials/orbit need a real Scene loop owned by the harness.
+
+**What landed**
+
+- `createThreeTool` builds `THREE.Scene` + `WebGLRenderer` (`preserveDrawingBuffer`) + `PerspectiveCamera`
+- `ThreeDrawContext`: `THREE`, `scene`, `camera`, `renderer`, `gl`, `setBackground`, `render`, time/params
+- Harness auto-`render` after each `draw` (opt-out via `autoRender: false`)
+- Re-export `THREE` / pin constants from `@repo/contracts/skeletons/three` for creative fill
+- Golden `three-depth` rewritten: MeshStandardMaterial cube + rim light + satellite (no raw shaders)
+- Compile: `minify: true`; `COMPILED_JS_MAX_CHARS` / `RUNTIME_MODULE_SOURCE_MAX_CHARS` → **1_500_000**
+- Codegen prompt: three craft uses setup/draw scene APIs
+
+**Files**
+
+- `packages/contracts/src/skeletons/three.ts`
+- `packages/contracts/src/skeletons/three-vendor.ts` (comments)
+- `packages/contracts/src/targets.ts`
+- `apps/api/src/agent/golden/three-depth.ts`
+- `apps/web/runtime/compile/tool-module.ts`, `cli-compile.mjs`
+- `apps/web/runtime/contract/messages.ts`
+- `apps/api/src/agent/validators/compile_check.py`
+- `apps/api/src/agent/prompts/create_codegen.py`
+- `apps/api/tests/test_track_b2_three_harness.py` (+ B1 harness import test update)
+- `md/contracts/skeletons/three.md`, `targets.md`
+
+**What users still cannot do**
+
+- Agent freely picking three on Create by default (**B4** prompts + **B5** gate; still `VIBEIT_TARGET_THREE_ENABLED`)
+- Optional OrbitControls product re-export (follow-up)
+- Guaranteed Studio polish edge-cases for three (**B3** if needed)
+
+**Verification**
+
+- `uv run python tests/test_track_b2_three_harness.py`
+- `uv run python tests/test_track_b1_three_vendor.py`
+- `uv run python tests/test_agent_am6.py`
+- `packages/contracts` `tsc --noEmit`
+
+### B3 — Frame + Studio mount for `three` (2026-08-08)
+
+**Why:** B2 harness works in host smoke, but Studio/public always mounted `target: "canvas2d"`, so a three version would be mislabeled and harder to reason about. Mount must honor `tool_versions.target`.
+
+**What landed**
+
+- `resolveRuntimeTarget()` — coerce API target → `canvas2d` \| `p5` \| `three` (fallback canvas2d)
+- Studio loader: `meta.target` from `version.target`
+- Studio runtime: mount + remount pass resolved target (no hardcode)
+- Public tool loader/shell/runtime: same target path
+- Frame adapter: accepts multi-target on mount; tracks `this.target` for bookkeeping
+- Fixture social-frame remains canvas2d; frame READY default still canvas2d
+
+**Files**
+
+- `apps/web/features/studio/lib/resolve-runtime-target.ts`
+- `apps/web/features/studio/fixtures.ts`
+- `apps/web/features/studio/components/studio-tool-loader.tsx`
+- `apps/web/features/studio/components/studio-shell.tsx`
+- `apps/web/features/studio/hooks/use-studio-runtime.ts`
+- `apps/web/features/studio/components/view-source-panel.tsx`
+- `apps/web/features/public-tool/components/public-tool-loader.tsx`
+- `apps/web/features/public-tool/components/public-tool-shell.tsx`
+- `apps/web/features/public-tool/hooks/use-public-tool-runtime.ts`
+- `apps/web/runtime/targets/canvas2d/adapter.ts`
+- `apps/web/runtime/frame/entry.ts`
+- `apps/web/runtime/targets/three/index.ts`, `targets/index.ts`, `README.md`
+- `apps/api/tests/test_track_b3_three_mount.py`
+- `md/contracts/skeletons/three.md`, `runtime-host.md`
+
+**What users still cannot do**
+
+- Create agent freely choosing three without env flag (**B4** + **B5**)
+- OrbitControls product re-export (optional polish)
+
+**Verification**
+
+- `uv run python tests/test_track_b3_three_mount.py`
+- `uv run python tests/test_track_b2_three_harness.py`
+
+### B4 — Agent target policy + three prompts (2026-08-08)
+
+**Why:** Harness + Studio mount work, but Create still treated three as a footnote. When `VIBEIT_TARGET_THREE_ENABLED=1`, plan/codegen/repair must prefer real three craft for 3D visions (Brik Kinetic Cube class).
+
+**What landed**
+
+- `target_policy`: vision heuristics (`vision_prefers_three`), soft-upgrade `apply_vision_target_preference`, `enabled_targets_prompt_block`
+- Plan prompts: live enabled-target block; three selection rules for materials / cube logos / WebGL
+- Plan node: after parse, soft-upgrade canvas2d → three when enabled + strong vision signals
+- Codegen: target-aware system prompts (`codegen_system_prompt`); full three setup/draw + MeshStandardMaterial craft
+- Repair: three-specific system prompt; critique notes three materials
+- Golden `three-depth` tags/description for material/cube/logo retrieval
+- Still **config-gated** (default off) — B5 eval before product default-on
+
+**Files**
+
+- `apps/api/src/agent/target_policy.py`
+- `apps/api/src/agent/prompts/create_plan.py`
+- `apps/api/src/agent/prompts/create_codegen.py`
+- `apps/api/src/agent/prompts/create_repair.py`
+- `apps/api/src/agent/prompts/critique.py`
+- `apps/api/src/agent/nodes/plan.py`, `codegen.py`, `repair.py`
+- `apps/api/src/agent/golden/index.py`
+- `apps/api/tests/test_track_b4_three_agent.py`
+
+**What users still cannot do**
+
+- Get three by default without env flag (**B5** gates before turning on in prod)
+- Guaranteed live LLM quality for multi-axis three without running Create
+
+**Verification**
+
+- `uv run python tests/test_track_b4_three_agent.py`
+- `uv run python tests/test_agent_a4.py`
+- `uv run python tests/test_agent_am6.py`
+
+### B5 — Three eval gates (2026-08-08)
+
+**Why:** B1–B4 make three runnable, but product consensus keeps three **config-gated until quality gates pass**. Operators need a CI-safe suite before setting `VIBEIT_TARGET_THREE_ENABLED=1`.
+
+**What landed**
+
+- Offline gate runner: `agent/evals/three_gates.py` → `run_three_offline_gates()`
+- CLI: `uv run python scripts/eval_three.py` (exit 0 = green; `--json` for machines)
+- Corpus: `evals/create/three/prompts.json` (4 three visions + live advisory thresholds)
+- Gates (all required, offline): policy default-off + enable, vendor pin, real harness, three-depth static/structural/compile/param_coverage/host, CDN/bare three blocked, B4 prompts, B3 Studio mount helper, corpus defined
+- **Product default remains off** — green gates **recommend** enable; they do not auto-flip the env flag
+
+**Files**
+
+- `apps/api/src/agent/evals/__init__.py`
+- `apps/api/src/agent/evals/three_gates.py`
+- `apps/api/scripts/eval_three.py`
+- `apps/api/evals/create/three/prompts.json`
+- `apps/api/evals/create/three/README.md`
+- `apps/api/tests/test_track_b5_three_gates.py`
+- `md/contracts/skeletons/three.md`, `targets.md`, `apps/api/README.md`
+
+**What users still cannot do**
+
+- Get three without setting `VIBEIT_TARGET_THREE_ENABLED=1` (intentional)
+- Guaranteed live LLM multi-axis three quality without a live shootout (offline suite covers path integrity)
+
+**Verification**
+
+- `uv run python scripts/eval_three.py` → 15/15 PASS
+- `uv run python tests/test_track_b5_three_gates.py`
+
 ---
 
 ## Capability matrix (honest)
@@ -307,16 +495,24 @@ Correct reading after A1–A6:
 | Codegen multi-branch enums | Prompted + goldens | Strong | Strong + three |
 | Studio collapsible sections | **Yes** | Yes | Yes |
 | Image library | No | Optional (A7) | Optional |
-| Real Three.js materials / orbit | No (stub only) | No | Yes |
+| Real Three.js Scene / renderer / camera | **Yes** (B2 harness) | Yes | Yes |
+| Real materials / mesh craft in goldens | **Yes** (`three-depth`) | Yes | Yes |
+| Studio/public mount uses `version.target` | **Yes** (B3) | Yes | Yes |
+| Agent three prompts + vision preference | **Yes** when env-enabled (B4) | Yes | Yes |
+| Three offline eval gates | **Yes** (B5 green) | Yes | Yes |
+| Three default-on in prod | **No** (opt-in env after green gates) | Optional | Opt-in |
+| OrbitControls product re-export | No | Optional | Optional |
+| three.js supply (product pin) | **Yes** — npm `0.185.1` (B1) | Yes | Yes |
 | Open esm.sh from tool code | Forbidden | Forbidden | Still forbidden (vendored) |
 
 ---
 
 ## Recommended next steps
 
-1. Optional live Create smoke — planMode multi-enum + open Studio (sectioned panel)  
-2. **A7** media library / **A8** eval when needed  
-3. **Track B** only when real 3D is required for demos like Chroma Cube Logo  
+1. Opt-in three for demos: `VIBEIT_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
+2. Optional live Create smoke (kinetic / chroma cube logo vision)  
+3. **A7** media library / **A8** eval when needed  
+4. Optional OrbitControls product re-export
 
 ---
 
@@ -329,6 +525,7 @@ Correct reading after A1–A6:
 | `md/contracts/param-schema.md` | Param kinds + group/uiHint |
 | `md/contracts/plan-json.md` | ToolPlan + controlSurface |
 | `md/contracts/skeletons/canvas2d.md` | Harness + pointer |
+| `md/contracts/skeletons/three.md` | B1 vendor pin + three harness roadmap |
 | `md/contracts/targets.md` | canvas2d ASAP; three config-gated |
 | `md/agents.md` | Agent specialization map |
 

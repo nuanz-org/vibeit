@@ -1,8 +1,12 @@
 /**
- * In-frame canvas2d VibeTool adapter (M2a3 + dynamic module load).
+ * In-frame VibeTool adapter (M2a3 + dynamic module load + B3 multi-target).
  *
  * Maps host postMessage commands → VibeTool lifecycle.
  * Runs only inside the sandboxed runtime frame (bundled entry).
+ *
+ * Target (canvas2d | p5 | three) is carried on mount for host bookkeeping;
+ * creative code lives in moduleSource (createCanvas2dTool / createP5Tool /
+ * createThreeTool). Same adapter mounts all three via blob import.
  *
  * Factory resolution (mount):
  * 1. moduleSource → blob import → activeFactory
@@ -13,7 +17,13 @@
  * (never a stale fixed constructor factory after a generated load).
  */
 
-import type { CreateVibeTool, ToolAssets, ToolParams, VibeTool } from "@repo/contracts";
+import type {
+  CreateVibeTool,
+  TargetId,
+  ToolAssets,
+  ToolParams,
+  VibeTool,
+} from "@repo/contracts";
 
 import {
   RUNTIME_ERROR_CODES,
@@ -51,8 +61,11 @@ export type Canvas2dFrameAdapterOptions = {
   defaultToolId: string;
   /** postMessage targetOrigin for parent replies (opaque frame → `"*"`). */
   parentOrigin?: string;
-  /** Target id advertised in READY (always canvas2d for this adapter). */
-  target?: "canvas2d";
+  /**
+   * Default target id advertised in READY (fixture path = canvas2d).
+   * Mount command may override for moduleSource tools (p5 / three).
+   */
+  target?: TargetId;
 };
 
 function readIntrospection(tool: VibeTool): ToolIntrospection {
@@ -69,14 +82,17 @@ function errorMessage(err: unknown): string {
 }
 
 /**
- * Frame-side controller: READY pulse + command handling for canvas2d tools.
+ * Frame-side controller: READY pulse + command handling for all targets.
+ * (Historically named Canvas2d — also hosts p5/three moduleSource tools.)
  */
 export class Canvas2dFrameAdapter {
   private readonly root: HTMLElement;
   private readonly fixtureRegistry: Record<string, CreateVibeTool>;
   private readonly defaultToolId: string;
   private readonly parentOrigin: string;
-  private readonly target: "canvas2d";
+  /** Default READY target; updated when mount carries a target. */
+  private target: TargetId;
+
 
   private tool: VibeTool | null = null;
   /** Last successfully resolved factory (module or fixture). */
@@ -275,6 +291,13 @@ export class Canvas2dFrameAdapter {
 
   private async mount(command: MountCommand): Promise<RuntimeResultPayload> {
     await this.safeDisposeTool();
+
+    // B3: track mount target (three / p5 / canvas2d) for READY/bookkeeping
+    const mountTarget: TargetId =
+      command.target === "p5" || command.target === "three"
+        ? command.target
+        : "canvas2d";
+    this.target = mountTarget;
 
     let createTool: CreateVibeTool;
     try {

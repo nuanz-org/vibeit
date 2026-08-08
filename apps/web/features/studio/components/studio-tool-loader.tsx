@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getTool } from "@/lib/api/tools";
 
 import type { StudioFixtureMeta } from "../fixtures";
+import { resolveRuntimeTarget } from "../lib/resolve-runtime-target";
 import {
   asDraftAssets,
   asParams,
@@ -80,6 +81,8 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
   const versionAssetSlots = parseVersionAssetSlots(version?.assetSlots);
   const versionDefaultParams = asParams(version?.defaultParams);
 
+  const runtimeTarget = resolveRuntimeTarget(version?.target);
+
   const meta: StudioFixtureMeta = {
     toolId: tool.id,
     // Logging / mount toolId — not a fixture id; moduleSource carries the code.
@@ -88,7 +91,8 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
     description:
       tool.description ||
       "Created from your vision. Control + assets personalize the live preview; full source is below.",
-    target: "canvas2d",
+    // B3: pass version.target so three (and p5) tools mount correctly
+    target: runtimeTarget,
   };
 
   return (

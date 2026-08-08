@@ -1,68 +1,18 @@
 /**
- * Golden: three-depth (AM6).
- * Hand-authored three-style WebGL tool — animated triangle + depth clear.
+ * Golden: three-depth (AM6 + B2 real three harness).
+ * Rotating depth cube with lights + MeshStandardMaterial — few-shot for three target.
  */
-import { createThreeTool } from "@repo/contracts/skeletons/three";
+import { createThreeTool, THREE } from "@repo/contracts/skeletons/three";
 
-function hexToRgb01(hex: string): [number, number, number] {
-  let h = String(hex || "").trim();
-  if (h.startsWith("#")) h = h.slice(1);
-  if (h.length === 3) {
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
+function colorFrom(hex: string, fallback: string): THREE.Color {
+  try {
+    return new THREE.Color(hex || fallback);
+  } catch {
+    return new THREE.Color(fallback);
   }
-  if (h.length !== 6) return [0.04, 0.04, 0.07];
-  const n = parseInt(h, 16);
-  if (!Number.isFinite(n)) return [0.04, 0.04, 0.07];
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-let _program: WebGLProgram | null = null;
-let _buf: WebGLBuffer | null = null;
-
-function ensureProgram(gl: WebGLRenderingContext): void {
-  if (_program) return;
-  const vsSrc = `
-    attribute vec2 a_pos;
-    uniform float u_time;
-    uniform float u_aspect;
-    varying float v_d;
-    void main() {
-      float s = 0.42 + 0.12 * sin(u_time * 2.0);
-      vec2 p = a_pos * s;
-      p.x /= max(u_aspect, 0.01);
-      v_d = length(a_pos);
-      gl_Position = vec4(p, 0.0, 1.0);
-    }
-  `;
-  const fsSrc = `
-    precision mediump float;
-    uniform vec3 u_accent;
-    uniform vec3 u_ink;
-    varying float v_d;
-    void main() {
-      float a = smoothstep(1.05, 0.15, v_d);
-      vec3 col = mix(u_ink, u_accent, a);
-      gl_FragColor = vec4(col, 1.0);
-    }
-  `;
-  const vs = gl.createShader(gl.VERTEX_SHADER)!;
-  gl.shaderSource(vs, vsSrc);
-  gl.compileShader(vs);
-  const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-  gl.shaderSource(fs, fsSrc);
-  gl.compileShader(fs);
-  _program = gl.createProgram()!;
-  gl.attachShader(_program, vs);
-  gl.attachShader(_program, fs);
-  gl.linkProgram(_program);
-  const verts = new Float32Array([0, 1, -0.866, -0.5, 0.866, -0.5]);
-  _buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, _buf);
-  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
-}
+let mesh: THREE.Mesh | null = null;
 
 export const createTool = () =>
   createThreeTool(
@@ -98,46 +48,99 @@ export const createTool = () =>
         intensity: 0.7,
       }),
       getAssetSlots: () => [],
+      setup(c) {
+        const T = c.THREE;
+        c.scene.add(new T.AmbientLight(0xffffff, 0.4));
+        const key = new T.DirectionalLight(0xffffff, 1.2);
+        key.position.set(2.8, 3.2, 2.4);
+        c.scene.add(key);
+        const rim = new T.DirectionalLight(
+          colorFrom(String(c.params.ink ?? "#f0eaff"), "#f0eaff"),
+          0.55,
+        );
+        rim.position.set(-2.2, 1.2, -1.5);
+        rim.name = "rim-light";
+        c.scene.add(rim);
+
+        mesh = new T.Mesh(
+          new T.BoxGeometry(1.05, 1.05, 1.05),
+          new T.MeshStandardMaterial({
+            color: colorFrom(String(c.params.accent ?? "#7c5cff"), "#7c5cff"),
+            metalness: 0.35,
+            roughness: 0.28,
+            emissive: colorFrom(String(c.params.ink ?? "#f0eaff"), "#f0eaff"),
+            emissiveIntensity: 0.08,
+          }),
+        );
+        mesh.name = "depth-cube";
+        c.scene.add(mesh);
+
+        // Small orbiting satellite for depth / motion variance
+        const sat = new T.Mesh(
+          new T.SphereGeometry(0.18, 24, 16),
+          new T.MeshStandardMaterial({
+            color: colorFrom(String(c.params.ink ?? "#f0eaff"), "#f0eaff"),
+            metalness: 0.5,
+            roughness: 0.25,
+          }),
+        );
+        sat.name = "depth-sat";
+        c.scene.add(sat);
+
+        c.camera.position.set(1.75, 1.35, 2.35);
+        c.camera.lookAt(0, 0, 0);
+      },
       draw(c) {
-        const gl = c.gl;
-        const bg = hexToRgb01(String(c.params.bg ?? "#0a0a12"));
-        const accent = hexToRgb01(String(c.params.accent ?? "#7c5cff"));
-        const ink = hexToRgb01(String(c.params.ink ?? "#f0eaff"));
+        c.setBackground(String(c.params.bg ?? "#0a0a12"));
         const speed = Number(c.params.speed ?? 1);
         const intensity = Number(c.params.intensity ?? 0.7);
-        c.clear(bg[0], bg[1], bg[2], 1);
-        ensureProgram(gl);
-        if (!_program || !_buf) return;
-        gl.useProgram(_program);
-        const aPos = gl.getAttribLocation(_program, "a_pos");
-        gl.bindBuffer(gl.ARRAY_BUFFER, _buf);
-        gl.enableVertexAttribArray(aPos);
-        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-        gl.uniform1f(
-          gl.getUniformLocation(_program, "u_time"),
-          c.time * speed * (0.5 + intensity),
-        );
-        gl.uniform1f(
-          gl.getUniformLocation(_program, "u_aspect"),
-          c.height > 0 ? c.width / c.height : 1,
-        );
-        gl.uniform3f(
-          gl.getUniformLocation(_program, "u_accent"),
-          accent[0],
-          accent[1],
-          accent[2],
-        );
-        gl.uniform3f(
-          gl.getUniformLocation(_program, "u_ink"),
-          ink[0],
-          ink[1],
-          ink[2],
-        );
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        const cube =
+          mesh ??
+          (c.scene.getObjectByName("depth-cube") as THREE.Mesh | null);
+        const sat = c.scene.getObjectByName("depth-sat") as THREE.Mesh | null;
+        const rim = c.scene.getObjectByName(
+          "rim-light",
+        ) as THREE.DirectionalLight | null;
+
+        if (cube) {
+          cube.rotation.x = c.time * 0.5 * speed * (0.6 + intensity * 0.5);
+          cube.rotation.y = c.time * 0.85 * speed;
+          const mat = cube.material as THREE.MeshStandardMaterial;
+          if (mat?.color) {
+            mat.color.copy(
+              colorFrom(String(c.params.accent ?? "#7c5cff"), "#7c5cff"),
+            );
+          }
+          if (mat && "emissive" in mat) {
+            mat.emissive.copy(
+              colorFrom(String(c.params.ink ?? "#f0eaff"), "#f0eaff"),
+            );
+            mat.emissiveIntensity = 0.05 + intensity * 0.12;
+          }
+        }
+        if (sat) {
+          const r = 1.35 + intensity * 0.15;
+          sat.position.set(
+            Math.cos(c.time * speed * 1.2) * r,
+            Math.sin(c.time * speed * 0.9) * 0.45,
+            Math.sin(c.time * speed * 1.2) * r,
+          );
+          const sm = sat.material as THREE.MeshStandardMaterial;
+          if (sm?.color) {
+            sm.color.copy(
+              colorFrom(String(c.params.ink ?? "#f0eaff"), "#f0eaff"),
+            );
+          }
+        }
+        if (rim) {
+          rim.color.copy(
+            colorFrom(String(c.params.ink ?? "#f0eaff"), "#f0eaff"),
+          );
+          rim.intensity = 0.35 + intensity * 0.4;
+        }
       },
       dispose() {
-        _program = null;
-        _buf = null;
+        mesh = null;
       },
     },
     { aspect: "1:1", autoDpr: true },

@@ -48,10 +48,31 @@ export function allowlistToolSource(source: string): AllowlistResult {
     }
   }
 
-  // Bare p5/three packages blocked; @repo/contracts/skeletons/* is allowed (AM6)
-  if (/from\s+['"]p5['"]|from\s+['"]three['"]/.test(text)) {
+  // Bare p5/three packages blocked; creative tools use harness skeletons only (AM6 + B1)
+  if (
+    /from\s+['"]p5(?:\/[^'"]*)?['"]|from\s+['"]three(?:\/[^'"]*)?['"]/.test(
+      text,
+    )
+  ) {
     errors.push(
       "bare p5/three package imports not allowed — use @repo/contracts/skeletons/*",
+    );
+  }
+
+  // B1: product-vendored three is for the harness only — not tool creative source
+  if (/@repo\/contracts\/skeletons\/three-vendor/.test(text)) {
+    errors.push(
+      "three-vendor is product-only — tool code must use @repo/contracts/skeletons/three (createThreeTool)",
+    );
+  }
+
+  // Remote module URLs (CDN / esm.sh) — belt-and-suspenders beyond npm_import
+  if (
+    /from\s+['"]https?:\/\//.test(text) ||
+    /import\s*\(\s*['"]https?:\/\//.test(text)
+  ) {
+    errors.push(
+      "remote module URLs not allowed — three is product-vendored (no CDN/esm.sh)",
     );
   }
 

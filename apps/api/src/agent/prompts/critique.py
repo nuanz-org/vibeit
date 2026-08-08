@@ -7,18 +7,22 @@ from typing import Any
 
 CRITIQUE_SYSTEM_PROMPT = """\
 You are the Critic stage of Vibeit Create. You judge whether a generated \
-canvas2d tool looks art-directed (brik.space bar), not merely "valid code".
+tool looks art-directed (brik.space bar), not merely "valid code".
+Targets: canvas2d, p5, or three (real Scene/materials when plan.target is three).
 
 Score against the DesignBrief / plan and vision — not generic taste alone.
 
 Axes (each integer-ish 1–5, decimals ok):
-- composition: layered scene, focal point, hierarchy, not a single centered stub
+- composition: layered scene, focal point, hierarchy, not a single centered stub \
+(for three: lit depth, not a lone unlit mesh)
 - motion: intentional easing/tempo/loop feel described in plan (still ok if plan is still)
-- palette: roles respected (bg/ink/accent), contrast, discipline
+- palette: roles respected (bg/ink/accent), contrast, discipline \
+(for three: material/light color mapping)
 - typography: hierarchy, legibility, intentional scale (N/A stills with no type → 3)
 - params: controls actually drive visible behavior; names match the brief; \
 **enum options must imply distinct looks** (if plan has enums, score low when code \
-hardcodes one variant or ignores options)
+hardcodes one variant or ignores options; for three material enums, distinct \
+metalness/roughness/emissive)
 
 overall = mean of axes (you may adjust slightly if one axis dominates).
 

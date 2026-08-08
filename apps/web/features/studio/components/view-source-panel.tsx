@@ -37,7 +37,7 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
         : "No version code stored yet for this tool."
       : "Fixture: apps/web/runtime/fixtures/social-frame/tool.ts"
   }
-// Runtime preview uses the sandboxed canvas2d host.`;
+// Runtime preview uses the sandboxed iframe host (target: ${target}).`;
 
   return (
     <div className={styles.sourcePanel}>

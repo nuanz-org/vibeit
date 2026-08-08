@@ -540,10 +540,10 @@ var TARGET_REGISTRY = {
   },
   three: {
     id: "three",
-    description: "3D / camera / materials (WebGL stub harness; AM6)",
+    description: "3D / camera / materials (B2: real three harness; three@0.185.1 product-vendored, no CDN)",
     launchStatus: "config_gated",
     asapPath: false,
-    libraries: "@repo/contracts/skeletons/three (WebGL + preserveDrawingBuffer; full three.js later)"
+    libraries: "createThreeTool + THREE from @repo/contracts/skeletons/three (Scene/WebGLRenderer/Camera; pin three@0.185.1)"
   }
 };
 var TARGET_DEFINITIONS = TARGET_IDS.map(
@@ -611,7 +611,7 @@ var HOST_TO_FRAME_TYPES = [
   "dispose",
   "getIntrospection"
 ];
-var RUNTIME_MODULE_SOURCE_MAX_CHARS = 5e5;
+var RUNTIME_MODULE_SOURCE_MAX_CHARS = 15e5;
 function envelope() {
   return {
     channel: RUNTIME_CHANNEL,
@@ -884,6 +884,7 @@ var Canvas2dFrameAdapter = class {
     __publicField(this, "fixtureRegistry");
     __publicField(this, "defaultToolId");
     __publicField(this, "parentOrigin");
+    /** Default READY target; updated when mount carries a target. */
     __publicField(this, "target");
     __publicField(this, "tool", null);
     /** Last successfully resolved factory (module or fixture). */
@@ -1054,6 +1055,8 @@ var Canvas2dFrameAdapter = class {
   }
   async mount(command) {
     await this.safeDisposeTool();
+    const mountTarget = command.target === "p5" || command.target === "three" ? command.target : "canvas2d";
+    this.target = mountTarget;
     let createTool;
     try {
       createTool = await this.resolveCreateTool(command);
@@ -1299,5 +1302,6 @@ startCanvas2dFrameAdapter({
   },
   defaultToolId: SOCIAL_FRAME_TOOL_ID,
   parentOrigin: "*",
+  // Default READY = canvas2d fixture; mount may switch to p5/three
   target: "canvas2d"
 });

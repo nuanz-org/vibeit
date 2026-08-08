@@ -148,11 +148,20 @@ GOLDEN_MANIFEST: tuple[GoldenEntry, ...] = (
                 "webgl",
                 "depth",
                 "3d",
-                "shader",
                 "material",
+                "mesh",
+                "cube",
+                "logo",
+                "parametric",
+                "loop",
+                "metalness",
+                "lighting",
             }
         ),
-        description="three-style WebGL depth pulse with palette roles",
+        description=(
+            "Real three harness: MeshStandardMaterial cube + rim light + "
+            "orbiting satellite; palette-driven materials (B2/B4 craft exemplar)"
+        ),
         target="three",
     ),
 )

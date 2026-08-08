@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react";
 import type {
   AssetSlots,
   ParamSchema,
+  TargetId,
   ToolAssets,
   ToolParams,
 } from "@repo/contracts";
@@ -29,6 +30,7 @@ import {
 } from "@/runtime";
 
 import { draftAssetsToToolAssets } from "../lib/draft-assets";
+import { resolveRuntimeTarget } from "../lib/resolve-runtime-target";
 import {
   buildPngExportFilename,
   buildPngSequenceZipFilename,
@@ -81,6 +83,11 @@ export type LastCaptureInfo = {
 
 export type UseStudioRuntimeOptions = {
   runtimeToolId: string;
+  /**
+   * Runtime target for mount (B3). Defaults to canvas2d when omitted/invalid.
+   * From tool_versions.target for generated tools.
+   */
+  target?: TargetId | string | null;
   /**
    * Generated TypeScript from tool_versions.code.
    * When non-empty, compile + mount as moduleSource (no fixture silent fallback).
@@ -189,10 +196,11 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       // sourceCode via ref — onReady deps only need stable runtimeToolId identity
       // but regenerated versions update hydrateOptsRef every render.
       const moduleSource = await resolveModuleSource();
+      const target = resolveRuntimeTarget(opts.target);
 
       const intro = await host.mountTool({}, undefined, {
         toolId: opts.runtimeToolId,
-        target: "canvas2d",
+        target,
         moduleSource,
       });
 
@@ -693,9 +701,10 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       if (!host) return;
       const opts = hydrateOptsRef.current;
       const moduleSource = await resolveModuleSource();
+      const target = resolveRuntimeTarget(opts.target);
       const intro = await host.mountTool(params, assetsRef.current, {
         toolId: opts.runtimeToolId,
-        target: "canvas2d",
+        target,
         moduleSource,
       });
       const controlSchema =

@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import type { ToolParams } from "@repo/contracts";
+import type { TargetId, ToolParams } from "@repo/contracts";
 
 import {
   RuntimeCompileError,
@@ -15,6 +15,8 @@ import {
   type RuntimeHostHandle,
   type RuntimeHostStatus,
 } from "@/runtime";
+
+import { resolveRuntimeTarget } from "@/features/studio/lib/resolve-runtime-target";
 
 function formatErr(err: unknown): string {
   if (err instanceof RuntimeBridgeError) {
@@ -35,6 +37,8 @@ export type UsePublicToolRuntimeOptions = {
   publicId: string;
   /** Logging / mount tool id (publicId is fine). */
   runtimeToolId: string;
+  /** B3: tool_versions.target for mount (defaults canvas2d). */
+  target?: TargetId | string | null;
   defaultParams?: ToolParams | null;
 };
 
@@ -81,10 +85,11 @@ export function usePublicToolRuntime(options: UsePublicToolRuntimeOptions) {
         const opts = optsRef.current;
         const moduleSource = await resolveModuleSource();
         const defaults = opts.defaultParams ?? {};
+        const target = resolveRuntimeTarget(opts.target);
 
         await host.mountTool(defaults, undefined, {
           toolId: opts.runtimeToolId,
-          target: "canvas2d",
+          target,
           moduleSource,
         });
 

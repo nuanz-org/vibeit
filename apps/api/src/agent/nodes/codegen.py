@@ -9,7 +9,7 @@ from adapters.llm.router import resolve_model_for_role
 from core.config import get_settings
 from agent.codegen_parse import CodegenParseError, extract_typescript_module
 from agent.golden.retrieve import retrieve_goldens
-from agent.prompts.create_codegen import CODEGEN_SYSTEM_PROMPT, codegen_user_prompt
+from agent.prompts.create_codegen import codegen_system_prompt, codegen_user_prompt
 from agent.state import CreateGraphState
 
 
@@ -53,8 +53,11 @@ async def codegen_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
         if isinstance(state.get("clarify_result"), dict)
         else None
     )
+    plan_target = "canvas2d"
+    if isinstance(plan.get("target"), str) and plan["target"].strip():
+        plan_target = plan["target"].strip()
     messages = [
-        ChatMessage(role="system", content=CODEGEN_SYSTEM_PROMPT),
+        ChatMessage(role="system", content=codegen_system_prompt(plan_target)),
         ChatMessage(
             role="user",
             content=codegen_user_prompt(

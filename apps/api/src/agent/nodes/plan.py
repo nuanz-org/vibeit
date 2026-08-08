@@ -1,4 +1,4 @@
-"""Plan node — vision → ToolPlan JSON (M3d). Forces target=canvas2d."""
+"""Plan node — vision → ToolPlan JSON (M3d + B4 target policy)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
 from adapters.llm.router import resolve_model_for_role
 from agent.clarify_parse import merge_forced_enums_into_plan
 from agent.plan_parse import PlanParseError, parse_asap_plan
-from agent.prompts.create_plan import PLAN_SYSTEM_PROMPT, plan_user_prompt
+from agent.prompts.create_plan import plan_system_prompt, plan_user_prompt
+from agent.target_policy import apply_vision_target_preference
 from agent.state import CreateGraphState
 from core.config import get_settings
 
@@ -43,7 +44,7 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
         else None
     )
     base_messages = [
-        ChatMessage(role="system", content=PLAN_SYSTEM_PROMPT),
+        ChatMessage(role="system", content=plan_system_prompt()),
         ChatMessage(
             role="user",
             content=plan_user_prompt(
@@ -89,6 +90,8 @@ async def plan_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any
                 forced = clarify_result.get("forcedEnums")
                 if isinstance(forced, list) and forced:
                     plan = merge_forced_enums_into_plan(plan, forced)
+            # B4: soft-upgrade to three/p5 when enabled and vision strongly prefers it
+            plan = apply_vision_target_preference(plan, vision)
             tokens += completion.usage.total_tokens
             tgt = plan.get("target") if isinstance(plan.get("target"), str) else "canvas2d"
             return {

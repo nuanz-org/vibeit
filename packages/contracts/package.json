@@ -31,6 +31,10 @@
     "./skeletons/three": {
       "types": "./src/skeletons/three.ts",
       "default": "./src/skeletons/three.ts"
+    },
+    "./skeletons/three-vendor": {
+      "types": "./src/skeletons/three-vendor.ts",
+      "default": "./src/skeletons/three-vendor.ts"
     }
   },
   "scripts": {
@@ -41,7 +45,11 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
+    "@types/three": "0.185.0",
     "eslint": "^9.39.1",
     "typescript": "5.9.2"
+  },
+  "dependencies": {
+    "three": "0.185.1"
   }
 }

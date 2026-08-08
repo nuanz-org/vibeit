@@ -12,8 +12,11 @@ import { fileURLToPath } from "node:url";
 
 import { allowlistToolSource, TOOL_SOURCE_MAX_CHARS } from "./allowlist";
 
-/** Max compiled JS returned to client / postMessage. */
-export const COMPILED_JS_MAX_CHARS = 500_000;
+/**
+ * Max compiled JS returned to client / postMessage.
+ * Raised in B2 so product-vendored three (bundled into tool ESM) fits.
+ */
+export const COMPILED_JS_MAX_CHARS = 1_500_000;
 
 function looksLikeWebPackage(dir: string): boolean {
   try {
@@ -72,6 +75,8 @@ export async function compileToolModule(
         sourcefile: "tool-module.ts",
       },
       bundle: true,
+      // Minify keeps three.js under practical postMessage / host limits (B2)
+      minify: true,
       write: false,
       format: "esm",
       platform: "browser",

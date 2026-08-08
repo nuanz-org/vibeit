@@ -3,6 +3,9 @@
  *
  * Build: `pnpm --filter web build:runtime-frame` (ESM — required for import(blobUrl))
  * Loaded by public/runtime-frame.html as <script type="module">.
+ *
+ * B3: one adapter hosts canvas2d fixtures and moduleSource tools for any
+ * target (canvas2d | p5 | three). Mount command carries the real target.
  */
 
 import {
@@ -30,5 +33,6 @@ startCanvas2dFrameAdapter({
   },
   defaultToolId: SOCIAL_FRAME_TOOL_ID,
   parentOrigin: "*",
+  // Default READY = canvas2d fixture; mount may switch to p5/three
   target: "canvas2d",
 });

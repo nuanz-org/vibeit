@@ -179,7 +179,7 @@ Sandbox attrs + CSP are enforced by the **M2a2 host** (see below), not by TypeSc
 | Control | Value | Why |
 |---------|--------|-----|
 | `sandbox` | `allow-scripts` only | Scripts run; **no** `allow-same-origin` → opaque origin; no parent cookie/DOM access |
-| Frame CSP | `default-src 'none'`; `script-src 'self' blob:`; `connect-src 'none'`; `img-src http: https: blob: data:` | Block fetch/XHR; allow asset images + blob tool modules |
+| Frame CSP | `default-src 'none'`; `script-src 'self' blob:`; `connect-src 'none'`; `img-src http: https: blob: data:` | Block fetch/XHR; allow asset images + blob tool modules. **Track B1–B3:** real three is product-vendored via npm (`three@0.185.1` on `@repo/contracts`) and enters the frame only by **bundled tool ESM** (`blob:`). Studio/public pass `mount.target` from `tool_versions.target` (`canvas2d` \| `p5` \| `three`). Never CDN / esm.sh. See [skeletons/three.md](./skeletons/three.md). |
 | Inbound origin | `"null"` | Opaque sandboxed frames report this origin string |
 | Parent → frame `targetOrigin` | `"*"` | Required when frame origin is opaque |
 | Ready race | Frame **pulses** `ready` every 250ms until first host command | Parent often attaches listener on `load` after first ready |

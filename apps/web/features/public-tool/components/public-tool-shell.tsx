@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import type { ToolParams } from "@repo/contracts";
+import type { TargetId, ToolParams } from "@repo/contracts";
 
 import { RuntimeHost } from "@/runtime";
 
@@ -13,6 +13,8 @@ export type PublicToolShellProps = {
   publicId: string;
   title?: string | null;
   description?: string | null;
+  /** B3: published version target for mount. */
+  target?: TargetId | string | null;
   defaultParams?: ToolParams | null;
 };
 
@@ -23,11 +25,13 @@ export function PublicToolShell({
   publicId,
   title,
   description,
+  target,
   defaultParams,
 }: PublicToolShellProps) {
   const runtime = usePublicToolRuntime({
     publicId,
     runtimeToolId: `public:${publicId}`,
+    target,
     defaultParams,
   });
 

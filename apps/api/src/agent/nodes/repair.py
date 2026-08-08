@@ -8,7 +8,7 @@ from typing import Any
 from adapters.llm.protocol import ChatMessage, LLMClient, LLMError
 from adapters.llm.router import resolve_model_for_role
 from agent.codegen_parse import CodegenParseError, extract_typescript_module
-from agent.prompts.create_repair import REPAIR_SYSTEM_PROMPT, repair_user_prompt
+from agent.prompts.create_repair import repair_system_prompt, repair_user_prompt
 from agent.state import CreateGraphState
 from core.config import get_settings
 
@@ -45,8 +45,11 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
 
     plan = state.get("plan") if isinstance(state.get("plan"), dict) else None
     plan_json = json.dumps(plan, indent=2) if plan is not None else None
+    plan_target = "canvas2d"
+    if isinstance(plan, dict) and isinstance(plan.get("target"), str):
+        plan_target = plan["target"]
     messages = [
-        ChatMessage(role="system", content=REPAIR_SYSTEM_PROMPT),
+        ChatMessage(role="system", content=repair_system_prompt(plan_target)),
         ChatMessage(
             role="user",
             content=repair_user_prompt(

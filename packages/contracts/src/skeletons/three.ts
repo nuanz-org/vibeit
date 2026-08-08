@@ -1,9 +1,14 @@
 /**
- * three-style skeleton harness (AM6a).
+ * three skeleton harness (Track B2 — real three.js).
  *
- * Stub harness: WebGL canvas with preserveDrawingBuffer for capture.
- * Does NOT load three.js from CDN (CSP blocks it). Creative fill gets a
- * minimal WebGL context + time/params; full three.js allowlist is M2b+.
+ * B1: product-vendored pin `@repo/contracts/skeletons/three-vendor` (`three@0.185.1`).
+ * B2: harness owns Scene / WebGLRenderer / PerspectiveCamera + rAF + capture/dispose.
+ *
+ * Creative / agent tool source must import only this module:
+ *   import { createThreeTool, THREE } from "@repo/contracts/skeletons/three"
+ * Never bare `"three"`, `"three/addons/*"`, or `skeletons/three-vendor`.
+ *
+ * Docs: md/contracts/skeletons/three.md
  */
 
 import type { AssetSlots, ParamSchema } from "../param-schema";
@@ -14,33 +19,71 @@ import type {
   ToolParams,
   VibeTool,
 } from "../vibe-tool";
+import {
+  THREE,
+  THREE_VIBEIT_PIN,
+  THREE_VIBEIT_SUPPLY,
+} from "./three-vendor";
+
+// Re-export product three for creative fill (allowlisted via this package path).
+export { THREE, THREE_VIBEIT_PIN, THREE_VIBEIT_SUPPLY };
 
 export type ThreeAspect = "1:1" | "9:16" | "16:9" | "4:5";
 
 export interface ThreeHarnessOptions {
   aspect?: ThreeAspect | string;
   autoDpr?: boolean;
+  /**
+   * Vertical FOV for the default PerspectiveCamera (degrees). Default 45.
+   */
+  fov?: number;
+  /**
+   * When true (default), harness calls `renderer.render(scene, camera)` after
+   * each successful `draw`. Set false only if creative renders manually.
+   */
+  autoRender?: boolean;
 }
 
+/**
+ * Frame state for creative `setup` / `draw` / hooks.
+ *
+ * Mutate `scene` (add meshes, lights). Prefer `c.THREE` for constructors.
+ * Do not replace `renderer` / `camera` ownership, start your own rAF, or import CDN three.
+ */
 export interface ThreeDrawContext {
   canvas: HTMLCanvasElement;
-  gl: WebGLRenderingContext;
+  /** Product-vendored three namespace (same pin as three-vendor). */
+  THREE: typeof THREE;
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  renderer: THREE.WebGLRenderer;
+  /** Underlying WebGL context (escape hatch; prefer three APIs). */
+  gl: WebGLRenderingContext | WebGL2RenderingContext;
   width: number;
   height: number;
   dpr: number;
   params: ToolParams;
   assets: ToolAssets;
+  /** Seconds since mount. */
   time: number;
+  /** Seconds since previous frame. */
   delta: number;
-  /** Clear color buffer (0–1 floats). */
-  clear: (r: number, g: number, b: number, a?: number) => void;
+  /**
+   * Set clear / background color. Accepts CSS hex (`#rrggbb`) or 0–1 RGB floats.
+   * Alpha defaults to 1.
+   */
+  setBackground: (color: string | number, g?: number, b?: number, a?: number) => void;
+  /** Manual render pass (usually unnecessary when autoRender is true). */
+  render: () => void;
 }
 
 export interface ThreeCreative {
   getParamSchema(): ParamSchema;
   getDefaultParams(): ToolParams;
   getAssetSlots(): AssetSlots;
+  /** Once after mount (scene/camera/renderer ready). Add meshes/lights here. */
   setup?(c: ThreeDrawContext): void | Promise<void>;
+  /** Every frame — animate; harness renders after unless autoRender is false. */
   draw(c: ThreeDrawContext): void;
   onParams?(params: ToolParams, c: ThreeDrawContext): void;
   dispose?(): void;
@@ -63,23 +106,16 @@ function parseAspect(aspect: string): { w: number; h: number } {
   return { w: 1, h: 1 };
 }
 
-function hexToRgb01(hex: string): [number, number, number] {
-  let h = hex.trim();
-  if (h.startsWith("#")) h = h.slice(1);
-  if (h.length === 3) {
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
+function hexToColor(hex: string): THREE.Color {
+  try {
+    return new THREE.Color(hex);
+  } catch {
+    return new THREE.Color("#0a0a12");
   }
-  if (h.length !== 6) return [0.05, 0.05, 0.08];
-  const n = parseInt(h, 16);
-  if (!Number.isFinite(n)) return [0.05, 0.05, 0.08];
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
 /**
- * Build a VibeTool with WebGL creative fill (three-style stub harness).
+ * Build a VibeTool with a real three.js scene loop.
  * Uses preserveDrawingBuffer so captureFrame can read pixels.
  */
 export function createThreeTool(
@@ -88,10 +124,14 @@ export function createThreeTool(
 ): VibeTool {
   const aspect = options.aspect ?? "1:1";
   const autoDpr = options.autoDpr !== false;
+  const autoRender = options.autoRender !== false;
+  const fov = options.fov ?? 45;
 
   let root: HTMLElement | null = null;
   let canvas: HTMLCanvasElement | null = null;
-  let gl: WebGLRenderingContext | null = null;
+  let renderer: THREE.WebGLRenderer | null = null;
+  let scene: THREE.Scene | null = null;
+  let camera: THREE.PerspectiveCamera | null = null;
   let params: ToolParams = { ...creative.getDefaultParams() };
   let assets: ToolAssets = {};
   let raf = 0;
@@ -103,15 +143,24 @@ export function createThreeTool(
   let height = 0;
   let dpr = 1;
   let resizeObserver: ResizeObserver | null = null;
-  let program: WebGLProgram | null = null;
-  let buf: WebGLBuffer | null = null;
+
+  // Default demo mesh (used only when creative.draw throws / empty default tool)
+  let defaultMesh: THREE.Mesh | null = null;
+  let defaultLight: THREE.Light | null = null;
+  let defaultAmbient: THREE.Light | null = null;
 
   function buildCtx(now: number): ThreeDrawContext {
-    if (!canvas || !gl) throw new Error("three harness: not mounted");
-    const g = gl;
+    if (!canvas || !renderer || !scene || !camera) {
+      throw new Error("three harness: not mounted");
+    }
+    const gl = renderer.getContext();
     return {
       canvas,
-      gl: g,
+      THREE,
+      scene,
+      camera,
+      renderer,
+      gl,
       width,
       height,
       dpr,
@@ -119,83 +168,65 @@ export function createThreeTool(
       assets,
       time: (now - startMs) / 1000,
       delta: lastMs ? (now - lastMs) / 1000 : 0,
-      clear(r, gg, b, a = 1) {
-        g.clearColor(r, gg, b, a);
-        g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT);
+      setBackground(color, g, b, a = 1) {
+        if (typeof color === "string") {
+          scene!.background = hexToColor(color);
+          renderer!.setClearColor(hexToColor(color), a);
+        } else if (
+          typeof color === "number" &&
+          typeof g === "number" &&
+          typeof b === "number"
+        ) {
+          const c = new THREE.Color(color, g, b);
+          scene!.background = c;
+          renderer!.setClearColor(c, a);
+        } else if (typeof color === "number") {
+          const c = new THREE.Color(color);
+          scene!.background = c;
+          renderer!.setClearColor(c, a);
+        }
+      },
+      render() {
+        renderer!.render(scene!, camera!);
       },
     };
   }
 
-  function ensureDefaultProgram() {
-    if (!gl || program) return;
-    const vsSrc = `
-      attribute vec2 a_pos;
-      uniform float u_time;
-      uniform float u_aspect;
-      varying float v_d;
-      void main() {
-        float s = 0.35 + 0.08 * sin(u_time * 2.0);
-        vec2 p = a_pos * s;
-        p.x /= u_aspect;
-        v_d = length(a_pos);
-        gl_Position = vec4(p, 0.0, 1.0);
-      }
-    `;
-    const fsSrc = `
-      precision mediump float;
-      uniform vec3 u_accent;
-      varying float v_d;
-      void main() {
-        float a = smoothstep(1.0, 0.2, v_d);
-        gl_FragColor = vec4(u_accent * a, 1.0);
-      }
-    `;
-    const vs = gl.createShader(gl.VERTEX_SHADER)!;
-    gl.shaderSource(vs, vsSrc);
-    gl.compileShader(vs);
-    const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-    gl.shaderSource(fs, fsSrc);
-    gl.compileShader(fs);
-    program = gl.createProgram()!;
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    const verts = new Float32Array([
-      0, 1, -0.866, -0.5, 0.866, -0.5,
-    ]);
-    buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+  function ensureDefaultScene(c: ThreeDrawContext) {
+    if (defaultMesh) return;
+    const T = c.THREE;
+    defaultAmbient = new T.AmbientLight(0xffffff, 0.45);
+    c.scene.add(defaultAmbient);
+    defaultLight = new T.DirectionalLight(0xffffff, 1.1);
+    defaultLight.position.set(2.5, 3.5, 2);
+    c.scene.add(defaultLight);
+    const geo = new T.BoxGeometry(1, 1, 1);
+    const mat = new T.MeshStandardMaterial({
+      color: hexToColor(String(c.params.accent ?? "#7c5cff")),
+      metalness: 0.25,
+      roughness: 0.35,
+    });
+    defaultMesh = new T.Mesh(geo, mat);
+    c.scene.add(defaultMesh);
+    c.camera.position.set(1.6, 1.2, 2.2);
+    c.camera.lookAt(0, 0, 0);
   }
 
   function defaultDraw(c: ThreeDrawContext) {
-    const g = c.gl;
-    ensureDefaultProgram();
-    if (!program || !buf) return;
-    const bg = hexToRgb01(String(c.params.bg ?? "#0a0a12"));
-    const accent = hexToRgb01(String(c.params.accent ?? "#7c5cff"));
-    c.clear(bg[0], bg[1], bg[2], 1);
-    g.useProgram(program);
-    const aPos = g.getAttribLocation(program, "a_pos");
-    g.bindBuffer(g.ARRAY_BUFFER, buf);
-    g.enableVertexAttribArray(aPos);
-    g.vertexAttribPointer(aPos, 2, g.FLOAT, false, 0, 0);
-    g.uniform1f(g.getUniformLocation(program, "u_time"), c.time);
-    g.uniform1f(
-      g.getUniformLocation(program, "u_aspect"),
-      c.height > 0 ? c.width / c.height : 1,
-    );
-    g.uniform3f(
-      g.getUniformLocation(program, "u_accent"),
-      accent[0],
-      accent[1],
-      accent[2],
-    );
-    g.drawArrays(g.TRIANGLES, 0, 3);
+    ensureDefaultScene(c);
+    const bg = String(c.params.bg ?? "#0a0a12");
+    c.setBackground(bg);
+    const speed = Number(c.params.speed ?? 1);
+    if (defaultMesh) {
+      defaultMesh.rotation.x = c.time * 0.55 * speed;
+      defaultMesh.rotation.y = c.time * 0.85 * speed;
+      const mat = defaultMesh.material as THREE.MeshStandardMaterial;
+      if (mat?.color) mat.color.copy(hexToColor(String(c.params.accent ?? "#7c5cff")));
+    }
   }
 
   function layout() {
-    if (!root || !canvas || !gl) return;
+    if (!root || !canvas || !renderer || !camera) return;
     const rect = root.getBoundingClientRect();
     const ar = parseAspect(aspect);
     let cssW = Math.max(1, Math.floor(rect.width) || 0);
@@ -209,13 +240,14 @@ export function createThreeTool(
     height = cssH;
     canvas.style.width = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
-    canvas.width = Math.max(1, Math.floor(cssW * dpr));
-    canvas.height = Math.max(1, Math.floor(cssH * dpr));
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(cssW, cssH, false);
+    camera.aspect = cssW / Math.max(cssH, 1);
+    camera.updateProjectionMatrix();
   }
 
   function frame(now: number) {
-    if (!mounted || !gl || !canvas) return;
+    if (!mounted || !renderer || !scene || !camera || !canvas) return;
     const c = buildCtx(now);
     if (!setupDone) {
       setupDone = true;
@@ -230,32 +262,74 @@ export function createThreeTool(
         /* keep loop */
       }
     }
+    if (autoRender) {
+      try {
+        renderer.render(scene, camera);
+      } catch {
+        /* keep loop */
+      }
+    }
     lastMs = now;
     raf = requestAnimationFrame(frame);
+  }
+
+  function disposeThreeGraph() {
+    if (defaultMesh) {
+      defaultMesh.geometry?.dispose();
+      const mat = defaultMesh.material;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else mat?.dispose();
+      defaultMesh = null;
+    }
+    defaultLight = null;
+    defaultAmbient = null;
+    if (scene) {
+      scene.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.geometry?.dispose?.();
+          const mat = mesh.material;
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose?.());
+          else (mat as THREE.Material | undefined)?.dispose?.();
+        }
+      });
+      scene.clear();
+    }
+    renderer?.dispose();
+    renderer?.forceContextLoss?.();
   }
 
   return {
     async mount(el: HTMLElement, mountOptions: MountOptions) {
       root = el;
       root.replaceChildren();
-      canvas = document.createElement("canvas");
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 100);
+      camera.position.set(0, 0, 3);
+
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        // Required for reliable captureFrame / toBlob
+        preserveDrawingBuffer: true,
+      });
+      renderer.setClearColor(hexToColor("#0a0a12"), 1);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      canvas = renderer.domElement;
       canvas.setAttribute("data-vibe-target", "three");
       canvas.style.display = "block";
       canvas.style.width = "100%";
       canvas.style.height = "100%";
       root.appendChild(canvas);
-      // preserveDrawingBuffer required for reliable captureFrame
-      const context = canvas.getContext("webgl", {
-        preserveDrawingBuffer: true,
-        antialias: true,
-        alpha: false,
-      });
-      if (!context) throw new Error("three harness: WebGL unavailable");
-      gl = context;
-      gl.enable(gl.DEPTH_TEST);
+
       params = { ...creative.getDefaultParams(), ...mountOptions.params };
       assets = { ...(mountOptions.assets ?? {}) };
       setupDone = false;
+      defaultMesh = null;
+      defaultLight = null;
+      defaultAmbient = null;
       mounted = true;
       startMs = performance.now();
       lastMs = 0;
@@ -268,7 +342,7 @@ export function createThreeTool(
     },
     update(nextParams: ToolParams) {
       params = { ...params, ...nextParams };
-      if (!mounted || !canvas || !gl) return;
+      if (!mounted || !renderer || !scene || !camera) return;
       creative.onParams?.(params, buildCtx(performance.now()));
     },
     async setAssets(next: ToolAssets) {
@@ -278,7 +352,11 @@ export function createThreeTool(
     getDefaultParams: () => creative.getDefaultParams(),
     getAssetSlots: () => creative.getAssetSlots(),
     captureFrame() {
-      if (!canvas) throw new Error("three harness: captureFrame before mount");
+      if (!canvas || !renderer || !scene || !camera) {
+        throw new Error("three harness: captureFrame before mount");
+      }
+      // Ensure a fresh frame is in the buffer before toBlob
+      renderer.render(scene, camera);
       return new Promise<Blob>((resolve, reject) => {
         canvas!.toBlob(
           (blob) =>
@@ -304,22 +382,22 @@ export function createThreeTool(
       } catch {
         /* ignore */
       }
-      if (gl && program) {
-        gl.deleteProgram(program);
-        program = null;
-      }
-      if (gl && buf) {
-        gl.deleteBuffer(buf);
-        buf = null;
+      try {
+        disposeThreeGraph();
+      } catch {
+        /* ignore */
       }
       root?.replaceChildren();
       root = null;
       canvas = null;
-      gl = null;
+      renderer = null;
+      scene = null;
+      camera = null;
     },
   };
 }
 
+/** Minimal reference three tool (rotating cube). */
 export const createTool: CreateVibeTool = () =>
   createThreeTool(
     {
@@ -334,23 +412,35 @@ export const createTool: CreateVibeTool = () =>
         speed: 1,
       }),
       getAssetSlots: () => [],
-      draw(c) {
-        // Default shader triangle; creative fill may replace entirely
-        const g = c.gl;
-        const bg = hexToRgb01(String(c.params.bg ?? "#0a0a12"));
-        c.clear(bg[0], bg[1], bg[2], 1);
-        // Use harness internal default via empty custom path: simple clear +
-        // a pulsing clear color shift so variance > 0 for smoke
-        const accent = hexToRgb01(String(c.params.accent ?? "#7c5cff"));
-        const speed = Number(c.params.speed ?? 1);
-        const pulse = 0.5 + 0.5 * Math.sin(c.time * speed * 2);
-        c.clear(
-          bg[0] * (1 - pulse * 0.3) + accent[0] * pulse * 0.3,
-          bg[1] * (1 - pulse * 0.3) + accent[1] * pulse * 0.3,
-          bg[2] * (1 - pulse * 0.3) + accent[2] * pulse * 0.3,
-          1,
+      setup(c) {
+        const T = c.THREE;
+        c.scene.add(new T.AmbientLight(0xffffff, 0.5));
+        const dir = new T.DirectionalLight(0xffffff, 1.15);
+        dir.position.set(2.5, 3.5, 2);
+        c.scene.add(dir);
+        const mesh = new T.Mesh(
+          new T.BoxGeometry(1, 1, 1),
+          new T.MeshStandardMaterial({
+            color: hexToColor(String(c.params.accent ?? "#7c5cff")),
+            metalness: 0.3,
+            roughness: 0.35,
+          }),
         );
-        void g;
+        mesh.name = "vibe-default-cube";
+        c.scene.add(mesh);
+        c.camera.position.set(1.6, 1.2, 2.2);
+        c.camera.lookAt(0, 0, 0);
+      },
+      draw(c) {
+        c.setBackground(String(c.params.bg ?? "#0a0a12"));
+        const mesh = c.scene.getObjectByName("vibe-default-cube") as THREE.Mesh | undefined;
+        const speed = Number(c.params.speed ?? 1);
+        if (mesh) {
+          mesh.rotation.x = c.time * 0.55 * speed;
+          mesh.rotation.y = c.time * 0.85 * speed;
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          if (mat?.color) mat.color.copy(hexToColor(String(c.params.accent ?? "#7c5cff")));
+        }
       },
     },
     { aspect: "1:1" },

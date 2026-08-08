@@ -14,7 +14,7 @@ Counterpart to the backend **agent** boundary (contract-driven, allowlisted).
 | **M2a5** Studio shell | ✅ Done | `/studio/social-frame` — Control + assets + preview |
 | **M2a6** real-asset capture | ✅ Done | Studio prove + API CORS checklist; M2a exit met |
 | **Dynamic tool delivery** | ✅ Done | esbuild compile + mount `moduleSource` (ESM frame + blob import) |
-| **M2b** p5/three | Deferred | Fast-follow |
+| **M2b** p5/three | Partial | **B1–B5:** three path complete offline; enable with `VIBEIT_TARGET_THREE_ENABLED=1` after `eval_three.py` |
 
 ## Import (parent / Studio)
 

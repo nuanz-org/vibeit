@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "milestone": "B5",
+  "target": "three",
+  "description": "Three.js craft corpus — run offline gates via scripts/eval_three.py before enabling VIBEIT_TARGET_THREE_ENABLED in prod",
+  "gates": {
+    "minOfflinePassRate": 1.0,
+    "requireHostSmoke": true,
+    "requireCompileUnderLimit": true,
+    "requireDefaultOff": true,
+    "minLiveFirstPassRate": 0.6,
+    "minLiveAfterRepairRate": 0.8,
+    "note": "Offline gates must all pass. Live rates are advisory until a committed live shootout."
+  },
+  "prompts": [
+    {
+      "id": "depth-cube",
+      "vision": "A lit 3D cube with metalness and rim light on a dark background, speed control",
+      "tags": ["three", "material", "cube", "depth"],
+      "tier": "easy",
+      "aspect": "1:1",
+      "expectTarget": "three"
+    },
+    {
+      "id": "kinetic-cube-logo",
+      "vision": "Kinetic cube logo with all three material variations (matte, metal, frosted glass), assembly spin, shape enum cube vs sphere",
+      "tags": ["three", "logo", "parametric", "material", "multi-axis"],
+      "tier": "hard",
+      "aspect": "1:1",
+      "expectTarget": "three"
+    },
+    {
+      "id": "chroma-glass",
+      "vision": "Chroma cube logo three.js frosted glass material with orbiting satellite and loop duration",
+      "tags": ["three", "glass", "logo", "loop"],
+      "tier": "hard",
+      "aspect": "1:1",
+      "expectTarget": "three"
+    },
+    {
+      "id": "mesh-lights",
+      "vision": "WebGL mesh with directional key light, ambient fill, and accent color material driven by params",
+      "tags": ["three", "lighting", "mesh"],
+      "tier": "medium",
+      "aspect": "1:1",
+      "expectTarget": "three"
+    }
+  ]
+}
