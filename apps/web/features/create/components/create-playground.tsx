@@ -6,6 +6,12 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { UserMenu } from "@/features/auth/components/user-menu";
+import {
+  AiMessage,
+  ChatStatusMarker,
+  ChatThread,
+  ChatThreadItem,
+} from "@/features/chat";
 import { ClarifyPanel } from "@/features/create/components/clarify-panel";
 import { JobProgress } from "@/features/create/components/job-progress";
 import {
@@ -228,69 +234,113 @@ export function CreatePlayground({
         </div>
 
         <div className={pg.chatScroll}>
-          <div className={pg.greeting}>
-            <p className={pg.greetingTitle}>
-              {greetingName
-                ? `Hi ${greetingName}, what do you want to build?`
-                : "What do you want to build?"}
-            </p>
-            <p className={pg.greetingSub}>
-              Describe a living design tool — motion, brand mark, social frame.
-            </p>
-          </div>
-
-          {lastSubmitted ? (
-            <div className={styles.msgUser}>
-              <p>{lastSubmitted}</p>
-            </div>
-          ) : null}
-
-          {jobId && !isAwaitingClarify ? (
-            <JobProgress status={status} jobId={jobId} />
-          ) : null}
-
-          {jobId && isAwaitingClarify && status?.clarify ? (
-            <ClarifyPanel
-              clarify={status.clarify}
-              pending={clarifyPending}
-              onSubmit={(answers) => void onClarifySubmit(answers)}
-            />
-          ) : null}
-
-          {submitError ? <p className={styles.error}>{submitError}</p> : null}
-          {jobQuery.isError ? (
-            <p className={styles.error}>
-              {jobQuery.error instanceof Error
-                ? jobQuery.error.message
-                : "Failed to poll job status"}
-            </p>
-          ) : null}
-          {isSuccess && resultQuery.isLoading ? (
-            <p className={pg.muted}>Opening Studio…</p>
-          ) : null}
-          {isSuccess && resultQuery.isError ? (
-            <p className={styles.error}>
-              Job succeeded but result could not be loaded.
-            </p>
-          ) : null}
-          {isFailed ? (
-            <div>
-              <p className={styles.error}>
-                {status?.errorMessage || "Generation failed"}
-              </p>
-              {salvageToolId ? (
-                <p className={pg.muted}>
-                  Salvage draft ready.{" "}
-                  <Link
-                    href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                    className={styles.link}
-                  >
-                    Open in Studio
-                  </Link>
+          <ChatThread className="h-full min-h-0">
+            <ChatThreadItem>
+              <div className={pg.greeting}>
+                <p className={pg.greetingTitle}>
+                  {greetingName
+                    ? `Hi ${greetingName}, what do you want to build?`
+                    : "What do you want to build?"}
                 </p>
-              ) : null}
-            </div>
-          ) : null}
+                <p className={pg.greetingSub}>
+                  Describe a living design tool — motion, brand mark, social
+                  frame.
+                </p>
+              </div>
+            </ChatThreadItem>
+
+            {lastSubmitted ? (
+              <ChatThreadItem id="user-vision">
+                <AiMessage role="user">{lastSubmitted}</AiMessage>
+              </ChatThreadItem>
+            ) : null}
+
+            {jobId && !isAwaitingClarify ? (
+              <ChatThreadItem id="job-progress" scrollAnchor>
+                <AiMessage
+                  role="assistant"
+                  header="Vibeit"
+                  variant="ghost"
+                  showAvatar
+                >
+                  <JobProgress status={status} jobId={jobId} />
+                </AiMessage>
+              </ChatThreadItem>
+            ) : null}
+
+            {jobId && isAwaitingClarify && status?.clarify ? (
+              <ChatThreadItem id="clarify" scrollAnchor>
+                <AiMessage
+                  role="assistant"
+                  header="A few questions"
+                  variant="ghost"
+                  showAvatar
+                >
+                  <ClarifyPanel
+                    clarify={status.clarify}
+                    pending={clarifyPending}
+                    onSubmit={(answers) => void onClarifySubmit(answers)}
+                  />
+                </AiMessage>
+              </ChatThreadItem>
+            ) : null}
+
+            {submitError ? (
+              <ChatThreadItem id="submit-error" scrollAnchor>
+                <AiMessage role="assistant" variant="destructive" header="Error">
+                  {submitError}
+                </AiMessage>
+              </ChatThreadItem>
+            ) : null}
+
+            {jobQuery.isError ? (
+              <ChatThreadItem id="poll-error" scrollAnchor>
+                <AiMessage role="assistant" variant="destructive" header="Error">
+                  {jobQuery.error instanceof Error
+                    ? jobQuery.error.message
+                    : "Failed to poll job status"}
+                </AiMessage>
+              </ChatThreadItem>
+            ) : null}
+
+            {isSuccess && resultQuery.isLoading ? (
+              <ChatThreadItem id="opening-studio" scrollAnchor>
+                <ChatStatusMarker pending>
+                  Opening Studio…
+                </ChatStatusMarker>
+              </ChatThreadItem>
+            ) : null}
+
+            {isSuccess && resultQuery.isError ? (
+              <ChatThreadItem id="result-error" scrollAnchor>
+                <AiMessage role="assistant" variant="destructive" header="Error">
+                  Job succeeded but result could not be loaded.
+                </AiMessage>
+              </ChatThreadItem>
+            ) : null}
+
+            {isFailed ? (
+              <ChatThreadItem id="job-failed" scrollAnchor>
+                <AiMessage
+                  role="assistant"
+                  variant="destructive"
+                  header="Generation failed"
+                  footer={
+                    salvageToolId ? (
+                      <Link
+                        href={`/studio/${encodeURIComponent(salvageToolId)}`}
+                        className="text-primary underline-offset-3 hover:underline"
+                      >
+                        Open salvage draft in Studio
+                      </Link>
+                    ) : undefined
+                  }
+                >
+                  {status?.errorMessage || "Generation failed"}
+                </AiMessage>
+              </ChatThreadItem>
+            ) : null}
+          </ChatThread>
         </div>
 
         <form

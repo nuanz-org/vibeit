@@ -3,6 +3,12 @@
 import { useCallback, useState } from "react";
 
 import {
+  AiMessage,
+  ChatStatusMarker,
+  ChatThread,
+  ChatThreadItem,
+} from "@/features/chat";
+import {
   playgroundStyles as pg,
 } from "@/features/playground/components/playground-shell";
 import { CreateJobApiError } from "@/lib/api/jobs";
@@ -206,51 +212,76 @@ export function RefineChatPanel({
         </div>
 
         <div className={pg.chatScroll}>
-          {!toolId ? (
-            <div className={pg.greeting}>
-              <p className={pg.greetingTitle}>Fixture mode</p>
-              <p className={pg.greetingSub}>
-                Chat refine is available on generated tools.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className={pg.greeting}>
-                <p className={pg.greetingTitle}>
-                  {toolLabel?.trim() || "Your tool is ready"}
-                </p>
-                <p className={pg.greetingSub}>
-                  Ask for structural or creative changes. Param tweaks stay in
-                  Controls.
-                </p>
-              </div>
-
-              {lastUserMessage ? (
-                <div className={styles.chatBubbleUser}>
-                  <p>{lastUserMessage}</p>
+          <ChatThread className="h-full min-h-0">
+            {!toolId ? (
+              <ChatThreadItem>
+                <div className={pg.greeting}>
+                  <p className={pg.greetingTitle}>Fixture mode</p>
+                  <p className={pg.greetingSub}>
+                    Chat refine is available on generated tools.
+                  </p>
                 </div>
-              ) : null}
+              </ChatThreadItem>
+            ) : (
+              <>
+                <ChatThreadItem>
+                  <div className={pg.greeting}>
+                    <p className={pg.greetingTitle}>
+                      {toolLabel?.trim() || "Your tool is ready"}
+                    </p>
+                    <p className={pg.greetingSub}>
+                      Ask for structural or creative changes. Param tweaks stay
+                      in Controls.
+                    </p>
+                  </div>
+                </ChatThreadItem>
 
-              {statusLine || busy || phase === "succeeded" || error ? (
-                <div className={styles.chatBubbleAssistant}>
-                  {busy ? (
-                    <p>Working on it — preview keeps the last good version.</p>
-                  ) : null}
-                  {statusLine && !busy ? (
-                    <p>
-                      {statusLine}
-                      {jobId ? ` · ${jobId.slice(0, 8)}…` : null}
-                    </p>
-                  ) : null}
-                  {error ? (
-                    <p className={styles.errorText} style={{ marginTop: 4 }}>
-                      {error}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </>
-          )}
+                {lastUserMessage ? (
+                  <ChatThreadItem id="refine-user">
+                    <AiMessage role="user">{lastUserMessage}</AiMessage>
+                  </ChatThreadItem>
+                ) : null}
+
+                {busy ? (
+                  <ChatThreadItem id="refine-busy" scrollAnchor>
+                    <ChatStatusMarker pending>
+                      Working on it — preview keeps the last good version
+                      {statusLine ? ` · ${statusLine}` : null}
+                    </ChatStatusMarker>
+                  </ChatThreadItem>
+                ) : null}
+
+                {!busy && statusLine ? (
+                  <ChatThreadItem id="refine-status" scrollAnchor>
+                    {error ? (
+                      <AiMessage
+                        role="assistant"
+                        variant="destructive"
+                        header="Refine failed"
+                        footer={
+                          jobId
+                            ? `${statusLine} · ${jobId.slice(0, 8)}…`
+                            : statusLine
+                        }
+                      >
+                        {error}
+                      </AiMessage>
+                    ) : (
+                      <AiMessage
+                        role="assistant"
+                        header="Vibeit"
+                        footer={
+                          jobId ? `${jobId.slice(0, 8)}…` : undefined
+                        }
+                      >
+                        {statusLine}
+                      </AiMessage>
+                    )}
+                  </ChatThreadItem>
+                ) : null}
+              </>
+            )}
+          </ChatThread>
         </div>
 
         <div className={pg.chatComposer}>
