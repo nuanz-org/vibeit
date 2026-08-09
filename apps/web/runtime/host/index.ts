@@ -9,6 +9,7 @@
 export { RuntimeHostBridge } from "./bridge";
 export type { RuntimeHostBridgeOptions } from "./bridge";
 export { RuntimeBridgeError } from "./bridge-error";
+export { resolveAssetsForFrame } from "./resolve-assets-for-frame";
 export { RuntimeHost } from "./RuntimeHost";
 export type { RuntimeHostHandle, RuntimeHostProps } from "./RuntimeHost";
 export {

@@ -2,7 +2,7 @@
  * Capture helpers (M2a6 / M7).
  *
  * Wire encode/decode: contract CaptureFrameWire.
- * Real-asset gate: M2a exit (not data: fixtures).
+ * Real-asset gate: user-local blob: or http upload (not synthetic data: fixtures).
  * Short video (M7b): record-video (in-frame MediaRecorder).
  */
 
@@ -21,8 +21,10 @@ export {
   findRealUploadedAsset,
   gateRealAssetCapture,
   hasRealUploadedAsset,
+  isCaptureEligibleAssetUrl,
   isFixtureAssetUrl,
   isRealUploadedAssetUrl,
+  isUserLocalAssetUrl,
   waitForPaintFrames,
 } from "./real-asset";
 export type { RealAssetCaptureGate } from "./real-asset";

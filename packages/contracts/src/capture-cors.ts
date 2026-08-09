@@ -150,8 +150,9 @@ export const CAPTURE_FAILURE_MEANING: Record<CaptureFailureReason, string> = {
 // ---------------------------------------------------------------------------
 
 /**
- * M2a exit requirement: PNG capture must succeed with a **real uploaded**
- * asset URL (storage or same-origin proxy), not only a data: URL fixture.
+ * M2a exit requirement (historical): PNG capture with a **real uploaded**
+ * http(s) asset URL. Product capture also accepts user-local `blob:` assets
+ * via {@link isUserLocalAssetUrl} / {@link isCaptureEligibleAssetUrl}.
  */
 export const M2A_CAPTURE_REQUIRES_REAL_ASSET = true as const;
 
@@ -165,8 +166,8 @@ export const REAL_UPLOADED_ASSET_PATH_MARKERS = [
 ] as const;
 
 /**
- * True if `url` is an http(s) asset URL suitable for canvas capture.
- * Rejects data: / blob: / file: fixtures that do not satisfy M2a exit.
+ * True if `url` is an http(s) asset URL (server-hosted or same-origin proxy).
+ * Does not include `blob:` user-local assets — see {@link isUserLocalAssetUrl}.
  */
 export function isRealUploadedAssetUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") return false;
@@ -187,16 +188,38 @@ export function isRealUploadedAssetUrl(url: string | null | undefined): boolean 
   return true;
 }
 
-/** True if the URL is a local fixture that does not satisfy M2a exit. */
+/**
+ * User personalization media kept in the browser (LocalAssetStore → object URL).
+ * Eligible for product capture; not a synthetic fixture.
+ */
+export function isUserLocalAssetUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  return url.trim().toLowerCase().startsWith("blob:");
+}
+
+/**
+ * Synthetic / non-user fixtures that must not count as “real media” for
+ * product or M2a prove bars. `blob:` is **not** a fixture (user-local).
+ */
 export function isFixtureAssetUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const t = url.trim().toLowerCase();
   return (
     t.startsWith("data:") ||
-    t.startsWith("blob:") ||
     t.startsWith("about:") ||
     t.startsWith("file:")
   );
+}
+
+/**
+ * True when the URL is eligible for product PNG/video capture with media bound.
+ * Accepts user-local blob URLs or http(s) uploads (not synthetic data: fixtures).
+ */
+export function isCaptureEligibleAssetUrl(
+  url: string | null | undefined,
+): boolean {
+  if (!url || isFixtureAssetUrl(url)) return false;
+  return isUserLocalAssetUrl(url) || isRealUploadedAssetUrl(url);
 }
 
 /**

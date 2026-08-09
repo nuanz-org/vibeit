@@ -106,8 +106,10 @@ export {
   PROVISIONAL_STORAGE_CORS,
   REAL_UPLOADED_ASSET_PATH_MARKERS,
   WEBGL_PRESERVE_DRAWING_BUFFER_DEFERRED,
+  isCaptureEligibleAssetUrl,
   isFixtureAssetUrl,
   isRealUploadedAssetUrl,
+  isUserLocalAssetUrl,
   isVibeitServedAssetUrl,
   provisionalCorsResponseHeaders,
 } from "./capture-cors";

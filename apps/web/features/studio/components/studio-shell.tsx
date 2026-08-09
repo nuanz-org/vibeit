@@ -10,7 +10,11 @@ import {
   PlaygroundShell,
   playgroundStyles as pg,
 } from "@/features/playground/components/playground-shell";
-import { RuntimeHost, isRealUploadedAssetUrl } from "@/runtime";
+import {
+  RuntimeHost,
+  isCaptureEligibleAssetUrl,
+  isUserLocalAssetUrl,
+} from "@/runtime";
 
 import type { StudioFixtureMeta } from "../fixtures";
 import { useStudioDraftPersist } from "../hooks/use-studio-draft-persist";
@@ -244,6 +248,8 @@ export function StudioShell({
 
   const runtime = useStudioRuntime({
     runtimeToolId: fixture.runtimeToolId,
+    // Local-first asset map key (same id Assets panel uses for IDB bindings)
+    localAssetToolId: stageToolKey,
     // B3: honor fixture/version target (canvas2d | p5 | three)
     target: fixture.target,
     sourceCode: liveSource,
@@ -503,23 +509,35 @@ export function StudioShell({
             onAssetUrl={runtime.setAsset}
             disabled={!runtime.mounted || runtime.busy}
             highlightSlotId={focusSlotId}
-            toolId={persistToolId ?? null}
+            toolId={stageToolKey}
           />
           {runtime.hasRealAsset ? (
             <p className={styles.okText}>
-              Upload bound
-              {Object.entries(runtime.assets)
-                .filter(([, ref]) => {
+              {(() => {
+                const bound = Object.entries(runtime.assets).filter(
+                  ([, ref]) => {
+                    const u =
+                      typeof ref === "string"
+                        ? ref
+                        : ref && "url" in ref
+                          ? ref.url
+                          : null;
+                    return isCaptureEligibleAssetUrl(u);
+                  },
+                );
+                const anyLocal = bound.some(([, ref]) => {
                   const u =
                     typeof ref === "string"
                       ? ref
                       : ref && "url" in ref
                         ? ref.url
                         : null;
-                  return isRealUploadedAssetUrl(u);
-                })
-                .map(([id]) => ` · ${id}`)
-                .join("")}
+                  return isUserLocalAssetUrl(u);
+                });
+                return `${anyLocal ? "Asset bound · on this device" : "Asset bound"}${bound
+                  .map(([id]) => ` · ${id}`)
+                  .join("")}`;
+              })()}
             </p>
           ) : null}
         </section>

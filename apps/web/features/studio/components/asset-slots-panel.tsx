@@ -5,7 +5,17 @@ import { useState } from "react";
 import type { AssetSlot, AssetSlots } from "@repo/contracts";
 import type { ToolAssets } from "@repo/contracts";
 
-import { uploadAsset } from "@/lib/api/assets";
+import {
+  LocalAssetValidationError,
+  deleteLocalAsset,
+  getLocalObjectUrl,
+  putLocalAsset,
+  revokeLocalObjectUrl,
+} from "../lib/local-asset-store";
+import {
+  getSlotBinding,
+  setSlotBinding,
+} from "../lib/project-asset-map";
 
 import styles from "../styles.module.css";
 
@@ -19,14 +29,13 @@ export type AssetSlotsPanelProps = {
   disabled?: boolean;
   /** M5a: highlight slot when Control assetRef deep-links here. */
   highlightSlotId?: string | null;
-  /** M5d: optional tool id to attach on studio upload. */
+  /** Tool id for local IDB bindings (required for persist across reload). */
   toolId?: string | null;
 };
 
 /**
- * Upload / clear asset slots (M2a5 + M5a focus + M5b empty UX).
- * Uses M1e studio upload API; real-asset capture bar is M2a6.
- * Empty slots show lettermark placeholders — never a broken img tag.
+ * Local-first asset slots: files stay in IndexedDB on this device.
+ * No studio upload to server for personalization (see md/local-first-assets.md).
  */
 export function AssetSlotsPanel({
   slots,
@@ -75,7 +84,6 @@ function placeholderHue(id: string): number {
 function lettermark(slot: AssetSlot): string {
   const raw = (slot.label ?? slot.id).trim();
   if (!raw) return "?";
-  // Prefer first letter of first word; multi-word → two initials.
   const parts = raw.split(/[\s_-]+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
@@ -109,13 +117,55 @@ function AssetSlotRow({
     setPending(true);
     setError(null);
     try {
-      const res = await uploadAsset(file, "studio", {
-        toolId: toolId ?? undefined,
-      });
-      // Prefer raw URL from API — must be http(s) for M2a6 (not data:).
-      await onAssetUrl(slot.id, res.url);
+      const tid = toolId?.trim() || null;
+      // Replace: drop previous local binding for this slot when possible.
+      if (tid) {
+        const prev = await getSlotBinding(tid, slot.id);
+        if (prev) {
+          revokeLocalObjectUrl(prev);
+          await setSlotBinding(tid, slot.id, null);
+          void deleteLocalAsset(prev);
+        }
+      }
+
+      const record = await putLocalAsset(file);
+      if (tid) {
+        await setSlotBinding(tid, slot.id, record.id);
+      }
+      const objectUrl = await getLocalObjectUrl(record.id);
+      if (!objectUrl) {
+        throw new Error("Could not create local preview URL");
+      }
+      await onAssetUrl(slot.id, objectUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      const msg =
+        err instanceof LocalAssetValidationError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Could not add image";
+      setError(msg);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function onClear() {
+    setPending(true);
+    setError(null);
+    try {
+      const tid = toolId?.trim() || null;
+      if (tid) {
+        const prev = await getSlotBinding(tid, slot.id);
+        if (prev) {
+          revokeLocalObjectUrl(prev);
+          await setSlotBinding(tid, slot.id, null);
+          void deleteLocalAsset(prev);
+        }
+      }
+      await onAssetUrl(slot.id, null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Clear failed");
     } finally {
       setPending(false);
     }
@@ -126,7 +176,7 @@ function AssetSlotRow({
     `${slot.id} ${slot.label ?? ""}`,
   );
   const ctaLabel = pending
-    ? "Uploading…"
+    ? "Adding…"
     : url
       ? "Replace"
       : isLogoLike
@@ -144,6 +194,7 @@ function AssetSlotRow({
       id={`asset-slot-${slot.id}`}
       data-slot-id={slot.id}
       data-empty={empty ? "true" : "false"}
+      data-local-first="true"
     >
       <div className={styles.assetHeader}>
         <span className={styles.fieldLabel}>
@@ -157,7 +208,7 @@ function AssetSlotRow({
             type="button"
             className={styles.linkButton}
             disabled={disabled || pending}
-            onClick={() => void onAssetUrl(slot.id, null)}
+            onClick={() => void onClear()}
           >
             Clear
           </button>
@@ -165,7 +216,9 @@ function AssetSlotRow({
       </div>
       {slot.description ? (
         <span className={styles.fieldHint}>{slot.description}</span>
-      ) : null}
+      ) : (
+        <span className={styles.fieldHint}>Stays on this device</span>
+      )}
       <div className={styles.assetBody}>
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -177,7 +230,7 @@ function AssetSlotRow({
               background: `linear-gradient(145deg, hsl(${hue} 42% 42%), hsl(${(hue + 40) % 360} 38% 28%))`,
             }}
             aria-hidden
-            title="Generated placeholder until you upload"
+            title="Placeholder until you add an image"
           >
             <span className={styles.assetPlaceholderMark}>{mark}</span>
           </div>
@@ -188,7 +241,7 @@ function AssetSlotRow({
           >
             <input
               type="file"
-              accept={slot.accept ?? "image/*"}
+              accept={slot.accept ?? "image/png,image/jpeg,image/webp"}
               disabled={disabled || pending}
               onChange={(e) => {
                 const f = e.target.files?.[0] ?? null;
@@ -200,7 +253,7 @@ function AssetSlotRow({
           </label>
           {empty && slot.aspectHint ? (
             <span className={styles.fieldHint}>
-              Hint {slot.aspectHint} · placeholder until upload
+              Hint {slot.aspectHint} · stays on this device
             </span>
           ) : null}
         </div>

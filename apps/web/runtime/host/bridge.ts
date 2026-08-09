@@ -30,6 +30,7 @@ import {
 } from "../contract";
 import { clampRecordDurationSeconds } from "../capture/record-video";
 import { RuntimeBridgeError } from "./bridge-error";
+import { resolveAssetsForFrame } from "./resolve-assets-for-frame";
 import {
   RUNTIME_COMMAND_TIMEOUT_MS,
   RUNTIME_FRAME_ORIGINS,
@@ -207,10 +208,12 @@ export class RuntimeHostBridge {
       timeoutMs?: number;
     },
   ): Promise<ToolIntrospection> {
+    // blob: from parent is not loadable in opaque sandbox — expand to data: first.
+    const frameAssets = await resolveAssetsForFrame(assets);
     const payload = await this.send(
       createMountCommand({
         params,
-        assets,
+        assets: frameAssets,
         toolId: options?.toolId,
         target: options?.target ?? "canvas2d",
         moduleSource: options?.moduleSource,
@@ -240,8 +243,9 @@ export class RuntimeHostBridge {
   }
 
   async setAssets(assets: ToolAssets, timeoutMs?: number): Promise<void> {
+    const frameAssets = await resolveAssetsForFrame(assets);
     const payload = await this.send(
-      createSetAssetsCommand({ assets }),
+      createSetAssetsCommand({ assets: frameAssets }),
       timeoutMs,
     );
     if (payload.kind !== "setAssets") {

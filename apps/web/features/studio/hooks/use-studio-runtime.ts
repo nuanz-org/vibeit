@@ -30,6 +30,8 @@ import {
 } from "@/runtime";
 
 import { draftAssetsToToolAssets } from "../lib/draft-assets";
+import { getLocalObjectUrl } from "../lib/local-asset-store";
+import { getSlotBindings } from "../lib/project-asset-map";
 import { resolveRuntimeTarget } from "../lib/resolve-runtime-target";
 import {
   buildPngExportFilename,
@@ -70,7 +72,7 @@ function hashSource(source: string): string {
 export type LastCaptureInfo = {
   /** Object URL for preview. */
   previewUrl: string;
-  /** Whether a real uploaded (http storage) asset was bound at capture time. */
+  /** Whether capture-eligible media (local blob or http upload) was bound. */
   usedRealAsset: boolean;
   /** Slot that supplied the real asset, if any. */
   realAssetSlotId?: string;
@@ -83,6 +85,11 @@ export type LastCaptureInfo = {
 
 export type UseStudioRuntimeOptions = {
   runtimeToolId: string;
+  /**
+   * Stable tool id for local-first asset bindings (IndexedDB ProjectAssetMap).
+   * Usually the same as Studio persistToolId / route tool id.
+   */
+  localAssetToolId?: string | null;
   /**
    * Runtime target for mount (B3). Defaults to canvas2d when omitted/invalid.
    * From tool_versions.target for generated tools.
@@ -281,9 +288,24 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
       };
       setParams(hydratedParams);
 
+      // Remote draft URLs (legacy server studio uploads) + local-first IDB binds.
       const hydratedAssets = draftAssetsToToolAssets(
         opts.initialDraftAssets ?? undefined,
       );
+      const toolKey = (opts.localAssetToolId ?? "").trim();
+      if (toolKey) {
+        try {
+          const bindings = await getSlotBindings(toolKey);
+          for (const [slotId, localId] of Object.entries(bindings)) {
+            const blobUrl = await getLocalObjectUrl(localId);
+            if (blobUrl) {
+              hydratedAssets[slotId] = blobUrl;
+            }
+          }
+        } catch {
+          /* IDB unavailable — continue with draft-only assets */
+        }
+      }
       assetsRef.current = hydratedAssets;
       setAssetsState(hydratedAssets);
 

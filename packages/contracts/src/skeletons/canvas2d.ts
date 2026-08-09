@@ -289,14 +289,20 @@ function assetUrl(ref: AssetRef | null | undefined): string | null {
 }
 
 /**
- * Load an image with CORS anonymous so captureFrame does not taint the canvas.
- * See M0f / capture-cors.ts (`ASSET_CROSS_ORIGIN`, storage CORS policy).
+ * Load an image for the harness.
+ * http(s): `crossOrigin = "anonymous"` so captureFrame does not taint (M0f).
+ * blob:/data:: same-origin object URLs — do not set crossOrigin (can break load).
  */
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    // Keep in sync with ASSET_CROSS_ORIGIN in capture-cors.ts
-    img.crossOrigin = "anonymous";
+    const lower = url.trim().toLowerCase();
+    const isLocalObject =
+      lower.startsWith("blob:") || lower.startsWith("data:");
+    if (!isLocalObject) {
+      // Keep in sync with ASSET_CROSS_ORIGIN in capture-cors.ts
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load asset: ${url}`));
     img.src = url;

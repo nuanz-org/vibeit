@@ -1,14 +1,15 @@
 /**
- * Real uploaded asset helpers for M2a6 capture exit.
+ * Capture-eligible media helpers (M2a6 / local-first).
  *
- * M2A_CAPTURE_REQUIRES_REAL_ASSET: PNG capture must succeed with a storage
- * (or same-origin proxy) URL — not only data: / blob: fixtures.
+ * Eligible: user-local blob: (IndexedDB) or http(s) uploads.
+ * Not eligible: synthetic data: fixtures.
  */
 
 import {
   M2A_CAPTURE_REQUIRES_REAL_ASSET,
-  isFixtureAssetUrl,
+  isCaptureEligibleAssetUrl,
   isRealUploadedAssetUrl,
+  isUserLocalAssetUrl,
   isVibeitServedAssetUrl,
   type ToolAssets,
 } from "@repo/contracts";
@@ -19,8 +20,10 @@ import type { CaptureFrameWire } from "../contract/capture-wire";
 export const CAPTURE_REQUIRES_REAL_ASSET = M2A_CAPTURE_REQUIRES_REAL_ASSET;
 
 export {
+  isCaptureEligibleAssetUrl,
   isFixtureAssetUrl,
   isRealUploadedAssetUrl,
+  isUserLocalAssetUrl,
   isVibeitServedAssetUrl,
 } from "@repo/contracts";
 
@@ -33,25 +36,34 @@ export function assetRefToUrl(
 }
 
 /**
- * First real uploaded URL among current tool assets, if any.
- * Prefers Vibeit `/assets/raw` / storage paths when present.
+ * First capture-eligible asset among current tool assets.
+ * Prefers user-local blob, then Vibeit raw/storage URLs, then other http(s).
  */
 export function findRealUploadedAsset(
   assets: ToolAssets,
 ): { slotId: string; url: string } | null {
+  let local: { slotId: string; url: string } | null = null;
+  let vibeit: { slotId: string; url: string } | null = null;
   let generic: { slotId: string; url: string } | null = null;
 
   for (const [slotId, ref] of Object.entries(assets)) {
     const url = assetRefToUrl(ref);
-    if (!url || isFixtureAssetUrl(url) || !isRealUploadedAssetUrl(url)) {
+    if (!url || !isCaptureEligibleAssetUrl(url)) {
+      continue;
+    }
+    if (isUserLocalAssetUrl(url)) {
+      if (!local) local = { slotId, url };
       continue;
     }
     if (isVibeitServedAssetUrl(url)) {
-      return { slotId, url };
+      if (!vibeit) vibeit = { slotId, url };
+      continue;
     }
-    if (!generic) generic = { slotId, url };
+    if (isRealUploadedAssetUrl(url) && !generic) {
+      generic = { slotId, url };
+    }
   }
-  return generic;
+  return local ?? vibeit ?? generic;
 }
 
 export function hasRealUploadedAsset(assets: ToolAssets): boolean {
@@ -63,7 +75,8 @@ export type RealAssetCaptureGate =
   | { ok: false; reason: string };
 
 /**
- * Gate for "prove M2a capture" — requires at least one real upload URL bound.
+ * Gate for product / prove capture — needs at least one eligible media bind
+ * (user-local blob: or http(s) upload). Synthetic data: fixtures do not count.
  */
 export function gateRealAssetCapture(assets: ToolAssets): RealAssetCaptureGate {
   if (!CAPTURE_REQUIRES_REAL_ASSET) {
@@ -80,7 +93,7 @@ export function gateRealAssetCapture(assets: ToolAssets): RealAssetCaptureGate {
     return {
       ok: false,
       reason:
-        "Upload a studio image (http storage URL) first — data: / blob: fixtures do not satisfy M2a exit",
+        "Add a photo in Assets first (stays on this device). Synthetic data: fixtures do not count.",
     };
   }
   return { ok: true, slotId: found.slotId, url: found.url };
