@@ -140,7 +140,7 @@ Correct reading after A1–A6:
 | **C3** | Sweeping-arc emblem golden | Not started | Few-shot: gradient + 8 thin arcs + assemble-to-ring |
 | **C4** | Codegen motion craft | Not started | ease-in-out, loop phase, stagger, hold-at-ring |
 | **C5** | Critic fidelity axes | Not started | Penalize HUD clutter / ignored gradient / invented text |
-| **C6** | Studio stage framing (optional) | Not started | Flat stage vs phone bezel by aspect |
+| **C6** | Studio stage framing (optional) | Done (v1) | Stage size bar: presets + custom W×H; no forced 9:16 |
 | **C7** | Fidelity eval / smoke vision | Not started | Fixed vision checklist vs Brik-class bar |
 
 **Priority order for implementation**

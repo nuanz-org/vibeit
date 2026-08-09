@@ -74,6 +74,7 @@ export function PublicToolLoader({ publicId }: { publicId: string }) {
       description={tool.description}
       target={target}
       defaultParams={defaultParams}
+      sourceCode={code}
     />
   );
 }

@@ -136,21 +136,29 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.85rem;
   padding: 1.5rem;
   position: relative;
 }
 
+/**
+ * Preview chrome only — size is driven by inline style from StageSizeBar (C6).
+ * Fallback square when no inline size is set (create empty stage).
+ */
 .frame {
-  width: min(100%, 320px);
-  aspect-ratio: 9 / 16;
+  width: min(100%, 480px);
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
   max-height: min(78vh, 720px);
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   background: #0a0a0c;
   box-shadow: 0 8px 28px color-mix(in srgb, #000 12%, transparent);
+  flex-shrink: 1;
 }
 
 .frameWide {

@@ -93,3 +93,18 @@ export function parseVersionAssetSlots(value: unknown): AssetSlots | null {
   }
   return slots.length > 0 ? slots : null;
 }
+
+/**
+ * Read plan.aspect from tool_versions.plan JSON (C6 stage seed).
+ * Returns null when missing or not a W:H-looking string.
+ */
+export function parseVersionPlanAspect(plan: unknown): string | null {
+  if (!plan || typeof plan !== "object" || Array.isArray(plan)) return null;
+  const aspect = (plan as Record<string, unknown>).aspect;
+  if (typeof aspect !== "string") return null;
+  const trimmed = aspect.trim();
+  if (!trimmed) return null;
+  // Accept "1:1", "16:9", "9:16", "4:5", free-form W:H
+  if (!/^\d+(?:\.\d+)?\s*:\s*\d+(?:\.\d+)?$/.test(trimmed)) return null;
+  return trimmed.replace(/\s+/g, "");
+}

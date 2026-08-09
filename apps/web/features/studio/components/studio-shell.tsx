@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
 
@@ -15,6 +15,16 @@ import { RuntimeHost, isRealUploadedAssetUrl } from "@/runtime";
 import type { StudioFixtureMeta } from "../fixtures";
 import { useStudioDraftPersist } from "../hooks/use-studio-draft-persist";
 import { useStudioRuntime } from "../hooks/use-studio-runtime";
+import {
+  defaultStageSize,
+  embedSizeFromStage,
+  fitStageBox,
+  loadStageSize,
+  parseAspectFromSource,
+  saveStageSize,
+  sizeFromAspect,
+  type StageSize,
+} from "../lib/stage-size";
 import {
   asParams,
   parseVersionAssetSlots,
@@ -31,6 +41,7 @@ import {
   type RefineAppliedPayload,
 } from "./refine-chat-panel";
 import { SharePanel } from "./share-panel";
+import { StageSizeBar } from "./stage-size-bar";
 import { ViewSourcePanel } from "./view-source-panel";
 
 export type StudioShellProps = {
@@ -64,6 +75,11 @@ export type StudioShellProps = {
   initialGalleryReady?: boolean | null;
   initialThumbnailAssetId?: string | null;
   initialThumbnailUrl?: string | null;
+  /**
+   * C6: plan.aspect from tool_versions.plan (e.g. "16:9", "9:16").
+   * Seeds stage size when no localStorage override.
+   */
+  planAspect?: string | null;
 };
 
 type DrawerKind = "export" | "publish" | null;
@@ -109,10 +125,75 @@ export function StudioShell({
   initialGalleryReady,
   initialThumbnailAssetId,
   initialThumbnailUrl,
+  planAspect,
 }: StudioShellProps) {
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<DrawerKind>(null);
+
+  const stageToolKey =
+    persistToolId?.trim() || fixture.toolId || "studio-local";
+  const isSocialFrameFixture =
+    fixture.toolId === "social-frame" ||
+    fixture.runtimeToolId === "fixture:social-frame";
+
+  /** SSR-safe seed (no localStorage); client effect applies stored preference. */
+  const [stageSize, setStageSize] = useState<StageSize>(() => {
+    const aspect =
+      planAspect?.trim() || parseAspectFromSource(sourceCode) || null;
+    if (aspect) return sizeFromAspect(aspect);
+    return defaultStageSize(isSocialFrameFixture ? "9:16" : "1:1");
+  });
+
+  const stageAreaRef = useRef<HTMLDivElement | null>(null);
+  const [stageMax, setStageMax] = useState({ w: 720, h: 640 });
+  /** Skip persisting until localStorage preference has been applied once. */
+  const [stagePrefsReady, setStagePrefsReady] = useState(false);
+
+  // Apply localStorage override once on mount (avoids SSR hydration mismatch).
+  useEffect(() => {
+    const stored = loadStageSize(stageToolKey);
+    if (stored) setStageSize(stored);
+    setStagePrefsReady(true);
+  }, [stageToolKey]);
+
+  useEffect(() => {
+    if (!stagePrefsReady) return;
+    saveStageSize(stageToolKey, stageSize);
+  }, [stageSize, stageToolKey, stagePrefsReady]);
+
+  useEffect(() => {
+    const el = stageAreaRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      // Leave room for StageSizeBar + padding
+      const w = Math.max(160, Math.floor(rect.width) - 24);
+      const h = Math.max(160, Math.floor(rect.height) - 72);
+      setStageMax({ w, h });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const frameDisplay = useMemo(() => {
+    const maxH =
+      typeof window !== "undefined"
+        ? Math.min(stageMax.h, Math.floor(window.innerHeight * 0.78))
+        : stageMax.h;
+    return fitStageBox(
+      stageSize.width,
+      stageSize.height,
+      stageMax.w,
+      maxH,
+    );
+  }, [stageSize.height, stageSize.width, stageMax.h, stageMax.w]);
+
+  const onStageSizeChange = useCallback((next: StageSize) => {
+    setStageSize(next);
+  }, []);
   /** M7f: update badge after thin publish without full reload. */
   const [liveToolStatus, setLiveToolStatus] = useState<string | null>(
     toolStatus ?? null,
@@ -354,11 +435,20 @@ export function StudioShell({
   );
 
   const stage = (
-    <div className={pg.stageInner}>
+    <div className={pg.stageInner} ref={stageAreaRef}>
       {runtime.error && !runtime.mounted ? (
         <div className={styles.errorBanner}>{runtime.error}</div>
       ) : null}
-      <div className={pg.frame}>
+      <div
+        className={pg.frame}
+        style={{
+          width: frameDisplay.displayW,
+          height: frameDisplay.displayH,
+          aspectRatio: "unset",
+          maxWidth: "100%",
+          maxHeight: "min(78vh, 720px)",
+        }}
+      >
         <RuntimeHost
           ref={runtime.hostRef}
           style={{ width: "100%", height: "100%", border: "none", display: "block" }}
@@ -369,6 +459,7 @@ export function StudioShell({
           onBridgeError={runtime.onBridgeError}
         />
       </div>
+      <StageSizeBar value={stageSize} onChange={onStageSizeChange} />
     </div>
   );
 
@@ -586,6 +677,8 @@ export function StudioShell({
                     title={initialTitle ?? fixture.label}
                     onPublished={onPublished}
                     fixtureMode={isFixtureOnly}
+                    embedWidth={embedSizeFromStage(stageSize).width}
+                    embedHeight={embedSizeFromStage(stageSize).height}
                   />
                   <PublishPanel
                     toolId={persistToolId}

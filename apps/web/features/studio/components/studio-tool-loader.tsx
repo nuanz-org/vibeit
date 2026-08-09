@@ -12,6 +12,7 @@ import {
   asParams,
   parseVersionAssetSlots,
   parseVersionParamSchema,
+  parseVersionPlanAspect,
 } from "../lib/version-metadata";
 import { StudioShell } from "./studio-shell";
 
@@ -80,6 +81,7 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
   const versionParamSchema = parseVersionParamSchema(version?.paramSchema);
   const versionAssetSlots = parseVersionAssetSlots(version?.assetSlots);
   const versionDefaultParams = asParams(version?.defaultParams);
+  const planAspect = parseVersionPlanAspect(version?.plan);
 
   const runtimeTarget = resolveRuntimeTarget(version?.target);
 
@@ -115,6 +117,7 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
       initialGalleryReady={tool.galleryReady}
       initialThumbnailAssetId={tool.thumbnailAssetId}
       initialThumbnailUrl={tool.thumbnailUrl}
+      planAspect={planAspect}
     />
   );
 }

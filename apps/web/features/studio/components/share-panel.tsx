@@ -27,6 +27,9 @@ export type SharePanelProps = {
    * Fixture / local-only Studio — show a short note instead of share actions.
    */
   fixtureMode?: boolean;
+  /** C6: embed iframe size from current stage (optional). */
+  embedWidth?: number;
+  embedHeight?: number;
 };
 
 type CopyKind = "url" | "embed" | null;
@@ -41,6 +44,8 @@ export function SharePanel({
   title,
   onPublished,
   fixtureMode,
+  embedWidth,
+  embedHeight,
 }: SharePanelProps) {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +65,11 @@ export function SharePanel({
       publicId
         ? buildEmbedSnippet(publicId, {
             title: title ?? "Vibeit tool",
+            width: embedWidth,
+            height: embedHeight,
           })
         : "",
-    [publicId, title],
+    [publicId, title, embedWidth, embedHeight],
   );
   const pathOnly = publicId ? publicToolPath(publicId) : "";
 

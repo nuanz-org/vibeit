@@ -119,6 +119,11 @@ orbit-style camera, WebGL showpieces (Brik Kinetic / Chroma Cube Logo class).
 Hard rules:
 - params must use only the kinds listed above.
 - Prefer social/creative kinetic tools (type, shapes, particles, posters, badges, logos, 3D marks).
+- Aspect selection (critical — match the vision, not a default phone):
+  - **16:9** for dashboards, timelines, landscape data viz, desktop UI mockups
+  - **1:1** for logos, emblems, badges, square posters
+  - **4:5** for feed portraits / Instagram-style cards
+  - **9:16** only for stories, vertical social frames, phone-first UIs
 - Do not invent brand kits or arbitrary npm packages.
 - Output valid JSON only.
 """

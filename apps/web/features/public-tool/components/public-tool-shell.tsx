@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 
 import type { TargetId, ToolParams } from "@repo/contracts";
 
+import {
+  fitStageBox,
+  parseAspectFromSource,
+  sizeFromAspect,
+} from "@/features/studio/lib/stage-size";
 import { RuntimeHost } from "@/runtime";
 
 import { usePublicToolRuntime } from "../hooks/use-public-tool-runtime";
@@ -16,6 +22,8 @@ export type PublicToolShellProps = {
   /** B3: published version target for mount. */
   target?: TargetId | string | null;
   defaultParams?: ToolParams | null;
+  /** C6: version source used only to seed preview aspect (not shown). */
+  sourceCode?: string | null;
 };
 
 /**
@@ -27,6 +35,7 @@ export function PublicToolShell({
   description,
   target,
   defaultParams,
+  sourceCode,
 }: PublicToolShellProps) {
   const runtime = usePublicToolRuntime({
     publicId,
@@ -34,6 +43,20 @@ export function PublicToolShell({
     target,
     defaultParams,
   });
+
+  const frameStyle = useMemo(() => {
+    const aspect = parseAspectFromSource(sourceCode) ?? "1:1";
+    const size = sizeFromAspect(aspect);
+    // Contain into a generous public stage box
+    const fitted = fitStageBox(size.width, size.height, 720, 640);
+    return {
+      width: fitted.displayW,
+      height: fitted.displayH,
+      aspectRatio: "unset" as const,
+      maxWidth: "100%",
+      maxHeight: "min(70vh, 720px)",
+    };
+  }, [sourceCode]);
 
   const statusClass =
     runtime.status === "ready" || runtime.mounted
@@ -91,7 +114,7 @@ export function PublicToolShell({
         ) : null}
 
         <div className={styles.previewStage}>
-          <div className={styles.frameWrap}>
+          <div className={styles.frameWrap} style={frameStyle}>
             <RuntimeHost
               ref={runtime.hostRef}
               onReady={(msg) => {
