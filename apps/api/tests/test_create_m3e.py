@@ -184,9 +184,12 @@ def test_worker_fixture_finalize_success() -> None:
             ver = await tools.get_latest_tool_version(enq.tool.id)
             assert ver is not None
             assert "createSocialFrameTool" in ver.code or "createCanvas2dTool" in ver.code
-            # draft not published
+            # Successful tools auto-publish to the public gallery
             tool = await tools.get_tool_by_id(enq.tool.id)
-            assert tool is not None and tool.status == "draft"
+            assert tool is not None
+            assert tool.status == "published"
+            assert tool.gallery_ready is True
+            assert tool.published_version_id is not None
         finally:
             await pool.close()
 

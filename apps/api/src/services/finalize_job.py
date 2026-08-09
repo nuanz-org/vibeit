@@ -1,8 +1,8 @@
 """
 Finalize Create job after agent runner (M3e).
 
-Success: tool_versions row + job succeeded (draft tool, not published).
-Failure: job failed; optional salvage version from best_valid_code.
+Success: tool_versions row + job succeeded + auto-publish to public gallery.
+Failure: job failed; optional salvage version from best_valid_code (stays draft).
 """
 
 from __future__ import annotations
@@ -112,8 +112,17 @@ async def finalize_from_agent_state(
                 repairs_used=int(repairs or 0),
             )
             updated = await jobs.get_job(job_id) or updated
-        # attach version id is not on job row — result uses latest version
-        _ = version
+
+        # Public by default: successful tools appear on /gallery + /t/:publicId.
+        # Salvage/failure paths below stay draft and never list.
+        tool_id = job.tool_id or state.get("tool_id")
+        if tool_id is not None and job.owner_user_id:
+            await tools.set_tool_published(
+                tool_id,
+                owner_user_id=job.owner_user_id,
+                published_version_id=version.id,
+                gallery_ready=True,
+            )
         return updated
 
     # --- fail / salvage ---

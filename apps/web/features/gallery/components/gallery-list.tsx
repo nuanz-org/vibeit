@@ -12,8 +12,24 @@ import { GalleryShell } from "./gallery-shell";
 
 const PAGE_SIZE = 24;
 
+function SkeletonGrid({ count = 8 }: { count?: number }) {
+  return (
+    <div className={styles.skeletonGrid} aria-hidden>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className={styles.skeletonCard}>
+          <div className={styles.skeletonThumb} />
+          <div className={styles.skeletonBody}>
+            <div className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+            <div className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
- * M8e — anonymous gallery browse with load-more pagination.
+ * Anonymous gallery browse with load-more pagination.
  * No source download or owner controls.
  */
 export function GalleryList() {
@@ -24,7 +40,7 @@ export function GalleryList() {
     initialPageParam: 0,
     getNextPageParam: (last, _pages, lastPageParam) =>
       last.hasMore ? lastPageParam + PAGE_SIZE : undefined,
-    retry: false,
+    retry: 1,
   });
 
   const items = useMemo(
@@ -34,45 +50,72 @@ export function GalleryList() {
 
   const loadingFirst = q.isLoading;
   const error = q.isError && items.length === 0;
+  const empty = !loadingFirst && !error && items.length === 0;
+  const countLabel =
+    items.length > 0
+      ? q.hasNextPage
+        ? `${items.length}+ tools`
+        : `${items.length} ${items.length === 1 ? "tool" : "tools"}`
+      : null;
 
   return (
     <GalleryShell>
       <main className={styles.main}>
-        <h1 className={styles.pageTitle}>Gallery</h1>
-        <p className={styles.pageLead}>
-          Browse published tools. Open any card to preview, then run it live —
-          no sign-in required.
-        </p>
+        <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderText}>
+            <h1 className={styles.pageTitle}>Gallery</h1>
+            <p className={styles.pageLead}>
+              Public interactive design tools from the community. Open any card
+              to preview — no sign-in required.
+            </p>
+          </div>
+          {countLabel ? (
+            <span className={styles.countPill}>{countLabel}</span>
+          ) : null}
+        </div>
 
         {loadingFirst ? (
-          <p className={styles.muted}>Loading gallery…</p>
+          <>
+            <p className={styles.muted} style={{ marginBottom: "1rem" }}>
+              Loading tools…
+            </p>
+            <SkeletonGrid />
+          </>
         ) : null}
 
         {error ? (
           <div className={styles.centerMsg}>
+            <div className={styles.emptyVisual} aria-hidden />
             <h1>Could not load gallery</h1>
             <p>
               {q.error instanceof Error
                 ? q.error.message
-                : "Something went wrong."}
+                : "Something went wrong while fetching public tools."}
             </p>
-            <Link href="/" className={styles.linkMuted}>
-              Back to Vibeit
-            </Link>
+            <div className={styles.actions} style={{ justifyContent: "center" }}>
+              <button
+                type="button"
+                className={`${styles.button} ${styles.buttonPrimary}`}
+                onClick={() => void q.refetch()}
+              >
+                Try again
+              </button>
+              <Link href="/" className={styles.button}>
+                Home
+              </Link>
+            </div>
           </div>
         ) : null}
 
-        {!loadingFirst && !error && items.length === 0 ? (
+        {empty ? (
           <div className={styles.centerMsg}>
-            <h1>Nothing published yet</h1>
+            <div className={styles.emptyVisual} aria-hidden />
+            <h1>No tools yet</h1>
             <p>
-              When creators publish tools to the gallery, they will show up
-              here.
+              Successful creates publish here automatically. Generate a tool to
+              seed the gallery, then share the live link with anyone.
             </p>
-            <div
-              className={styles.actions}
-              style={{ justifyContent: "center" }}
-            >
+            <div className={styles.actions} style={{ justifyContent: "center" }}>
               <Link
                 href="/create"
                 className={`${styles.button} ${styles.buttonPrimary}`}
@@ -101,7 +144,10 @@ export function GalleryList() {
                   {q.isFetchingNextPage ? "Loading…" : "Load more"}
                 </button>
               ) : null}
-              <Link href="/create" className={styles.button}>
+              <Link
+                href="/create"
+                className={`${styles.button} ${styles.buttonPrimary}`}
+              >
                 Create your own
               </Link>
             </div>

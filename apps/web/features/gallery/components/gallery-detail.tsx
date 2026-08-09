@@ -5,11 +5,12 @@ import Link from "next/link";
 
 import { getGalleryItem } from "@/lib/api/gallery";
 
+import { normalizePublicAssetUrl } from "../lib/asset-url";
 import styles from "../styles.module.css";
 import { GalleryShell } from "./gallery-shell";
 
 /**
- * M8e — gallery detail card → open live /t/:publicId (reuse M7e public run).
+ * Gallery detail card → open live /t/:publicId.
  * No source download or Studio owner controls.
  */
 export function GalleryDetail({ publicId }: { publicId: string }) {
@@ -22,7 +23,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   if (q.isLoading) {
     return (
       <GalleryShell>
-        <main className={styles.centerMsg}>
+        <main className={styles.main}>
           <p className={styles.muted} style={{ margin: 0 }}>
             Loading…
           </p>
@@ -41,10 +42,11 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
     return (
       <GalleryShell>
         <main className={styles.centerMsg}>
+          <div className={styles.emptyVisual} aria-hidden />
           <h1>{notFound ? "Not in gallery" : "Could not open"}</h1>
           <p>
             {notFound
-              ? "This tool is not in the public gallery. It may be private, unpublished, or share-only."
+              ? "This tool is not in the public gallery. It may be private or unpublished."
               : msg}
           </p>
           <div className={styles.actions} style={{ justifyContent: "center" }}>
@@ -65,27 +67,25 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   const desc = card.description?.trim() || null;
   const tags = card.tags ?? [];
   const runHref = `/t/${encodeURIComponent(card.publicId)}`;
+  const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
 
   return (
     <GalleryShell>
       <main className={styles.main}>
-        <p className={styles.muted} style={{ marginBottom: "1rem" }}>
-          <Link href="/gallery" className={styles.linkMuted}>
-            ← Gallery
-          </Link>
-        </p>
+        <Link href="/gallery" className={styles.breadcrumb}>
+          ← Gallery
+        </Link>
 
         <div className={styles.detail}>
           <div className={styles.detailThumb}>
-            {card.thumbnailUrl ? (
+            {thumbSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={card.thumbnailUrl}
-                alt=""
-                crossOrigin="anonymous"
-              />
+              <img src={thumbSrc} alt="" decoding="async" />
             ) : (
-              <div className={styles.thumbPlaceholder}>No preview</div>
+              <div className={styles.thumbPlaceholder} aria-hidden>
+                <div className={styles.thumbPlaceholderIcon} />
+                <span className={styles.thumbPlaceholderLabel}>Live tool</span>
+              </div>
             )}
           </div>
 
@@ -104,8 +104,8 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
             ) : null}
 
             <p className={styles.muted}>
-              Opens an interactive preview. View only — no source download or
-              Studio controls.
+              Interactive preview — view only. No source download or Studio
+              controls.
             </p>
 
             <div className={styles.actions}>
