@@ -468,6 +468,122 @@
   flex: 1;
 }
 
+/* Multi-image library tray (Studio assets) */
+.assetLibrary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  background: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+}
+
+.assetLibraryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.assetTray {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.assetTrayItem {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.assetTrayThumbBtn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  cursor: pointer;
+}
+
+.assetTrayThumbBtn[data-selected="true"] {
+  border-color: color-mix(in srgb, #d97706 85%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 28%, transparent);
+}
+
+.assetTrayThumbBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.assetTrayThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.assetTrayIndex {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.2rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+  color: #fff;
+  background: color-mix(in srgb, #000 55%, transparent);
+  pointer-events: none;
+}
+
+.assetTrayRemove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  background: var(--background, #fff);
+  color: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 0.75;
+}
+
+.assetTrayRemove:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.assetTrayRemove:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* fileLabel used as button (Assign selected) */
+button.fileLabel {
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 .fileLabelPrimary {
   background: color-mix(in srgb, #b45309 12%, transparent);
   border-color: color-mix(in srgb, #d97706 40%, transparent);

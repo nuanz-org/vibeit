@@ -44,6 +44,20 @@ export function CreateForm() {
   const queryClient = useQueryClient();
   const [visionText, setVisionText] = useState(DEFAULT_VISION);
   const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
+  const [inspirationPreviews, setInspirationPreviews] = useState<
+    { key: string; name: string; url: string }[]
+  >([]);
+  useEffect(() => {
+    const next = inspirationFiles.map((file, index) => ({
+      key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+    setInspirationPreviews(next);
+    return () => {
+      for (const p of next) URL.revokeObjectURL(p.url);
+    };
+  }, [inspirationFiles]);
   const [modelOptions, setModelOptions] = useState<LlmModelOption[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [modelsError, setModelsError] = useState<string | null>(null);
@@ -235,27 +249,67 @@ export function CreateForm() {
           ) : null}
         </label>
 
-        <label className={styles.label}>
-          Inspiration images (optional)
+        <div className={styles.label}>
+          <span>Inspiration images (optional)</span>
           <input
             className={styles.fileInput}
             type="file"
             accept="image/png,image/jpeg,image/webp"
             multiple
-            disabled={pending || generating || isAwaitingClarify}
+            disabled={
+              pending ||
+              generating ||
+              isAwaitingClarify ||
+              inspirationFiles.length >= MAX_INSPIRATION
+            }
             onChange={(e) => {
               const list = e.target.files ? Array.from(e.target.files) : [];
-              setInspirationFiles(list.slice(0, MAX_INSPIRATION));
+              e.target.value = "";
+              if (!list.length) return;
+              setInspirationFiles((prev) => {
+                const room = MAX_INSPIRATION - prev.length;
+                if (room <= 0) return prev;
+                // Append; keep first-selected order (visual tray L→R).
+                return [...prev, ...list.slice(0, room)];
+              });
             }}
           />
+          {inspirationPreviews.length > 0 ? (
+            <ul className={styles.inspirationTray} aria-label="Inspiration images">
+              {inspirationPreviews.map((p, index) => (
+                <li key={p.key} className={styles.inspirationTrayItem}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.url}
+                    alt={p.name}
+                    className={styles.inspirationThumb}
+                  />
+                  <span className={styles.inspirationIndex}>{index + 1}</span>
+                  <button
+                    type="button"
+                    className={styles.inspirationRemove}
+                    disabled={pending || generating || isAwaitingClarify}
+                    aria-label={`Remove ${p.name}`}
+                    onClick={() =>
+                      setInspirationFiles((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <span className={styles.muted}>
-            Up to {MAX_INSPIRATION} PNG/JPEG/WebP. Style is interpreted only —
-            never copied 1:1.
+            Up to {MAX_INSPIRATION} PNG/JPEG/WebP — multi-select or add more.
+            Style is interpreted only — never copied 1:1.
             {inspirationFiles.length
               ? ` · ${inspirationFiles.length} selected`
               : null}
           </span>
-        </label>
+        </div>
 
         <label className={styles.checkboxRow}>
           <input

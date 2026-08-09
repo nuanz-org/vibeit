@@ -96,7 +96,11 @@ function assetUrl(ref) {
 function loadImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    const lower = url.trim().toLowerCase();
+    const isLocalObject = lower.startsWith("blob:") || lower.startsWith("data:");
+    if (!isLocalObject) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load asset: ${url}`));
     img.src = url;

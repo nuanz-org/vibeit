@@ -57,6 +57,20 @@ export function CreatePlayground({
   const queryClient = useQueryClient();
   const [visionText, setVisionText] = useState("");
   const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
+  const [inspirationPreviews, setInspirationPreviews] = useState<
+    { key: string; name: string; url: string }[]
+  >([]);
+  useEffect(() => {
+    const next = inspirationFiles.map((file, index) => ({
+      key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+    setInspirationPreviews(next);
+    return () => {
+      for (const p of next) URL.revokeObjectURL(p.url);
+    };
+  }, [inspirationFiles]);
   const [modelOptions, setModelOptions] = useState<LlmModelOption[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [modelsError, setModelsError] = useState<string | null>(null);
@@ -362,26 +376,65 @@ export function CreatePlayground({
               }
             }}
           />
+          {inspirationPreviews.length > 0 ? (
+            <ul className={styles.inspirationTray} aria-label="Inspiration images">
+              {inspirationPreviews.map((p, index) => (
+                <li key={p.key} className={styles.inspirationTrayItem}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.url}
+                    alt={p.name}
+                    className={styles.inspirationThumb}
+                  />
+                  <span className={styles.inspirationIndex}>{index + 1}</span>
+                  <button
+                    type="button"
+                    className={styles.inspirationRemove}
+                    disabled={pending || generating || isAwaitingClarify}
+                    aria-label={`Remove ${p.name}`}
+                    onClick={() =>
+                      setInspirationFiles((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <div className={pg.composerFooter}>
             <div className={pg.composerMeta}>
-              <label className={pg.attachBtn}>
+              <label className={pg.attachBtn} title="Add inspiration images">
                 +
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   multiple
-                  disabled={pending || generating || isAwaitingClarify}
+                  disabled={
+                    pending ||
+                    generating ||
+                    isAwaitingClarify ||
+                    inspirationFiles.length >= MAX_INSPIRATION
+                  }
                   onChange={(e) => {
                     const list = e.target.files
                       ? Array.from(e.target.files)
                       : [];
-                    setInspirationFiles(list.slice(0, MAX_INSPIRATION));
+                    e.target.value = "";
+                    if (!list.length) return;
+                    setInspirationFiles((prev) => {
+                      const room = MAX_INSPIRATION - prev.length;
+                      if (room <= 0) return prev;
+                      return [...prev, ...list.slice(0, room)];
+                    });
                   }}
                 />
               </label>
               {inspirationFiles.length > 0 ? (
                 <span className={pg.muted}>
-                  {inspirationFiles.length} image
+                  {inspirationFiles.length}/{MAX_INSPIRATION} image
                   {inspirationFiles.length > 1 ? "s" : ""}
                 </span>
               ) : null}
