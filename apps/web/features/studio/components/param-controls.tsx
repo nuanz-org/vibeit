@@ -18,6 +18,10 @@ export type ParamControlsProps = {
   /** M5a: restore defaults (live update, no remount). */
   onResetDefaults?: () => void;
   /**
+   * When true, hide the internal Reset control (header hosts it).
+   */
+  hideReset?: boolean;
+  /**
    * M5a: assetRef fields deep-link here (scroll/focus Assets panel).
    * Does not hold image bytes — params stay separate from slots.
    */
@@ -26,21 +30,20 @@ export type ParamControlsProps = {
 };
 
 /**
- * Schema-driven Control fields (M2a5 + M5a + A6 sections).
- * Groups by `field.group` when present; collapsible sections.
- * Enums: segmented (≤4 or uiHint) / select; booleans: switch; numbers: slider.
+ * Brik-class schema-driven Control fields.
+ * Flat accordion sections · horizontal label | control rows · fill-bar numbers.
  */
 export function ParamControls({
   schema,
   params,
   onChange,
   onResetDefaults,
+  hideReset = false,
   onFocusAssetSlot,
   disabled,
 }: ParamControlsProps) {
   const sections = useMemo(() => groupParamsBySchema(schema), [schema]);
 
-  // Collapse state: all open by default; user can collapse.
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const toggle = useCallback((id: string) => {
@@ -53,88 +56,76 @@ export function ParamControls({
 
   return (
     <div className={styles.controlStack}>
-      <div className={styles.presetBar}>
-        <button
-          type="button"
-          className={styles.presetChip}
-          disabled={disabled || !onResetDefaults}
-          onClick={() => onResetDefaults?.()}
-          title="Restore getDefaultParams() / version defaults"
-        >
-          Reset to defaults
-        </button>
-      </div>
-
-      {sections.map((section, index) => {
-        const isCollapsed = Boolean(collapsed[section.id]);
-        // First section stays open unless user collapses; others same default open
-        const open = !isCollapsed;
-        return (
-          <div
-            key={section.id}
-            className={styles.controlSection}
-            data-section={section.id}
-            data-open={open ? "true" : "false"}
+      {!hideReset && onResetDefaults ? (
+        <div className={styles.controlToolbar}>
+          <button
+            type="button"
+            className={styles.resetLink}
+            disabled={disabled}
+            onClick={() => onResetDefaults()}
+            title="Restore default parameters"
           >
-            <button
-              type="button"
-              className={styles.controlSectionHeader}
-              onClick={() => toggle(section.id)}
-              aria-expanded={open}
-              aria-controls={`${section.id}-body`}
-              id={`${section.id}-header`}
+            <ResetIcon />
+            Reset
+          </button>
+        </div>
+      ) : null}
+
+      <div className={styles.controlAccordion}>
+        {sections.map((section) => {
+          const isCollapsed = Boolean(collapsed[section.id]);
+          const open = !isCollapsed;
+          return (
+            <div
+              key={section.id}
+              className={styles.controlSection}
+              data-section={section.id}
+              data-open={open ? "true" : "false"}
             >
-              <span className={styles.controlSectionTitle}>{section.label}</span>
-              <span className={styles.controlSectionMeta}>
-                {section.fields.length}
+              <button
+                type="button"
+                className={styles.controlSectionHeader}
+                onClick={() => toggle(section.id)}
+                aria-expanded={open}
+                aria-controls={`${section.id}-body`}
+                id={`${section.id}-header`}
+              >
+                <span className={styles.controlSectionTitle}>
+                  {section.label}
+                </span>
                 <span
                   className={styles.controlSectionChevron}
                   data-open={open ? "true" : "false"}
                   aria-hidden
                 >
-                  ▾
+                  <ChevronIcon />
                 </span>
-              </span>
-            </button>
-            {open ? (
-              <div
-                className={styles.controlSectionBody}
-                id={`${section.id}-body`}
-                role="region"
-                aria-labelledby={`${section.id}-header`}
-                style={{
-                  // Subtle stagger for first paint of multi-section tools
-                  animationDelay: `${Math.min(index, 4) * 40}ms`,
-                }}
-              >
-                {section.id === "legacy-colors" ? (
-                  <p className={styles.muted}>
-                    Palette overrides — live preview, no regenerate.
-                  </p>
-                ) : null}
-                {section.id === "legacy-assets" ? (
-                  <p className={styles.muted}>
-                    These params point at asset slots — upload images in Assets
-                    below.
-                  </p>
-                ) : null}
-                <div className={styles.controlList}>
-                  {section.fields.map((field) => (
-                    <ParamFieldControl
-                      key={field.name}
-                      field={field}
-                      value={params[field.name]}
-                      disabled={disabled}
-                      onChange={(value) => onChange(field.name, value)}
-                      onFocusAssetSlot={onFocusAssetSlot}
-                    />
-                  ))}
+              </button>
+              {open ? (
+                <div
+                  className={styles.controlSectionBody}
+                  id={`${section.id}-body`}
+                  role="region"
+                  aria-labelledby={`${section.id}-header`}
+                >
+                  <div className={styles.controlList}>
+                    {section.fields.map((field) => (
+                      <ParamFieldControl
+                        key={field.name}
+                        field={field}
+                        value={params[field.name]}
+                        disabled={disabled}
+                        onChange={(value) => onChange(field.name, value)}
+                        onFocusAssetSlot={onFocusAssetSlot}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -158,77 +149,103 @@ function ParamFieldControl({
 
   switch (field.kind) {
     case "color": {
-      const hex =
-        typeof value === "string" && value.startsWith("#")
-          ? value.slice(0, 7)
+      const raw =
+        typeof value === "string" && value.length > 0
+          ? value
           : typeof field.default === "string"
-            ? field.default.slice(0, 7)
+            ? field.default
             : "#000000";
+      const hex = normalizeHex(raw);
       return (
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>{label}</span>
-          <div className={styles.colorRow}>
-            <input
-              type="color"
-              value={hex}
-              disabled={disabled}
-              onChange={(e) => onChange(e.target.value)}
-              className={styles.colorInput}
-            />
+        <div className={styles.fieldRow}>
+          <span className={styles.fieldRowLabel} title={field.description}>
+            {label}
+          </span>
+          <div className={styles.colorControl}>
+            <label className={styles.colorSwatch}>
+              <input
+                type="color"
+                value={hex}
+                disabled={disabled}
+                onChange={(e) => onChange(e.target.value.toUpperCase())}
+                className={styles.colorInputNative}
+                aria-label={`${label} color`}
+              />
+              <span
+                className={styles.colorSwatchFace}
+                style={{ background: hex }}
+                aria-hidden
+              />
+            </label>
             <input
               type="text"
-              value={typeof value === "string" ? value : hex}
+              value={typeof value === "string" ? value.toUpperCase() : hex}
               disabled={disabled}
               onChange={(e) => onChange(e.target.value)}
-              className={styles.textInput}
+              className={styles.colorHex}
               spellCheck={false}
+              aria-label={`${label} hex`}
             />
           </div>
-          {field.description ? (
-            <span className={styles.fieldHint}>{field.description}</span>
-          ) : null}
-        </label>
+        </div>
       );
     }
     case "number": {
       const n =
         typeof value === "number" && Number.isFinite(value)
           ? value
-          : field.default;
+          : typeof field.default === "number"
+            ? field.default
+            : 0;
       const min = field.min ?? 0;
       const max = field.max ?? 100;
       const step = field.step ?? 1;
       const decimals = step < 1 ? (String(step).split(".")[1]?.length ?? 2) : 0;
       const display =
         decimals > 0 ? Number(n).toFixed(Math.min(decimals, 3)) : String(n);
+      const span = max - min || 1;
+      const pct = Math.min(100, Math.max(0, ((n - min) / span) * 100));
+      const highFill = pct >= 42;
+
       return (
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>
+        <div className={styles.fieldRow}>
+          <span className={styles.fieldRowLabel} title={field.description}>
             {label}
-            <span className={styles.fieldValue}>{display}</span>
           </span>
-          <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={n}
-            disabled={disabled}
-            onChange={(e) => onChange(Number(e.target.value))}
-            className={styles.rangeInput}
-          />
-          {field.description ? (
-            <span className={styles.fieldHint}>{field.description}</span>
-          ) : null}
-        </label>
+          <div
+            className={styles.valueSlider}
+            data-high={highFill ? "true" : "false"}
+            data-disabled={disabled ? "true" : "false"}
+          >
+            <div
+              className={styles.valueSliderFill}
+              style={{ width: `${pct}%` }}
+              aria-hidden
+            />
+            <span className={styles.valueSliderReadout}>{display}</span>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={n}
+              disabled={disabled}
+              onChange={(e) => onChange(Number(e.target.value))}
+              className={styles.valueSliderInput}
+              aria-label={label}
+            />
+          </div>
+        </div>
       );
     }
     case "text": {
       const text =
         typeof value === "string" ? value : String(field.default ?? "");
       return (
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>{label}</span>
+        <div className={styles.fieldRow}>
+          <span className={styles.fieldRowLabel} title={field.description}>
+            {label}
+          </span>
           <input
             type="text"
             value={text}
@@ -236,12 +253,9 @@ function ParamFieldControl({
             placeholder={field.placeholder}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className={styles.textInput}
+            className={styles.controlPillInput}
           />
-          {field.description ? (
-            <span className={styles.fieldHint}>{field.description}</span>
-          ) : null}
-        </label>
+        </div>
       );
     }
     case "enum": {
@@ -251,8 +265,10 @@ function ParamFieldControl({
 
       if (segmented) {
         return (
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>{label}</span>
+          <div className={styles.fieldStack}>
+            <span className={styles.fieldRowLabel} title={field.description}>
+              {label}
+            </span>
             <div
               className={styles.segmented}
               role="radiogroup"
@@ -276,21 +292,21 @@ function ParamFieldControl({
                 );
               })}
             </div>
-            {field.description ? (
-              <span className={styles.fieldHint}>{field.description}</span>
-            ) : null}
           </div>
         );
       }
 
       return (
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>{label}</span>
+        <div className={styles.fieldRow}>
+          <span className={styles.fieldRowLabel} title={field.description}>
+            {label}
+          </span>
           <select
             value={current}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className={styles.selectInput}
+            className={styles.controlPillSelect}
+            aria-label={label}
           >
             {field.options.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -298,24 +314,21 @@ function ParamFieldControl({
               </option>
             ))}
           </select>
-          {field.description ? (
-            <span className={styles.fieldHint}>{field.description}</span>
-          ) : null}
-        </label>
+        </div>
       );
     }
     case "boolean": {
       const checked =
         typeof value === "boolean" ? value : Boolean(field.default);
       return (
-        <label className={styles.switchRow}>
-          <span className={styles.switchText}>
-            <span className={styles.fieldLabelInline}>{label}</span>
-            {field.description ? (
-              <span className={styles.fieldHint}>{field.description}</span>
-            ) : null}
+        <label className={styles.fieldRow} data-interactive="true">
+          <span className={styles.fieldRowLabel} title={field.description}>
+            {label}
           </span>
-          <span className={styles.switchTrack} data-checked={checked ? "true" : "false"}>
+          <span
+            className={styles.switchTrack}
+            data-checked={checked ? "true" : "false"}
+          >
             <input
               type="checkbox"
               className={styles.switchInput}
@@ -332,23 +345,69 @@ function ParamFieldControl({
     case "assetRef": {
       const slotId = field.assetSlotId;
       return (
-        <div className={styles.field}>
-          <span className={styles.fieldLabel}>{label}</span>
+        <div className={styles.fieldRow}>
+          <span className={styles.fieldRowLabel} title={field.description}>
+            {label}
+          </span>
           <button
             type="button"
             className={styles.assetRefButton}
             disabled={disabled}
             onClick={() => onFocusAssetSlot?.(slotId)}
           >
-            Open Assets · {slotId}
+            Open · {slotId}
           </button>
-          {field.description ? (
-            <span className={styles.fieldHint}>{field.description}</span>
-          ) : null}
         </div>
       );
     }
     default:
       return null;
   }
+}
+
+function normalizeHex(raw: string): string {
+  const s = raw.trim();
+  if (/^#[0-9a-fA-F]{6}/.test(s)) return s.slice(0, 7).toUpperCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    const r = s[1];
+    const g = s[2];
+    const b = s[3];
+    return `#${r}${r}${g}${g}${b}${b}`.toUpperCase();
+  }
+  return "#000000";
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M4 6L8 10L12 6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M2.5 3.5V6.5H5.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3.2 9.2A5 5 0 1 0 4 4.8L2.5 6.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }

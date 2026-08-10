@@ -536,6 +536,18 @@ export function StudioShell({
     <>
       <div className={pg.panelHeader}>
         <h2 className={pg.panelTitle}>Controls</h2>
+        <button
+          type="button"
+          className={styles.resetLink}
+          disabled={!runtime.mounted || runtime.busy}
+          onClick={() => runtime.resetParams()}
+          title="Restore default parameters"
+        >
+          <span className={styles.resetLinkIcon} aria-hidden>
+            ↺
+          </span>
+          Reset
+        </button>
       </div>
       <div className={pg.panelScroll}>
         <section className={styles.section}>
@@ -547,6 +559,7 @@ export function StudioShell({
               params={runtime.params}
               onChange={runtime.setParam}
               onResetDefaults={runtime.resetParams}
+              hideReset
               onFocusAssetSlot={focusAssetSlot}
               disabled={!runtime.mounted || runtime.busy}
             />
