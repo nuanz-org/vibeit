@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,6 +14,7 @@ import {
   ChatThreadItem,
 } from "@/features/chat";
 import { ClarifyPanel } from "@/features/create/components/clarify-panel";
+import { CreateStage, type CreateStageMode } from "@/features/create/components/create-stage";
 import { JobProgress } from "@/features/create/components/job-progress";
 import {
   PlaygroundShell,
@@ -41,13 +43,43 @@ import styles from "../styles.module.css";
 
 const MAX_INSPIRATION = 4;
 
+const VISION_STARTERS = [
+  {
+    label: "Kinetic logo",
+    vision:
+      "A kinetic logo mark that loops — soft spring motion, brand-ready, exportable as a short loop.",
+  },
+  {
+    label: "Social frame",
+    vision:
+      "A social media frame with animated border and title type — customizable colors and photo slot.",
+  },
+  {
+    label: "Type poster",
+    vision:
+      "A kinetic typography poster — bold headline, staggered word motion, warm gradient backdrop.",
+  },
+  {
+    label: "3D object",
+    vision:
+      "A simple 3D object on a soft gradient stage — orbiting light, tweakable material and color.",
+  },
+] as const;
+
+const SEND_SPRING = {
+  type: "spring" as const,
+  stiffness: 520,
+  damping: 28,
+  mass: 0.6,
+};
+
 export type CreatePlaygroundProps = {
   userName?: string | null;
   userEmail?: string | null;
 };
 
 /**
- * Brickspace-class Create: chat-first vision composer + empty stage.
+ * Brickspace-class Create: chat-first vision composer + morph empty stage.
  */
 export function CreatePlayground({
   userName,
@@ -55,6 +87,7 @@ export function CreatePlayground({
 }: CreatePlaygroundProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const reduce = useReducedMotion();
   const [visionText, setVisionText] = useState("");
   const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
   const [inspirationPreviews, setInspirationPreviews] = useState<
@@ -230,11 +263,23 @@ export function CreatePlayground({
     (userEmail ? userEmail.split("@")[0] : null) ||
     null;
 
+  const showStarters = !jobId && !lastSubmitted;
+
+  const stageMode: CreateStageMode = generating
+    ? "generating"
+    : isAwaitingClarify
+      ? "clarify"
+      : isSuccess
+        ? "opening"
+        : isFailed
+          ? "failed"
+          : "idle";
+
   const chat = (
     <div className={pg.chatBody}>
       <div className={pg.chatCard}>
         <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
-          <h2 className={pg.panelTitle}>Create</h2>
+          <h2 className={pg.panelTitle}>Chat</h2>
           {jobId ? (
             <button
               type="button"
@@ -260,6 +305,24 @@ export function CreatePlayground({
                   Describe a living design tool — motion, brand mark, social
                   frame.
                 </p>
+                {showStarters ? (
+                  <>
+                    <p className={styles.startersLabel}>Or try one of these</p>
+                    <ul className={styles.starters}>
+                      {VISION_STARTERS.map((s) => (
+                        <li key={s.label}>
+                          <button
+                            type="button"
+                            className={styles.starterChip}
+                            onClick={() => setVisionText(s.vision)}
+                          >
+                            {s.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
               </div>
             </ChatThreadItem>
 
@@ -365,10 +428,10 @@ export function CreatePlayground({
             className={pg.composerInput}
             value={visionText}
             onChange={(e) => setVisionText(e.target.value)}
-            rows={4}
+            rows={3}
             required
             disabled={pending || generating || isAwaitingClarify}
-            placeholder="Describe the living design tool you want…"
+            placeholder="Describe your vision…"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -407,7 +470,7 @@ export function CreatePlayground({
           <div className={pg.composerFooter}>
             <div className={pg.composerMeta}>
               <label className={pg.attachBtn} title="Add inspiration images">
-                +
+                <PlusIcon />
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -434,8 +497,7 @@ export function CreatePlayground({
               </label>
               {inspirationFiles.length > 0 ? (
                 <span className={pg.muted}>
-                  {inspirationFiles.length}/{MAX_INSPIRATION} image
-                  {inspirationFiles.length > 1 ? "s" : ""}
+                  {inspirationFiles.length}/{MAX_INSPIRATION}
                 </span>
               ) : null}
               <select
@@ -486,7 +548,7 @@ export function CreatePlayground({
                   {quota.createsUsed}/{quota.createsLimit}
                 </span>
               ) : null}
-              <button
+              <motion.button
                 type="submit"
                 className={pg.btnSend}
                 disabled={!canSend}
@@ -499,9 +561,21 @@ export function CreatePlayground({
                         ? "Quota reached"
                         : "Generate tool"
                 }
+                whileTap={reduce || !canSend ? undefined : { scale: 0.92 }}
+                animate={
+                  reduce
+                    ? undefined
+                    : {
+                        scale: canSend ? 1 : 0.96,
+                        backgroundColor: canSend
+                          ? "var(--ink, var(--foreground))"
+                          : undefined,
+                      }
+                }
+                transition={SEND_SPRING}
               >
                 <SendIcon />
-              </button>
+              </motion.button>
             </div>
           </div>
           {modelsError ? (
@@ -514,22 +588,7 @@ export function CreatePlayground({
 
   const stage = (
     <div className={pg.stageInner}>
-      <div className={pg.emptyStage}>
-        <p className={pg.emptyStageTitle}>
-          {generating
-            ? "Building your tool…"
-            : isAwaitingClarify
-              ? "Answer a few questions"
-              : isSuccess
-                ? "Opening Studio…"
-                : "Your tool will appear here"}
-        </p>
-        <p className={pg.emptyStageHint}>
-          {generating
-            ? "Plan → code → validate. Hang tight."
-            : "Describe a vision in chat to generate a live design tool."}
-        </p>
-      </div>
+      <CreateStage mode={stageMode} phase={status?.phase} />
     </div>
   );
 
@@ -552,6 +611,19 @@ export function CreatePlayground({
       chat={chat}
       stage={stage}
     />
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M8 3.25V12.75M3.25 8H12.75"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 

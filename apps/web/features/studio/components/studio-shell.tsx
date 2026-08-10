@@ -171,9 +171,9 @@ export function StudioShell({
     if (!el || typeof ResizeObserver === "undefined") return;
     const measure = () => {
       const rect = el.getBoundingClientRect();
-      // Leave room for StageSizeBar + padding
-      const w = Math.max(160, Math.floor(rect.width) - 24);
-      const h = Math.max(160, Math.floor(rect.height) - 72);
+      // stageAreaRef is the canvas slot only (size bar is docked below).
+      const w = Math.max(160, Math.floor(rect.width) - 16);
+      const h = Math.max(160, Math.floor(rect.height) - 16);
       setStageMax({ w, h });
     };
     measure();
@@ -183,15 +183,12 @@ export function StudioShell({
   }, []);
 
   const frameDisplay = useMemo(() => {
-    const maxH =
-      typeof window !== "undefined"
-        ? Math.min(stageMax.h, Math.floor(window.innerHeight * 0.78))
-        : stageMax.h;
+    // stageMax is measured from the canvas slot above the pinned size bar.
     return fitStageBox(
       stageSize.width,
       stageSize.height,
       stageMax.w,
-      maxH,
+      stageMax.h,
     );
   }, [stageSize.height, stageSize.width, stageMax.h, stageMax.w]);
 
@@ -493,31 +490,45 @@ export function StudioShell({
   );
 
   const stage = (
-    <div className={pg.stageInner} ref={stageAreaRef}>
-      {runtime.error && !runtime.mounted ? (
-        <div className={styles.errorBanner}>{runtime.error}</div>
-      ) : null}
-      <div
-        className={pg.frame}
-        style={{
-          width: frameDisplay.displayW,
-          height: frameDisplay.displayH,
-          aspectRatio: "unset",
-          maxWidth: "100%",
-          maxHeight: "min(78vh, 720px)",
-        }}
-      >
-        <RuntimeHost
-          ref={runtime.hostRef}
-          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-          onReady={(msg) => {
-            void runtime.onReady(msg);
+    <div className={pg.stageInner} data-stage-layout="pinned-bar">
+      {/*
+        Canvas slot fills remaining height and centers the frame.
+        Size bar is pinned to the bottom of the stage so aspect changes
+        do not jump W/H controls up and down with the preview.
+      */}
+      <div className={styles.stageCanvasSlot} ref={stageAreaRef}>
+        {runtime.error && !runtime.mounted ? (
+          <div className={styles.errorBanner}>{runtime.error}</div>
+        ) : null}
+        <div
+          className={pg.frame}
+          style={{
+            width: frameDisplay.displayW,
+            height: frameDisplay.displayH,
+            aspectRatio: "unset",
+            maxWidth: "100%",
+            maxHeight: "100%",
           }}
-          onStatusChange={runtime.onStatusChange}
-          onBridgeError={runtime.onBridgeError}
-        />
+        >
+          <RuntimeHost
+            ref={runtime.hostRef}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              display: "block",
+            }}
+            onReady={(msg) => {
+              void runtime.onReady(msg);
+            }}
+            onStatusChange={runtime.onStatusChange}
+            onBridgeError={runtime.onBridgeError}
+          />
+        </div>
       </div>
-      <StageSizeBar value={stageSize} onChange={onStageSizeChange} />
+      <div className={styles.stageSizeBarDock}>
+        <StageSizeBar value={stageSize} onChange={onStageSizeChange} />
+      </div>
     </div>
   );
 

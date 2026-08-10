@@ -177,13 +177,13 @@
 }
 
 .progressCard {
-  padding: 1rem;
+  padding: 0.85rem 0.95rem;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
-  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in oklch, var(--ink, var(--foreground)) 3.5%, transparent);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .progressHeader {
@@ -195,38 +195,110 @@
 
 .progressTitle {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
+  letter-spacing: -0.015em;
 }
 
 .progressStatus {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.55rem;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  background: color-mix(in oklch, var(--ink, var(--foreground)) 8%, transparent);
+  color: var(--muted-ink);
+  text-transform: none;
 }
 
 .progressStatus[data-status="running"],
 .progressStatus[data-status="queued"] {
-  color: #a16207;
-  background: color-mix(in srgb, #a16207 14%, transparent);
+  color: oklch(0.55 0.12 75);
+  background: color-mix(in oklch, oklch(0.65 0.14 75) 14%, transparent);
 }
 
 .progressStatus[data-status="succeeded"] {
-  color: #15803d;
-  background: color-mix(in srgb, #15803d 14%, transparent);
+  color: oklch(0.48 0.12 150);
+  background: color-mix(in oklch, oklch(0.55 0.14 150) 14%, transparent);
 }
 
 .progressStatus[data-status="failed"] {
-  color: #b91c1c;
-  background: color-mix(in srgb, #b91c1c 14%, transparent);
+  color: oklch(0.52 0.18 25);
+  background: color-mix(in oklch, oklch(0.55 0.2 25) 14%, transparent);
 }
 
 .progressStatus[data-status="awaiting_clarify"] {
-  color: #1d4ed8;
-  background: color-mix(in srgb, #1d4ed8 14%, transparent);
+  color: oklch(0.48 0.14 260);
+  background: color-mix(in oklch, oklch(0.55 0.16 260) 14%, transparent);
+}
+
+.progressSteps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.progressStep {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.progressStepDot {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in oklch, var(--ink, var(--foreground)) 18%, transparent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--background);
+  background: transparent;
+  position: relative;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.progressStep[data-state="done"] .progressStepDot {
+  background: var(--ink, var(--foreground));
+  border-color: var(--ink, var(--foreground));
+}
+
+.progressStep[data-state="active"] .progressStepDot {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 14%, transparent);
+}
+
+.progressStep[data-state="error"] .progressStepDot {
+  border-color: oklch(0.55 0.2 25);
+  background: color-mix(in oklch, oklch(0.55 0.2 25) 18%, transparent);
+}
+
+.progressStepPulse {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--accent);
+  display: block;
+}
+
+.progressStepLabel {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: var(--muted-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progressStep[data-state="active"] .progressStepLabel,
+.progressStep[data-state="done"] .progressStepLabel {
+  color: var(--ink, var(--foreground));
 }
 
 /* A3 planMode clarify */
@@ -325,18 +397,228 @@
 }
 
 .progressBarTrack {
-  height: 6px;
+  height: 4px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  background: color-mix(in oklch, var(--ink, var(--foreground)) 9%, transparent);
   overflow: hidden;
-  margin-top: 0.25rem;
 }
 
 .progressBarFill {
   height: 100%;
   border-radius: 999px;
-  background: var(--foreground);
-  transition: width 0.4s ease;
+  background: var(--ink, var(--foreground));
+  width: 0;
+}
+
+.progressBarFill[data-failed="true"] {
+  opacity: 0.4;
+  background: oklch(0.55 0.2 25);
+}
+
+/* ── Create morph stage (Brik empty canvas + Morph Surface) ── */
+
+.createStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 1rem;
+}
+
+.morphSurface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface-elevated, var(--background));
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--panel-shadow);
+  max-width: min(100%, 360px);
+}
+
+.morphDot {
+  position: absolute;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--accent);
+  z-index: 2;
+}
+
+.morphGlow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    color-mix(in oklch, var(--accent) 18%, transparent),
+    transparent 55%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.morphBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem 1.5rem;
+  text-align: center;
+  height: 100%;
+}
+
+.morphCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 26ch;
+}
+
+.morphTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink, var(--foreground));
+}
+
+.morphHint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted-ink);
+}
+
+.phaseRail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.phaseItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.phaseDot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in oklch, var(--ink, var(--foreground)) 16%, transparent);
+  display: grid;
+  place-items: center;
+  color: var(--background);
+  background: transparent;
+}
+
+.phaseItem[data-state="done"] .phaseDot {
+  background: var(--ink, var(--foreground));
+  border-color: var(--ink, var(--foreground));
+}
+
+.phaseItem[data-state="active"] .phaseDot {
+  border-color: var(--accent);
+}
+
+.phasePulse {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--accent);
+  display: block;
+  animation: phasePulse 1.4s ease-in-out infinite;
+}
+
+.phaseLabel {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: var(--muted-ink);
+}
+
+.phaseItem[data-state="active"] .phaseLabel,
+.phaseItem[data-state="done"] .phaseLabel {
+  color: var(--ink, var(--foreground));
+}
+
+@keyframes phasePulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.25);
+  }
+}
+
+/* Vision starter chips */
+.starters {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.starterChip {
+  appearance: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--muted-ink);
+  cursor: pointer;
+  transition:
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    border-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.starterChip:hover {
+  border-color: color-mix(in oklch, var(--ink, var(--foreground)) 22%, transparent);
+  color: var(--ink, var(--foreground));
+  background: color-mix(in oklch, var(--ink, var(--foreground)) 4%, transparent);
+  transform: translateY(-1px);
+}
+
+.starterChip:active {
+  transform: scale(0.98);
+}
+
+.startersLabel {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted-ink);
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phasePulse {
+    animation: none;
+  }
+
+  .starterChip {
+    transition: none;
+  }
 }
 
 .code {
