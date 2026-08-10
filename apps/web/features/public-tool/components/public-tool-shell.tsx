@@ -72,7 +72,7 @@ export function PublicToolShell({
       <header className={styles.header}>
         <div className={styles.headerMeta}>
           <Link href="/" className={styles.brand}>
-            Vibeit
+            Aiditr
           </Link>
           <span className={styles.badge}>Public</span>
           <span className={styles.title} title={label}>

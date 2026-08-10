@@ -23,7 +23,7 @@ export default function Home() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <span style={{ fontWeight: 700, letterSpacing: "-0.03em" }}>
-            Vibeit
+            Aiditr
           </span>
           <Link
             href="/gallery"
@@ -65,7 +65,7 @@ export default function Home() {
             fontSize: "1.05rem",
           }}
         >
-          Describe what you want to make. Vibeit generates a freeform interactive
+          Describe what you want to make. Aiditr generates a freeform interactive
           tool you can control, export, share, and publish.
         </p>
         <div

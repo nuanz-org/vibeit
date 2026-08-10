@@ -57,7 +57,7 @@ export function ResetPasswordForm() {
   if (!token && !urlError) {
     return (
       <div className={styles.card}>
-        <p className={styles.brand}>Vibeit</p>
+        <p className={styles.brand}>Aiditr</p>
         <h1 className={styles.title}>Invalid link</h1>
         <p className={styles.subtitle}>
           This password reset page needs a valid token from your email link.
@@ -73,7 +73,7 @@ export function ResetPasswordForm() {
 
   return (
     <div className={styles.card}>
-      <p className={styles.brand}>Vibeit</p>
+      <p className={styles.brand}>Aiditr</p>
       <h1 className={styles.title}>Choose a new password</h1>
       <p className={styles.subtitle}>
         Use at least 8 characters. Other sessions will be signed out after reset.

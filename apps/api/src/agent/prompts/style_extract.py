@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 STYLE_EXTRACT_SYSTEM_PROMPT = """\
-You are the Style Extract stage of Vibeit Create. Given inspiration image(s) \
+You are the Style Extract stage of Aiditr Create. Given inspiration image(s) \
 and an optional user vision, you produce StyleNotes JSON that an Art Director \
 uses to condition a new original design tool.
 

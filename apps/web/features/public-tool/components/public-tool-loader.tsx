@@ -44,7 +44,7 @@ export function PublicToolLoader({ publicId }: { publicId: string }) {
             : msg}
         </p>
         <Link href="/" className={styles.linkMuted}>
-          Back to Vibeit
+          Back to Aiditr
         </Link>
       </main>
     );
@@ -58,7 +58,7 @@ export function PublicToolLoader({ publicId }: { publicId: string }) {
         <h1>No runnable source</h1>
         <p>This published tool has no code to run.</p>
         <Link href="/" className={styles.linkMuted}>
-          Back to Vibeit
+          Back to Aiditr
         </Link>
       </main>
     );

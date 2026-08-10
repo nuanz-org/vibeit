@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 CLARIFY_SYSTEM_PROMPT = """\
-You are the Clarify stage (Art Director interview) of Vibeit Create. Given a user \
+You are the Clarify stage (Art Director interview) of Aiditr Create. Given a user \
 vision, ask 2–4 short multiple-choice questions that unlock a better parametric tool.
 
 Output ONE JSON object only (no markdown fences, no commentary).

@@ -210,6 +210,39 @@ class ToolsRepository:
             row = await conn.fetchrow(sql, *args)
         return tool_from_record(row) if row else None
 
+    async def set_tool_thumbnail(
+        self,
+        tool_id: UUID | str,
+        *,
+        owner_user_id: str,
+        thumbnail_asset_id: UUID | str,
+        mark_export_smoke: bool = True,
+    ) -> ToolRow | None:
+        """
+        M8c auto/manual thumb: attach kind=thumb asset to an owned tool.
+        Does not change status or gallery_ready — only thumbnail + optional smoke.
+        Returns None if missing or not owned.
+        """
+        sets = [
+            "thumbnail_asset_id = $3::uuid",
+            "updated_at = now()",
+        ]
+        if mark_export_smoke:
+            sets.append("export_smoke_at = now()")
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE tools
+                SET {", ".join(sets)}
+                WHERE id = $1::uuid AND owner_user_id = $2
+                RETURNING {_TOOL_COLUMNS}
+                """,
+                str(tool_id),
+                owner_user_id,
+                str(thumbnail_asset_id),
+            )
+        return tool_from_record(row) if row else None
+
     async def set_tool_unpublished(
         self,
         tool_id: UUID | str,

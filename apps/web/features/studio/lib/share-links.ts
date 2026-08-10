@@ -39,7 +39,7 @@ export function buildEmbedSnippet(
   const src = buildShareUrl(publicId, options?.origin);
   const width = options?.width ?? 480;
   const height = options?.height ?? 480;
-  const title = (options?.title ?? "Vibeit tool").replace(/"/g, "'");
+  const title = (options?.title ?? "Aiditr tool").replace(/"/g, "'");
   return `<iframe src="${src}" width="${width}" height="${height}" title="${title}" frameborder="0" allow="autoplay; fullscreen" loading="lazy" style="border:0;border-radius:12px;max-width:100%;"></iframe>`;
 }
 

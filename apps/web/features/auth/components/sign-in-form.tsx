@@ -44,7 +44,7 @@ export function SignInForm() {
 
   return (
     <div className={styles.card}>
-      <p className={styles.brand}>Vibeit</p>
+      <p className={styles.brand}>Aiditr</p>
       <h1 className={styles.title}>Sign in</h1>
       <p className={styles.subtitle}>
         Use your email and password to continue to Create.

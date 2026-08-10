@@ -36,7 +36,7 @@ export function ForgotPasswordForm() {
 
   return (
     <div className={styles.card}>
-      <p className={styles.brand}>Vibeit</p>
+      <p className={styles.brand}>Aiditr</p>
       <h1 className={styles.title}>Reset password</h1>
       <p className={styles.subtitle}>
         Enter your email and we&apos;ll send a link to choose a new password.

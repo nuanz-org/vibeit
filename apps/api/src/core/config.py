@@ -112,7 +112,7 @@ class Settings:
             "LLM_HTTP_REFERER",
             "http://localhost:3000",
         ).strip()
-        self.llm_app_title: str = os.getenv("LLM_APP_TITLE", "Vibeit").strip()
+        self.llm_app_title: str = os.getenv("LLM_APP_TITLE", "Aiditr").strip()
 
         # Product Create model menu (user-selectable). Empty env → built-in defaults.
         raw_menu = os.getenv("LLM_MODELS_ALLOWED", "").strip()

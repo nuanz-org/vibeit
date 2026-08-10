@@ -43,7 +43,7 @@ def _build_llm(settings: Settings) -> LLMClient:
         default_model=default,
         timeout_seconds=settings.llm_timeout_seconds,
         http_referer=settings.llm_http_referer or None,
-        app_title=settings.llm_app_title or "Vibeit",
+        app_title=settings.llm_app_title or "Aiditr",
     )
 
 

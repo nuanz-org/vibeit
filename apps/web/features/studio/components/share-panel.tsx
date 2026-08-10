@@ -64,7 +64,7 @@ export function SharePanel({
     () =>
       publicId
         ? buildEmbedSnippet(publicId, {
-            title: title ?? "Vibeit tool",
+            title: title ?? "Aiditr tool",
             width: embedWidth,
             height: embedHeight,
           })

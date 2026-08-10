@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { GalleryList } from "@/features/gallery/components/gallery-list";
 
 export const metadata: Metadata = {
-  title: "Gallery · Vibeit",
-  description: "Browse published interactive design tools on Vibeit.",
+  title: "Gallery · Aiditr",
+  description: "Browse published interactive design tools on Aiditr.",
 };
 
 /**

@@ -39,7 +39,7 @@ export function SignUpForm() {
 
   return (
     <div className={styles.card}>
-      <p className={styles.brand}>Vibeit</p>
+      <p className={styles.brand}>Aiditr</p>
       <h1 className={styles.title}>Create account</h1>
       <p className={styles.subtitle}>
         Sign up with email and password to start creating tools.

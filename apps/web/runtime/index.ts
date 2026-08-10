@@ -1,5 +1,5 @@
 /**
- * Vibeit tool runtime subsystem (M2a).
+ * Aiditr tool runtime subsystem (M2a).
  *
  * Layout (frontend-architecture.md):
  * - contract/  — postMessage protocol (M2a1 ✅)

@@ -11,7 +11,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { publicId } = await params;
   return {
-    title: `Gallery · Vibeit`,
+    title: `Gallery · Aiditr`,
     description: `Published tool ${publicId}`,
   };
 }

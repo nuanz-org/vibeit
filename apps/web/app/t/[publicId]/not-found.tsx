@@ -10,7 +10,7 @@ export default function PublicToolNotFound() {
         This public link is invalid or the tool is not published.
       </p>
       <Link href="/" style={{ textDecoration: "underline", opacity: 0.75 }}>
-        Back to Vibeit
+        Back to Aiditr
       </Link>
     </main>
   );

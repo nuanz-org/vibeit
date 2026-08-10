@@ -219,6 +219,8 @@ export function StudioShell({
         }
       : null,
   );
+  /** Once-per-tool guard for automatic gallery frame capture. */
+  const autoThumbAttemptedRef = useRef<string | null>(null);
   // AM7 — live version after refine (client-side last-good rollback)
   const [liveSource, setLiveSource] = useState<string | null | undefined>(
     sourceCode,
@@ -280,6 +282,56 @@ export function StudioShell({
 
   const displayStatus = liveToolStatus ?? toolStatus ?? null;
   const isFixtureOnly = !persistToolId || !publicId;
+
+  /**
+   * Auto gallery thumbnail: when Studio mounts a generated tool that has no
+   * thumb yet, capture once and upload (API pins tools.thumbnail_asset_id).
+   * Soft-fail — never blocks Studio. Backfills blanks created by create finalize.
+   */
+  useEffect(() => {
+    const toolId = persistToolId?.trim();
+    if (!toolId || isFixtureOnly) return;
+    if (!runtime.mounted || runtime.status !== "ready") return;
+    if (galleryThumb?.assetId || initialThumbnailAssetId) return;
+    if (autoThumbAttemptedRef.current === toolId) return;
+
+    autoThumbAttemptedRef.current = toolId;
+    let cancelled = false;
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const result = await runtime.captureAndUploadThumbnail(toolId, {
+            quiet: true,
+          });
+          if (cancelled) return;
+          setGalleryThumb({
+            assetId: result.assetId,
+            url: result.url,
+            at: new Date().toISOString(),
+          });
+        } catch {
+          // Soft-fail: owner can still use manual “Save gallery thumbnail”
+          if (!cancelled) {
+            autoThumbAttemptedRef.current = `${toolId}:failed`;
+          }
+        }
+      })();
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once when host ready
+  }, [
+    persistToolId,
+    isFixtureOnly,
+    runtime.mounted,
+    runtime.status,
+    galleryThumb?.assetId,
+    initialThumbnailAssetId,
+  ]);
 
   const focusAssetSlot = useCallback((slotId: string) => {
     setFocusSlotId(slotId);

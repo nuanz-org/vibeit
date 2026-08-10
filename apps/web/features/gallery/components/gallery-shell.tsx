@@ -25,7 +25,7 @@ export function GalleryShell({ children }: GalleryShellProps) {
       <header className={styles.header}>
         <div className={styles.headerMeta}>
           <Link href="/" className={styles.brand}>
-            Vibeit
+            Aiditr
           </Link>
           <nav className={styles.nav} aria-label="Primary">
             <Link

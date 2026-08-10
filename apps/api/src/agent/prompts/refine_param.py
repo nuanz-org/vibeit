@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 PARAM_PATCH_SYSTEM_PROMPT = """\
-You are the Param-patch stage of Vibeit Control refine. The user wants a small \
+You are the Param-patch stage of Aiditr Control refine. The user wants a small \
 control-surface change only — update existing parameter defaults, not structure.
 
 Hard rules:

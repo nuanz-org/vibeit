@@ -30,7 +30,7 @@ function SkeletonGrid({ count = 8 }: { count?: number }) {
 
 /**
  * Anonymous gallery browse with load-more pagination.
- * No source download or owner controls.
+ * Media-first masonry; no source download or owner controls.
  */
 export function GalleryList() {
   const q = useInfiniteQuery({
@@ -61,27 +61,20 @@ export function GalleryList() {
   return (
     <GalleryShell>
       <main className={styles.main}>
-        <div className={styles.pageHeader}>
-          <div className={styles.pageHeaderText}>
+        <header className={styles.pageHeader}>
+          <div className={styles.pageHeaderTop}>
             <h1 className={styles.pageTitle}>Gallery</h1>
-            <p className={styles.pageLead}>
-              Public interactive design tools from the community. Open any card
-              to preview — no sign-in required.
-            </p>
+            {countLabel ? (
+              <span className={styles.countPill}>{countLabel}</span>
+            ) : null}
           </div>
-          {countLabel ? (
-            <span className={styles.countPill}>{countLabel}</span>
-          ) : null}
-        </div>
+          <p className={styles.pageLead}>
+            Explore interactive design tools from the community. Open any piece
+            to play — no sign-in required.
+          </p>
+        </header>
 
-        {loadingFirst ? (
-          <>
-            <p className={styles.muted} style={{ marginBottom: "1rem" }}>
-              Loading tools…
-            </p>
-            <SkeletonGrid />
-          </>
-        ) : null}
+        {loadingFirst ? <SkeletonGrid /> : null}
 
         {error ? (
           <div className={styles.centerMsg}>
@@ -112,8 +105,8 @@ export function GalleryList() {
             <div className={styles.emptyVisual} aria-hidden />
             <h1>No tools yet</h1>
             <p>
-              Successful creates publish here automatically. Generate a tool to
-              seed the gallery, then share the live link with anyone.
+              Published tools land here. Create one, capture a thumbnail, and
+              publish to seed the gallery.
             </p>
             <div className={styles.actions} style={{ justifyContent: "center" }}>
               <Link

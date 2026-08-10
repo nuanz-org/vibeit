@@ -39,7 +39,7 @@ const t = (c.time % loopDur) / loopDur; // 0..1 seamless loop phase
 """
 
 CODEGEN_SYSTEM_PROMPT_CANVAS2D = f"""\
-You are the Codegen stage of Vibeit Create. Emit a single TypeScript module that implements \
+You are the Codegen stage of Aiditr Create. Emit a single TypeScript module that implements \
 a **canvas2d** VibeTool via the harness. Output ONLY the TypeScript source (no markdown fences).
 
 Required shape:
@@ -86,7 +86,7 @@ Match param schema names and asset slot ids from the plan JSON exactly.
 """
 
 CODEGEN_SYSTEM_PROMPT_THREE = f"""\
-You are the Codegen stage of Vibeit Create. Emit a single TypeScript module that implements \
+You are the Codegen stage of Aiditr Create. Emit a single TypeScript module that implements \
 a **three** VibeTool via the real three.js harness (Track B). Output ONLY the TypeScript source \
 (no markdown fences).
 
@@ -147,7 +147,7 @@ Match param schema names and asset slot ids from the plan JSON exactly.
 """
 
 CODEGEN_SYSTEM_PROMPT_P5 = f"""\
-You are the Codegen stage of Vibeit Create. Emit a single TypeScript module that implements \
+You are the Codegen stage of Aiditr Create. Emit a single TypeScript module that implements \
 a **p5-style** VibeTool via the harness. Output ONLY the TypeScript source (no markdown fences).
 
 Required shape:

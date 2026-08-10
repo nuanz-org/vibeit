@@ -4,7 +4,7 @@ import { CreatePlayground } from "@/features/create/components/create-playground
 import { requireSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
-  title: "Create · Vibeit",
+  title: "Create · Aiditr",
 };
 
 /**

@@ -91,7 +91,7 @@ export const RuntimeHost = forwardRef<RuntimeHostHandle, RuntimeHostProps>(
       className,
       style,
       frameSrc = RUNTIME_FRAME_PATH,
-      title = "Vibeit tool runtime",
+      title = "Aiditr tool runtime",
       onReady,
       onStatusChange,
       onUnhandledError,

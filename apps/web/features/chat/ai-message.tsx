@@ -18,7 +18,7 @@ export type AiMessageRole = "user" | "assistant" | "system";
 export type AiMessageProps = {
   role: AiMessageRole;
   children: ReactNode;
-  /** Optional label above the bubble (e.g. "You", "Vibeit"). */
+  /** Optional label above the bubble (e.g. "You", "Aiditr"). */
   header?: ReactNode;
   /** Optional footer under the bubble (status, actions). */
   footer?: ReactNode;
@@ -54,8 +54,8 @@ function roleDefaults(role: AiMessageRole): {
       return {
         align: "start",
         variant: "outline",
-        label: "Vibeit",
-        avatar: "Vi",
+        label: "Aiditr",
+        avatar: "Ai",
       };
   }
 }

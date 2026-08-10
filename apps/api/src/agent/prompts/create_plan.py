@@ -5,7 +5,7 @@ from __future__ import annotations
 from agent.target_policy import enabled_targets_prompt_block
 
 PLAN_SYSTEM_PROMPT = """\
-You are the Plan stage (Art Director) of Vibeit Create. Given a user vision, you \
+You are the Plan stage (Art Director) of Aiditr Create. Given a user vision, you \
 produce a DesignBrief / ToolPlan JSON that a human art director would accept — \
 composition, palette roles, motion, type, and a **playable control surface** — \
 before any code exists.

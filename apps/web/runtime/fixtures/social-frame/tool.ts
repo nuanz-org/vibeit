@@ -227,7 +227,7 @@ export const socialFrameCreative: Canvas2dCreative = {
     g.fillStyle = accent;
     g.globalAlpha = 0.7;
     g.font = `500 ${Math.max(10, Math.floor(w * 0.032))}px system-ui, sans-serif`;
-    g.fillText("vibeit · social frame", w * 0.5, h * 0.88, w * 0.8);
+    g.fillText("aiditr · social frame", w * 0.5, h * 0.88, w * 0.8);
     g.globalAlpha = 1;
   },
   // --- CREATIVE_FILL end ---

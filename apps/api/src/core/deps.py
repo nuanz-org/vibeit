@@ -77,7 +77,7 @@ def get_llm_client(settings: Settings = Depends(get_settings)) -> LLMClient:
         default_model=model,
         timeout_seconds=settings.llm_timeout_seconds,
         http_referer=settings.llm_http_referer or None,
-        app_title=settings.llm_app_title or "Vibeit",
+        app_title=settings.llm_app_title or "Aiditr",
     )
 
 

@@ -8,7 +8,7 @@ from typing import Any
 from agent.prompts.perf_craft import PERF_CRAFT_CANVAS2D, PERF_CRAFT_REPAIR
 
 REPAIR_SYSTEM_PROMPT_CANVAS2D = f"""\
-You are the Repair stage of Vibeit Create. Fix the TypeScript canvas2d tool module \
+You are the Repair stage of Aiditr Create. Fix the TypeScript canvas2d tool module \
 so it passes static validation and real smoke gates (compile + host).
 
 Hard rules (must keep):
@@ -50,7 +50,7 @@ Output ONLY the full fixed TypeScript module (no markdown fences, no commentary)
 """
 
 REPAIR_SYSTEM_PROMPT_THREE = """\
-You are the Repair stage of Vibeit Create. Fix the TypeScript **three** tool module \
+You are the Repair stage of Aiditr Create. Fix the TypeScript **three** tool module \
 so it passes static validation and real smoke gates (compile + host).
 
 Hard rules (must keep):
@@ -78,7 +78,7 @@ Output ONLY the full fixed TypeScript module (no markdown fences, no commentary)
 """
 
 REPAIR_SYSTEM_PROMPT_P5 = """\
-You are the Repair stage of Vibeit Create. Fix the TypeScript p5-style tool module \
+You are the Repair stage of Aiditr Create. Fix the TypeScript p5-style tool module \
 so it passes static validation and real smoke gates (compile + host).
 
 Hard rules (must keep):

@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
         await pool.close()
 
 
-app = FastAPI(title="Vibeit API", lifespan=lifespan)
+app = FastAPI(title="Aiditr API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

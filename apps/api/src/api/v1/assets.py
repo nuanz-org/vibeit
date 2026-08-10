@@ -25,7 +25,8 @@ from adapters.db.repositories.assets import AssetsRepository
 from adapters.storage.cors import storage_cors_headers
 from adapters.storage.protocol import ObjectStorage
 from core.config import Settings, get_settings
-from core.deps import get_assets_repo, get_storage
+from adapters.db.repositories.tools import ToolsRepository
+from core.deps import get_assets_repo, get_storage, get_tools_repo
 from core.security import get_current_user
 from schemas.assets import AssetResponse
 from services.upload_asset import (
@@ -77,15 +78,27 @@ async def post_asset(
     ),
     user: AuthUser = Depends(get_current_user),
     assets: AssetsRepository = Depends(get_assets_repo),
+    tools: ToolsRepository = Depends(get_tools_repo),
     storage: ObjectStorage = Depends(get_storage),
     settings: Settings = Depends(get_settings),
 ) -> AssetResponse:
     data = await file.read()
     tid = (toolId or "").strip() or None
+    kind_norm = kind.strip().lower()
+
+    # M8c: thumb+toolId must target an owned tool so we can pin thumbnail_asset_id
+    if tid and kind_norm == "thumb":
+        owned = await tools.get_tool_by_id(tid)
+        if owned is None or owned.owner_user_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tool not found",
+            )
+
     try:
         row, _url = await upload_asset(
             owner_user_id=user.id,
-            kind=kind.strip().lower(),
+            kind=kind_norm,
             data=data,
             content_type=file.content_type,
             original_filename=file.filename,
@@ -99,6 +112,16 @@ async def post_asset(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+    # Auto-attach gallery thumbnail so /gallery cards get a real image without
+    # a separate publish step (create finalize often lists tools pre-thumb).
+    if tid and kind_norm == "thumb":
+        await tools.set_tool_thumbnail(
+            tid,
+            owner_user_id=user.id,
+            thumbnail_asset_id=row.id,
+            mark_export_smoke=True,
+        )
 
     return _to_response(row, api_public_base_url=settings.api_public_base_url)
 

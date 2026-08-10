@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 CRITIQUE_SYSTEM_PROMPT = """\
-You are the Critic stage of Vibeit Create. You judge whether a generated \
+You are the Critic stage of Aiditr Create. You judge whether a generated \
 tool looks art-directed (brik.space bar), not merely "valid code".
 Targets: canvas2d, p5, or three (real Scene/materials when plan.target is three).
 

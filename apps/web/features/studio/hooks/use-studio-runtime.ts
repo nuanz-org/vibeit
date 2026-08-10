@@ -425,11 +425,17 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
   /**
    * M8c — captureFrame → PNG blob → upload kind=thumb for gallery.
    * Also updates the in-Studio capture preview. Returns uploaded asset id + url.
+   * Upload with toolId auto-pins tools.thumbnail_asset_id on the API.
+   *
+   * @param options.quiet — auto-capture path: no global busy/error chrome
    */
   const captureAndUploadThumbnail = useCallback(
-    async (toolId: string) => {
-      setError(null);
-      setBusy(true);
+    async (toolId: string, options?: { quiet?: boolean }) => {
+      const quiet = Boolean(options?.quiet);
+      if (!quiet) {
+        setError(null);
+        setBusy(true);
+      }
       try {
         flushPendingParamsNow();
         const host = hostRef.current;
@@ -439,6 +445,8 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
         if (!toolId.trim()) {
           throw new Error("Tool id required to save a gallery thumbnail");
         }
+        // Extra settle so generated tools finish first paint / texture load
+        await waitForPaintFrames();
         await waitForPaintFrames();
         const frame = await host.captureFrame();
         assertCaptureFrameLooksLikePng(frame);
@@ -449,13 +457,15 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
 
         const at = new Date();
         const real = gateRealAssetCapture(assetsRef.current);
-        applyCaptureResult(blob, {
-          usedRealAsset: real.ok,
-          realAssetSlotId: real.ok ? real.slotId : undefined,
-          realAssetUrl: real.ok ? real.url : undefined,
-          at: at.toISOString(),
-          byteLength: frame.byteLength ?? blob.size,
-        });
+        if (!quiet) {
+          applyCaptureResult(blob, {
+            usedRealAsset: real.ok,
+            realAssetSlotId: real.ok ? real.slotId : undefined,
+            realAssetUrl: real.ok ? real.url : undefined,
+            at: at.toISOString(),
+            byteLength: frame.byteLength ?? blob.size,
+          });
+        }
         if (real.ok) {
           setM2aCaptureProved(true);
         }
@@ -472,16 +482,20 @@ export function useStudioRuntime(options: UseStudioRuntimeOptions) {
         };
       } catch (err) {
         const msg = formatErr(err);
-        if (/taint|security|cross-origin|CAPTURE_FAILED/i.test(msg)) {
-          setError(
-            `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
-          );
-        } else {
-          setError(msg);
+        if (!quiet) {
+          if (/taint|security|cross-origin|CAPTURE_FAILED/i.test(msg)) {
+            setError(
+              `${msg} — check storage CORS + crossOrigin=anonymous (M0f/M2a6)`,
+            );
+          } else {
+            setError(msg);
+          }
         }
         throw err instanceof Error ? err : new Error(msg);
       } finally {
-        setBusy(false);
+        if (!quiet) {
+          setBusy(false);
+        }
       }
     },
     [applyCaptureResult, flushPendingParamsNow],

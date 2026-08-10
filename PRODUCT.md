@@ -10,7 +10,7 @@ Motion and brand designers, marketers, and indie creators who need living design
 
 ## Product Purpose
 
-Vibeit turns a creative vision (plus optional inspiration screenshots) into a freeform-generated interactive design tool. Users control parameters, drop in their own assets, refine via chat, export PNG/video, and publish to a gallery. North-star product feel: [brik.space](https://brik.space) tool editor clarity.
+Aiditr turns a creative vision (plus optional inspiration screenshots) into a freeform-generated interactive design tool. Users control parameters, drop in their own assets, refine via chat, export PNG/video, and publish to a gallery. North-star product feel: [brik.space](https://brik.space) tool editor clarity.
 
 ## Brand Personality
 

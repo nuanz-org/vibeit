@@ -2,12 +2,21 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { getGalleryItem } from "@/lib/api/gallery";
 
 import { normalizePublicAssetUrl } from "../lib/asset-url";
 import styles from "../styles.module.css";
 import { GalleryShell } from "./gallery-shell";
+
+function hashHue(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return h % 360;
+}
 
 /**
  * Gallery detail card → open live /t/:publicId.
@@ -68,12 +77,13 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   const tags = card.tags ?? [];
   const runHref = `/t/${encodeURIComponent(card.publicId)}`;
   const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
+  const hue = hashHue(card.publicId || title);
 
   return (
     <GalleryShell>
       <main className={styles.main}>
         <Link href="/gallery" className={styles.breadcrumb}>
-          ← Gallery
+          ← Back to Gallery
         </Link>
 
         <div className={styles.detail}>
@@ -82,9 +92,16 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={thumbSrc} alt="" decoding="async" />
             ) : (
-              <div className={styles.thumbPlaceholder} aria-hidden>
-                <div className={styles.thumbPlaceholderIcon} />
-                <span className={styles.thumbPlaceholderLabel}>Live tool</span>
+              <div
+                className={styles.thumbPlaceholder}
+                style={
+                  {
+                    ["--ph-hue" as string]: String(hue),
+                  } as CSSProperties
+                }
+                aria-hidden
+              >
+                <span className={styles.thumbPlaceholderMark} />
               </div>
             )}
           </div>

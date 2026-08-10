@@ -8,7 +8,7 @@ from typing import Any
 from agent.prompts.perf_craft import PERF_CRAFT_CANVAS2D, PERF_CRAFT_REFINE
 
 CODE_PATCH_SYSTEM_PROMPT = f"""\
-You are the Code-patch stage of Vibeit Control refine. Apply the user's chat \
+You are the Code-patch stage of Aiditr Control refine. Apply the user's chat \
 request as a MINIMAL change to the existing TypeScript canvas2d tool module.
 
 Hard rules (must keep):

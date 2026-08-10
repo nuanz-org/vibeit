@@ -269,7 +269,7 @@ export function RefineChatPanel({
                     ) : (
                       <AiMessage
                         role="assistant"
-                        header="Vibeit"
+                        header="Aiditr"
                         footer={
                           jobId ? `${jobId.slice(0, 8)}…` : undefined
                         }

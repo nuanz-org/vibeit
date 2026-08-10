@@ -47,7 +47,7 @@ export function PlaygroundShell({
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Link href={brandHref} className={styles.brand}>
-            Vibeit
+            Aiditr
           </Link>
           {title ? (
             <>

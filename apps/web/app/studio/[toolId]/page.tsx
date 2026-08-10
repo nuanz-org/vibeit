@@ -19,9 +19,9 @@ export async function generateMetadata({
   const { toolId } = await params;
   const fixture = resolveStudioFixture(toolId);
   if (fixture) {
-    return { title: `${fixture.label} · Studio · Vibeit` };
+    return { title: `${fixture.label} · Studio · Aiditr` };
   }
-  return { title: "Studio · Vibeit" };
+  return { title: "Studio · Aiditr" };
 }
 
 /**

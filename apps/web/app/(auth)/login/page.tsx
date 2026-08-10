@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { SignInForm } from "@/features/auth/components/sign-in-form";
 
 export const metadata: Metadata = {
-  title: "Sign in · Vibeit",
+  title: "Sign in · Aiditr",
 };
 
 export default function LoginPage() {

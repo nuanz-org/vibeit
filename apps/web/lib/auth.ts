@@ -30,7 +30,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       void sendEmail({
         to: user.email,
-        subject: "Reset your Vibeit password",
+        subject: "Reset your Aiditr password",
         text: `Click the link to reset your password:\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
       });
     },
@@ -43,7 +43,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       void sendEmail({
         to: user.email,
-        subject: "Verify your Vibeit email",
+        subject: "Verify your Aiditr email",
         text: `Click the link to verify your email:\n\n${url}`,
       });
     },

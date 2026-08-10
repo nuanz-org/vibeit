@@ -188,7 +188,7 @@ class OpenRouterLLMClient:
         base_url: str = OPENROUTER_CHAT_URL,
         timeout_seconds: float = 60.0,
         http_referer: str | None = None,
-        app_title: str = "Vibeit",
+        app_title: str = "Aiditr",
         client: httpx.AsyncClient | None = None,
     ) -> None:
         if not api_key or not api_key.strip():

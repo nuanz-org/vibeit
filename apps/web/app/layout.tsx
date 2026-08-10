@@ -19,7 +19,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Vibeit",
+  title: "Aiditr",
   description: "Turn a creative vision into a living design tool.",
 };
 

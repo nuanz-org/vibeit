@@ -273,7 +273,7 @@ export function CreatePlayground({
               <ChatThreadItem id="job-progress" scrollAnchor>
                 <AiMessage
                   role="assistant"
-                  header="Vibeit"
+                  header="Aiditr"
                   variant="ghost"
                   showAvatar
                 >

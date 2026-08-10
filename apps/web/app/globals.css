@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Vibeit product tokens + shadcn theme (mapped to keep existing CSS modules working). */
+/* Aiditr product tokens + shadcn theme (mapped to keep existing CSS modules working). */
 :root {
   --surface: oklch(0.965 0.004 260);
   --surface-elevated: oklch(0.995 0.002 260);
