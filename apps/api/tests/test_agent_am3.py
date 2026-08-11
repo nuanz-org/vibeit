@@ -252,7 +252,7 @@ def test_critique_node_failure_soft() -> None:
 def test_runner_advisory_low_score_still_finalizes() -> None:
     """Default: critic not enforced → low score still finalizes after gates."""
     async def _run() -> None:
-        os.environ.pop("VIBEIT_CRITIC_ENFORCED", None)
+        os.environ.pop("AIDITR_CRITIC_ENFORCED", None)
         llm = CriticLLM(
             overall=2.0,
             fixes=["Add secondary layer", "Improve type hierarchy"],
@@ -277,7 +277,7 @@ def test_runner_advisory_low_score_still_finalizes() -> None:
 
 def test_runner_enforced_low_score_triggers_repair() -> None:
     async def _run() -> None:
-        os.environ["VIBEIT_CRITIC_ENFORCED"] = "1"
+        os.environ["AIDITR_CRITIC_ENFORCED"] = "1"
         try:
             llm = CriticLLM(
                 overall=2.5,
@@ -296,18 +296,18 @@ def test_runner_enforced_low_score_triggers_repair() -> None:
             # After repair mock raises score
             assert float(state.get("critique_score") or 0) >= 3.5
         finally:
-            os.environ.pop("VIBEIT_CRITIC_ENFORCED", None)
+            os.environ.pop("AIDITR_CRITIC_ENFORCED", None)
 
     asyncio.run(_run())
 
 
 def test_critic_threshold_env() -> None:
-    os.environ["VIBEIT_CRITIC_THRESHOLD"] = "4.0"
+    os.environ["AIDITR_CRITIC_THRESHOLD"] = "4.0"
     try:
         assert critic_threshold() == 4.0
     finally:
-        os.environ.pop("VIBEIT_CRITIC_THRESHOLD", None)
-    assert critic_enforced() is False or os.getenv("VIBEIT_CRITIC_ENFORCED")
+        os.environ.pop("AIDITR_CRITIC_THRESHOLD", None)
+    assert critic_enforced() is False or os.getenv("AIDITR_CRITIC_ENFORCED")
 
 
 if __name__ == "__main__":

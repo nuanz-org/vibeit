@@ -15,13 +15,13 @@
 | Supply | **npm** package `three`, exact pin **`0.185.1`** on `@repo/contracts` |
 | Not allowed | esm.sh, unpkg, jsdelivr, skypack, raw GitHub, or any remote script/module URL |
 | Lockfile | pnpm workspace lock (`pnpm-lock.yaml`) is the install source of truth |
-| Product import path | `@repo/contracts/skeletons/three-vendor` (exports `THREE`, `THREE_VIBEIT_PIN`) |
+| Product import path | `@repo/contracts/skeletons/three-vendor` (exports `THREE`, `THREE_AIDITR_PIN`) |
 | Tool / agent import path | **Only** `@repo/contracts/skeletons/three` (`createThreeTool`, re-exported `THREE`) |
 | Bare `from "three"` in tool source | **Forbidden** (static allowlist + compile allowlist) |
 | `three/addons/*` in tool source | **Forbidden** — future OrbitControls re-export from harness only |
 | CSP | Unchanged: `script-src 'self' blob:`; `connect-src 'none'` — remote three cannot load |
 | Sandbox | Still iframe `allow-scripts` only (no OS container) |
-| Config gate | `VIBEIT_TARGET_THREE_ENABLED` remains default **off** until B5 |
+| Config gate | `AIDITR_TARGET_THREE_ENABLED` remains default **off** until B5 |
 
 ---
 
@@ -143,7 +143,7 @@ Keep `runtime-frame.html` meta in sync with `sandbox.ts`.
 
 Helper: `apps/web/features/studio/lib/resolve-runtime-target.ts`
 
-## B4 agent policy (when `VIBEIT_TARGET_THREE_ENABLED=1`)
+## B4 agent policy (when `AIDITR_TARGET_THREE_ENABLED=1`)
 
 | Piece | Behavior |
 |-------|----------|
@@ -160,7 +160,7 @@ cd apps/api && uv run python scripts/eval_three.py
 ```
 
 Offline suite (CI-safe): policy, vendor pin, harness, three-depth smoke, allowlist, B4 prompts, B3 mount, corpus.  
-**Exit 0** → safe to set `VIBEIT_TARGET_THREE_ENABLED=1`. Product default stays **off**.
+**Exit 0** → safe to set `AIDITR_TARGET_THREE_ENABLED=1`. Product default stays **off**.
 
 Corpus: `apps/api/evals/create/three/prompts.json` · README: `evals/create/three/README.md`
 
@@ -177,7 +177,7 @@ Corpus: `apps/api/evals/create/three/prompts.json` · README: `evals/create/thre
 **B1**
 
 - `packages/contracts` depends on `"three": "0.185.1"` (exact)  
-- `THREE_VIBEIT_PIN === "0.185.1"`  
+- `THREE_AIDITR_PIN === "0.185.1"`  
 - Static/compile allowlist rejects bare `"three"` and remote URLs  
 
 **B2**

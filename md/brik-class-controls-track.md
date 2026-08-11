@@ -32,7 +32,7 @@ They are **PR / milestone labels** for this track only (not old AM1/AM2 agent mi
 | **PR-C1…C7** | Craft fidelity (Track C / “track 3”) | Brief lock, emblem defaults, goldens, motion, critic |
 | **PR-D1** (**experimental**) | Perf craft: soft-glow helpers + lint + neon-trail golden | Keep kinetic/glow tools interactive on retina Studio |
 
-They were introduced in the implementation plan for “Brik-class control surfaces & interactive tools,” then refined after capturing Brik’s Kinetic Cube Logo flow and a **sweeping-arc emblem** side-by-side (Vibeit vs Brik).
+They were introduced in the implementation plan for “Brik-class control surfaces & interactive tools,” then refined after capturing Brik’s Kinetic Cube Logo flow and a **sweeping-arc emblem** side-by-side (Aiditr vs Brik).
 
 ### What does “A1 and A2 completed” mean?
 
@@ -81,7 +81,7 @@ Correct reading after A1–A6:
 **Vision (shared):**  
 *Looping animation of a circular emblem built from 8 thin arcs sweeping in and aligning into a ring, smooth ease-in-out motion, soft gradient background shifting from deep blue to mint green, 4-second loop.*
 
-| | **Brik** | **Vibeit (observed)** |
+| | **Brik** | **Aiditr (observed)** |
 |--|----------|----------------------|
 | Background | Soft full-bleed blue → mint gradient | Dark void + neon HUD stack |
 | Emblem | Thin light arcs, quiet ring, large negative space | Dense radar / sci-fi rings + grid + bloom |
@@ -90,7 +90,7 @@ Correct reading after A1–A6:
 | Canvas | Wide flat stage (~1200×800) | Phone bezel preview (presentation choice) |
 | Controllers | Geometry + choreography + gradient colors (high leverage, fewer knobs) | Richer sections (Content / Structure / Motion / Look) but defaults pull off-brief |
 
-**Honest read:** Track A **control UI** works (collapsible groups, segmented enums, sliders). The gap to Brik is **creative fidelity** — Brik stayed on-brief; Vibeit upgraded the brief into a different product (HUD lock). Track C is **not** “more sliders”; it is plan defaults, goldens, no invented copy, motion assemble-to-ring, and critic penalties for clutter.
+**Honest read:** Track A **control UI** works (collapsible groups, segmented enums, sliders). The gap to Brik is **creative fidelity** — Brik stayed on-brief; Aiditr upgraded the brief into a different product (HUD lock). Track C is **not** “more sliders”; it is plan defaults, goldens, no invented copy, motion assemble-to-ring, and critic penalties for clutter.
 
 ### Architecture decisions (locked)
 
@@ -187,7 +187,7 @@ Correct reading after A1–A6:
 
 ### A2 — canvas2d pointer + helpers (2026-08-08)
 
-**Why:** Brik interaction tools need pointer distance; Vibeit draw context had only time/params/images.
+**Why:** Brik interaction tools need pointer distance; Aiditr draw context had only time/params/images.
 
 **What landed**
 
@@ -341,12 +341,12 @@ Correct reading after A1–A6:
 
 ### B1 — Design freeze: vendored three, not CDN (2026-08-08)
 
-**Why:** Brik loads three from esm.sh; Vibeit must keep iframe CSP + allowlist. Before a real harness (B2), freeze **supply** (pin + import surface) so product code never opens a CDN hole.
+**Why:** Brik loads three from esm.sh; Aiditr must keep iframe CSP + allowlist. Before a real harness (B2), freeze **supply** (pin + import surface) so product code never opens a CDN hole.
 
 **What landed**
 
 - Exact npm pin: `three@0.185.1` on `@repo/contracts` (lockfile-managed)
-- Product vendor module: `@repo/contracts/skeletons/three-vendor` → `THREE`, `THREE_VIBEIT_PIN`
+- Product vendor module: `@repo/contracts/skeletons/three-vendor` → `THREE`, `THREE_AIDITR_PIN`
 - Design doc: `md/contracts/skeletons/three.md` (who may import what, CSP, compile-size note for B2)
 - Allowlist / static validate: block bare `three` / `three/*`, tool use of `three-vendor`, remote `https://` module URLs
 - Codegen prompt: no CDN / three-vendor / bare three
@@ -408,7 +408,7 @@ Correct reading after A1–A6:
 
 **What users still cannot do**
 
-- Agent freely picking three on Create by default (**B4** prompts + **B5** gate; still `VIBEIT_TARGET_THREE_ENABLED`)
+- Agent freely picking three on Create by default (**B4** prompts + **B5** gate; still `AIDITR_TARGET_THREE_ENABLED`)
 - Optional OrbitControls product re-export (follow-up)
 - Guaranteed Studio polish edge-cases for three (**B3** if needed)
 
@@ -461,7 +461,7 @@ Correct reading after A1–A6:
 
 ### B4 — Agent target policy + three prompts (2026-08-08)
 
-**Why:** Harness + Studio mount work, but Create still treated three as a footnote. When `VIBEIT_TARGET_THREE_ENABLED=1`, plan/codegen/repair must prefer real three craft for 3D visions (Brik Kinetic Cube class).
+**Why:** Harness + Studio mount work, but Create still treated three as a footnote. When `AIDITR_TARGET_THREE_ENABLED=1`, plan/codegen/repair must prefer real three craft for 3D visions (Brik Kinetic Cube class).
 
 **What landed**
 
@@ -497,7 +497,7 @@ Correct reading after A1–A6:
 
 ### B5 — Three eval gates (2026-08-08)
 
-**Why:** B1–B4 make three runnable, but product consensus keeps three **config-gated until quality gates pass**. Operators need a CI-safe suite before setting `VIBEIT_TARGET_THREE_ENABLED=1`.
+**Why:** B1–B4 make three runnable, but product consensus keeps three **config-gated until quality gates pass**. Operators need a CI-safe suite before setting `AIDITR_TARGET_THREE_ENABLED=1`.
 
 **What landed**
 
@@ -519,7 +519,7 @@ Correct reading after A1–A6:
 
 **What users still cannot do**
 
-- Get three without setting `VIBEIT_TARGET_THREE_ENABLED=1` (intentional)
+- Get three without setting `AIDITR_TARGET_THREE_ENABLED=1` (intentional)
 - Guaranteed live LLM multi-axis three quality without a live shootout (offline suite covers path integrity)
 
 **Verification**
@@ -687,7 +687,7 @@ Goal: stop Studio lag on neon/trail/particle tools without banning legitimate st
 
 1. **Track C** — start **C1** (vision lock) then **C3** (sweeping-arc golden)  
 2. Smoke **Track D** live: glow/trail vision → confirm no `perf:` false-fail storm; retina Studio stays interactive  
-3. Opt-in three for demos: `VIBEIT_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
+3. Opt-in three for demos: `AIDITR_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
 4. Optional live Create smoke (kinetic / chroma cube logo vision)  
 5. **A7** media library / **A8** eval when needed  
 6. Optional OrbitControls product re-export

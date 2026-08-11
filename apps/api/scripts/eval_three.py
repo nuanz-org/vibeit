@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  gates:            {'PASS' if report.gates_passed else 'FAIL'}")
     print(
         f"  recommend_enable: "
-        f"{'yes — set VIBEIT_TARGET_THREE_ENABLED=1' if report.recommend_enable else 'no'}"
+        f"{'yes — set AIDITR_TARGET_THREE_ENABLED=1' if report.recommend_enable else 'no'}"
     )
     for n in report.notes:
         print(f"  note: {n}")

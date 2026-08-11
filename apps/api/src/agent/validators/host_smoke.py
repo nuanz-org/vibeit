@@ -44,14 +44,14 @@ class HostSmokeResult:
 
 
 def smoke_artifact_dir() -> Path:
-    env = os.getenv("VIBEIT_SMOKE_DIR", "").strip()
+    env = os.getenv("AIDITR_SMOKE_DIR", "").strip()
     if env:
         return Path(env).expanduser().resolve()
     return _DEFAULT_SMOKE_DIR.resolve()
 
 
 def _min_variance() -> float:
-    raw = os.getenv("VIBEIT_SMOKE_MIN_VARIANCE", "").strip()
+    raw = os.getenv("AIDITR_SMOKE_MIN_VARIANCE", "").strip()
     if raw:
         try:
             return float(raw)
@@ -229,13 +229,13 @@ def _run_host_smoke_impl(
                     timeout=int(timeout * 1000),
                 )
                 page.wait_for_function(
-                    "() => window.__vibeitHostSmoke && typeof window.__vibeitHostSmoke.run === 'function'",
+                    "() => window.__aiditrHostSmoke && typeof window.__aiditrHostSmoke.run === 'function'",
                     timeout=int(min(timeout, 15) * 1000),
                 )
 
                 result = page.evaluate(
                     """async ([moduleSource, minVariance, timeoutMs]) => {
-                      return await window.__vibeitHostSmoke.run(moduleSource, {
+                      return await window.__aiditrHostSmoke.run(moduleSource, {
                         minVariance,
                         readyTimeoutMs: Math.min(timeoutMs, 12000),
                         commandTimeoutMs: Math.min(timeoutMs, 15000),
@@ -338,7 +338,7 @@ def run_host_smoke(
     timeout = (
         timeout_seconds
         if timeout_seconds is not None
-        else float(os.getenv("VIBEIT_HOST_SMOKE_TIMEOUT_SECONDS", str(_DEFAULT_TIMEOUT_S)))
+        else float(os.getenv("AIDITR_HOST_SMOKE_TIMEOUT_SECONDS", str(_DEFAULT_TIMEOUT_S)))
     )
     variance_floor = min_variance if min_variance is not None else _min_variance()
 

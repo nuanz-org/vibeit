@@ -30,7 +30,7 @@ export const STAGE_PRESETS: readonly StagePresetDef[] = [
 export const STAGE_SIZE_MIN = 64;
 export const STAGE_SIZE_MAX = 4096;
 
-const STORAGE_PREFIX = "vibeit.stageSize.v1:";
+const STORAGE_PREFIX = "aiditr.stageSize.v1:";
 
 export function clampStageDim(n: number): number {
   if (!Number.isFinite(n)) return STAGE_SIZE_MIN;

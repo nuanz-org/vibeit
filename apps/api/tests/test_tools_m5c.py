@@ -24,7 +24,7 @@ from services.update_tool_draft import (
     normalize_draft_params,
 )
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def _any_user() -> str | None:

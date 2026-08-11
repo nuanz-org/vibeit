@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 # apps/api/src/core/config.py →
 #   parents[2] = apps/api
-#   parents[4] = monorepo root (vibeit/)
+#   parents[4] = monorepo root (aiditr/)
 _API_ROOT = Path(__file__).resolve().parents[2]
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 
@@ -42,7 +42,7 @@ class Settings:
     def __init__(self) -> None:
         self.database_url: str = os.getenv(
             "DATABASE_URL",
-            "postgresql://vibeit:vibeit@localhost:5432/vibeit",
+            "postgresql://aiditr:aiditr@localhost:5432/aiditr",
         )
         # Better Auth default session cookie name (signed cookie prefix may apply)
         self.session_cookie_name: str = os.getenv(
@@ -127,24 +127,24 @@ class Settings:
             os.getenv("CREATE_WALL_TIME_SECONDS", "120")
         )
         self.host_smoke_timeout_seconds: float = float(
-            os.getenv("VIBEIT_HOST_SMOKE_TIMEOUT_SECONDS", "45")
+            os.getenv("AIDITR_HOST_SMOKE_TIMEOUT_SECONDS", "45")
         )
         self.smoke_min_variance: float = float(
-            os.getenv("VIBEIT_SMOKE_MIN_VARIANCE", "5")
+            os.getenv("AIDITR_SMOKE_MIN_VARIANCE", "5")
         )
-        # AM3 critic — advisory until VIBEIT_CRITIC_ENFORCED after calibration
+        # AM3 critic — advisory until AIDITR_CRITIC_ENFORCED after calibration
         self.critic_threshold: float = float(
-            os.getenv("VIBEIT_CRITIC_THRESHOLD", "3.5")
+            os.getenv("AIDITR_CRITIC_THRESHOLD", "3.5")
         )
         self.critic_enforced: bool = os.getenv(
-            "VIBEIT_CRITIC_ENFORCED", ""
+            "AIDITR_CRITIC_ENFORCED", ""
         ).lower() in ("1", "true", "yes", "on")
         # AM6 multi-target (config-gated; canvas2d always on)
         self.target_p5_enabled: bool = os.getenv(
-            "VIBEIT_TARGET_P5_ENABLED", ""
+            "AIDITR_TARGET_P5_ENABLED", ""
         ).lower() in ("1", "true", "yes", "on")
         self.target_three_enabled: bool = os.getenv(
-            "VIBEIT_TARGET_THREE_ENABLED", ""
+            "AIDITR_TARGET_THREE_ENABLED", ""
         ).lower() in ("1", "true", "yes", "on")
         # When true, POST /jobs runs agent via BackgroundTasks (M3e default).
         self.create_worker_enabled: bool = os.getenv(
@@ -165,14 +165,14 @@ class Settings:
         # --- AM7 Control refine budgets ---
         # Max refine enqueues per tool within the rolling window
         self.refine_budget_per_tool: int = int(
-            os.getenv("VIBEIT_REFINE_BUDGET_PER_TOOL", "20")
+            os.getenv("AIDITR_REFINE_BUDGET_PER_TOOL", "20")
         )
         self.refine_budget_window_hours: int = int(
-            os.getenv("VIBEIT_REFINE_BUDGET_WINDOW_HOURS", "24")
+            os.getenv("AIDITR_REFINE_BUDGET_WINDOW_HOURS", "24")
         )
         self.refine_wall_time_seconds: float = float(
             os.getenv(
-                "VIBEIT_REFINE_WALL_TIME_SECONDS",
+                "AIDITR_REFINE_WALL_TIME_SECONDS",
                 str(self.create_wall_time_seconds),
             )
         )

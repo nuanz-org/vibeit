@@ -34,7 +34,7 @@ def test_three_corpus_file() -> None:
 def test_offline_three_gates_pass() -> None:
     """Full offline suite including host smoke — B5 green bar."""
     # Ensure default-off check is meaningful
-    os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
+    os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
     report = run_three_offline_gates(skip_host=False)
     assert report.mode == "offline"
     assert report.required_total >= 10
@@ -48,7 +48,7 @@ def test_offline_three_gates_pass() -> None:
 
 
 def test_offline_gates_restore_env() -> None:
-    os.environ["VIBEIT_TARGET_THREE_ENABLED"] = "1"
+    os.environ["AIDITR_TARGET_THREE_ENABLED"] = "1"
     try:
         report = run_three_offline_gates(skip_host=True)
         assert report.gates_passed or any(
@@ -58,7 +58,7 @@ def test_offline_gates_restore_env() -> None:
         assert three_enabled()
         assert resolve_plan_target("three") == "three"
     finally:
-        os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
+        os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
 
 
 def test_pin_constant_matches_expected() -> None:

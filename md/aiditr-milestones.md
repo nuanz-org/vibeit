@@ -1,6 +1,6 @@
-# Vibeit — MVP milestones
+# Aiditr — MVP milestones
 
-**Source:** [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)  
+**Source:** [aiditr-product-architecture-consensus.md](./aiditr-product-architecture-consensus.md)  
 **Status:** **Core-loop ASAP track** — aligned to consensus frozen v1  
 **Date:** 2026-08-03 · **Revised:** 2026-08-06 (M0–M3 + M5 + M2a7 + **M7 complete** + **M8 complete** · **core loop complete** · next **M9** / fast-follows)  
 **Goal:** Ship the **canvas2d complete loop as soon as possible** — Auth → Create → Studio → Export/share/embed → Publish gallery  

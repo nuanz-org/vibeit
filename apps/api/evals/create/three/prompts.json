@@ -2,7 +2,7 @@
   "version": 1,
   "milestone": "B5",
   "target": "three",
-  "description": "Three.js craft corpus — run offline gates via scripts/eval_three.py before enabling VIBEIT_TARGET_THREE_ENABLED in prod",
+  "description": "Three.js craft corpus — run offline gates via scripts/eval_three.py before enabling AIDITR_TARGET_THREE_ENABLED in prod",
   "gates": {
     "minOfflinePassRate": 1.0,
     "requireHostSmoke": true,

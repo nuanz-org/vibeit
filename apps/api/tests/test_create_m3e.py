@@ -21,7 +21,7 @@ from services.create_job import enqueue_create_job
 from services.finalize_job import finalize_from_agent_state
 from workers.generation import run_generation_job
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 _GOOD_CODE = """
 import { createCanvas2dTool } from "@repo/contracts/skeletons/canvas2d";

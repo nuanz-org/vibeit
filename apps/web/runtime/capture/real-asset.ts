@@ -10,7 +10,7 @@ import {
   isCaptureEligibleAssetUrl,
   isRealUploadedAssetUrl,
   isUserLocalAssetUrl,
-  isVibeitServedAssetUrl,
+  isAiditrServedAssetUrl,
   type ToolAssets,
 } from "@repo/contracts";
 
@@ -24,7 +24,7 @@ export {
   isFixtureAssetUrl,
   isRealUploadedAssetUrl,
   isUserLocalAssetUrl,
-  isVibeitServedAssetUrl,
+  isAiditrServedAssetUrl,
 } from "@repo/contracts";
 
 export function assetRefToUrl(
@@ -37,13 +37,13 @@ export function assetRefToUrl(
 
 /**
  * First capture-eligible asset among current tool assets.
- * Prefers user-local blob, then Vibeit raw/storage URLs, then other http(s).
+ * Prefers user-local blob, then Aiditr raw/storage URLs, then other http(s).
  */
 export function findRealUploadedAsset(
   assets: ToolAssets,
 ): { slotId: string; url: string } | null {
   let local: { slotId: string; url: string } | null = null;
-  let vibeit: { slotId: string; url: string } | null = null;
+  let aiditr: { slotId: string; url: string } | null = null;
   let generic: { slotId: string; url: string } | null = null;
 
   for (const [slotId, ref] of Object.entries(assets)) {
@@ -55,15 +55,15 @@ export function findRealUploadedAsset(
       if (!local) local = { slotId, url };
       continue;
     }
-    if (isVibeitServedAssetUrl(url)) {
-      if (!vibeit) vibeit = { slotId, url };
+    if (isAiditrServedAssetUrl(url)) {
+      if (!aiditr) aiditr = { slotId, url };
       continue;
     }
     if (isRealUploadedAssetUrl(url) && !generic) {
       generic = { slotId, url };
     }
   }
-  return local ?? vibeit ?? generic;
+  return local ?? aiditr ?? generic;
 }
 
 export function hasRealUploadedAsset(assets: ToolAssets): boolean {

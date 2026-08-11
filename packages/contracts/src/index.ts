@@ -1,5 +1,5 @@
 /**
- * @repo/contracts — shared Vibeit contract types (M0-thin).
+ * @repo/contracts — shared Aiditr contract types (M0-thin).
  *
  * Contract home (M0a decision): this package is the TypeScript source of truth.
  * Human-readable specs live under `md/contracts/`.
@@ -110,7 +110,7 @@ export {
   isFixtureAssetUrl,
   isRealUploadedAssetUrl,
   isUserLocalAssetUrl,
-  isVibeitServedAssetUrl,
+  isAiditrServedAssetUrl,
   provisionalCorsResponseHeaders,
 } from "./capture-cors";
 export type {

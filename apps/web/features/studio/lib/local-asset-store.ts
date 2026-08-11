@@ -4,7 +4,7 @@
  * @see md/local-first-assets.md
  */
 
-const DB_NAME = "vibeit-local-assets";
+const DB_NAME = "aiditr-local-assets";
 const DB_VERSION = 1;
 const STORE = "assets";
 

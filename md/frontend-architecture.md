@@ -1,13 +1,13 @@
-# Vibeit — frontend architecture
+# Aiditr — frontend architecture
 
 **Status:** Locked recommendation for `apps/web`  
 **Date:** 2026-08-04  
 **Stack:** Next.js (App Router) · React · **TanStack Query** · monorepo `packages/ui` · FastAPI client  
 **Related:**
 - [backend-architecture.md](./backend-architecture.md)
-- [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)
+- [aiditr-product-architecture-consensus.md](./aiditr-product-architecture-consensus.md)
 - [plan.md](./plan.md)
-- [vibeit-milestones.md](./vibeit-milestones.md)
+- [aiditr-milestones.md](./aiditr-milestones.md)
 
 ---
 
@@ -27,7 +27,7 @@ Use a **modular feature architecture** on the **Next.js App Router**, with **Tan
 | **Modular features + thin routes + runtime subsystem** | **Yes** |
 | **TanStack Query for server state (jobs, tools, gallery, …)** | **Yes** |
 
-**Rationale:** Vibeit web is a product UI shell. Hard frontend work is **Studio**, **sandboxed multi-target runtime**, and **client export** (PNG + MediaRecorder) — not enterprise domain modeling. Feature folders ship faster and mirror the modular backend. Generation AI stays on the API (LangGraph), not in Next. Create/Refine **job polling**, tool loads, gallery lists, and post-mutation invalidation fit TanStack Query well; keep it off pure UI/runtime state.
+**Rationale:** Aiditr web is a product UI shell. Hard frontend work is **Studio**, **sandboxed multi-target runtime**, and **client export** (PNG + MediaRecorder) — not enterprise domain modeling. Feature folders ship faster and mirror the modular backend. Generation AI stays on the API (LangGraph), not in Next. Create/Refine **job polling**, tool loads, gallery lists, and post-mutation invalidation fit TanStack Query well; keep it off pure UI/runtime state.
 
 ---
 
@@ -423,4 +423,4 @@ Until then, **do not** add layers “for purity.”
 | UI / runtime state | **React local**; store only if needed |
 | `packages/ui` | **Primitives only** |
 
-This is the default frontend shape for Vibeit until a later ADR supersedes it.
+This is the default frontend shape for Aiditr until a later ADR supersedes it.

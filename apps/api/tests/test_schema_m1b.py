@@ -15,7 +15,7 @@ import asyncpg
 
 from adapters.db.schema_notes import PRODUCT_TABLES
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 async def _check() -> None:

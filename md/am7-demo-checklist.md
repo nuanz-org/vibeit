@@ -27,16 +27,16 @@ uv run pytest tests/test_agent_am7.py -q
 | Failed refine never replaces last-good preview | |
 | Param-only chat does not require full codegen (server: `used_param_patch_only`) | |
 | Critic non-regression rejects lower score vs base (unit-tested) | |
-| Refine budget 429 after `VIBEIT_REFINE_BUDGET_PER_TOOL` (default 20 / 24h) | |
+| Refine budget 429 after `AIDITR_REFINE_BUDGET_PER_TOOL` (default 20 / 24h) | |
 | Create path / canvas2d corpus unaffected | |
 
 ## Env
 
 | Variable | Default | Notes |
 |----------|---------|--------|
-| `VIBEIT_REFINE_BUDGET_PER_TOOL` | 20 | Rolling window enqueues per tool |
-| `VIBEIT_REFINE_BUDGET_WINDOW_HOURS` | 24 | |
-| `VIBEIT_REFINE_WALL_TIME_SECONDS` | create wall | Refine runner wall |
+| `AIDITR_REFINE_BUDGET_PER_TOOL` | 20 | Rolling window enqueues per tool |
+| `AIDITR_REFINE_BUDGET_WINDOW_HOURS` | 24 | |
+| `AIDITR_REFINE_WALL_TIME_SECONDS` | create wall | Refine runner wall |
 | `OPENROUTER_API_KEY` | — | Required for live refine worker |
 
 ## Migration

@@ -18,7 +18,7 @@ from adapters.db.repositories.assets import AssetsRepository
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 async def _any_user_id(conn: asyncpg.Connection) -> str:

@@ -19,7 +19,7 @@ function ensureRoot(): HTMLElement {
   if (existing) return existing;
   const root = document.createElement("div");
   root.id = "root";
-  root.setAttribute("data-vibeit-runtime-root", "");
+  root.setAttribute("data-aiditr-runtime-root", "");
   document.body.appendChild(root);
   return root;
 }

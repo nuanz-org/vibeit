@@ -1,6 +1,6 @@
 # `@repo/contracts`
 
-Shared TypeScript contracts for Vibeit (M0-thin).
+Shared TypeScript contracts for Aiditr (M0-thin).
 
 | Artifact | Location |
 |----------|----------|

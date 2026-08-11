@@ -20,15 +20,15 @@
  */
 
 /**
- * Exact three.js version pinned for Vibeit Track B.
+ * Exact three.js version pinned for Aiditr Track B.
  * Keep in sync with `dependencies.three` in packages/contracts/package.json.
  */
-export const THREE_VIBEIT_PIN = "0.185.1" as const;
+export const THREE_AIDITR_PIN = "0.185.1" as const;
 
 /** Human-readable product label for gates / docs. */
-export const THREE_VIBEIT_SUPPLY = "npm:three@0.185.1 (product-vendored; no CDN)" as const;
+export const THREE_AIDITR_SUPPLY = "npm:three@0.185.1 (product-vendored; no CDN)" as const;
 
 // Re-export the pinned package so product code has one import path.
 // B2 harness will use this; creative tool source must not.
 export * as THREE from "three";
-export { THREE_VIBEIT_PIN as THREE_VERSION };
+export { THREE_AIDITR_PIN as THREE_VERSION };

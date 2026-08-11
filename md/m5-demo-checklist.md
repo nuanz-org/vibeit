@@ -89,7 +89,7 @@ When automated checklist passes and manual list is green once → **M5 core-loop
 
 ## Related
 
-- [vibeit-milestones.md](./vibeit-milestones.md) — M5a–M5f  
+- [aiditr-milestones.md](./aiditr-milestones.md) — M5a–M5f  
 - [param-schema.md](./contracts/param-schema.md)  
 - [access-rules.md](./access-rules.md) — source never downloadable  
 - Studio: `apps/web/features/studio/`  

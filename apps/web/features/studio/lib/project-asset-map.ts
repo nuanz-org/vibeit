@@ -3,7 +3,7 @@
  * Does not store image bytes — see local-asset-store.ts.
  */
 
-const DB_NAME = "vibeit-project-asset-map";
+const DB_NAME = "aiditr-project-asset-map";
 const DB_VERSION = 1;
 const STORE = "bindings";
 

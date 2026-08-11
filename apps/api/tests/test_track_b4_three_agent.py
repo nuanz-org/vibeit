@@ -32,8 +32,8 @@ from agent.target_policy import (
 
 
 def _clear_target_flags() -> None:
-    os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
-    os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
+    os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
+    os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
 
 
 def test_vision_prefers_three_signals() -> None:
@@ -49,7 +49,7 @@ def test_prefer_target_respects_config_gate() -> None:
     _clear_target_flags()
     vision = "kinetic cube logo with frosted glass three.js materials"
     assert prefer_target_for_vision(vision) is None
-    os.environ["VIBEIT_TARGET_THREE_ENABLED"] = "1"
+    os.environ["AIDITR_TARGET_THREE_ENABLED"] = "1"
     try:
         assert prefer_target_for_vision(vision) == "three"
         assert three_enabled()
@@ -73,7 +73,7 @@ def test_apply_vision_upgrades_canvas2d_when_three_enabled() -> None:
     out = apply_vision_target_preference(dict(plan), vision)
     assert out["target"] == "canvas2d"
 
-    os.environ["VIBEIT_TARGET_THREE_ENABLED"] = "1"
+    os.environ["AIDITR_TARGET_THREE_ENABLED"] = "1"
     try:
         out2 = apply_vision_target_preference(dict(plan), vision)
         assert out2["target"] == "three"

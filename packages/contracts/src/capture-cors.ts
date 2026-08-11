@@ -157,7 +157,7 @@ export const CAPTURE_FAILURE_MEANING: Record<CaptureFailureReason, string> = {
 export const M2A_CAPTURE_REQUIRES_REAL_ASSET = true as const;
 
 /**
- * Path markers for Vibeit upload/serve URLs (M1e raw + M1d storage).
+ * Path markers for Aiditr upload/serve URLs (M1e raw + M1d storage).
  * Used by isRealUploadedAssetUrl for the M2a6 capture bar.
  */
 export const REAL_UPLOADED_ASSET_PATH_MARKERS = [
@@ -223,9 +223,9 @@ export function isCaptureEligibleAssetUrl(
 }
 
 /**
- * True when URL is a Vibeit storage/raw serve path (stronger than generic http).
+ * True when URL is an Aiditr storage/raw serve path (stronger than generic http).
  */
-export function isVibeitServedAssetUrl(url: string | null | undefined): boolean {
+export function isAiditrServedAssetUrl(url: string | null | undefined): boolean {
   if (!isRealUploadedAssetUrl(url) || isFixtureAssetUrl(url)) return false;
   try {
     const path = new URL(url!.trim()).pathname;

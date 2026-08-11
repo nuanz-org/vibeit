@@ -1,4 +1,4 @@
-# Vibeit API (`apps/api`)
+# Aiditr API (`apps/api`)
 
 FastAPI backend for Create jobs, tools, assets, and (later) the LangGraph agent.
 
@@ -11,7 +11,7 @@ pnpm --filter @repo/api dev
 cd apps/api && uv run fastapi dev src/main.py --port 8000
 ```
 
-Requires Postgres when using auth-protected routes (`DATABASE_URL`, default `postgresql://vibeit:vibeit@localhost:5432/vibeit`).
+Requires Postgres when using auth-protected routes (`DATABASE_URL`, default `postgresql://aiditr:aiditr@localhost:5432/aiditr`).
 
 ## Database setup
 
@@ -112,7 +112,7 @@ Shell / process env vars still win (`override=False`). See root `.env.example`.
 | `LLM_CODEGEN_MODEL` | same as default | Forced to Flash on ASAP path |
 | `LLM_TIMEOUT_SECONDS` | `60` | Per completion |
 | `LLM_HTTP_REFERER` | `http://localhost:3000` | Optional OpenRouter header |
-| `LLM_APP_TITLE` | `Vibeit` | Optional OpenRouter `X-Title` |
+| `LLM_APP_TITLE` | `Aiditr` | Optional OpenRouter `X-Title` |
 
 | Path | Role |
 |------|------|
@@ -153,7 +153,7 @@ cd apps/api && uv run python tests/test_agent_am2.py   # needs: uv run playwrigh
 
 Smoke pipeline (AM2): **structural → esbuild compile → param coverage → Playwright host** (runtime-frame). Screenshots land in `apps/api/.data/smoke/`. Fail closed if Node/esbuild/Playwright/Chromium missing.
 
-After gates pass, **AM3 critic** scores craft (advisory by default). Set `VIBEIT_CRITIC_ENFORCED=1` only after calibration (`evals/create/calibration/`).
+After gates pass, **AM3 critic** scores craft (advisory by default). Set `AIDITR_CRITIC_ENFORCED=1` only after calibration (`evals/create/calibration/`).
 
 ### AM4 model routing + Create picker
 
@@ -214,8 +214,8 @@ Style extract **soft-fails** (job continues unstyled) if images missing or visio
 
 ```bash
 # Default: canvas2d only. Opt-in:
-VIBEIT_TARGET_P5_ENABLED=1
-VIBEIT_TARGET_THREE_ENABLED=1
+AIDITR_TARGET_P5_ENABLED=1
+AIDITR_TARGET_THREE_ENABLED=1
 ```
 
 Skeletons: `@repo/contracts/skeletons/p5` (Canvas2D-backed p5-like API) and
@@ -227,7 +227,7 @@ heuristics may soft-upgrade `target` to `three` for materials / cube-logo / WebG
 **B5:** offline gates before enabling in an environment:
 
 ```bash
-uv run python scripts/eval_three.py   # exit 0 = recommend VIBEIT_TARGET_THREE_ENABLED=1
+uv run python scripts/eval_three.py   # exit 0 = recommend AIDITR_TARGET_THREE_ENABLED=1
 ```
 
 Goldens: `p5-orbit`, `three-depth`. Plan may set `target` + `targetRationale` only when enabled.
@@ -252,8 +252,8 @@ running → plan → codegen → validate ⇄ repair (≤ N) → smoke (compile+
 |-----|---------|--------|
 | `CREATE_REPAIR_MAX` | `3` | Repair attempts |
 | `CREATE_WALL_TIME_SECONDS` | `120` | Job wall clock (AM2 host smoke needs headroom) |
-| `VIBEIT_HOST_SMOKE_TIMEOUT_SECONDS` | `45` | Per host-smoke attempt |
-| `VIBEIT_SMOKE_MIN_VARIANCE` | `5` | Blank-canvas luminance variance floor |
+| `AIDITR_HOST_SMOKE_TIMEOUT_SECONDS` | `45` | Per host-smoke attempt |
+| `AIDITR_SMOKE_MIN_VARIANCE` | `5` | Blank-canvas luminance variance floor |
 | `CREATE_WORKER_ENABLED` | `true` | Set `false` to only enqueue |
 
 | Outcome | Job status | Tool |

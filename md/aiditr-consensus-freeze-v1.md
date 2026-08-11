@@ -1,4 +1,4 @@
-# Vibeit consensus freeze v1 — finalization record
+# Aiditr consensus freeze v1 — finalization record
 
 **Date:** 2026-08-04  
 **Status:** Applied to consensus + milestones  
@@ -43,8 +43,8 @@
 
 ## Files updated
 
-- [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md) — status **Consensus frozen — v1**
-- [vibeit-milestones.md](./vibeit-milestones.md) — critical path + fast-follows
+- [aiditr-product-architecture-consensus.md](./aiditr-product-architecture-consensus.md) — status **Consensus frozen — v1**
+- [aiditr-milestones.md](./aiditr-milestones.md) — critical path + fast-follows
 
 ---
 

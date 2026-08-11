@@ -88,7 +88,7 @@ async def run_create_with_repairs(
     + optional A3 clarify_result (forced enums + transcript) into plan.
 
     Success: ready_for_finalize=True, smoke_ok=True, validate_ok=True.
-    Critic: advisory by default (VIBEIT_CRITIC_ENFORCED); failure degrades to
+    Critic: advisory by default (AIDITR_CRITIC_ENFORCED); failure degrades to
     gates-only finalize. When enforced, overall < threshold triggers repair
     with critique fixes (counts against repair budget).
     Style extract: soft-fail — missing/failed vision never blocks Create.

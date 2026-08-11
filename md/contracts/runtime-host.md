@@ -44,7 +44,7 @@ Every message is a plain object:
 
 | Field | Value |
 |-------|--------|
-| `channel` | `"vibeit-runtime"` (`RUNTIME_CHANNEL`) |
+| `channel` | `"aiditr-runtime"` (`RUNTIME_CHANNEL`) |
 | `version` | `1` (`RUNTIME_PROTOCOL_VERSION`) |
 | `type` | Discriminant (see below) |
 | `requestId` | Required on commands + matching `result` / command-scoped `error` |

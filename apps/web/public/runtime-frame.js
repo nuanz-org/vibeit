@@ -519,7 +519,7 @@ var socialFrameCreative = {
     g.fillStyle = accent;
     g.globalAlpha = 0.7;
     g.font = `500 ${Math.max(10, Math.floor(w * 0.032))}px system-ui, sans-serif`;
-    g.fillText("vibeit \xB7 social frame", w * 0.5, h * 0.88, w * 0.8);
+    g.fillText("aiditr \xB7 social frame", w * 0.5, h * 0.88, w * 0.8);
     g.globalAlpha = 1;
   }
   // --- CREATIVE_FILL end ---
@@ -607,7 +607,7 @@ var RUNTIME_ERROR_CODES = {
 };
 
 // runtime/contract/messages.ts
-var RUNTIME_CHANNEL = "vibeit-runtime";
+var RUNTIME_CHANNEL = "aiditr-runtime";
 var RUNTIME_PROTOCOL_VERSION = 1;
 var HOST_TO_FRAME_TYPES = [
   "mount",
@@ -1298,7 +1298,7 @@ function ensureRoot() {
   if (existing) return existing;
   const root2 = document.createElement("div");
   root2.id = "root";
-  root2.setAttribute("data-vibeit-runtime-root", "");
+  root2.setAttribute("data-aiditr-runtime-root", "");
   document.body.appendChild(root2);
   return root2;
 }

@@ -151,7 +151,7 @@ def test_m7d_public_tools_smoke() -> None:
 
 
 def test_milestones_m7_subparts_documented() -> None:
-    path = _ROOT / "md" / "vibeit-milestones.md"
+    path = _ROOT / "md" / "aiditr-milestones.md"
     text = path.read_text(encoding="utf-8")
     for key in ("M7a", "M7b", "M7c", "M7d", "M7e", "M7f", "M7g"):
         assert key in text

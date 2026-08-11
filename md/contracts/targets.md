@@ -35,7 +35,7 @@ Do **not** add frameworks ad hoc (`react`, `svg`, …) on the ASAP path. Extendi
 |--------|-----------|---------------|-----------|
 | `canvas2d` | **Yes — required** | `required` | Browser Canvas 2D only |
 | `p5` | No | `config_gated` | Canvas2D-backed stub harness (full p5 later) |
-| `three` | No | `config_gated` | **B1–B5:** real harness + agent path; offline gates green via `scripts/eval_three.py`; enable with `VIBEIT_TARGET_THREE_ENABLED=1` — see [skeletons/three.md](./skeletons/three.md) |
+| `three` | No | `config_gated` | **B1–B5:** real harness + agent path; offline gates green via `scripts/eval_three.py`; enable with `AIDITR_TARGET_THREE_ENABLED=1` — see [skeletons/three.md](./skeletons/three.md) |
 
 | Status | Meaning |
 |--------|---------|

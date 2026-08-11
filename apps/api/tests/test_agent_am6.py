@@ -71,8 +71,8 @@ def test_retrieve_filters_by_target() -> None:
 
 
 def test_target_policy_defaults_canvas2d_only() -> None:
-    os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
-    os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
+    os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
+    os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
     assert enabled_targets() == frozenset({"canvas2d"})
     assert resolve_plan_target("p5") == "canvas2d"
     assert resolve_plan_target("three") == "canvas2d"
@@ -80,18 +80,18 @@ def test_target_policy_defaults_canvas2d_only() -> None:
 
 
 def test_target_policy_enables_p5() -> None:
-    os.environ["VIBEIT_TARGET_P5_ENABLED"] = "1"
+    os.environ["AIDITR_TARGET_P5_ENABLED"] = "1"
     try:
         assert is_target_enabled("p5")
         assert resolve_plan_target("p5") == "p5"
         # three still off
         assert resolve_plan_target("three") == "canvas2d"
     finally:
-        os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
+        os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
 
 
 def test_plan_parse_respects_enabled_target() -> None:
-    os.environ["VIBEIT_TARGET_P5_ENABLED"] = "1"
+    os.environ["AIDITR_TARGET_P5_ENABLED"] = "1"
     try:
         plan = normalize_asap_plan(
             {
@@ -111,11 +111,11 @@ def test_plan_parse_respects_enabled_target() -> None:
         assert plan["target"] == "p5"
         assert "sketch" in plan.get("targetRationale", "")
     finally:
-        os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
+        os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
 
 
 def test_plan_parse_forces_canvas2d_when_disabled() -> None:
-    os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
+    os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
     plan = normalize_asap_plan(
         {
             "concept": "orbit",

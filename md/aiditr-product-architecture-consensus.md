@@ -1,4 +1,4 @@
-# Vibeit — product & architecture consensus (frozen v1)
+# Aiditr — product & architecture consensus (frozen v1)
 
 **Status:** **Consensus frozen — v1** (Fable 5 finalization after Kimi K3 + DeepSeek V4 Flash + Grok review)  
 **North star:** Product like [brik.space](https://brik.space)  
@@ -9,7 +9,7 @@
 
 ## One-line product
 
-**Vibeit** turns a creative vision (+ optional inspiration screenshots) into a **living, freeform-generated design tool** you can control, drop your own assets into, export (PNG + video), share/embed, and publish to a gallery — aimed at motion/brand designers, marketers, and indie creators.
+**Aiditr** turns a creative vision (+ optional inspiration screenshots) into a **living, freeform-generated design tool** you can control, drop your own assets into, export (PNG + video), share/embed, and publish to a gallery — aimed at motion/brand designers, marketers, and indie creators.
 
 ---
 
@@ -332,6 +332,6 @@ No further consensus edits after freeze except via a logged revision entry.
 4. Implementation plan (schema, auth, agent, sandbox, Studio UI)  
 5. Build  
 
-**Milestones:** see [vibeit-milestones.md](./vibeit-milestones.md).
+**Milestones:** see [aiditr-milestones.md](./aiditr-milestones.md).
 
 No implementation until explicitly requested.

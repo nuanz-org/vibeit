@@ -2,8 +2,8 @@
 Multi-target enablement + selection policy (AM6 + Track B4).
 
 canvas2d is always on. p5 / three are config-gated:
-  VIBEIT_TARGET_P5_ENABLED=1
-  VIBEIT_TARGET_THREE_ENABLED=1
+  AIDITR_TARGET_P5_ENABLED=1
+  AIDITR_TARGET_THREE_ENABLED=1
 
 When three is enabled, vision heuristics may prefer three for real 3D craft
 (Brik Kinetic Cube Logo class tools).
@@ -59,11 +59,11 @@ def _flag(name: str) -> bool:
 
 
 def p5_enabled() -> bool:
-    return _flag("VIBEIT_TARGET_P5_ENABLED")
+    return _flag("AIDITR_TARGET_P5_ENABLED")
 
 
 def three_enabled() -> bool:
-    return _flag("VIBEIT_TARGET_THREE_ENABLED")
+    return _flag("AIDITR_TARGET_THREE_ENABLED")
 
 
 def enabled_targets() -> frozenset[TargetId]:

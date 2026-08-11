@@ -35,8 +35,8 @@ class CompileCheckResult:
 
 
 def apps_web_root() -> Path:
-    """Resolve apps/web (override with VIBEIT_WEB_ROOT)."""
-    env = os.getenv("VIBEIT_WEB_ROOT", "").strip()
+    """Resolve apps/web (override with AIDITR_WEB_ROOT)."""
+    env = os.getenv("AIDITR_WEB_ROOT", "").strip()
     if env:
         return Path(env).expanduser().resolve()
     return _DEFAULT_WEB_ROOT.resolve()
@@ -47,7 +47,7 @@ def _cli_path(web_root: Path) -> Path:
 
 
 def _node_bin() -> str | None:
-    env = os.getenv("VIBEIT_NODE_BIN", "").strip()
+    env = os.getenv("AIDITR_NODE_BIN", "").strip()
     if env and Path(env).is_file():
         return env
     return shutil.which("node")
@@ -72,7 +72,7 @@ def run_compile_check(
         return CompileCheckResult(
             ok=False,
             errors=[
-                "compile: node binary not found — install Node.js or set VIBEIT_NODE_BIN"
+                "compile: node binary not found — install Node.js or set AIDITR_NODE_BIN"
             ],
         )
 
@@ -94,7 +94,7 @@ def run_compile_check(
     timeout = (
         timeout_seconds
         if timeout_seconds is not None
-        else float(os.getenv("VIBEIT_COMPILE_TIMEOUT_SECONDS", str(_DEFAULT_TIMEOUT_S)))
+        else float(os.getenv("AIDITR_COMPILE_TIMEOUT_SECONDS", str(_DEFAULT_TIMEOUT_S)))
     )
 
     try:

@@ -19,7 +19,7 @@ import type { RuntimeErrorCode } from "./errors";
 // ---------------------------------------------------------------------------
 
 /** Discriminator so host ignores unrelated window messages. */
-export const RUNTIME_CHANNEL = "vibeit-runtime" as const;
+export const RUNTIME_CHANNEL = "aiditr-runtime" as const;
 
 /** Bump only on breaking protocol changes. */
 export const RUNTIME_PROTOCOL_VERSION = 1 as const;

@@ -1,10 +1,10 @@
-# Vibeit — implementation plan
+# Aiditr — implementation plan
 
 **Status:** Planning  
 **Date:** 2026-08-04  
 **Sources:**
-- [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)
-- [vibeit-milestones.md](./vibeit-milestones.md) (detail + exit criteria)
+- [aiditr-product-architecture-consensus.md](./aiditr-product-architecture-consensus.md)
+- [aiditr-milestones.md](./aiditr-milestones.md) (detail + exit criteria)
 
 **North star:** Product like [brik.space](https://brik.space)  
 **MVP goal:** Auth → Create → Studio → Export/share/embed → Publish gallery  
@@ -13,7 +13,7 @@
 
 ## Product (one line)
 
-**Vibeit** turns a creative vision (+ optional inspiration screenshots) into a living, freeform-generated design tool you can control, drop own assets into, export (PNG + video), share/embed, and publish to a gallery.
+**Aiditr** turns a creative vision (+ optional inspiration screenshots) into a living, freeform-generated design tool you can control, drop own assets into, export (PNG + video), share/embed, and publish to a gallery.
 
 ---
 
@@ -213,7 +213,7 @@ A real user can:
 
 …with failed generations never appearing as published tools.
 
-That is **M8 exit**. Detail for each milestone lives in [vibeit-milestones.md](./vibeit-milestones.md).
+That is **M8 exit**. Detail for each milestone lives in [aiditr-milestones.md](./aiditr-milestones.md).
 
 ---
 

@@ -22,7 +22,7 @@ from main import app
 from services.create_job import enqueue_create_job
 from workers.generation import run_generation_job
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def _any_user() -> str | None:

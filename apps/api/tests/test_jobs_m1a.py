@@ -61,7 +61,7 @@ def test_create_job_authenticated_returns_queued() -> None:
 
     url = os.getenv(
         "DATABASE_URL",
-        "postgresql://vibeit:vibeit@localhost:5432/vibeit",
+        "postgresql://aiditr:aiditr@localhost:5432/aiditr",
     )
 
     async def _any_user() -> str | None:

@@ -1,4 +1,4 @@
-# Vibeit — Agent milestones (generation quality track)
+# Aiditr — Agent milestones (generation quality track)
 
 **Source:** [agents.md](./agents.md) (agent roster, model routing, gates)
 **Status:** **AM7 chat refine — code complete / exit partial** (see [Coverage log](#coverage-log))
@@ -63,7 +63,7 @@ What has actually been implemented on this track (update when an AM lands).
 |---------|--------|-------------|
 | **AM6a** | ✅ | `createP5Tool` / `createThreeTool` skeletons (Canvas2D + WebGL stubs); host target stubs |
 | **AM6b** | ✅ | Goldens `p5-orbit`, `three-depth`; retriever filters by target; plan `target` + rationale |
-| **AM6c** | ✅ | `VIBEIT_TARGET_P5_ENABLED` / `THREE`; target-aware static validate; tests `test_agent_am6.py` |
+| **AM6c** | ✅ | `AIDITR_TARGET_P5_ENABLED` / `THREE`; target-aware static validate; tests `test_agent_am6.py` |
 
 **Still open for full AM6 exit:**
 
@@ -111,7 +111,7 @@ What has actually been implemented on this track (update when an AM lands).
 |---------|--------|-------------|
 | **AM3a** | ✅ | Corpus v2: 44 prompts with `tier` + `aspect` + tags in `evals/create/prompts.json` |
 | **AM3b** | ✅ | `prompts/critique.py`, `critique_parse.py`, `nodes/critique.py` — Critique JSON + scores/fixes |
-| **AM3c** | ✅ | Runner: after smoke_ok → critique; low score + `VIBEIT_CRITIC_ENFORCED=1` → repair with fix list |
+| **AM3c** | ✅ | Runner: after smoke_ok → critique; low score + `AIDITR_CRITIC_ENFORCED=1` → repair with fix list |
 | **AM3d** | ✅ (partial) | Calibration scaffold `evals/create/calibration/`; eval report has mean judge + per-prompt scores; tests `test_agent_am3.py` |
 
 **Files touched (canonical):**
@@ -126,12 +126,12 @@ What has actually been implemented on this track (update when an AM lands).
 | Tests | `apps/api/tests/test_agent_am3.py` |
 | Docs | this file |
 
-**App impact:** After gates pass, Create runs a critic LLM pass and stores scores. **Does not block finalize** unless `VIBEIT_CRITIC_ENFORCED=1` (post-calibration). Critic failure → gates-only finalize.
+**App impact:** After gates pass, Create runs a critic LLM pass and stores scores. **Does not block finalize** unless `AIDITR_CRITIC_ENFORCED=1` (post-calibration). Critic failure → gates-only finalize.
 
 **Still open for full AM3 exit:**
 
 - [ ] Owner rates ~20 outputs; Spearman ≥ 0.7 documented in calibration notes  
-- [ ] Set `VIBEIT_CRITIC_ENFORCED=1` only after calibration  
+- [ ] Set `AIDITR_CRITIC_ENFORCED=1` only after calibration  
 - [ ] Live eval on full 44-prompt corpus with mean judge scores committed  
 - [ ] Then mark AM3 fully exited and start **AM4**
 
@@ -144,7 +144,7 @@ What has actually been implemented on this track (update when an AM lands).
 | **AM2a** | ✅ | `validators/compile_check.py` + `apps/web/runtime/compile/cli-compile.mjs` (esbuild, same config as Studio) |
 | **AM2b** | ✅ | `validators/host_smoke.py` + Playwright Chromium + `smoke_assets/host.html`; blank canvas / console / captureFrame; screenshot under `apps/api/.data/smoke/` |
 | **AM2c** | ✅ | `validators/param_coverage.py`; runner/repair get compile+host errors; phase `smoke:host` / `smoke:compile` |
-| **AM2d** | ✅ | `tests/test_agent_am2.py`; wall default 120s; min variance env `VIBEIT_SMOKE_MIN_VARIANCE` |
+| **AM2d** | ✅ | `tests/test_agent_am2.py`; wall default 120s; min variance env `AIDITR_SMOKE_MIN_VARIANCE` |
 
 **Files touched (canonical):**
 
@@ -205,7 +205,7 @@ What has actually been implemented on this track (update when an AM lands).
 
 ## How to read this
 
-Same conventions as [vibeit-milestones.md](./vibeit-milestones.md):
+Same conventions as [aiditr-milestones.md](./aiditr-milestones.md):
 
 | Term | Meaning |
 |------|---------|
@@ -392,7 +392,7 @@ A deliberately broken (runtime-throwing) and a deliberately blank (clear-only) t
 
 - [x] **Eval corpus v2** — 10 → 44 prompts across categories with difficulty tiers and aspect tags
 - [x] **Critic agent** — rubric prompt + Critique JSON parse (composition, motion, palette, typography, params)
-- [x] **Critic-in-loop** — when `VIBEIT_CRITIC_ENFORCED=1`, overall < threshold → repair with fix list; default advisory
+- [x] **Critic-in-loop** — when `AIDITR_CRITIC_ENFORCED=1`, overall < threshold → repair with fix list; default advisory
 - [x] **Human calibration** — scaffold + method in `evals/create/calibration/` (ratings pending owner)
 - [x] **Quality eval report** — eval emits per-prompt judge scores + screenshot paths + mean judge
 
@@ -560,7 +560,7 @@ Create with vision + 2 inspiration screenshots → tool whose defaults visibly e
 - [x] **Golden tool per target** — `p5-orbit`, `three-depth` + canvas2d goldens; retriever filters by target
 - [x] **Art Director target selection** — plan may pick `canvas2d|p5|three` + `targetRationale`; forced to canvas2d unless env-enabled
 - [x] Per-target validators/smoke (structural + compile + host for goldens)
-- [x] **Eval gates per target** — `VIBEIT_TARGET_P5_ENABLED` / `VIBEIT_TARGET_THREE_ENABLED` (default off)
+- [x] **Eval gates per target** — `AIDITR_TARGET_P5_ENABLED` / `AIDITR_TARGET_THREE_ENABLED` (default off)
 
 ### Exit criteria
 

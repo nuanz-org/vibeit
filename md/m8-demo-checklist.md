@@ -111,7 +111,7 @@ When automated checklist passes and manual list is green once → **M8 core-loop
 
 ## Related
 
-- [vibeit-milestones.md](./vibeit-milestones.md) — M8a–M8g  
+- [aiditr-milestones.md](./aiditr-milestones.md) — M8a–M8g  
 - [access-rules.md](./access-rules.md)  
 - [m7-demo-checklist.md](./m7-demo-checklist.md)  
 - Studio publish: `apps/web/features/studio/components/publish-panel.tsx`  

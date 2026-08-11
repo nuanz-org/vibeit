@@ -20,7 +20,7 @@ from core.security import get_current_user
 from domain.publish_gates import PublishGateInput, evaluate_publish_gates
 from main import app
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def _any_user() -> str | None:

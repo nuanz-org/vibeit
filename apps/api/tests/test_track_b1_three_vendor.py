@@ -38,8 +38,8 @@ def test_contracts_pins_exact_three_version() -> None:
 
 def test_vendor_module_exports_matching_pin() -> None:
     text = VENDOR_TS.read_text(encoding="utf-8")
-    m = re.search(r'THREE_VIBEIT_PIN\s*=\s*"([^"]+)"', text)
-    assert m, "THREE_VIBEIT_PIN missing from three-vendor.ts"
+    m = re.search(r'THREE_AIDITR_PIN\s*=\s*"([^"]+)"', text)
+    assert m, "THREE_AIDITR_PIN missing from three-vendor.ts"
     assert m.group(1) == THREE_PIN
     assert 'from "three"' in text or "from 'three'" in text
     # No import/require of CDN hosts (comments may mention them as forbidden)

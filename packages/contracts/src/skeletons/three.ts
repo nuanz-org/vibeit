@@ -21,12 +21,12 @@ import type {
 } from "../vibe-tool";
 import {
   THREE,
-  THREE_VIBEIT_PIN,
-  THREE_VIBEIT_SUPPLY,
+  THREE_AIDITR_PIN,
+  THREE_AIDITR_SUPPLY,
 } from "./three-vendor";
 
 // Re-export product three for creative fill (allowlisted via this package path).
-export { THREE, THREE_VIBEIT_PIN, THREE_VIBEIT_SUPPLY };
+export { THREE, THREE_AIDITR_PIN, THREE_AIDITR_SUPPLY };
 
 export type ThreeAspect = "1:1" | "9:16" | "16:9" | "4:5";
 

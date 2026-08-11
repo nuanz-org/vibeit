@@ -1,9 +1,9 @@
-# Vibeit — Agent architecture (generation quality track)
+# Aiditr — Agent architecture (generation quality track)
 
 **Status:** Proposal — targets the brik.space quality bar
 **Date:** 2026-08-06
 **Context:** Core loop (M0–M8) is complete on canvas2d. The remaining gap to brik.space-level output is **generation quality**, not product plumbing. This doc defines the agent roster, model routing, and quality gates needed to close it.
-**Reference:** [vibeit-milestones.md](./vibeit-milestones.md) · brik.space pipeline analysis (two-pass `art_director` → design brief → tool calls → completion pass, Gemini 3.5 Flash, ~199s)
+**Reference:** [aiditr-milestones.md](./aiditr-milestones.md) · brik.space pipeline analysis (two-pass `art_director` → design brief → tool calls → completion pass, Gemini 3.5 Flash, ~199s)
 
 ---
 

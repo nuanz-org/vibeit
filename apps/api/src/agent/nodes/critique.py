@@ -23,7 +23,7 @@ from core.config import get_settings
 
 
 def critic_threshold() -> float:
-    raw = os.getenv("VIBEIT_CRITIC_THRESHOLD", "").strip()
+    raw = os.getenv("AIDITR_CRITIC_THRESHOLD", "").strip()
     if raw:
         try:
             return float(raw)
@@ -35,9 +35,9 @@ def critic_threshold() -> float:
 def critic_enforced() -> bool:
     """
     When false (default), scores are recorded but low scores do not block finalize.
-    Set VIBEIT_CRITIC_ENFORCED=1 after human calibration (AM3d).
+    Set AIDITR_CRITIC_ENFORCED=1 after human calibration (AM3d).
     """
-    return os.getenv("VIBEIT_CRITIC_ENFORCED", "").lower() in (
+    return os.getenv("AIDITR_CRITIC_ENFORCED", "").lower() in (
         "1",
         "true",
         "yes",

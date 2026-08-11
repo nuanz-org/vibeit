@@ -93,7 +93,7 @@ When automated checklist passes and manual list is green once → **M3 core-loop
 
 ## Related
 
-- [vibeit-milestones.md](./vibeit-milestones.md) — M3a–M3h  
+- [aiditr-milestones.md](./aiditr-milestones.md) — M3a–M3h  
 - [job-api.md](./contracts/job-api.md)  
 - [plan-json.md](./contracts/plan-json.md)  
 - Eval prompts: `apps/api/evals/create/prompts.json`  

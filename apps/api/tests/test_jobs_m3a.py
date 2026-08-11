@@ -24,7 +24,7 @@ from domain.job_status import IllegalJobTransition, assert_job_transition
 from main import app
 from services.create_job import transition_job_status
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def test_illegal_transitions() -> None:

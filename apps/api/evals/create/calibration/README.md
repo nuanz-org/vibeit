@@ -5,7 +5,7 @@ The judge is **advisory** until this calibration set is filled and correlation i
 ## Goal
 
 Owner rates ~20 Create outputs. Compare human overall scores to critic `overall`.  
-Target: rank correlation (Spearman) **≥ 0.7** before setting `VIBEIT_CRITIC_ENFORCED=1`.
+Target: rank correlation (Spearman) **≥ 0.7** before setting `AIDITR_CRITIC_ENFORCED=1`.
 
 ## Method
 
@@ -26,8 +26,8 @@ Target: rank correlation (Spearman) **≥ 0.7** before setting `VIBEIT_CRITIC_EN
 5. Only then enable enforcement:
 
    ```bash
-   export VIBEIT_CRITIC_ENFORCED=1
-   export VIBEIT_CRITIC_THRESHOLD=3.5   # optional
+   export AIDITR_CRITIC_ENFORCED=1
+   export AIDITR_CRITIC_THRESHOLD=3.5   # optional
    ```
 
 ## Template — `human-scores.json`

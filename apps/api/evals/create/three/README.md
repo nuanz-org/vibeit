@@ -13,7 +13,7 @@ uv run python scripts/eval_three.py --json
 Exit code **0** = all required offline gates green → safe to opt-in:
 
 ```bash
-VIBEIT_TARGET_THREE_ENABLED=1
+AIDITR_TARGET_THREE_ENABLED=1
 ```
 
 Default remains **off** until an operator enables the flag after a green run.
@@ -41,7 +41,7 @@ Default remains **off** until an operator enables the flag after a green run.
 Live Create on three prompts still uses the main create runner with three enabled; not required for B5 offline green:
 
 ```bash
-VIBEIT_TARGET_THREE_ENABLED=1 EVAL_LIVE=1 uv run python scripts/eval_create.py
+AIDITR_TARGET_THREE_ENABLED=1 EVAL_LIVE=1 uv run python scripts/eval_create.py
 ```
 
 Live first-pass thresholds in `prompts.json` → `gates.minLive*` are advisory until a committed shootout.

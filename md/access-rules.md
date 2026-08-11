@@ -1,8 +1,8 @@
-# Vibeit — access rules (MVP)
+# Aiditr — access rules (MVP)
 
 **Milestone:** M1f  
 **Status:** Frozen for ASAP core loop  
-**Related:** [vibeit-milestones.md](./vibeit-milestones.md) · [backend-architecture.md](./backend-architecture.md) · [capture-cors.md](./contracts/capture-cors.md)
+**Related:** [aiditr-milestones.md](./aiditr-milestones.md) · [backend-architecture.md](./backend-architecture.md) · [capture-cors.md](./contracts/capture-cors.md)
 
 These rules prevent M7/M8 from inventing ownership later. Implementation may lag (e.g. share page lands in M7); **do not weaken** the table without a product decision.
 
@@ -128,4 +128,4 @@ When adding a new route, ask:
 
 ## Demo alignment (M1)
 
-See M1 demo checklist in [vibeit-milestones.md](./vibeit-milestones.md#m1f--public-vs-private-access-rules--m1-demo) and `apps/api/tests/` smokes.
+See M1 demo checklist in [aiditr-milestones.md](./aiditr-milestones.md#m1f--public-vs-private-access-rules--m1-demo) and `apps/api/tests/` smokes.

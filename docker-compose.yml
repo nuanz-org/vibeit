@@ -1,22 +1,22 @@
 services:
   db:
     image: postgres:trixie
-    container_name: vibeit-db
+    container_name: aiditr-db
     restart: unless-stopped
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-vibeit}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vibeit}
-      POSTGRES_DB: ${POSTGRES_DB:-vibeit}
+      POSTGRES_USER: ${POSTGRES_USER:-aiditr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aiditr}
+      POSTGRES_DB: ${POSTGRES_DB:-aiditr}
     volumes:
       # Postgres 18+ (trixie) expects the mount at /var/lib/postgresql, not .../data
-      - vibeit_pgdata:/var/lib/postgresql
+      - aiditr_pgdata:/var/lib/postgresql
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-vibeit} -d ${POSTGRES_DB:-vibeit}",
+          "pg_isready -U ${POSTGRES_USER:-aiditr} -d ${POSTGRES_DB:-aiditr}",
         ]
       interval: 5s
       timeout: 5s
@@ -24,4 +24,4 @@ services:
       start_period: 10s
 
 volumes:
-  vibeit_pgdata:
+  aiditr_pgdata:

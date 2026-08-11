@@ -20,7 +20,7 @@ from core.security import get_current_user
 from main import app
 from services.public_tool import normalize_tags
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def _any_user() -> str | None:

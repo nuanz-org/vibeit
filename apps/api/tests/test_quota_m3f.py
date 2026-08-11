@@ -26,7 +26,7 @@ from main import app
 from services.create_job import QuotaExceededError, enqueue_create_job
 from services.quota import estimate_cost_cents, get_quota_snapshot, utc_day_start
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def test_estimate_cost_cents() -> None:

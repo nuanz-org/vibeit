@@ -93,7 +93,7 @@ When automated checklist passes and manual list is green once → **M7 core-loop
 
 ## Related
 
-- [vibeit-milestones.md](./vibeit-milestones.md) — M7a–M7g  
+- [aiditr-milestones.md](./aiditr-milestones.md) — M7a–M7g  
 - [export-browser-support.md](./export-browser-support.md)  
 - [access-rules.md](./access-rules.md)  
 - Studio: `apps/web/features/studio/`  

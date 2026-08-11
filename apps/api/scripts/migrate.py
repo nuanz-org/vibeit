@@ -23,7 +23,7 @@ import asyncpg
 
 _API_ROOT = Path(__file__).resolve().parents[1]
 _MIGRATIONS_DIR = _API_ROOT / "migrations"
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 _VERSION_RE = re.compile(r"^(\d{3,})_.+\.sql$")
 
@@ -120,11 +120,11 @@ async def migrate(database_url: str) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Apply Vibeit API SQL migrations")
+    parser = argparse.ArgumentParser(description="Apply Aiditr API SQL migrations")
     parser.add_argument(
         "--database-url",
         default=None,
-        help="Postgres URL (default: DATABASE_URL or local vibeit)",
+        help="Postgres URL (default: DATABASE_URL or local aiditr)",
     )
     args = parser.parse_args()
     code = asyncio.run(migrate(_database_url(args.database_url)))

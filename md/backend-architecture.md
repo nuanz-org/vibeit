@@ -1,12 +1,12 @@
-# Vibeit — backend architecture
+# Aiditr — backend architecture
 
 **Status:** Locked recommendation for `apps/api`  
 **Date:** 2026-08-04  
 **Stack:** FastAPI · LangGraph · Postgres · object storage · OpenRouter  
 **Related:**
-- [vibeit-product-architecture-consensus.md](./vibeit-product-architecture-consensus.md)
+- [aiditr-product-architecture-consensus.md](./aiditr-product-architecture-consensus.md)
 - [plan.md](./plan.md)
-- [vibeit-milestones.md](./vibeit-milestones.md)
+- [aiditr-milestones.md](./aiditr-milestones.md)
 
 ---
 
@@ -21,7 +21,7 @@ Use a **modular layered** architecture for the FastAPI backend.
 | NestJS-style `@Module()` DI modules | **No** — FastAPI has no Nest runtime |
 | **Modular layered + selective ports** | **Yes** |
 
-**Rationale:** Vibeit is early (thin API today). Hard parts are jobs, LangGraph, LLM, and storage — not deep enterprise domain modeling. Modular layers ship faster; we still isolate swap-prone infra so OpenRouter, auth, and object storage can change without rewriting routers.
+**Rationale:** Aiditr is early (thin API today). Hard parts are jobs, LangGraph, LLM, and storage — not deep enterprise domain modeling. Modular layers ship faster; we still isolate swap-prone infra so OpenRouter, auth, and object storage can change without rewriting routers.
 
 ---
 
@@ -29,7 +29,7 @@ Use a **modular layered** architecture for the FastAPI backend.
 
 **Same spirit as Nest feature modules, not Nest itself.**
 
-| NestJS | Vibeit FastAPI |
+| NestJS | Aiditr FastAPI |
 |--------|----------------|
 | `@Module({ controllers, providers })` | Feature folder + imports |
 | `Controller` | `router.py` (FastAPI `APIRouter`) |
@@ -327,4 +327,4 @@ Until then, **do not** add layers “for purity.”
 | Agent? | **`agent/` under application layer** |
 | HTTP? | **Thin routers → services → adapters** |
 
-This is the default backend shape for Vibeit until a later ADR supersedes it.
+This is the default backend shape for Aiditr until a later ADR supersedes it.

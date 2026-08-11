@@ -103,7 +103,7 @@ def test_m5c_draft_smoke() -> None:
 
 
 def test_milestones_m5_subparts_documented() -> None:
-    path = _ROOT / "md" / "vibeit-milestones.md"
+    path = _ROOT / "md" / "aiditr-milestones.md"
     text = path.read_text(encoding="utf-8")
     for key in ("M5a", "M5b", "M5c", "M5d", "M5e", "M5f"):
         assert key in text

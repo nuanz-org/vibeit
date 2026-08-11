@@ -103,7 +103,7 @@ def test_m8_web_surfaces_exist() -> None:
 
 
 def test_milestones_m8_subparts_documented() -> None:
-    path = _ROOT / "md" / "vibeit-milestones.md"
+    path = _ROOT / "md" / "aiditr-milestones.md"
     text = path.read_text(encoding="utf-8")
     for key in ("M8a", "M8b", "M8c", "M8d", "M8e", "M8f", "M8g"):
         assert key in text

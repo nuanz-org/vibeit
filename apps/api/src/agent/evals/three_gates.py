@@ -2,7 +2,7 @@
 Track B5 — offline three eval gates.
 
 Deterministic (CI-safe) checks that prove the three path is safe to enable
-via VIBEIT_TARGET_THREE_ENABLED. Does not require live LLM.
+via AIDITR_TARGET_THREE_ENABLED. Does not require live LLM.
 
 Usage:
   from agent.evals.three_gates import run_three_offline_gates
@@ -119,19 +119,19 @@ def run_three_offline_gates(
     skip_host: bool = False,
 ) -> ThreeEvalReport:
     """
-    Run all offline three gates. Restores VIBEIT_TARGET_THREE_ENABLED after.
+    Run all offline three gates. Restores AIDITR_TARGET_THREE_ENABLED after.
 
     skip_host: when True, skip Playwright host smoke (unit-only environments).
     """
     gates: list[GateResult] = []
     notes: list[str] = []
-    saved_three = os.environ.get("VIBEIT_TARGET_THREE_ENABLED")
-    saved_p5 = os.environ.get("VIBEIT_TARGET_P5_ENABLED")
+    saved_three = os.environ.get("AIDITR_TARGET_THREE_ENABLED")
+    saved_p5 = os.environ.get("AIDITR_TARGET_P5_ENABLED")
 
     try:
         # --- policy ---
-        os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
-        os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
+        os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
+        os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
         off = not three_enabled() and "three" not in enabled_targets()
         gates.append(
             _gate(
@@ -153,18 +153,18 @@ def run_three_offline_gates(
             )
         )
 
-        os.environ["VIBEIT_TARGET_THREE_ENABLED"] = "1"
+        os.environ["AIDITR_TARGET_THREE_ENABLED"] = "1"
         on = three_enabled() and resolve_plan_target("three") == "three"
         gates.append(
             _gate(
                 "policy_enable_resolves",
                 on,
-                "VIBEIT_TARGET_THREE_ENABLED=1 enables target three"
+                "AIDITR_TARGET_THREE_ENABLED=1 enables target three"
                 if on
                 else "flag did not enable three",
             )
         )
-        os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
+        os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
 
         # --- supply / harness ---
         pin_ok = False
@@ -173,7 +173,7 @@ def run_three_offline_gates(
             vendor = _VENDOR_TS.read_text(encoding="utf-8")
             pkg = json.loads(_CONTRACTS_PKG.read_text(encoding="utf-8"))
             dep = str(pkg.get("dependencies", {}).get("three") or "")
-            m = re.search(r'THREE_VIBEIT_PIN\s*=\s*"([^"]+)"', vendor)
+            m = re.search(r'THREE_AIDITR_PIN\s*=\s*"([^"]+)"', vendor)
             pin = m.group(1) if m else ""
             pin_ok = dep == THREE_PIN and pin == THREE_PIN
             pin_detail = f"package three={dep!r} pin={pin!r} expected={THREE_PIN!r}"
@@ -381,20 +381,20 @@ export const createTool = () => ({
 
     finally:
         if saved_three is None:
-            os.environ.pop("VIBEIT_TARGET_THREE_ENABLED", None)
+            os.environ.pop("AIDITR_TARGET_THREE_ENABLED", None)
         else:
-            os.environ["VIBEIT_TARGET_THREE_ENABLED"] = saved_three
+            os.environ["AIDITR_TARGET_THREE_ENABLED"] = saved_three
         if saved_p5 is None:
-            os.environ.pop("VIBEIT_TARGET_P5_ENABLED", None)
+            os.environ.pop("AIDITR_TARGET_P5_ENABLED", None)
         else:
-            os.environ["VIBEIT_TARGET_P5_ENABLED"] = saved_p5
+            os.environ["AIDITR_TARGET_P5_ENABLED"] = saved_p5
 
     required = [g for g in gates if g.required]
     required_passed = sum(1 for g in required if g.ok)
     gates_passed = all(g.ok for g in required)
 
     notes.append(
-        "Offline green means safe to set VIBEIT_TARGET_THREE_ENABLED=1; "
+        "Offline green means safe to set AIDITR_TARGET_THREE_ENABLED=1; "
         "product default remains off until operators opt in."
     )
     if gates_passed:

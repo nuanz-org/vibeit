@@ -26,7 +26,7 @@
   <body>
     <!--
       Parent host for AM2 Playwright smoke.
-      Mirrors RuntimeHostBridge postMessage protocol (channel vibeit-runtime).
+      Mirrors RuntimeHostBridge postMessage protocol (channel aiditr-runtime).
       iframe sandbox matches Studio (allow-scripts only → opaque origin).
     -->
     <iframe
@@ -36,7 +36,7 @@
       title="runtime-frame"
     ></iframe>
     <script>
-      const CHANNEL = "vibeit-runtime";
+      const CHANNEL = "aiditr-runtime";
       const VERSION = 1;
       const consoleErrors = [];
 
@@ -180,7 +180,7 @@
       /**
        * Full smoke: wait ready → mount module → settle → captureFrame → variance.
        */
-      window.__vibeitHostSmoke = {
+      window.__aiditrHostSmoke = {
         getConsoleErrors() {
           return consoleErrors.slice();
         },

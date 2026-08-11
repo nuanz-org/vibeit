@@ -19,7 +19,7 @@ from adapters.db.repositories.tools import ToolsRepository
 from core.security import get_current_user
 from main import app
 
-_DEFAULT_URL = "postgresql://vibeit:vibeit@localhost:5432/vibeit"
+_DEFAULT_URL = "postgresql://aiditr:aiditr@localhost:5432/aiditr"
 
 
 def _any_user() -> str | None:
