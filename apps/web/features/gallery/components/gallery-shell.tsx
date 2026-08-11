@@ -13,6 +13,7 @@ export type GalleryShellProps = {
 
 /**
  * Public gallery chrome (no auth required).
+ * Base.org language: white/muted stage, blue mark, pill nav, snappy ease.
  */
 export function GalleryShell({ children }: GalleryShellProps) {
   const pathname = usePathname() || "";
@@ -20,25 +21,28 @@ export function GalleryShell({ children }: GalleryShellProps) {
     pathname === "/gallery" || pathname.startsWith("/gallery/");
 
   return (
-    <div className="flex min-h-screen flex-col bg-stage text-foreground">
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-4 bg-stage/88 px-5 py-[0.85rem] backdrop-blur-[12px]">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-[0.35rem]">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-border bg-background/88 px-5 py-3.5 backdrop-blur-[12px] md:px-6">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-[0.35rem]">
           <Link
             href="/"
-            className="px-[0.15rem] py-[0.35rem] text-[0.95rem] font-semibold tracking-tight text-inherit no-underline hover:opacity-70 focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ring"
+            className="flex items-center gap-2.5 px-[0.15rem] py-[0.35rem] text-[15px] font-medium tracking-tight text-inherit no-underline hover:opacity-70 focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ring"
           >
+            <span
+              className="inline-block size-6 shrink-0 rounded-[2px] bg-primary"
+              aria-hidden
+            />
             Aiditr
           </Link>
           <nav
-            className="flex items-center gap-[0.2rem] rounded-xl bg-foreground/5 p-[0.2rem]"
+            className="flex items-center gap-[0.2rem] rounded-full border border-border bg-surface p-[0.2rem]"
             aria-label="Primary"
           >
             <Link
               href="/gallery"
               className={cn(
-                "rounded-[10px] px-3 py-[0.45rem] text-[0.8125rem] font-medium text-muted-foreground no-underline transition-[color,background] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-foreground/[0.06] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none",
-                onBrowse &&
-                  "bg-card text-foreground shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_8%,transparent)]",
+                "rounded-full px-3.5 py-[0.45rem] text-[0.8125rem] font-medium text-muted-foreground no-underline transition-[color,background] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#F8F8F8] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none dark:hover:bg-secondary",
+                onBrowse && "bg-card text-foreground shadow-sm",
               )}
               aria-current={onBrowse ? "page" : undefined}
             >
@@ -46,7 +50,7 @@ export function GalleryShell({ children }: GalleryShellProps) {
             </Link>
             <Link
               href="/create"
-              className="rounded-[10px] px-3 py-[0.45rem] text-[0.8125rem] font-medium text-muted-foreground no-underline transition-[color,background] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-foreground/[0.06] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
+              className="rounded-full px-3.5 py-[0.45rem] text-[0.8125rem] font-medium text-muted-foreground no-underline transition-[color,background] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#F8F8F8] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none dark:hover:bg-secondary"
             >
               Create
             </Link>

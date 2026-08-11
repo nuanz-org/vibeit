@@ -11,10 +11,10 @@ import { normalizePublicAssetUrl } from "../lib/asset-url";
 import { GalleryShell } from "./gallery-shell";
 
 const btn =
-  "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[10px] border border-foreground/12 bg-card px-4 py-[0.55rem] text-sm font-medium text-inherit no-underline transition-[border-color,background,opacity] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:enabled:border-foreground/24 hover:enabled:bg-[color-mix(in_oklch,var(--foreground)_3%,var(--card))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none";
+  "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-border bg-card px-4 py-[0.55rem] text-sm font-medium text-inherit no-underline transition-[border-color,background,opacity] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:enabled:bg-[#F8F8F8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none dark:hover:enabled:bg-secondary";
 
 const btnPrimary =
-  "border-transparent bg-primary font-semibold text-primary-foreground hover:enabled:border-transparent hover:enabled:bg-primary hover:enabled:opacity-[0.92]";
+  "border-transparent bg-primary font-medium text-primary-foreground hover:enabled:border-transparent hover:enabled:bg-base-blue-hover";
 
 function hashHue(seed: string): number {
   let h = 0;

@@ -6,24 +6,22 @@ import { FormEvent, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 const card =
-  "w-full max-w-[400px] rounded-xl border border-foreground/12 bg-[color-mix(in_srgb,var(--background)_92%,var(--foreground)_4%)] p-8 shadow-sm";
-const brand =
-  "mb-2 text-[0.8rem] font-semibold tracking-[0.06em] text-foreground/55 uppercase";
-const title = "mb-1.5 text-2xl font-semibold tracking-tight";
-const subtitle = "mb-6 text-[0.9rem] leading-snug text-foreground/65";
+  "w-full max-w-[400px] rounded-[12px] border border-border bg-card p-8";
+const title = "mb-1.5 text-2xl font-medium tracking-[-0.03em]";
+const subtitle = "mb-6 text-[0.95rem] leading-snug text-ink/70";
 const form = "flex flex-col gap-4";
 const field = "flex flex-col gap-1.5";
 const label = "text-[0.85rem] font-medium";
 const input =
-  "w-full appearance-none rounded-lg border border-foreground/18 bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 focus:border-foreground/45 focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--foreground)_8%,transparent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full appearance-none rounded-[10px] border border-border bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-primary/50 focus:shadow-[0_0_0_3px_rgb(0_0_255/0.12)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
 const submit =
-  "mt-1 cursor-pointer rounded-lg border-none bg-foreground px-4 py-2.5 text-[0.95rem] font-semibold text-background transition-[opacity,transform] duration-100 hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-55";
+  "mt-1 h-12 cursor-pointer rounded-full border-none bg-primary px-4 text-[0.95rem] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-55";
 const error =
-  "rounded-lg border border-[#c43c3c]/25 bg-[#c43c3c]/10 px-3 py-2.5 text-sm leading-snug text-[#c43c3c] dark:text-[#f07178]";
+  "rounded-[10px] border border-[#FC401F]/25 bg-[#FC401F]/10 px-3 py-2.5 text-sm leading-snug text-[#FC401F]";
 const success =
-  "rounded-lg border border-[#2a7a4b]/25 bg-[#2a7a4b]/10 px-3 py-2.5 text-sm leading-snug text-[#2a7a4b] dark:text-[#7dcea0]";
-const footer = "mt-5 text-center text-sm text-foreground/65";
-const link = "font-medium text-foreground underline underline-offset-2 hover:opacity-80";
+  "rounded-[10px] border border-[#66C800]/25 bg-[#66C800]/10 px-3 py-2.5 text-sm leading-snug text-[#2a7a4b]";
+const footer = "mt-5 text-center text-sm text-muted-foreground";
+const link = "font-medium text-primary underline underline-offset-2 hover:opacity-80";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -55,7 +53,13 @@ export function ForgotPasswordForm() {
 
   return (
     <div className={card}>
-      <p className={brand}>Aiditr</p>
+      <div className="mb-5 flex items-center gap-2.5">
+        <span
+          className="inline-block size-6 shrink-0 rounded-[2px] bg-primary"
+          aria-hidden
+        />
+        <p className="m-0 text-[15px] font-medium tracking-[-0.02em]">Aiditr</p>
+      </div>
       <h1 className={title}>Reset password</h1>
       <p className={subtitle}>
         Enter your email and we&apos;ll send a link to choose a new password.

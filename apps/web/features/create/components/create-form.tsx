@@ -352,7 +352,7 @@ export function CreateForm() {
         <div className="flex flex-wrap items-center gap-[0.65rem]">
           <button
             type="submit"
-            className="cursor-pointer rounded-[10px] border-none bg-foreground px-[1.1rem] py-[0.6rem] font-[inherit] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-50"
             disabled={
               pending ||
               generating ||
@@ -374,7 +374,7 @@ export function CreateForm() {
             <button
               type="button"
               className={cn(
-                "cursor-pointer rounded-[10px] border border-foreground/16 bg-transparent px-[1.1rem] py-[0.6rem] font-[inherit] font-semibold text-inherit disabled:cursor-not-allowed disabled:opacity-50",
+                "h-12 cursor-pointer rounded-full border border-border bg-transparent px-6 font-[inherit] text-[15px] font-medium text-inherit transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#F8F8F8] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-secondary",
               )}
               onClick={reset}
             >

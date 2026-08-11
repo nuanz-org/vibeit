@@ -189,7 +189,7 @@ function ParamFieldControl({
               value={typeof value === "string" ? value.toUpperCase() : hex}
               disabled={disabled}
               onChange={(e) => onChange(e.target.value)}
-              className="w-[5.6rem] min-w-0 rounded-md border-none bg-ink/[0.07] px-[0.4rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] tracking-[0.01em] text-inherit uppercase tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-ink/18 disabled:opacity-50"
+              className="w-[5.6rem] min-w-0 rounded-md border-none bg-black/[0.06] px-[0.4rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] tracking-[0.01em] text-ink uppercase tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-primary/30 disabled:opacity-50 dark:bg-white/10"
               spellCheck={false}
               aria-label={`${label} hex`}
             />
@@ -221,19 +221,19 @@ function ParamFieldControl({
           </span>
           <div
             className={cn(
-              "group relative h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 select-none overflow-hidden rounded-md bg-ink/8 data-[disabled=true]:opacity-45",
+              "group relative h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 select-none overflow-hidden rounded-md bg-black/[0.06] data-[disabled=true]:opacity-45 dark:bg-white/10",
             )}
             data-high={highFill ? "true" : "false"}
             data-disabled={disabled ? "true" : "false"}
           >
             <div
-              className="pointer-events-none absolute inset-y-0 left-0 rounded-l-md bg-ink transition-[width] duration-[80ms] ease-linear group-data-[high=false]:rounded-md motion-reduce:transition-none"
+              className="pointer-events-none absolute inset-y-0 left-0 rounded-l-md bg-primary transition-[width] duration-[80ms] ease-linear group-data-[high=false]:rounded-md motion-reduce:transition-none"
               style={{ width: `${pct}%` }}
               aria-hidden
             />
             <span
               className={cn(
-                "pointer-events-none relative z-[1] grid h-full place-items-center text-[0.72rem] font-semibold tracking-tight tabular-nums text-ink transition-colors duration-[120ms] group-data-[high=true]:text-white",
+                "pointer-events-none relative z-[1] grid h-full place-items-center text-[0.72rem] font-semibold tracking-tight tabular-nums text-ink transition-colors duration-[120ms] group-data-[high=true]:text-primary-foreground",
               )}
             >
               {display}
@@ -268,7 +268,7 @@ function ParamFieldControl({
             placeholder={field.placeholder}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className="h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 rounded-md border-none bg-ink/8 px-[0.55rem] text-center font-inherit text-[0.72rem] font-[550] text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-ink/18 disabled:cursor-not-allowed disabled:opacity-45"
+            className="h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 rounded-md border-none bg-black/[0.06] px-[0.55rem] text-center font-inherit text-[0.72rem] font-[550] text-ink focus:outline-2 focus:outline-offset-1 focus:outline-primary/30 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-white/10"
           />
         </div>
       );
@@ -285,7 +285,7 @@ function ParamFieldControl({
               {label}
             </span>
             <div
-              className="flex flex-wrap gap-[0.2rem] rounded-lg bg-ink/[0.07] p-[0.18rem]"
+              className="flex flex-wrap gap-[0.2rem] rounded-lg bg-black/[0.06] p-[0.18rem] dark:bg-white/10"
               role="radiogroup"
               aria-label={label}
             >
@@ -298,12 +298,14 @@ function ParamFieldControl({
                     role="radio"
                     aria-checked={selected}
                     className={cn(
-                      "min-h-[1.7rem] min-w-[3.5rem] flex-1 cursor-pointer rounded-md border-none bg-transparent px-[0.45rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] text-muted-ink transition-[background-color,color,transform] duration-[140ms] ease-[cubic-bezier(0.2,0,0,1)]",
-                      "enabled:hover:bg-ink/6 enabled:hover:text-ink",
+                      "min-h-[1.7rem] min-w-[3.5rem] flex-1 cursor-pointer rounded-md border-none px-[0.45rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] transition-[background-color,color,transform] duration-[140ms] ease-[cubic-bezier(0.2,0,0,1)]",
                       "enabled:active:scale-[0.97]",
-                      "data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-background",
                       "disabled:cursor-not-allowed disabled:opacity-45",
                       "motion-reduce:transition-none",
+                      // Selected styles applied via JS so hover cannot override (TW hover vs data race)
+                      selected
+                        ? "bg-primary font-semibold text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                        : "bg-transparent text-muted-ink enabled:hover:bg-black/[0.06] enabled:hover:text-ink dark:enabled:hover:bg-white/10",
                     )}
                     data-selected={selected ? "true" : "false"}
                     disabled={disabled}
@@ -327,7 +329,7 @@ function ParamFieldControl({
             value={current}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className="h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 appearance-none rounded-md border-none bg-ink/8 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2712%27%20height%3D%2712%27%20viewBox%3D%270%200%2016%2016%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M4%206L8%2010L12%206%27%20stroke%3D%27%23888%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E')] bg-[length:12px] bg-[position:right_0.45rem_center] bg-no-repeat py-0 pr-[1.4rem] pl-[0.55rem] text-left font-inherit text-[0.72rem] font-[550] text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-ink/18 disabled:cursor-not-allowed disabled:opacity-45"
+            className="h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 appearance-none rounded-md border-none bg-black/[0.06] bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2712%27%20height%3D%2712%27%20viewBox%3D%270%200%2016%2016%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M4%206L8%2010L12%206%27%20stroke%3D%27%23888%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E')] bg-[length:12px] bg-[position:right_0.45rem_center] bg-no-repeat py-0 pr-[1.4rem] pl-[0.55rem] text-left font-inherit text-[0.72rem] font-[550] text-ink focus:outline-2 focus:outline-offset-1 focus:outline-primary/30 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-white/10"
             aria-label={label}
           >
             {field.options.map((opt) => (
@@ -349,7 +351,7 @@ function ParamFieldControl({
           </span>
           <span
             className={cn(
-              "group/sw relative h-[1.3rem] w-[2.35rem] shrink-0 rounded-full bg-ink/14 transition-colors duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] data-[checked=true]:bg-ink",
+              "group/sw relative h-[1.3rem] w-[2.35rem] shrink-0 rounded-full bg-black/[0.12] transition-colors duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] dark:bg-white/15 data-[checked=true]:bg-primary",
             )}
             data-checked={checked ? "true" : "false"}
           >

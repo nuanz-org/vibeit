@@ -126,7 +126,7 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
                     className={cn(
                       "cursor-pointer rounded-full border border-foreground/16 bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] transition-[background,border-color] duration-150 ease-in-out",
                       "enabled:hover:border-foreground/35",
-                      "data-[selected=true]:border-foreground data-[selected=true]:bg-foreground data-[selected=true]:text-background",
+                      "data-[selected=true]:border-primary data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
                       "disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                     data-selected={
@@ -147,7 +147,7 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
                     className={cn(
                       "cursor-pointer rounded-full border border-foreground/16 bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] transition-[background,border-color] duration-150 ease-in-out",
                       "enabled:hover:border-foreground/35",
-                      "data-[selected=true]:border-foreground data-[selected=true]:bg-foreground data-[selected=true]:text-background",
+                      "data-[selected=true]:border-primary data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
                       "disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                     data-selected={
@@ -173,7 +173,7 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
       <div className="flex flex-wrap items-center gap-[0.65rem]">
         <button
           type="button"
-          className="cursor-pointer rounded-[10px] border-none bg-foreground px-[1.1rem] py-[0.6rem] font-[inherit] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!allAnswered || pending}
           onClick={handleBuild}
         >

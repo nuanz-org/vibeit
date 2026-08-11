@@ -1,5 +1,6 @@
 /**
- * Shared playground chrome class names (Brik-class craft tool).
+ * Shared playground chrome class names (Base.org product language).
+ * Monochrome surfaces + Base Blue accent via design tokens.
  * Exported as string constants so create/studio can keep using
  * `playgroundStyles` without CSS modules.
  */
@@ -92,13 +93,13 @@ export const playgroundStyles = {
   // Variant modifiers use ! so they win when composed as `${btn} ${btnPrimary}`
   // (create/studio join class strings; Tailwind source order is not className order).
   btnPrimary: [
-    "border-transparent! bg-ink! text-background!",
-    "not-disabled:hover:bg-[color-mix(in_oklch,var(--ink)_88%,#000)]!",
+    "rounded-full! border-transparent! bg-primary! text-primary-foreground!",
+    "not-disabled:hover:bg-base-blue-hover!",
   ].join(" "),
 
   btnAccent: [
-    "border-transparent! bg-accent! text-accent-ink!",
-    "not-disabled:hover:brightness-[0.97]",
+    "rounded-full! border-transparent! bg-accent! text-accent-ink!",
+    "not-disabled:hover:bg-base-blue-hover!",
   ].join(" "),
 
   btnGhost: "border-transparent! font-medium opacity-75",
@@ -107,13 +108,13 @@ export const playgroundStyles = {
 
   btnSend: [
     "inline-flex min-h-[2.15rem] min-w-[2.15rem] cursor-pointer items-center justify-center",
-    "rounded-[10px] border-0 bg-ink p-[0.4rem] text-background",
-    "transition-[background-color,transform,opacity] duration-[180ms]",
-    "[transition-timing-function:cubic-bezier(0.2,0,0,1)]",
-    "not-disabled:hover:-translate-y-px",
+    "rounded-full border-0 bg-primary p-[0.4rem] text-primary-foreground",
+    "transition-[background-color,transform,opacity] duration-150",
+    "[transition-timing-function:cubic-bezier(0.4,0,0.2,1)]",
+    "not-disabled:hover:bg-base-blue-hover",
     "not-disabled:active:scale-[0.96]",
     "disabled:cursor-not-allowed disabled:translate-y-0",
-    "disabled:bg-[color-mix(in_oklch,var(--ink)_55%,transparent)] disabled:opacity-35",
+    "disabled:bg-primary/40 disabled:opacity-35",
     "motion-reduce:transition-none",
   ].join(" "),
 
