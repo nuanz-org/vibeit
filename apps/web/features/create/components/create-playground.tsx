@@ -39,8 +39,6 @@ import {
   type LlmModelOption,
 } from "@/lib/api/llm";
 
-import styles from "../styles.module.css";
-
 const MAX_INSPIRATION = 4;
 
 const VISION_STARTERS = [
@@ -307,13 +305,15 @@ export function CreatePlayground({
                 </p>
                 {showStarters ? (
                   <>
-                    <p className={styles.startersLabel}>Or try one of these</p>
-                    <ul className={styles.starters}>
+                    <p className="mt-[0.15rem] mb-0 w-full text-[0.72rem] text-muted-ink">
+                      Or try one of these
+                    </p>
+                    <ul className="mt-[0.35rem] mb-0 flex list-none flex-wrap gap-[0.4rem] p-0">
                       {VISION_STARTERS.map((s) => (
                         <li key={s.label}>
                           <button
                             type="button"
-                            className={styles.starterChip}
+                            className="cursor-pointer appearance-none rounded-full border border-border-subtle bg-transparent px-[0.7rem] py-[0.4rem] text-xs font-medium font-[inherit] text-muted-ink transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:-translate-y-px hover:border-ink/22 hover:bg-ink/4 hover:text-ink active:scale-[0.98] motion-reduce:transition-none"
                             onClick={() => setVisionText(s.vision)}
                           >
                             {s.label}
@@ -440,19 +440,27 @@ export function CreatePlayground({
             }}
           />
           {inspirationPreviews.length > 0 ? (
-            <ul className={styles.inspirationTray} aria-label="Inspiration images">
+            <ul
+              className="m-0 flex list-none flex-wrap gap-[0.45rem] p-0"
+              aria-label="Inspiration images"
+            >
               {inspirationPreviews.map((p, index) => (
-                <li key={p.key} className={styles.inspirationTrayItem}>
+                <li
+                  key={p.key}
+                  className="relative size-14 shrink-0 overflow-hidden rounded-[10px] border border-foreground/12"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={p.url}
                     alt={p.name}
-                    className={styles.inspirationThumb}
+                    className="block size-full object-cover"
                   />
-                  <span className={styles.inspirationIndex}>{index + 1}</span>
+                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-bold leading-[1.1rem] text-white">
+                    {index + 1}
+                  </span>
                   <button
                     type="button"
-                    className={styles.inspirationRemove}
+                    className="absolute top-0.5 right-0.5 grid size-[1.15rem] cursor-pointer place-items-center rounded-full border-none bg-black/55 p-0 text-[0.85rem] leading-none text-white disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={pending || generating || isAwaitingClarify}
                     aria-label={`Remove ${p.name}`}
                     onClick={() =>
@@ -579,7 +587,9 @@ export function CreatePlayground({
             </div>
           </div>
           {modelsError ? (
-            <p className={styles.error}>{modelsError}</p>
+            <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
+              {modelsError}
+            </p>
           ) : null}
         </form>
       </div>

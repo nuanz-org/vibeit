@@ -10,27 +10,18 @@ export function UserMenu() {
   const { data: session, isPending } = useSession();
 
   if (isPending) {
-    return (
-      <span style={{ fontSize: "0.875rem", opacity: 0.6 }}>Loading…</span>
-    );
+    return <span className="text-sm opacity-60">Loading…</span>;
   }
 
   if (!session?.user) {
     return (
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-        <Link href="/login" style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+      <div className="flex items-center gap-3">
+        <Link href="/login" className="text-[0.9rem] font-medium">
           Sign in
         </Link>
         <Link
           href="/signup"
-          style={{
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            padding: "0.4rem 0.75rem",
-            borderRadius: 8,
-            background: "var(--foreground)",
-            color: "var(--background)",
-          }}
+          className="rounded-lg bg-foreground px-3 py-1.5 text-[0.9rem] font-semibold text-background"
         >
           Sign up
         </Link>
@@ -50,24 +41,14 @@ export function UserMenu() {
   }
 
   return (
-    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-      <span style={{ fontSize: "0.875rem", opacity: 0.75 }}>
+    <div className="flex items-center gap-3">
+      <span className="text-sm opacity-75">
         {session.user.name || session.user.email}
       </span>
       <button
         type="button"
         onClick={handleSignOut}
-        style={{
-          font: "inherit",
-          fontSize: "0.875rem",
-          fontWeight: 500,
-          background: "transparent",
-          border: "1px solid color-mix(in srgb, var(--foreground) 18%, transparent)",
-          borderRadius: 8,
-          padding: "0.35rem 0.65rem",
-          cursor: "pointer",
-          color: "var(--foreground)",
-        }}
+        className="cursor-pointer rounded-lg border border-foreground/18 bg-transparent px-2.5 py-1.5 text-sm font-medium text-foreground"
       >
         Sign out
       </button>

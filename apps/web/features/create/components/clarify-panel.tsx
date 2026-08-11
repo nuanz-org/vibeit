@@ -7,8 +7,7 @@ import type {
   ClarifyQuestion,
   JobClarifyState,
 } from "@/lib/api/jobs";
-
-import styles from "../styles.module.css";
+import { cn } from "@/lib/utils";
 
 const ALL_OPTIONS_KEY = "__all_options__";
 
@@ -85,36 +84,51 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
   }
 
   return (
-    <div className={styles.clarifyCard}>
-      <div className={styles.progressHeader}>
-        <span className={styles.progressTitle}>Plan with me</span>
-        <span className={styles.progressStatus} data-status="awaiting_clarify">
+    <div className="flex flex-col gap-[0.85rem] rounded-xl border border-[#1d4ed8]/28 bg-[#1d4ed8]/6 px-[1.1rem] py-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[0.88rem] font-semibold tracking-[-0.015em]">
+          Plan with me
+        </span>
+        <span
+          className={cn(
+            "rounded-full bg-ink/8 px-2 py-[0.18rem] text-[0.68rem] font-[650] tracking-[0.02em] text-muted-ink",
+            "data-[status=awaiting_clarify]:bg-[oklch(0.55_0.16_260)]/14 data-[status=awaiting_clarify]:text-[oklch(0.48_0.14_260)]",
+          )}
+          data-status="awaiting_clarify"
+        >
           awaiting answers
         </span>
       </div>
 
       {clarify.understanding ? (
-        <p className={styles.clarifyUnderstanding}>{clarify.understanding}</p>
+        <p className="m-0 text-[0.92rem] leading-normal opacity-90">
+          {clarify.understanding}
+        </p>
       ) : null}
 
-      <div className={styles.clarifyQuestions}>
+      <div className="flex flex-col gap-4">
         {questions.map((q) => {
           const multi = Boolean(q.multiSelect);
           const allowAll = q.allowAllOptions !== false;
           const current = answers[q.id];
           return (
-            <div key={q.id} className={styles.clarifyQuestion}>
-              <p className={styles.clarifyPrompt}>
+            <div key={q.id} className="flex flex-col gap-2">
+              <p className="m-0 text-[0.9rem] font-semibold leading-[1.4]">
                 {q.group ? (
-                  <span className={styles.clarifyGroup}>{q.group} · </span>
+                  <span className="font-medium opacity-70">{q.group} · </span>
                 ) : null}
                 {q.prompt}
               </p>
-              <div className={styles.chipRow} role="group" aria-label={q.prompt}>
+              <div className="flex flex-wrap gap-[0.45rem]" role="group" aria-label={q.prompt}>
                 {allowAll ? (
                   <button
                     type="button"
-                    className={styles.chip}
+                    className={cn(
+                      "cursor-pointer rounded-full border border-foreground/16 bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] transition-[background,border-color] duration-150 ease-in-out",
+                      "enabled:hover:border-foreground/35",
+                      "data-[selected=true]:border-foreground data-[selected=true]:bg-foreground data-[selected=true]:text-background",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
                     data-selected={
                       isSelected(current, ALL_OPTIONS_KEY, false)
                         ? "true"
@@ -130,7 +144,12 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
                   <button
                     key={opt.value}
                     type="button"
-                    className={styles.chip}
+                    className={cn(
+                      "cursor-pointer rounded-full border border-foreground/16 bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] transition-[background,border-color] duration-150 ease-in-out",
+                      "enabled:hover:border-foreground/35",
+                      "data-[selected=true]:border-foreground data-[selected=true]:bg-foreground data-[selected=true]:text-background",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
                     data-selected={
                       isSelected(current, opt.value, multi) ? "true" : "false"
                     }
@@ -151,17 +170,17 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
         })}
       </div>
 
-      <div className={styles.actions}>
+      <div className="flex flex-wrap items-center gap-[0.65rem]">
         <button
           type="button"
-          className={styles.button}
+          className="cursor-pointer rounded-[10px] border-none bg-foreground px-[1.1rem] py-[0.6rem] font-[inherit] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!allAnswered || pending}
           onClick={handleBuild}
         >
           {pending ? "Starting build…" : "Build it"}
         </button>
       </div>
-      <p className={styles.muted}>
+      <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
         Choosing <strong>All options</strong> turns that axis into a Studio enum
         control so you can switch variants later.
       </p>

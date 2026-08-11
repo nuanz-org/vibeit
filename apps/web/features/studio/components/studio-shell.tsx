@@ -34,7 +34,6 @@ import {
   parseVersionAssetSlots,
   parseVersionParamSchema,
 } from "../lib/version-metadata";
-import styles from "../styles.module.css";
 import { AssetSlotsPanel } from "./asset-slots-panel";
 import { EmptySlotsBanner } from "./empty-slots-banner";
 import { ExportPanel } from "./export-panel";
@@ -496,9 +495,14 @@ export function StudioShell({
         Size bar is pinned to the bottom of the stage so aspect changes
         do not jump W/H controls up and down with the preview.
       */}
-      <div className={styles.stageCanvasSlot} ref={stageAreaRef}>
+      <div
+        className="relative flex min-h-0 min-w-0 w-full flex-1 flex-col items-center justify-center gap-[0.65rem]"
+        ref={stageAreaRef}
+      >
         {runtime.error && !runtime.mounted ? (
-          <div className={styles.errorBanner}>{runtime.error}</div>
+          <div className="absolute top-3 left-1/2 z-[5] max-w-[min(90%,28rem)] -translate-x-1/2 rounded-[10px] border border-[#b91c1c]/28 bg-[color-mix(in_srgb,#b91c1c_12%,var(--background))] px-[0.85rem] py-[0.55rem] text-[0.8rem] leading-snug text-[#b91c1c]">
+            {runtime.error}
+          </div>
         ) : null}
         <div
           className={pg.frame}
@@ -526,7 +530,7 @@ export function StudioShell({
           />
         </div>
       </div>
-      <div className={styles.stageSizeBarDock}>
+      <div className="z-[2] flex w-full shrink-0 items-center justify-center px-0 pt-[0.15rem] pb-1">
         <StageSizeBar value={stageSize} onChange={onStageSizeChange} />
       </div>
     </div>
@@ -538,21 +542,21 @@ export function StudioShell({
         <h2 className={pg.panelTitle}>Controls</h2>
         <button
           type="button"
-          className={styles.resetLink}
+          className="inline-flex cursor-pointer items-center gap-[0.35rem] rounded-md border-none bg-transparent px-[0.35rem] py-[0.3rem] font-inherit text-[0.78rem] font-medium text-muted-ink transition-colors duration-150 hover:bg-ink/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
           disabled={!runtime.mounted || runtime.busy}
           onClick={() => runtime.resetParams()}
           title="Restore default parameters"
         >
-          <span className={styles.resetLinkIcon} aria-hidden>
+          <span className="text-[0.95rem] leading-none opacity-85" aria-hidden>
             ↺
           </span>
           Reset
         </button>
       </div>
       <div className={pg.panelScroll}>
-        <section className={styles.section}>
+        <section className="flex flex-col gap-[0.55rem]">
           {runtime.mounted && runtime.paramSchema.length === 0 ? (
-            <p className={styles.muted}>No controls for this tool.</p>
+            <p className="text-sm opacity-55">No controls for this tool.</p>
           ) : (
             <ParamControls
               schema={runtime.paramSchema}
@@ -567,11 +571,13 @@ export function StudioShell({
         </section>
 
         <section
-          className={styles.section}
+          className="mt-[0.35rem] flex flex-col gap-[0.55rem] border-t border-border-subtle pt-[0.85rem]"
           ref={assetsSectionRef}
           id="studio-assets"
         >
-          <h2 className={styles.sectionTitle}>Assets</h2>
+          <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
+            Assets
+          </h2>
           {runtime.mounted && runtime.assetSlots.length > 0 ? (
             <EmptySlotsBanner
               slots={runtime.assetSlots}
@@ -588,7 +594,7 @@ export function StudioShell({
             toolId={stageToolKey}
           />
           {runtime.hasRealAsset ? (
-            <p className={styles.okText}>
+            <p className="text-[0.8rem] leading-snug text-[#15803d]">
               {(() => {
                 const bound = Object.entries(runtime.assets).filter(
                   ([, ref]) => {
@@ -628,13 +634,13 @@ export function StudioShell({
           versionId={liveVersionId}
         />
 
-        <details className={styles.advancedDetails}>
+        <details className="rounded-xl border border-foreground/10 px-[0.7rem] py-[0.55rem] [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:text-[0.78rem] [&_summary]:font-semibold [&_summary]:opacity-65 [&_summary::-webkit-details-marker]:hidden">
           <summary>Advanced</summary>
-          <div className={styles.advancedBody}>
-            <div className={styles.actions}>
+          <div className="mt-[0.65rem] flex flex-col gap-[0.55rem]">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className={styles.button}
+                className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
                 disabled={
                   !runtime.mounted || runtime.busy || !runtime.hasRealAsset
                 }
@@ -645,7 +651,7 @@ export function StudioShell({
               </button>
               <button
                 type="button"
-                className={styles.button}
+                className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
                 disabled={!runtime.mounted || runtime.busy}
                 onClick={() => void runtime.capturePng()}
               >
@@ -653,7 +659,7 @@ export function StudioShell({
               </button>
               <button
                 type="button"
-                className={styles.button}
+                className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
                 disabled={runtime.busy || runtime.status === "loading"}
                 onClick={() => void runtime.remount()}
               >
@@ -661,12 +667,12 @@ export function StudioShell({
               </button>
             </div>
             {runtime.capturePreviewUrl ? (
-              <div className={styles.captureRow} style={{ padding: 0 }}>
+              <div className="flex items-start gap-4 p-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={runtime.capturePreviewUrl}
                   alt="Captured PNG"
-                  className={styles.captureThumb}
+                  className="h-auto w-24 rounded-[10px] border border-foreground/12 bg-white"
                 />
               </div>
             ) : null}
@@ -674,10 +680,14 @@ export function StudioShell({
         </details>
 
         {runtime.error ? (
-          <p className={styles.errorText}>{runtime.error}</p>
+          <p className="text-[0.8rem] leading-snug text-[#b91c1c]">
+            {runtime.error}
+          </p>
         ) : null}
         {persist.error ? (
-          <p className={styles.errorText}>Draft save: {persist.error}</p>
+          <p className="text-[0.8rem] leading-snug text-[#b91c1c]">
+            Draft save: {persist.error}
+          </p>
         ) : null}
       </div>
     </>

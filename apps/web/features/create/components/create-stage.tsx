@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import React from "react";
 
-import styles from "../styles.module.css";
+import { cn } from "@/lib/utils";
 
 /* ─────────────────────────────────────────────────────────
  * ANIMATION STORYBOARD — Create empty stage
@@ -82,9 +82,9 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
   const copy = copyFor(mode);
 
   return (
-    <div className={styles.createStage}>
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center p-4">
       <motion.div
-        className={styles.morphSurface}
+        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden border border-border-subtle bg-surface-elevated shadow-panel"
         layout
         initial={false}
         animate={{
@@ -97,7 +97,7 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
         {/* Ambient accent dot — layoutId continuity like Morph Surface */}
         <motion.div
           layoutId="create-surface-dot"
-          className={styles.morphDot}
+          className="absolute z-[2] size-[0.55rem] rounded-full bg-accent"
           transition={reduce ? { duration: 0 } : DOT.spring}
           style={{
             top: generating ? 18 : 22,
@@ -107,18 +107,18 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
 
         {!reduce && generating ? (
           <motion.div
-            className={styles.morphGlow}
+            className="pointer-events-none absolute -inset-[20%] z-0 bg-[radial-gradient(circle_at_30%_30%,color-mix(in_oklch,var(--accent)_18%,transparent),transparent_55%)]"
             aria-hidden
             animate={{ opacity: [0.35, 0.7, 0.35], scale: [1, 1.04, 1] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
         ) : null}
 
-        <div className={styles.morphBody}>
+        <div className="relative z-[1] flex h-full flex-col items-center justify-center gap-4 px-6 pt-8 pb-6 text-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={mode + (phase ?? "")}
-              className={styles.morphCopy}
+              className="flex max-w-[26ch] flex-col gap-[0.4rem]"
               initial={reduce ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduce ? undefined : { opacity: 0, y: -4 }}
@@ -128,8 +128,12 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
                 damping: 36,
               }}
             >
-              <p className={styles.morphTitle}>{copy.title}</p>
-              <p className={styles.morphHint}>{copy.hint}</p>
+              <p className="m-0 text-[0.95rem] font-semibold tracking-[-0.02em] text-ink">
+                {copy.title}
+              </p>
+              <p className="m-0 text-[0.82rem] leading-[1.45] text-muted-ink">
+                {copy.hint}
+              </p>
             </motion.div>
           </AnimatePresence>
 
@@ -137,7 +141,7 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
             {generating ? (
               <motion.ol
                 key="phases"
-                className={styles.phaseRail}
+                className="m-0 flex list-none items-center justify-center gap-3 p-0"
                 initial={reduce ? false : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduce ? undefined : { opacity: 0, y: 4 }}
@@ -155,17 +159,31 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
                   return (
                     <li
                       key={p.id}
-                      className={styles.phaseItem}
+                      className="group inline-flex items-center gap-[0.35rem]"
                       data-state={state}
                     >
-                      <span className={styles.phaseDot} aria-hidden>
+                      <span
+                        className={cn(
+                          "grid size-4 place-items-center rounded-full border-[1.5px] border-ink/16 bg-transparent text-background",
+                          "group-data-[state=done]:border-ink group-data-[state=done]:bg-ink",
+                          "group-data-[state=active]:border-accent",
+                        )}
+                        aria-hidden
+                      >
                         {state === "done" ? (
                           <CheckMini />
                         ) : state === "active" ? (
-                          <span className={styles.phasePulse} />
+                          <span className="block size-[0.35rem] animate-phase-pulse rounded-full bg-accent motion-reduce:animate-none" />
                         ) : null}
                       </span>
-                      <span className={styles.phaseLabel}>{p.label}</span>
+                      <span
+                        className={cn(
+                          "text-[0.72rem] font-[550] text-muted-ink",
+                          "group-data-[state=active]:text-ink group-data-[state=done]:text-ink",
+                        )}
+                      >
+                        {p.label}
+                      </span>
                     </li>
                   );
                 })}

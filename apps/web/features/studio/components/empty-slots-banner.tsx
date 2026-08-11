@@ -3,8 +3,6 @@
 import type { AssetSlot, AssetSlots } from "@repo/contracts";
 import type { ToolAssets } from "@repo/contracts";
 
-import styles from "../styles.module.css";
-
 export type EmptySlotsBannerProps = {
   slots: AssetSlots;
   assets: ToolAssets;
@@ -77,18 +75,22 @@ export function EmptySlotsBanner({
 
   return (
     <div
-      className={styles.emptySlotsBanner}
+      className="flex items-start justify-between gap-3 rounded-xl border border-[#d97706]/35 bg-[#f59e0b]/14 px-[0.85rem] py-3"
       role="status"
       data-empty-slots={emptyCount}
       data-primary-slot={primary.id}
     >
-      <div className={styles.emptySlotsBannerBody}>
-        <p className={styles.emptySlotsBannerTitle}>{headline}</p>
-        <p className={styles.emptySlotsBannerDetail}>{detail}</p>
+      <div className="min-w-0 flex-1">
+        <p className="m-0 text-[0.9rem] font-[650] tracking-tight text-[color-mix(in_srgb,#92400e_80%,var(--foreground))]">
+          {headline}
+        </p>
+        <p className="mt-1 mb-0 text-[0.78rem] leading-snug opacity-80">
+          {detail}
+        </p>
       </div>
       <button
         type="button"
-        className={styles.emptySlotsBannerCta}
+        className="shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-none bg-[#b45309] px-[0.7rem] py-[0.4rem] font-inherit text-[0.78rem] font-semibold text-[#fffbeb] hover:bg-[#92400e]"
         onClick={() => onFocusSlot?.(primary.id)}
       >
         {isLogoLike ? "Add logo" : `Add ${label}`}

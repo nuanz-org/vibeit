@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { publishTool } from "@/lib/api/tools";
+import { cn } from "@/lib/utils";
 
 import {
   buildEmbedSnippet,
@@ -10,7 +11,6 @@ import {
   copyTextToClipboard,
   publicToolPath,
 } from "../lib/share-links";
-import styles from "../styles.module.css";
 
 export type SharePanelProps = {
   /** tools.public_id — required for share URLs. */
@@ -33,6 +33,20 @@ export type SharePanelProps = {
 };
 
 type CopyKind = "url" | "embed" | null;
+
+const btn =
+  "inline-flex cursor-pointer items-center justify-center rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit no-underline box-border disabled:cursor-not-allowed disabled:opacity-45";
+const btnPrimary = "border-transparent bg-foreground text-background";
+const section = "flex flex-col gap-[0.55rem]";
+const sectionTitle =
+  "text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55";
+const muted = "text-sm opacity-55";
+const shareField = "flex flex-col gap-[0.35rem]";
+const fieldLabel = "block font-medium";
+const textInput =
+  "w-full min-w-0 rounded-lg border border-border-subtle bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
+const embedTextarea =
+  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-[family-name:var(--font-geist-mono),ui-monospace,monospace] text-[0.75rem] leading-snug text-inherit";
 
 /**
  * M7f — Studio share + embed + thin make-public.
@@ -111,25 +125,25 @@ export function SharePanel({
 
   if (fixtureMode || !publicId || !toolId) {
     return (
-      <section className={styles.section} aria-label="Share">
-        <h2 className={styles.sectionTitle}>Share</h2>
-        <p className={styles.muted}>Share is available on generated tools.</p>
+      <section className={section} aria-label="Share">
+        <h2 className={sectionTitle}>Share</h2>
+        <p className={muted}>Share is available on generated tools.</p>
       </section>
     );
   }
 
   return (
-    <section className={styles.section} aria-label="Share">
-      <h2 className={styles.sectionTitle}>Share</h2>
-      <p className={styles.muted}>
+    <section className={section} aria-label="Share">
+      <h2 className={sectionTitle}>Share</h2>
+      <p className={muted}>
         {isPublished ? "Public link is live." : "Private until you make it public."}
       </p>
 
-      <div className={styles.actions}>
+      <div className="flex flex-wrap gap-2">
         {!isPublished ? (
           <button
             type="button"
-            className={`${styles.button} ${styles.buttonPrimary}`}
+            className={cn(btn, btnPrimary)}
             disabled={publishing}
             onClick={() => void handleMakePublic()}
             title="Set status=published so /t/{publicId} works anonymously"
@@ -137,12 +151,12 @@ export function SharePanel({
             {publishing ? "Publishing…" : "Make public link"}
           </button>
         ) : (
-          <span className={`${styles.badge} ${styles.badgeReady}`}>
+          <span className="rounded-full bg-[#15803d]/14 px-[0.55rem] py-[0.2rem] text-xs font-semibold text-[#15803d]">
             Public
           </span>
         )}
         <a
-          className={styles.button}
+          className={btn}
           href={pathOnly}
           target="_blank"
           rel="noopener noreferrer"
@@ -156,21 +170,21 @@ export function SharePanel({
         </a>
       </div>
 
-      <div className={styles.shareField}>
-        <label className={styles.fieldLabelInline} htmlFor="studio-share-url">
+      <div className={shareField}>
+        <label className={fieldLabel} htmlFor="studio-share-url">
           Share URL
         </label>
-        <div className={styles.shareRow}>
+        <div className="flex items-stretch gap-2">
           <input
             id="studio-share-url"
-            className={styles.textInput}
+            className={cn(textInput, "flex-1")}
             readOnly
             value={shareUrl}
             onFocus={(e) => e.currentTarget.select()}
           />
           <button
             type="button"
-            className={styles.button}
+            className={btn}
             onClick={() => void handleCopyUrl()}
             disabled={!isPublished}
             title={
@@ -184,23 +198,23 @@ export function SharePanel({
         </div>
       </div>
 
-      <div className={styles.shareField}>
-        <label className={styles.fieldLabelInline} htmlFor="studio-embed">
+      <div className={shareField}>
+        <label className={fieldLabel} htmlFor="studio-embed">
           Embed snippet
         </label>
         <textarea
           id="studio-embed"
-          className={styles.embedTextarea}
+          className={embedTextarea}
           readOnly
           rows={4}
           value={embedSnippet}
           onFocus={(e) => e.currentTarget.select()}
           spellCheck={false}
         />
-        <div className={styles.actions}>
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className={styles.button}
+            className={btn}
             onClick={() => void handleCopyEmbed()}
             disabled={!isPublished}
             title={
@@ -214,7 +228,9 @@ export function SharePanel({
         </div>
       </div>
 
-      {error ? <p className={styles.errorText}>{error}</p> : null}
+      {error ? (
+        <p className="text-[0.8rem] leading-snug text-[#b91c1c]">{error}</p>
+      ) : null}
     </section>
   );
 }

@@ -28,24 +28,22 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
 
   if (q.isLoading) {
     return (
-      <main style={{ padding: "2rem", maxWidth: 480, margin: "0 auto" }}>
-        <p style={{ opacity: 0.7 }}>Loading tool…</p>
+      <main className="mx-auto max-w-[480px] p-8">
+        <p className="opacity-70">Loading tool…</p>
       </main>
     );
   }
 
   if (q.isError || !q.data) {
     return (
-      <main style={{ padding: "2rem", maxWidth: 480, margin: "0 auto" }}>
-        <h1 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>
-          Tool not found
-        </h1>
-        <p style={{ opacity: 0.7, marginBottom: "1rem", lineHeight: 1.5 }}>
+      <main className="mx-auto max-w-[480px] p-8">
+        <h1 className="mb-2 text-xl">Tool not found</h1>
+        <p className="mb-4 leading-relaxed opacity-70">
           {q.error instanceof Error
             ? q.error.message
             : "Could not load this tool."}
         </p>
-        <Link href="/create" style={{ textDecoration: "underline" }}>
+        <Link href="/create" className="underline">
           Back to Create
         </Link>
       </main>
@@ -60,18 +58,16 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
   // a generated tool and null sourceCode (that would fall back to default fixture).
   if (!versionCode?.trim()) {
     return (
-      <main style={{ padding: "2rem", maxWidth: 520, margin: "0 auto" }}>
-        <h1 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>
-          No runnable source
-        </h1>
-        <p style={{ opacity: 0.7, marginBottom: "1rem", lineHeight: 1.5 }}>
+      <main className="mx-auto max-w-[520px] p-8">
+        <h1 className="mb-2 text-xl">No runnable source</h1>
+        <p className="mb-4 leading-relaxed opacity-70">
           This tool has no version code yet, so the live preview cannot start.
           Create a new tool from vision, or open a completed generation.
         </p>
-        <p style={{ opacity: 0.6, marginBottom: "1rem", fontSize: "0.9rem" }}>
+        <p className="mb-4 text-[0.9rem] opacity-60">
           {tool.title || tool.id}
         </p>
-        <Link href="/create" style={{ textDecoration: "underline" }}>
+        <Link href="/create" className="underline">
           Back to Create
         </Link>
       </main>

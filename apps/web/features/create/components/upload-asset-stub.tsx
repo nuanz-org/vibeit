@@ -35,97 +35,51 @@ export function UploadAssetStub() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-    >
-      <label style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <label className="text-[0.9rem] font-medium">
         Kind
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as AssetKind)}
-          style={{
-            display: "block",
-            marginTop: "0.35rem",
-            padding: "0.45rem 0.6rem",
-            borderRadius: 8,
-            border:
-              "1px solid color-mix(in srgb, var(--foreground) 14%, transparent)",
-            background: "transparent",
-            color: "inherit",
-            font: "inherit",
-          }}
+          className="mt-1.5 block rounded-lg border border-foreground/14 bg-transparent px-2.5 py-[0.45rem] text-inherit [font:inherit]"
         >
           <option value="inspiration">inspiration</option>
           <option value="studio">studio</option>
         </select>
       </label>
 
-      <label style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+      <label className="text-[0.9rem] font-medium">
         Image (PNG / JPEG / WebP, max 10&nbsp;MB)
         <input
           type="file"
           accept="image/png,image/jpeg,image/webp"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          style={{ display: "block", marginTop: "0.35rem", font: "inherit" }}
+          className="mt-1.5 block [font:inherit]"
         />
       </label>
 
       <button
         type="submit"
         disabled={pending || !file}
-        style={{
-          alignSelf: "flex-start",
-          padding: "0.55rem 1rem",
-          borderRadius: 8,
-          border: "none",
-          background: "var(--foreground)",
-          color: "var(--background)",
-          fontWeight: 600,
-          cursor: pending || !file ? "not-allowed" : "pointer",
-          opacity: pending || !file ? 0.6 : 1,
-        }}
+        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Uploading…" : "Upload image"}
       </button>
 
       {error ? (
-        <p style={{ color: "crimson", fontSize: "0.875rem", margin: 0 }}>
-          {error}
-        </p>
+        <p className="m-0 text-sm text-[#dc143c]">{error}</p>
       ) : null}
 
       {result ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.5rem",
-            padding: "0.75rem",
-            borderRadius: 8,
-            background:
-              "color-mix(in srgb, var(--foreground) 6%, transparent)",
-          }}
-        >
+        <div className="flex flex-col gap-2 rounded-lg bg-foreground/[0.06] p-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={result.url}
             alt={result.originalFilename || "Uploaded asset"}
             crossOrigin="anonymous"
-            style={{
-              maxWidth: "100%",
-              maxHeight: 200,
-              objectFit: "contain",
-              borderRadius: 6,
-            }}
+            className="max-h-[200px] max-w-full rounded-md object-contain"
           />
-          <pre
-            style={{
-              margin: 0,
-              fontSize: "0.75rem",
-              overflow: "auto",
-            }}
-          >
+          <pre className="m-0 overflow-auto text-xs">
             {JSON.stringify(result, null, 2)}
           </pre>
         </div>

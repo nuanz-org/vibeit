@@ -120,11 +120,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
 .imgDark {
   display: none;
 }
@@ -142,7 +137,21 @@ a {
   }
 }
 
+/* Studio control accordion open animation (Brik-class param sections) */
+@keyframes control-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @theme inline {
+  --animate-control-section-in: control-section-in 0.18s
+    cubic-bezier(0.2, 0, 0, 1) both;
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -176,6 +185,16 @@ a {
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  /* Product surfaces (Brik-class craft tool) */
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-stage: var(--stage-bg);
+  --color-ink: var(--ink);
+  --color-muted-ink: var(--muted-ink);
+  --color-accent-ink: var(--accent-ink);
+  --color-border-subtle: var(--border-subtle);
+  --shadow-panel: var(--panel-shadow);
+  --radius-panel: var(--panel-radius);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -183,6 +202,19 @@ a {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --animate-phase-pulse: phasePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes phasePulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.25);
+  }
 }
 
 .dark {
@@ -235,4 +267,16 @@ a {
   html {
     @apply font-sans;
   }
+  /*
+   * Default links inherit body ink. Must live in @layer base so Tailwind
+   * color utilities (text-background, text-primary-foreground) win on
+   * solid primary CTAs — unlayered `a { color: inherit }` overrode them
+   * and produced black-on-black buttons.
+   */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
+
+

@@ -10,10 +10,10 @@ import {
   parseAspectFromSource,
   sizeFromAspect,
 } from "@/features/studio/lib/stage-size";
+import { cn } from "@/lib/utils";
 import { RuntimeHost } from "@/runtime";
 
 import { usePublicToolRuntime } from "../hooks/use-public-tool-runtime";
-import styles from "../styles.module.css";
 
 export type PublicToolShellProps = {
   publicId: string;
@@ -58,27 +58,35 @@ export function PublicToolShell({
     };
   }, [sourceCode]);
 
-  const statusClass =
-    runtime.status === "ready" || runtime.mounted
-      ? styles.badgeReady
-      : runtime.status === "error"
-        ? styles.badgeError
-        : styles.badgeLoading;
+  const statusReady = runtime.status === "ready" || runtime.mounted;
+  const statusError = runtime.status === "error";
 
   const label = title?.trim() || "Shared tool";
 
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <div className={styles.headerMeta}>
-          <Link href="/" className={styles.brand}>
+    <div className="flex min-h-screen flex-col">
+      <header className="flex items-center justify-between gap-4 border-b border-foreground/10 px-5 py-3.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <Link href="/" className="font-semibold tracking-tight text-inherit hover:opacity-80">
             Aiditr
           </Link>
-          <span className={styles.badge}>Public</span>
-          <span className={styles.title} title={label}>
+          <span className="rounded-full bg-foreground/8 px-2.5 py-0.5 text-xs font-semibold">
+            Public
+          </span>
+          <span
+            className="max-w-[min(40vw,280px)] truncate text-[0.95rem] font-semibold tracking-tight"
+            title={label}
+          >
             {label}
           </span>
-          <span className={`${styles.badge} ${statusClass}`}>
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+              statusReady && "bg-[#15803d]/14 text-[#15803d]",
+              statusError && "bg-[#b91c1c]/14 text-[#b91c1c]",
+              !statusReady && !statusError && "bg-[#a16207]/14 text-[#a16207]",
+            )}
+          >
             {runtime.mounted
               ? "live"
               : runtime.busy
@@ -88,33 +96,41 @@ export function PublicToolShell({
                   : runtime.status}
           </span>
         </div>
-        <div className={styles.headerMeta}>
-          <Link href="/gallery" className={styles.linkMuted}>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/gallery" className="text-[0.8rem] text-inherit underline opacity-65">
             Gallery
           </Link>
-          <Link href="/create" className={styles.linkMuted}>
+          <Link href="/create" className="text-[0.8rem] text-inherit underline opacity-65">
             Create your own
           </Link>
         </div>
       </header>
 
-      <div className={styles.body}>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pt-4 pb-6">
         {description?.trim() ? (
-          <p className={styles.desc}>{description.trim()}</p>
+          <p className="m-0 max-w-xl text-sm leading-snug opacity-65">
+            {description.trim()}
+          </p>
         ) : (
-          <p className={styles.muted}>
+          <p className="m-0 text-[0.8rem] opacity-55">
             Interactive preview · view only (no Studio controls on this page)
           </p>
         )}
 
         {runtime.error ? (
-          <div className={styles.errorBanner} role="alert">
+          <div
+            className="rounded-[10px] border border-[#b91c1c]/35 bg-[#b91c1c]/10 px-4 py-3 text-sm leading-snug text-[#b91c1c]"
+            role="alert"
+          >
             {runtime.error}
           </div>
         ) : null}
 
-        <div className={styles.previewStage}>
-          <div className={styles.frameWrap} style={frameStyle}>
+        <div className="flex min-h-[min(70vh,720px)] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/[0.03]">
+          <div
+            className="max-h-[min(70vh,720px)] max-w-full overflow-hidden rounded-xl bg-[#0a0a0a] shadow-[0_12px_40px_color-mix(in_srgb,#000_18%,transparent)] [&_iframe]:block [&_iframe]:h-full [&_iframe]:w-full [&_iframe]:border-0"
+            style={frameStyle}
+          >
             <RuntimeHost
               ref={runtime.hostRef}
               onReady={(msg) => {
@@ -126,7 +142,7 @@ export function PublicToolShell({
           </div>
         </div>
 
-        <p className={styles.muted}>
+        <p className="m-0 text-[0.8rem] opacity-55">
           publicId <code>{publicId}</code>
         </p>
       </div>

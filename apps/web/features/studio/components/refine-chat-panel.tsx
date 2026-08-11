@@ -15,8 +15,6 @@ import { CreateJobApiError } from "@/lib/api/jobs";
 import { pollRefineJob, startRefineJob } from "@/lib/api/refine";
 import { getTool, type ToolResponse } from "@/lib/api/tools";
 
-import styles from "../styles.module.css";
-
 export type RefineAppliedPayload = {
   tool: ToolResponse;
   previous: {
@@ -138,18 +136,25 @@ export function RefineChatPanel({
   if (!consoleLayout) {
     if (!toolId) {
       return (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Refine</h2>
-          <p className={styles.muted}>Available on generated tools.</p>
+        <section className="flex flex-col gap-[0.55rem]">
+          <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
+            Refine
+          </h2>
+          <p className="text-sm opacity-55">Available on generated tools.</p>
         </section>
       );
     }
 
     return (
-      <section className={styles.section} aria-label="Chat refine">
-        <h2 className={styles.sectionTitle}>Refine</h2>
+      <section
+        className="flex flex-col gap-[0.55rem]"
+        aria-label="Chat refine"
+      >
+        <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
+          Refine
+        </h2>
         <textarea
-          className={styles.refineInput}
+          className="mt-2 min-h-[4.5rem] w-full resize-y rounded-[10px] border border-foreground/14 bg-foreground/[0.04] px-3 py-[0.65rem] font-inherit text-[0.85rem] leading-snug text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:cursor-not-allowed disabled:opacity-55"
           rows={3}
           value={message}
           disabled={!enabled || busy}
@@ -162,10 +167,10 @@ export function RefineChatPanel({
             }
           }}
         />
-        <div className={styles.refineActions}>
+        <div className="mt-[0.55rem] flex flex-wrap items-center gap-[0.65rem]">
           <button
             type="button"
-            className={styles.button}
+            className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
             disabled={!enabled || busy || !message.trim()}
             onClick={() => void submit()}
           >
@@ -174,7 +179,7 @@ export function RefineChatPanel({
           {canRollback && onRollback ? (
             <button
               type="button"
-              className={styles.linkButton}
+              className="cursor-pointer border-none bg-transparent font-inherit text-[0.8rem] text-inherit underline opacity-65 disabled:cursor-not-allowed disabled:opacity-35"
               disabled={busy}
               onClick={onRollback}
             >
@@ -183,11 +188,11 @@ export function RefineChatPanel({
           ) : null}
         </div>
         {statusLine ? (
-          <p className={styles.muted} style={{ marginTop: 8 }}>
-            {statusLine}
-          </p>
+          <p className="mt-2 text-sm opacity-55">{statusLine}</p>
         ) : null}
-        {error ? <p className={styles.errorText}>{error}</p> : null}
+        {error ? (
+          <p className="text-[0.8rem] leading-snug text-[#b91c1c]">{error}</p>
+        ) : null}
       </section>
     );
   }

@@ -26,9 +26,9 @@ export default async function GalleryDetailPage({ params }: PageProps) {
 
   if (!id) {
     return (
-      <main style={{ padding: "2.5rem 1.5rem", maxWidth: 420, margin: "0 auto" }}>
-        <h1 style={{ fontSize: "1.25rem" }}>Not found</h1>
-        <p style={{ opacity: 0.7 }}>Missing public id.</p>
+      <main className="mx-auto max-w-[420px] px-6 py-10">
+        <h1 className="text-xl">Not found</h1>
+        <p className="opacity-70">Missing public id.</p>
       </main>
     );
   }

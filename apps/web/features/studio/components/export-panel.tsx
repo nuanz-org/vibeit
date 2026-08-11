@@ -1,8 +1,7 @@
 "use client";
 
 import { RECORD_VIDEO_DEFAULT_SECONDS } from "@/runtime";
-
-import styles from "../styles.module.css";
+import { cn } from "@/lib/utils";
 
 export type ExportPanelProps = {
   /** Whether the runtime host has a mounted live tool. */
@@ -46,6 +45,10 @@ export type ExportPanelProps = {
   lastThumbnailAt?: string | null;
 };
 
+const btn =
+  "cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45";
+const btnPrimary = "border-transparent bg-foreground text-background";
+
 /**
  * M7a–M7c export + M8c gallery thumbnail capture.
  */
@@ -76,12 +79,14 @@ export function ExportPanel({
   const sequencing = sequenceProgress != null;
 
   return (
-    <section className={styles.section} aria-label="Export">
-      <h2 className={styles.sectionTitle}>Export</h2>
-      <div className={styles.actions}>
+    <section className="flex flex-col gap-[0.55rem]" aria-label="Export">
+      <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
+        Export
+      </h2>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={`${styles.button} ${styles.buttonPrimary}`}
+          className={cn(btn, btnPrimary)}
           disabled={disabled}
           onClick={() => void onDownloadPng(filenameBase)}
           title={
@@ -96,7 +101,7 @@ export function ExportPanel({
         </button>
         <button
           type="button"
-          className={styles.button}
+          className={btn}
           disabled={disabled}
           onClick={() =>
             void onDownloadVideo(filenameBase, RECORD_VIDEO_DEFAULT_SECONDS)
@@ -117,7 +122,7 @@ export function ExportPanel({
         </button>
         <button
           type="button"
-          className={styles.button}
+          className={btn}
           disabled={disabled}
           onClick={() =>
             void onDownloadPngSequence(
@@ -138,7 +143,7 @@ export function ExportPanel({
         {onSaveGalleryThumbnail ? (
           <button
             type="button"
-            className={styles.button}
+            className={btn}
             disabled={disabled}
             onClick={() => void onSaveGalleryThumbnail()}
             title={
@@ -152,17 +157,17 @@ export function ExportPanel({
         ) : null}
       </div>
       {lastThumbnailAt || lastThumbnailUrl ? (
-        <div className={styles.thumbPreview}>
+        <div className="mt-[0.65rem] flex items-center gap-3">
           {lastThumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={lastThumbnailUrl}
               alt="Gallery thumbnail"
-              className={styles.thumbImage}
+              className="h-[72px] w-[72px] rounded-lg border border-foreground/12 bg-foreground/[0.04] object-cover"
               crossOrigin="anonymous"
             />
           ) : null}
-          <p className={styles.muted}>
+          <p className="text-sm opacity-55">
             Gallery thumbnail
             {lastThumbnailAt
               ? ` · ${new Date(lastThumbnailAt).toLocaleTimeString()}`
@@ -171,7 +176,7 @@ export function ExportPanel({
         </div>
       ) : null}
       {lastAt || lastVideoAt || lastSequenceAt ? (
-        <p className={styles.muted}>
+        <p className="text-sm opacity-55">
           {lastAt
             ? `PNG ${new Date(lastAt).toLocaleTimeString()}`
             : null}

@@ -1,7 +1,5 @@
 "use client";
 
-import styles from "../styles.module.css";
-
 export type ViewSourcePanelProps = {
   toolId: string;
   target: string;
@@ -40,26 +38,28 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
 // Runtime preview uses the sandboxed iframe host (target: ${target}).`;
 
   return (
-    <div className={styles.sourcePanel}>
-      <div className={styles.sourceHeader}>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          className={styles.sourceToggle}
+          className="cursor-pointer self-start border-none bg-transparent font-inherit text-[0.8rem] font-medium underline opacity-70"
           onClick={onToggle}
           aria-expanded={open}
         >
           {open ? "Hide source" : "View source"}
         </button>
-        <span className={styles.sourcePolicy}>View only · no download</span>
+        <span className="text-[0.7rem] font-semibold tracking-[0.03em] uppercase opacity-50">
+          View only · no download
+        </span>
       </div>
       {open ? (
         <>
-          <p className={styles.sourceHint}>
+          <p className="m-0 text-[0.75rem] leading-snug opacity-55">
             Source is visible in Studio for the owner only. There is no download
             control and no public source API.
           </p>
           <pre
-            className={styles.sourcePre}
+            className="m-0 max-h-[280px] overflow-auto rounded-[10px] bg-foreground/[0.06] p-3 text-[0.7rem] leading-snug whitespace-pre-wrap text-inherit select-text"
             data-view-only="true"
             data-download="false"
             // Prevent accidental browser save-as of selected text as primary UX;

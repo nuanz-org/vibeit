@@ -9,7 +9,6 @@ import {
   sizeFromCustom,
   sizeFromPreset,
 } from "../lib/stage-size";
-import styles from "../styles.module.css";
 
 export type StageSizeBarProps = {
   value: StageSize;
@@ -70,12 +69,18 @@ export function StageSizeBar({
   );
 
   return (
-    <div className={styles.stageSizeBar} role="group" aria-label="Stage size">
-      <label className={styles.stageSizeField}>
-        <span className={styles.stageSizeLabel}>W</span>
+    <div
+      className="flex shrink-0 flex-wrap items-center justify-center gap-x-[0.55rem] gap-y-[0.45rem] rounded-full border border-border-subtle bg-surface-elevated px-[0.55rem] py-[0.4rem] shadow-panel"
+      role="group"
+      aria-label="Stage size"
+    >
+      <label className="inline-flex items-center gap-[0.3rem]">
+        <span className="text-[0.68rem] font-[650] tracking-[0.04em] uppercase opacity-55">
+          W
+        </span>
         <input
           type="number"
-          className={styles.stageSizeInput}
+          className="w-[4.25rem] rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50"
           value={wDraft}
           min={64}
           max={4096}
@@ -90,14 +95,16 @@ export function StageSizeBar({
             }
           }}
         />
-        <span className={styles.stageSizeUnit}>px</span>
+        <span className="text-[0.68rem] opacity-45">px</span>
       </label>
 
-      <label className={styles.stageSizeField}>
-        <span className={styles.stageSizeLabel}>H</span>
+      <label className="inline-flex items-center gap-[0.3rem]">
+        <span className="text-[0.68rem] font-[650] tracking-[0.04em] uppercase opacity-55">
+          H
+        </span>
         <input
           type="number"
-          className={styles.stageSizeInput}
+          className="w-[4.25rem] rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50"
           value={hDraft}
           min={64}
           max={4096}
@@ -112,11 +119,11 @@ export function StageSizeBar({
             }
           }}
         />
-        <span className={styles.stageSizeUnit}>px</span>
+        <span className="text-[0.68rem] opacity-45">px</span>
       </label>
 
       <select
-        className={styles.stageSizeSelect}
+        className="min-w-[7.5rem] cursor-pointer rounded-lg border border-foreground/14 bg-foreground/[0.04] px-2 py-[0.32rem] text-[0.78rem] font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-50"
         value={value.preset}
         disabled={disabled}
         aria-label="Stage size preset"

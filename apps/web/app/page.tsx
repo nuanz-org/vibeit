@@ -4,30 +4,13 @@ import { UserMenu } from "@/features/auth/components/user-menu";
 
 export default function Home() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1rem 1.5rem",
-          borderBottom:
-            "1px solid color-mix(in srgb, var(--foreground) 10%, transparent)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ fontWeight: 700, letterSpacing: "-0.03em" }}>
-            Aiditr
-          </span>
+    <div className="flex min-h-screen flex-col">
+      <header className="flex items-center justify-between border-b border-foreground/10 px-6 py-4">
+        <div className="flex items-center gap-4">
+          <span className="font-bold tracking-tight">Aiditr</span>
           <Link
             href="/gallery"
-            style={{ fontSize: "0.9rem", fontWeight: 500, opacity: 0.75 }}
+            className="text-[0.9rem] font-medium opacity-75"
           >
             Gallery
           </Link>
@@ -35,84 +18,30 @@ export default function Home() {
         <UserMenu />
       </header>
 
-      <main
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2rem 1.5rem",
-          textAlign: "center",
-          gap: "1rem",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "clamp(2rem, 5vw, 3rem)",
-            letterSpacing: "-0.04em",
-            maxWidth: 640,
-            lineHeight: 1.15,
-          }}
-        >
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-8 text-center">
+        <h1 className="max-w-[640px] text-[clamp(2rem,5vw,3rem)] leading-[1.15] tracking-tighter">
           Turn a vision into a living design tool
         </h1>
-        <p
-          style={{
-            maxWidth: 480,
-            lineHeight: 1.55,
-            opacity: 0.7,
-            fontSize: "1.05rem",
-          }}
-        >
+        <p className="max-w-[480px] text-[1.05rem] leading-relaxed opacity-70">
           Describe what you want to make. Aiditr generates a freeform interactive
           tool you can control, export, share, and publish.
         </p>
-        <div
-          style={{
-            display: "flex",
-            gap: "0.75rem",
-            marginTop: "0.75rem",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
+        <div className="mt-3 flex flex-wrap justify-center gap-3">
           <Link
             href="/create"
-            style={{
-              padding: "0.7rem 1.15rem",
-              borderRadius: 10,
-              background: "var(--foreground)",
-              color: "var(--background)",
-              fontWeight: 600,
-              fontSize: "0.95rem",
-            }}
+            className="rounded-[10px] bg-foreground px-[1.15rem] py-[0.7rem] text-[0.95rem] font-semibold text-background"
           >
             Start creating
           </Link>
           <Link
             href="/gallery"
-            style={{
-              padding: "0.7rem 1.15rem",
-              borderRadius: 10,
-              border:
-                "1px solid color-mix(in srgb, var(--foreground) 18%, transparent)",
-              fontWeight: 500,
-              fontSize: "0.95rem",
-            }}
+            className="rounded-[10px] border border-foreground/18 px-[1.15rem] py-[0.7rem] text-[0.95rem] font-medium"
           >
             Browse gallery
           </Link>
           <Link
             href="/login"
-            style={{
-              padding: "0.7rem 1.15rem",
-              borderRadius: 10,
-              border:
-                "1px solid color-mix(in srgb, var(--foreground) 18%, transparent)",
-              fontWeight: 500,
-              fontSize: "0.95rem",
-            }}
+            className="rounded-[10px] border border-foreground/18 px-[1.15rem] py-[0.7rem] text-[0.95rem] font-medium"
           >
             Sign in
           </Link>

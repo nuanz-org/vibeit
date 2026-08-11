@@ -10,8 +10,7 @@ import {
   type PublishGateFailure,
   type ToolResponse,
 } from "@/lib/api/tools";
-
-import styles from "../styles.module.css";
+import { cn } from "@/lib/utils";
 
 export type PublishPanelProps = {
   toolId: string | null | undefined;
@@ -43,6 +42,22 @@ function parseTags(raw: string): string[] {
     .map((t) => t.trim())
     .filter(Boolean);
 }
+
+const btn =
+  "inline-flex cursor-pointer items-center justify-center rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit no-underline box-border disabled:cursor-not-allowed disabled:opacity-45";
+const btnPrimary = "border-transparent bg-foreground text-background";
+const section = "flex flex-col gap-[0.55rem]";
+const sectionTitle =
+  "text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55";
+const muted = "text-sm opacity-55";
+const shareField = "flex flex-col gap-[0.35rem]";
+const fieldLabel = "block font-medium";
+const textInput =
+  "w-full rounded-lg border border-border-subtle bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
+const embedTextarea =
+  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-[family-name:var(--font-geist-mono),ui-monospace,monospace] text-[0.75rem] leading-snug text-inherit";
+const badge =
+  "rounded-full bg-foreground/8 px-[0.55rem] py-[0.2rem] text-xs font-semibold";
 
 /**
  * M8f — Studio gallery publish panel (metadata + gates + thumb + unpublish).
@@ -208,9 +223,9 @@ export function PublishPanel({
 
   if (fixtureMode || !toolId || !publicId) {
     return (
-      <section className={styles.section} aria-label="Publish">
-        <h2 className={styles.sectionTitle}>Publish</h2>
-        <p className={styles.muted}>Gallery publish is for generated tools.</p>
+      <section className={section} aria-label="Publish">
+        <h2 className={sectionTitle}>Publish</h2>
+        <p className={muted}>Gallery publish is for generated tools.</p>
       </section>
     );
   }
@@ -219,28 +234,28 @@ export function PublishPanel({
   const publicHref = `/t/${encodeURIComponent(publicId)}`;
 
   return (
-    <section className={styles.section} aria-label="Publish to gallery">
-      <h2 className={styles.sectionTitle}>Publish</h2>
+    <section className={section} aria-label="Publish to gallery">
+      <h2 className={sectionTitle}>Publish</h2>
 
-      <div className={styles.actions} style={{ marginBottom: "0.75rem" }}>
+      <div className="mb-3 flex flex-wrap gap-2">
         {inGallery ? (
-          <span className={`${styles.badge} ${styles.badgeReady}`}>
+          <span className={cn(badge, "bg-[#15803d]/14 text-[#15803d]")}>
             In gallery
           </span>
         ) : isPublished ? (
-          <span className={styles.badge}>Public link · not in gallery</span>
+          <span className={badge}>Public link · not in gallery</span>
         ) : (
-          <span className={styles.badge}>Draft · private</span>
+          <span className={badge}>Draft · private</span>
         )}
       </div>
 
-      <div className={styles.shareField}>
-        <label className={styles.fieldLabelInline} htmlFor="publish-title">
+      <div className={shareField}>
+        <label className={fieldLabel} htmlFor="publish-title">
           Title
         </label>
         <input
           id="publish-title"
-          className={styles.textInput}
+          className={textInput}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Name shown in the gallery"
@@ -248,13 +263,13 @@ export function PublishPanel({
         />
       </div>
 
-      <div className={styles.shareField}>
-        <label className={styles.fieldLabelInline} htmlFor="publish-desc">
+      <div className={shareField}>
+        <label className={fieldLabel} htmlFor="publish-desc">
           Description
         </label>
         <textarea
           id="publish-desc"
-          className={styles.embedTextarea}
+          className={embedTextarea}
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -263,25 +278,25 @@ export function PublishPanel({
         />
       </div>
 
-      <div className={styles.shareField}>
-        <label className={styles.fieldLabelInline} htmlFor="publish-tags">
+      <div className={shareField}>
+        <label className={fieldLabel} htmlFor="publish-tags">
           Tags
         </label>
         <input
           id="publish-tags"
-          className={styles.textInput}
+          className={textInput}
           value={tagsRaw}
           onChange={(e) => setTagsRaw(e.target.value)}
           placeholder="motion, brand, canvas (comma-separated)"
         />
       </div>
 
-      <div className={styles.shareField}>
-        <span className={styles.fieldLabelInline}>Thumbnail</span>
-        <div className={styles.actions}>
+      <div className={shareField}>
+        <span className={fieldLabel}>Thumbnail</span>
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className={styles.button}
+            className={btn}
             disabled={!mounted || busy || capturing || !onCaptureThumbnail}
             onClick={() => void handleCapture()}
             title="Capture live frame and upload as gallery thumbnail"
@@ -290,38 +305,38 @@ export function PublishPanel({
           </button>
         </div>
         {thumbUrl ? (
-          <div className={styles.thumbPreview}>
+          <div className="mt-[0.65rem] flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={thumbUrl}
               alt="Gallery thumbnail"
-              className={styles.thumbImage}
+              className="h-[72px] w-[72px] rounded-lg border border-foreground/12 bg-foreground/[0.04] object-cover"
               crossOrigin="anonymous"
             />
-            <p className={styles.muted}>Ready for gallery</p>
+            <p className={muted}>Ready for gallery</p>
           </div>
         ) : (
-          <p className={styles.muted}>
+          <p className={muted}>
             Capture a frame from the live preview before publishing.
           </p>
         )}
       </div>
 
-      <div className={styles.shareField}>
-        <span className={styles.fieldLabelInline}>Checklist</span>
-        <ul className={styles.publishChecklist}>
+      <div className={shareField}>
+        <span className={fieldLabel}>Checklist</span>
+        <ul className="mt-[0.35rem] mb-0 flex list-none flex-col gap-1 p-0">
           {checklist.map((item) => (
-            <li key={item.label} className={styles.muted}>
+            <li key={item.label} className={muted}>
               {item.ok ? "✓" : "○"} {item.label}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className={styles.actions}>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={`${styles.button} ${styles.buttonPrimary}`}
+          className={cn(btn, btnPrimary)}
           disabled={!canPublish || publishing || unpublishing}
           onClick={() => void handlePublishGallery()}
           title="Run gates and list this tool in the public gallery"
@@ -335,7 +350,7 @@ export function PublishPanel({
         {(isPublished || inGallery) && (
           <button
             type="button"
-            className={styles.button}
+            className={btn}
             disabled={publishing || unpublishing}
             onClick={() => void handleUnpublish()}
             title="Full takedown: hide public link and remove from gallery"
@@ -344,30 +359,32 @@ export function PublishPanel({
           </button>
         )}
         {inGallery ? (
-          <Link href={galleryHref} className={styles.button} target="_blank">
+          <Link href={galleryHref} className={btn} target="_blank">
             View in gallery
           </Link>
         ) : null}
         {isPublished ? (
-          <Link href={publicHref} className={styles.button} target="_blank">
+          <Link href={publicHref} className={btn} target="_blank">
             Open public page
           </Link>
         ) : null}
       </div>
 
       {gateFailures.length > 0 ? (
-        <ul className={styles.publishGateList}>
+        <ul className="mt-[0.65rem] mb-0 flex list-none flex-col gap-[0.35rem] p-0">
           {gateFailures.map((g) => (
-            <li key={g.code} className={styles.errorText}>
+            <li key={g.code} className="text-[0.8rem] leading-snug text-[#b91c1c]">
               <strong>{g.code}</strong>: {g.message}
             </li>
           ))}
         </ul>
       ) : null}
       {error && gateFailures.length === 0 ? (
-        <p className={styles.errorText}>{error}</p>
+        <p className="text-[0.8rem] leading-snug text-[#b91c1c]">{error}</p>
       ) : null}
-      {successMsg ? <p className={styles.okText}>{successMsg}</p> : null}
+      {successMsg ? (
+        <p className="text-[0.8rem] leading-snug text-[#15803d]">{successMsg}</p>
+      ) : null}
     </section>
   );
 }

@@ -5,7 +5,26 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
-import styles from "../styles.module.css";
+
+const card =
+  "w-full max-w-[400px] rounded-xl border border-foreground/12 bg-[color-mix(in_srgb,var(--background)_92%,var(--foreground)_4%)] p-8 shadow-sm";
+const brand =
+  "mb-2 text-[0.8rem] font-semibold tracking-[0.06em] text-foreground/55 uppercase";
+const title = "mb-1.5 text-2xl font-semibold tracking-tight";
+const subtitle = "mb-6 text-[0.9rem] leading-snug text-foreground/65";
+const form = "flex flex-col gap-4";
+const field = "flex flex-col gap-1.5";
+const label = "text-[0.85rem] font-medium";
+const input =
+  "w-full appearance-none rounded-lg border border-foreground/18 bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 focus:border-foreground/45 focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--foreground)_8%,transparent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
+const submit =
+  "mt-1 cursor-pointer rounded-lg border-none bg-foreground px-4 py-2.5 text-[0.95rem] font-semibold text-background transition-[opacity,transform] duration-100 hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-55";
+const error =
+  "rounded-lg border border-[#c43c3c]/25 bg-[#c43c3c]/10 px-3 py-2.5 text-sm leading-snug text-[#c43c3c] dark:text-[#f07178]";
+const footer = "mt-5 text-center text-sm text-foreground/65";
+const link = "font-medium text-foreground underline underline-offset-2 hover:opacity-80";
+const mutedLink =
+  "text-[0.8rem] text-foreground/60 underline underline-offset-2 hover:text-foreground";
 
 export function SignInForm() {
   const router = useRouter();
@@ -14,12 +33,12 @@ export function SignInForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
+    setErrorMsg(null);
     setLoading(true);
 
     const { error: signInError } = await authClient.signIn.email({
@@ -31,10 +50,10 @@ export function SignInForm() {
 
     if (signInError) {
       if (signInError.status === 403) {
-        setError("Please verify your email address before signing in.");
+        setErrorMsg("Please verify your email address before signing in.");
         return;
       }
-      setError(signInError.message || "Could not sign in. Check your credentials.");
+      setErrorMsg(signInError.message || "Could not sign in. Check your credentials.");
       return;
     }
 
@@ -43,23 +62,27 @@ export function SignInForm() {
   }
 
   return (
-    <div className={styles.card}>
-      <p className={styles.brand}>Aiditr</p>
-      <h1 className={styles.title}>Sign in</h1>
-      <p className={styles.subtitle}>
+    <div className={card}>
+      <p className={brand}>Aiditr</p>
+      <h1 className={title}>Sign in</h1>
+      <p className={subtitle}>
         Use your email and password to continue to Create.
       </p>
 
-      <form className={styles.form} onSubmit={onSubmit}>
-        {error ? <div className={styles.error} role="alert">{error}</div> : null}
+      <form className={form} onSubmit={onSubmit}>
+        {errorMsg ? (
+          <div className={error} role="alert">
+            {errorMsg}
+          </div>
+        ) : null}
 
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="email">
+        <div className={field}>
+          <label className={label} htmlFor="email">
             Email
           </label>
           <input
             id="email"
-            className={styles.input}
+            className={input}
             type="email"
             autoComplete="email"
             required
@@ -69,18 +92,18 @@ export function SignInForm() {
           />
         </div>
 
-        <div className={styles.field}>
-          <div className={styles.rowBetween}>
-            <label className={styles.label} htmlFor="password">
+        <div className={field}>
+          <div className="flex items-center justify-between gap-2">
+            <label className={label} htmlFor="password">
               Password
             </label>
-            <Link className={styles.mutedLink} href="/forgot-password">
+            <Link className={mutedLink} href="/forgot-password">
               Forgot password?
             </Link>
           </div>
           <input
             id="password"
-            className={styles.input}
+            className={input}
             type="password"
             autoComplete="current-password"
             required
@@ -91,14 +114,14 @@ export function SignInForm() {
           />
         </div>
 
-        <button className={styles.submit} type="submit" disabled={loading}>
+        <button className={submit} type="submit" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <p className={styles.footer}>
+      <p className={footer}>
         No account?{" "}
-        <Link className={styles.link} href="/signup">
+        <Link className={link} href="/signup">
           Create one
         </Link>
       </p>

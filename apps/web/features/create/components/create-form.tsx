@@ -25,8 +25,7 @@ import {
   fetchLlmModels,
   type LlmModelOption,
 } from "@/lib/api/llm";
-
-import styles from "../styles.module.css";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_VISION =
   "A kinetic 9:16 social frame with a bold headline, purple accent pulse, and a logo slot";
@@ -206,12 +205,12 @@ export function CreateForm() {
     quotaBlocked ||
     (quota != null && quota.createsUsed >= quota.createsLimit);
   return (
-    <div className={styles.form}>
-      <form onSubmit={(e) => void onSubmit(e)} className={styles.form}>
-        <label className={styles.label}>
+    <div className="flex flex-col gap-4">
+      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5 text-[0.9rem] font-medium">
           Vision
           <textarea
-            className={styles.textarea}
+            className="min-h-[120px] w-full resize-y rounded-[10px] border border-foreground/14 bg-transparent px-[0.85rem] py-3 font-[inherit] leading-[1.45] text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-foreground/25"
             value={visionText}
             onChange={(e) => setVisionText(e.target.value)}
             rows={5}
@@ -221,10 +220,10 @@ export function CreateForm() {
           />
         </label>
 
-        <label className={styles.label}>
+        <label className="flex flex-col gap-1.5 text-[0.9rem] font-medium">
           Model
           <select
-            className={styles.select}
+            className="w-full max-w-[28rem] rounded-[10px] border border-foreground/14 bg-transparent px-3 py-[0.6rem] font-[inherit] text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-foreground/25 disabled:cursor-not-allowed disabled:opacity-55"
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
             disabled={pending || generating || modelOptions.length === 0}
@@ -240,19 +239,21 @@ export function CreateForm() {
               ))
             )}
           </select>
-          <span className={styles.muted}>
+          <span className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
             OpenRouter model for plan + codegen + repair. Options come from
             server config (LLM_MODELS_ALLOWED).
           </span>
           {modelsError ? (
-            <span className={styles.error}>{modelsError}</span>
+            <span className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
+              {modelsError}
+            </span>
           ) : null}
         </label>
 
-        <div className={styles.label}>
+        <div className="flex flex-col gap-1.5 text-[0.9rem] font-medium">
           <span>Inspiration images (optional)</span>
           <input
-            className={styles.fileInput}
+            className="max-w-full font-[inherit] text-sm"
             type="file"
             accept="image/png,image/jpeg,image/webp"
             multiple
@@ -275,19 +276,27 @@ export function CreateForm() {
             }}
           />
           {inspirationPreviews.length > 0 ? (
-            <ul className={styles.inspirationTray} aria-label="Inspiration images">
+            <ul
+              className="m-0 flex list-none flex-wrap gap-[0.45rem] p-0"
+              aria-label="Inspiration images"
+            >
               {inspirationPreviews.map((p, index) => (
-                <li key={p.key} className={styles.inspirationTrayItem}>
+                <li
+                  key={p.key}
+                  className="relative size-14 shrink-0 overflow-hidden rounded-[10px] border border-foreground/12"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={p.url}
                     alt={p.name}
-                    className={styles.inspirationThumb}
+                    className="block size-full object-cover"
                   />
-                  <span className={styles.inspirationIndex}>{index + 1}</span>
+                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-bold leading-[1.1rem] text-white">
+                    {index + 1}
+                  </span>
                   <button
                     type="button"
-                    className={styles.inspirationRemove}
+                    className="absolute top-0.5 right-0.5 grid size-[1.15rem] cursor-pointer place-items-center rounded-full border-none bg-black/55 p-0 text-[0.85rem] leading-none text-white disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={pending || generating || isAwaitingClarify}
                     aria-label={`Remove ${p.name}`}
                     onClick={() =>
@@ -302,7 +311,7 @@ export function CreateForm() {
               ))}
             </ul>
           ) : null}
-          <span className={styles.muted}>
+          <span className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
             Up to {MAX_INSPIRATION} PNG/JPEG/WebP — multi-select or add more.
             Style is interpreted only — never copied 1:1.
             {inspirationFiles.length
@@ -311,16 +320,17 @@ export function CreateForm() {
           </span>
         </div>
 
-        <label className={styles.checkboxRow}>
+        <label className="flex cursor-pointer items-start gap-[0.55rem] text-[0.9rem] font-medium leading-[1.4]">
           <input
             type="checkbox"
+            className="mt-[0.2rem] size-4 shrink-0"
             checked={planMode}
             disabled={pending || generating || isAwaitingClarify || Boolean(jobId)}
             onChange={(e) => setPlanMode(e.target.checked)}
           />
           <span>
             Plan with me
-            <span className={styles.muted}>
+            <span className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
               {" "}
               — short clarify questions first; “All options” becomes Studio enum
               controls
@@ -328,20 +338,21 @@ export function CreateForm() {
           </span>
         </label>
 
-        {quota ? (          <p className={styles.quota}>
+        {quota ? (
+          <p className="text-[0.8rem] opacity-70">
             Creates today: {quota.createsUsed}/{quota.createsLimit}
             {quota.resetsAt ? ` · resets ${quota.resetsAt}` : null}
           </p>
         ) : (
-          <p className={styles.muted}>
+          <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
             One create uses your daily generation quota (default 10/day).
           </p>
         )}
 
-        <div className={styles.actions}>
+        <div className="flex flex-wrap items-center gap-[0.65rem]">
           <button
             type="submit"
-            className={styles.button}
+            className="cursor-pointer rounded-[10px] border-none bg-foreground px-[1.1rem] py-[0.6rem] font-[inherit] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
             disabled={
               pending ||
               generating ||
@@ -362,7 +373,9 @@ export function CreateForm() {
           {jobId ? (
             <button
               type="button"
-              className={`${styles.button} ${styles.buttonGhost}`}
+              className={cn(
+                "cursor-pointer rounded-[10px] border border-foreground/16 bg-transparent px-[1.1rem] py-[0.6rem] font-[inherit] font-semibold text-inherit disabled:cursor-not-allowed disabled:opacity-50",
+              )}
               onClick={reset}
             >
               New vision
@@ -371,7 +384,9 @@ export function CreateForm() {
         </div>
       </form>
 
-      {submitError ? <p className={styles.error}>{submitError}</p> : null}
+      {submitError ? (
+        <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">{submitError}</p>
+      ) : null}
 
       {jobId && !isAwaitingClarify ? (
         <JobProgress status={status} jobId={jobId} />
@@ -385,7 +400,8 @@ export function CreateForm() {
         />
       ) : null}
 
-      {jobQuery.isError ? (        <p className={styles.error}>
+      {jobQuery.isError ? (
+        <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
           {jobQuery.error instanceof Error
             ? jobQuery.error.message
             : "Failed to poll job status"}
@@ -393,11 +409,13 @@ export function CreateForm() {
       ) : null}
 
       {isSuccess && resultQuery.isLoading ? (
-        <p className={styles.muted}>Opening Studio…</p>
+        <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
+          Opening Studio…
+        </p>
       ) : null}
 
       {isSuccess && resultQuery.isError ? (
-        <p className={styles.error}>
+        <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
           Job succeeded but result could not be loaded.{" "}
           {resultQuery.error instanceof Error
             ? resultQuery.error.message
@@ -407,15 +425,15 @@ export function CreateForm() {
 
       {isFailed ? (
         <div>
-          <p className={styles.error}>
+          <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
             {status?.errorMessage || "Generation failed"}
           </p>
           {salvageToolId ? (
-            <p className={styles.muted}>
+            <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
               A salvage draft was saved.{" "}
               <Link
                 href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                className={styles.link}
+                className="font-medium text-inherit underline"
               >
                 Open draft in Studio
               </Link>

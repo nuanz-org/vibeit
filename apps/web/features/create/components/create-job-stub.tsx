@@ -35,70 +35,29 @@ export function CreateJobStub() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-      }}
-    >
-      <label style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <label className="text-[0.9rem] font-medium">
         Vision (stub create job)
         <textarea
           value={visionText}
           onChange={(e) => setVisionText(e.target.value)}
           rows={3}
           required
-          style={{
-            display: "block",
-            width: "100%",
-            marginTop: "0.35rem",
-            padding: "0.65rem 0.75rem",
-            borderRadius: 8,
-            border:
-              "1px solid color-mix(in srgb, var(--foreground) 14%, transparent)",
-            background: "transparent",
-            color: "inherit",
-            font: "inherit",
-            resize: "vertical",
-          }}
+          className="mt-1.5 block w-full resize-y rounded-lg border border-foreground/14 bg-transparent px-3 py-2.5 text-inherit [font:inherit]"
         />
       </label>
       <button
         type="submit"
         disabled={pending || !visionText.trim()}
-        style={{
-          alignSelf: "flex-start",
-          padding: "0.55rem 1rem",
-          borderRadius: 8,
-          border: "none",
-          background: "var(--foreground)",
-          color: "var(--background)",
-          fontWeight: 600,
-          cursor: pending ? "wait" : "pointer",
-          opacity: pending || !visionText.trim() ? 0.6 : 1,
-        }}
+        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-semibold text-background disabled:cursor-wait disabled:opacity-60"
       >
         {pending ? "Starting…" : "Start create job (stub)"}
       </button>
       {error ? (
-        <p style={{ color: "crimson", fontSize: "0.875rem", margin: 0 }}>
-          {error}
-        </p>
+        <p className="m-0 text-sm text-[#dc143c]">{error}</p>
       ) : null}
       {result ? (
-        <pre
-          style={{
-            margin: 0,
-            padding: "0.75rem",
-            borderRadius: 8,
-            fontSize: "0.8rem",
-            overflow: "auto",
-            background:
-              "color-mix(in srgb, var(--foreground) 6%, transparent)",
-          }}
-        >
+        <pre className="m-0 overflow-auto rounded-lg bg-foreground/[0.06] p-3 text-[0.8rem]">
           {JSON.stringify(result, null, 2)}
         </pre>
       ) : null}
