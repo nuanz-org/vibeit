@@ -17,6 +17,7 @@ import { ClarifyPanel } from "@/features/create/components/clarify-panel";
 import { CreateStage, type CreateStageMode } from "@/features/create/components/create-stage";
 import { JobProgress } from "@/features/create/components/job-progress";
 import {
+  ChatPanelCollapseButton,
   PlaygroundShell,
   playgroundStyles as pg,
 } from "@/features/playground/components/playground-shell";
@@ -278,16 +279,19 @@ export function CreatePlayground({
       <div className={pg.chatCard}>
         <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
           <h2 className={pg.panelTitle}>Chat</h2>
-          {jobId ? (
-            <button
-              type="button"
-              className={pg.btnGhost}
-              style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
-              onClick={reset}
-            >
-              New vision
-            </button>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-0.5">
+            {jobId ? (
+              <button
+                type="button"
+                className={pg.btnGhost}
+                style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
+                onClick={reset}
+              >
+                New vision
+              </button>
+            ) : null}
+            <ChatPanelCollapseButton />
+          </div>
         </div>
 
         <div className={pg.chatScroll}>

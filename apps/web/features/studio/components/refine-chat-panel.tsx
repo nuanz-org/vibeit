@@ -9,6 +9,7 @@ import {
   ChatThreadItem,
 } from "@/features/chat";
 import {
+  ChatPanelCollapseButton,
   playgroundStyles as pg,
 } from "@/features/playground/components/playground-shell";
 import { CreateJobApiError } from "@/lib/api/jobs";
@@ -203,17 +204,20 @@ export function RefineChatPanel({
       <div className={pg.chatCard}>
         <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
           <h2 className={pg.panelTitle}>Chat</h2>
-          {canRollback && onRollback ? (
-            <button
-              type="button"
-              className={pg.btnGhost}
-              style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
-              disabled={busy}
-              onClick={onRollback}
-            >
-              Undo refine
-            </button>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-0.5">
+            {canRollback && onRollback ? (
+              <button
+                type="button"
+                className={pg.btnGhost}
+                style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
+                disabled={busy}
+                onClick={onRollback}
+              >
+                Undo refine
+              </button>
+            ) : null}
+            <ChatPanelCollapseButton />
+          </div>
         </div>
 
         <div className={pg.chatScroll}>
