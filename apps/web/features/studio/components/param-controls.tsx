@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Tooltip } from "@base-ui/react/tooltip";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
 
 import type { ParamField, ParamSchema } from "@repo/contracts";
 import type { ToolParams } from "@repo/contracts";
@@ -11,6 +20,13 @@ import {
   groupParamsBySchema,
   useSegmentedEnum,
 } from "../lib/group-params";
+
+/** Segmented option tips only — snappy open; re-enter within timeout is instant. */
+const TIP_OPEN_DELAY_MS = 80;
+const TIP_SKIP_DELAY_MS = 3000;
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export type ParamControlsProps = {
   schema: ParamSchema;
@@ -93,7 +109,6 @@ export function ParamControls({
             )}
             disabled={disabled}
             onClick={() => onResetDefaults()}
-            title="Restore default parameters"
           >
             <ResetIcon />
             Reset
@@ -205,9 +220,7 @@ function ParamFieldControl({
       const hex = normalizeHex(raw);
       return (
         <div className={fieldRow}>
-          <span className={fieldRowLabel} title={field.description}>
-            {label}
-          </span>
+          <FieldLabel label={label} description={field.description} />
           <div className="inline-flex max-w-[58%] shrink-0 items-center gap-1.5">
             <label
               className={cn(
@@ -263,42 +276,56 @@ function ParamFieldControl({
         decimals > 0 ? Number(n).toFixed(Math.min(decimals, 3)) : String(n);
       const span = max - min || 1;
       const pct = Math.min(100, Math.max(0, ((n - min) / span) * 100));
-      const highFill = pct >= 42;
+      // Clip right edge so only glyphs under the fill invert (Brik-style).
+      const clipRight = `${(100 - pct).toFixed(3)}%`;
 
       return (
         <div className={fieldRow}>
-          <span className={fieldRowLabel} title={field.description}>
-            {label}
-          </span>
+          <FieldLabel label={label} description={field.description} />
           <div
             className={cn(
               "group relative h-8 w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 select-none overflow-hidden rounded-[10px]",
               "bg-ink/[0.05] dark:bg-white/10",
-              "transition-[box-shadow,transform] duration-ui ease-ui",
+              "transition-[box-shadow] duration-ui ease-ui",
               "hover:bg-ink/[0.07] dark:hover:bg-white/[0.12]",
               "data-[disabled=true]:opacity-45",
               "focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-ink/25",
             )}
-            data-high={highFill ? "true" : "false"}
             data-disabled={disabled ? "true" : "false"}
           >
             <div
               className={cn(
                 "pointer-events-none absolute inset-y-0 left-0 rounded-[10px] bg-cta",
                 "transition-[width] duration-fast ease-ui",
-                "group-data-[high=false]:rounded-[10px]",
                 "motion-reduce:transition-none",
               )}
               style={{ width: `${pct}%` }}
               aria-hidden
             />
+            {/* Base value (ink) — always full; fill sits under it. */}
             <span
               className={cn(
-                "pointer-events-none relative z-[1] grid h-full place-items-center",
+                "pointer-events-none relative z-[1] grid h-full w-full place-items-center",
                 "text-[0.72rem] font-semibold tracking-tight tabular-nums text-ink",
-                "transition-colors duration-fast ease-ui",
-                "group-data-[high=true]:text-cta-foreground",
               )}
+              aria-hidden
+            >
+              {display}
+            </span>
+            {/*
+             * Overlay value (cta-foreground), same layout as base.
+             * clip-path reveals only the portion over the fill so individual
+             * digits (or partial digits) invert independently.
+             */}
+            <span
+              className={cn(
+                "pointer-events-none absolute inset-0 z-[1] grid place-items-center",
+                "text-[0.72rem] font-semibold tracking-tight tabular-nums text-cta-foreground",
+                "transition-[clip-path] duration-fast ease-ui",
+                "motion-reduce:transition-none",
+              )}
+              style={{ clipPath: `inset(0 ${clipRight} 0 0)` }}
+              aria-hidden
             >
               {display}
             </span>
@@ -322,9 +349,7 @@ function ParamFieldControl({
         typeof value === "string" ? value : String(field.default ?? "");
       return (
         <div className={fieldRow}>
-          <span className={fieldRowLabel} title={field.description}>
-            {label}
-          </span>
+          <FieldLabel label={label} description={field.description} />
           <input
             type="text"
             value={text}
@@ -349,51 +374,44 @@ function ParamFieldControl({
       if (segmented) {
         return (
           <div className={fieldStack}>
-            <span className={cn(fieldRowLabel, "px-1.5")} title={field.description}>
-              {label}
-            </span>
-            <div
-              className="flex flex-wrap gap-0.5 rounded-[10px] bg-ink/[0.05] p-0.5 dark:bg-white/10"
-              role="radiogroup"
-              aria-label={label}
+            <FieldLabel
+              label={label}
+              description={field.description}
+              className="px-1.5"
+            />
+            {/* Tips only for truncated option pills (e.g. "Full Kit…"), not labels. */}
+            <Tooltip.Provider
+              delay={TIP_OPEN_DELAY_MS}
+              closeDelay={0}
+              timeout={TIP_SKIP_DELAY_MS}
             >
-              {field.options.map((opt) => {
-                const selected = current === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    className={cn(
-                      "min-h-8 min-w-[3.5rem] flex-1 cursor-pointer rounded-[8px] border-none px-2 py-1.5",
-                      "font-inherit text-[0.72rem] font-medium tracking-[-0.01em]",
-                      "transition-[background-color,color,transform,box-shadow] duration-ui ease-ui",
-                      "enabled:active:scale-[0.96]",
-                      "disabled:cursor-not-allowed disabled:opacity-45",
-                      "motion-reduce:transition-none motion-reduce:active:scale-100",
-                      selected
-                        ? "bg-cta font-semibold text-cta-foreground shadow-sm hover:bg-cta-hover"
-                        : "bg-transparent text-muted-ink enabled:hover:bg-ink/[0.06] enabled:hover:text-ink dark:enabled:hover:bg-white/10",
-                    )}
-                    data-selected={selected ? "true" : "false"}
-                    disabled={disabled}
-                    onClick={() => onChange(opt.value)}
-                  >
-                    {opt.label ?? opt.value}
-                  </button>
-                );
-              })}
-            </div>
+              <div
+                className="flex flex-wrap gap-0.5 rounded-[10px] bg-ink/[0.05] p-0.5 dark:bg-white/10"
+                role="radiogroup"
+                aria-label={label}
+              >
+                {field.options.map((opt) => {
+                  const selected = current === opt.value;
+                  const optLabel = opt.label ?? opt.value;
+                  return (
+                    <SegmentedOption
+                      key={opt.value}
+                      label={optLabel}
+                      selected={selected}
+                      disabled={disabled}
+                      onSelect={() => onChange(opt.value)}
+                    />
+                  );
+                })}
+              </div>
+            </Tooltip.Provider>
           </div>
         );
       }
 
       return (
         <div className={fieldRow}>
-          <span className={fieldRowLabel} title={field.description}>
-            {label}
-          </span>
+          <FieldLabel label={label} description={field.description} />
           <select
             value={current}
             disabled={disabled}
@@ -421,9 +439,7 @@ function ParamFieldControl({
         typeof value === "boolean" ? value : Boolean(field.default);
       return (
         <label className={fieldRow} data-interactive="true">
-          <span className={fieldRowLabel} title={field.description}>
-            {label}
-          </span>
+          <FieldLabel label={label} description={field.description} />
           <span
             className={cn(
               "group/sw relative h-6 w-10 shrink-0 rounded-full",
@@ -459,9 +475,7 @@ function ParamFieldControl({
       const slotId = field.assetSlotId;
       return (
         <div className={fieldRow}>
-          <span className={fieldRowLabel} title={field.description}>
-            {label}
-          </span>
+          <FieldLabel label={label} description={field.description} />
           <button
             type="button"
             className={cn(
@@ -483,6 +497,128 @@ function ParamFieldControl({
     default:
       return null;
   }
+}
+
+/** Single-line field name — no tooltip (tips are only for truncated option pills). */
+function FieldLabel({
+  label,
+  className,
+}: {
+  label: string;
+  description?: string;
+  className?: string;
+}) {
+  return <span className={cn(fieldRowLabel, className)}>{label}</span>;
+}
+
+/**
+ * Segmented enum option: fixed single-line height.
+ * Fast tooltip only when the label is actually ellipsized.
+ */
+function SegmentedOption({
+  label,
+  selected,
+  disabled,
+  onSelect,
+}: {
+  label: string;
+  selected: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+}) {
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [truncated, setTruncated] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = textRef.current;
+    if (!el) return;
+    setTruncated(el.scrollWidth > el.clientWidth + 1);
+  }, []);
+
+  useIsomorphicLayoutEffect(() => {
+    measure();
+  }, [label, measure]);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  const button = (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      className={cn(
+        "inline-flex h-8 min-w-0 flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border-none px-2",
+        "font-inherit text-[0.72rem] font-medium tracking-[-0.01em]",
+        "transition-[background-color,color,transform,box-shadow] duration-ui ease-ui",
+        "enabled:active:scale-[0.96]",
+        "disabled:cursor-not-allowed disabled:opacity-45",
+        "motion-reduce:transition-none motion-reduce:active:scale-100",
+        selected
+          ? "bg-cta font-semibold text-cta-foreground shadow-sm hover:bg-cta-hover"
+          : "bg-transparent text-muted-ink enabled:hover:bg-ink/[0.06] enabled:hover:text-ink dark:enabled:hover:bg-white/10",
+      )}
+      data-selected={selected ? "true" : "false"}
+      disabled={disabled}
+      onClick={onSelect}
+    >
+      <span ref={textRef} className="block min-w-0 truncate">
+        {label}
+      </span>
+    </button>
+  );
+
+  if (!truncated) return button;
+
+  return <OptionTip content={label}>{button}</OptionTip>;
+}
+
+/** Fast tip for truncated segmented options only (not browser `title`). */
+function OptionTip({
+  content,
+  children,
+}: {
+  content: string;
+  children: ReactElement;
+}) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger
+        delay={TIP_OPEN_DELAY_MS}
+        closeDelay={0}
+        closeOnClick
+        render={children}
+      />
+      <Tooltip.Portal>
+        <Tooltip.Positioner
+          side="top"
+          sideOffset={6}
+          className="z-[80] outline-none"
+        >
+          <Tooltip.Popup
+            className={cn(
+              "max-w-[16rem] rounded-[8px] bg-ink px-2.5 py-1.5",
+              "text-[0.72rem] leading-snug font-medium tracking-[-0.01em] text-cta-foreground",
+              "shadow-[0_4px_16px_rgba(0,0,0,0.14)]",
+              "origin-[var(--transform-origin)]",
+              "transition-[opacity,transform] duration-fast ease-ui",
+              "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+              "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+              "data-[instant]:transition-none",
+              "motion-reduce:transition-none motion-reduce:data-[starting-style]:scale-100",
+            )}
+          >
+            {content}
+          </Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
 }
 
 function normalizeHex(raw: string): string {
