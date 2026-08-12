@@ -313,7 +313,7 @@ export function CreatePlayground({
                         <li key={s.label}>
                           <button
                             type="button"
-                            className="cursor-pointer appearance-none rounded-[10px] border border-border-subtle bg-transparent px-[0.7rem] py-[0.4rem] text-xs font-medium font-[inherit] text-muted-ink transition-[background-color,border-color,color,transform] duration-ui ease-ui hover:-translate-y-px hover:border-ink/22 hover:bg-ink/4 hover:text-ink active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className="cursor-pointer appearance-none rounded-[10px] bg-transparent px-[0.7rem] py-[0.4rem] text-xs font-medium font-[inherit] text-muted-ink ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background-color,box-shadow,color,transform] duration-ui ease-ui hover:-translate-y-px hover:bg-ink/4 hover:text-ink hover:ring-black/15 active:scale-[0.98] dark:ring-white/10 dark:shadow-black/30 dark:hover:ring-white/15 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             onClick={() => setVisionText(s.vision)}
                           >
                             {s.label}
@@ -447,7 +447,7 @@ export function CreatePlayground({
               {inspirationPreviews.map((p, index) => (
                 <li
                   key={p.key}
-                  className="relative size-14 shrink-0 overflow-hidden rounded-[10px] border border-foreground/12"
+                  className="relative size-14 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -610,14 +610,7 @@ export function CreatePlayground({
           <span className={`${pg.chip} ${pg.chipWarn}`}>generating</span>
         ) : null
       }
-      headerActions={
-        <>
-          <Link href="/gallery" className={`${pg.btn} ${pg.btnGhost}`}>
-            Gallery
-          </Link>
-          <UserMenu />
-        </>
-      }
+      headerActions={<UserMenu variant="avatar" />}
       chat={chat}
       stage={stage}
     />

@@ -84,7 +84,7 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-[0.85rem] rounded-xl border border-[#1d4ed8]/28 bg-[#1d4ed8]/6 px-[1.1rem] py-4">
+    <div className="flex flex-col gap-[0.85rem] rounded-[10px] bg-[#1d4ed8]/6 px-[1.1rem] py-4 ring-1 ring-[#1d4ed8]/25 shadow-sm shadow-black/10">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[0.88rem] font-semibold tracking-[-0.015em]">
           Plan with me
@@ -124,9 +124,9 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
                   <button
                     type="button"
                     className={cn(
-                      "cursor-pointer rounded-full border border-foreground/16 bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] transition-[background,border-color] duration-150 ease-in-out",
-                      "enabled:hover:border-foreground/35",
-                      "data-[selected=true]:border-primary data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
+                      "cursor-pointer rounded-full bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background,box-shadow] duration-150 ease-in-out dark:ring-white/10",
+                      "enabled:hover:ring-black/20 dark:enabled:hover:ring-white/20",
+                      "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[selected=true]:ring-primary data-[selected=true]:shadow-none",
                       "disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                     data-selected={
@@ -145,9 +145,9 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
                     key={opt.value}
                     type="button"
                     className={cn(
-                      "cursor-pointer rounded-full border border-foreground/16 bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] transition-[background,border-color] duration-150 ease-in-out",
-                      "enabled:hover:border-foreground/35",
-                      "data-[selected=true]:border-primary data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
+                      "cursor-pointer rounded-full bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background,box-shadow] duration-150 ease-in-out dark:ring-white/10",
+                      "enabled:hover:ring-black/20 dark:enabled:hover:ring-white/20",
+                      "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[selected=true]:ring-primary data-[selected=true]:shadow-none",
                       "disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                     data-selected={

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
@@ -87,25 +86,6 @@ export type StudioShellProps = {
 
 type DrawerKind = "export" | "publish" | null;
 
-function saveStatusLabel(
-  status: ReturnType<typeof useStudioDraftPersist>["status"],
-  enabled: boolean,
-): string | null {
-  if (!enabled) return null;
-  switch (status) {
-    case "dirty":
-      return "Unsaved…";
-    case "saving":
-      return "Saving…";
-    case "saved":
-      return "Saved";
-    case "error":
-      return "Save failed";
-    default:
-      return null;
-  }
-}
-
 /**
  * Studio shell — Brickspace-class Chat | Preview | Controls.
  */
@@ -133,6 +113,10 @@ export function StudioShell({
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<DrawerKind>(null);
+  /** Header title: live publish metadata → initial → fixture label. */
+  const [displayTitle, setDisplayTitle] = useState(
+    () => initialTitle?.trim() || fixture.label,
+  );
 
   const stageToolKey =
     persistToolId?.trim() || fixture.toolId || "studio-local";
@@ -344,12 +328,16 @@ export function StudioShell({
   const onToolUpdated = useCallback(
     (tool: {
       status: string;
+      title?: string | null;
       galleryReady?: boolean;
       thumbnailAssetId?: string | null;
       thumbnailUrl?: string | null;
     }) => {
       setLiveToolStatus(tool.status);
       setLiveGalleryReady(Boolean(tool.galleryReady));
+      if (tool.title?.trim()) {
+        setDisplayTitle(tool.title.trim());
+      }
       if (tool.thumbnailAssetId && tool.thumbnailUrl) {
         setGalleryThumb({
           assetId: tool.thumbnailAssetId,
@@ -392,76 +380,8 @@ export function StudioShell({
     setRemountToken((n) => n + 1);
   }, [rollbackSnapshot]);
 
-  const statusClass =
-    runtime.status === "ready" || runtime.mounted
-      ? pg.chipLive
-      : runtime.status === "error"
-        ? pg.chipError
-        : pg.chipWarn;
-
-  const saveLabel = saveStatusLabel(persist.status, persist.enabled);
-  const saveChipClass =
-    persist.status === "saved"
-      ? pg.chipLive
-      : persist.status === "error"
-        ? pg.chipError
-        : persist.status === "saving" || persist.status === "dirty"
-          ? pg.chipWarn
-          : pg.chip;
-
-  const headerMeta = (
-    <>
-      {displayStatus ? (
-        <span
-          className={`${pg.chip} ${
-            displayStatus === "published" ? pg.chipLive : pg.chipWarn
-          }`}
-        >
-          {displayStatus}
-        </span>
-      ) : null}
-      <span className={`${pg.chip} ${statusClass}`}>
-        {runtime.mounted
-          ? "live"
-          : runtime.status === "ready"
-            ? "ready"
-            : runtime.status}
-      </span>
-      {saveLabel ? (
-        <span className={`${pg.chip} ${saveChipClass}`}>{saveLabel}</span>
-      ) : null}
-    </>
-  );
-
   const headerActions = (
     <>
-      <Link href="/gallery" className={`${pg.btn} ${pg.btnGhost}`}>
-        Gallery
-      </Link>
-      <Link href="/create" className={`${pg.btn} ${pg.btnGhost}`}>
-        Create
-      </Link>
-      {persist.enabled ? (
-        <button
-          type="button"
-          className={pg.btn}
-          disabled={
-            persist.status === "saving" ||
-            persist.status === "idle" ||
-            persist.status === "saved"
-          }
-          onClick={() => persist.saveNow()}
-        >
-          Save
-        </button>
-      ) : null}
-      <button
-        type="button"
-        className={pg.btn}
-        onClick={() => setDrawer("publish")}
-      >
-        Publish
-      </button>
       <button
         type="button"
         className={`${pg.btn} ${pg.btnAccent}`}
@@ -470,8 +390,7 @@ export function StudioShell({
       >
         Export
       </button>
-      <span className="mx-0.5 hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden />
-      <UserMenu />
+      <UserMenu variant="avatar" />
     </>
   );
 
@@ -702,8 +621,9 @@ export function StudioShell({
   return (
     <>
       <PlaygroundShell
-        title={fixture.label}
-        headerMeta={headerMeta}
+        title={displayTitle}
+        onEditTitle={() => setDrawer("publish")}
+        editTitleLabel="Edit name, publish & share"
         headerActions={headerActions}
         chat={chat}
         stage={stage}

@@ -5,14 +5,21 @@ import { type ReactNode, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { playgroundStyles } from "../styles";
+import { playgroundStyles, surfaceEdge } from "../styles";
 
 export type PlaygroundShellProps = {
   /** Center title next to brand (tool name or "Create"). */
   title?: string;
-  /** Status chips next to title. */
+  /**
+   * When set, shows a quiet edit control next to the title
+   * (Brickspace: name + pencil → metadata / cover).
+   */
+  onEditTitle?: () => void;
+  /** Accessible label for the edit control. */
+  editTitleLabel?: string;
+  /** Status chips next to title (prefer empty in studio — keep chrome quiet). */
   headerMeta?: ReactNode;
-  /** Right-side actions (Export, Publish, user). */
+  /** Right-side actions (Export, avatar). */
   headerActions?: ReactNode;
   /** Chat / refine console. */
   chat: ReactNode;
@@ -30,33 +37,44 @@ export type PlaygroundShellProps = {
   panelOrder?: "chat-left" | "controls-left";
 };
 
+/**
+ * Brickspace-class floating shell:
+ * nav touches the top; L/R/B gutters float panels on the stage.
+ */
 const shellClass = cn(
   "grid h-dvh max-h-dvh overflow-hidden bg-stage text-ink",
   "grid-cols-[minmax(280px,320px)_minmax(0,1fr)_minmax(280px,320px)]",
   "grid-rows-[auto_minmax(0,1fr)]",
-  "px-[0.65rem] pt-0 pb-[0.65rem]",
+  // No top gutter — nav bar flushes to top; L/R/B stage shows through
+  "px-3 pb-3 pt-0",
+  // Between columns + under header
+  "gap-x-3 gap-y-3",
   "data-[controls=false]:grid-cols-[minmax(300px,380px)_minmax(0,1fr)]",
   // Mobile: stage full width + bottom tabs; side panels become overlays
   "max-[1100px]:grid-cols-1",
   "max-[1100px]:grid-rows-[auto_minmax(0,1fr)_auto]",
   "max-[1100px]:[grid-template-areas:'header'_'stage'_'tabs']",
-  "max-[1100px]:px-2 max-[1100px]:pb-2",
+  "max-[1100px]:gap-2 max-[1100px]:px-2 max-[1100px]:pb-2 max-[1100px]:pt-0",
 );
 
 const headerClass = cn(
   "z-20 flex min-h-[3.25rem] items-center justify-between gap-4",
-  "[grid-area:header] -mx-[0.65rem] border-b border-border",
-  "bg-surface-elevated/95 px-4 py-2 backdrop-blur-[8px]",
+  // Flush top; L/R align with shell gutters (spans all columns)
+  "[grid-area:header]",
+  // Square top corners against the viewport; soft radius only on bottom
+  "rounded-b-[10px] bg-surface-elevated px-4 py-2",
+  surfaceEdge,
 );
 
 const sidePanelClass = cn(
-  "mt-[0.65rem] flex min-h-0 min-w-0 flex-col overflow-hidden",
-  "rounded-2xl border border-border-subtle bg-surface-elevated shadow-elev",
-  // Mobile overlay panels
+  "flex min-h-0 min-w-0 flex-col overflow-hidden",
+  "rounded-[10px] bg-surface-elevated",
+  surfaceEdge,
+  // Mobile overlay panels — inset matches shell gutter
   "max-[1100px]:fixed max-[1100px]:inset-x-2",
   "max-[1100px]:top-[calc(3.25rem+0.5rem)]",
-  "max-[1100px]:bottom-[calc(3.25rem+0.5rem)]",
-  "max-[1100px]:z-20 max-[1100px]:mt-0",
+  "max-[1100px]:bottom-[calc(0.5rem+3.25rem+0.5rem)]",
+  "max-[1100px]:z-20",
   "max-[1100px]:data-[mobile-hidden=true]:hidden",
 );
 
@@ -69,11 +87,40 @@ const mobileTabClass = cn(
   "motion-reduce:transition-none",
 );
 
+function EditTitleIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M11.2 2.35a1.35 1.35 0 0 1 1.91 1.91L5.4 12 2.5 12.75l.75-2.9 7.95-7.5Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.85 3.7 11.55 5.4"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** Header label: first two words + ellipsis (full title stays in `title` tooltip). */
+function headerTitleLabel(title: string, wordLimit = 2): string {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= wordLimit) return words.join(" ");
+  return `${words.slice(0, wordLimit).join(" ")}…`;
+}
+
 /**
  * Brickspace-class 3-column playground: Chat | Stage | Controls (or swapped).
+ * Header stays sparse: logo + name (+ edit) | primary actions + avatar.
  */
 export function PlaygroundShell({
   title,
+  onEditTitle,
+  editTitleLabel = "Edit tool details",
   headerMeta,
   headerActions,
   chat,
@@ -101,35 +148,54 @@ export function PlaygroundShell({
       style={{ gridTemplateAreas: areas }}
     >
       <header className={headerClass}>
-        <div className="flex min-w-0 items-center gap-2.5">
+        {/* Content-sized left cluster — title+edit stay tight (never stretch to center) */}
+        <div className="flex min-w-0 shrink items-center gap-1.5">
           <Link
             href={brandHref}
             className={cn(
-              "flex shrink-0 items-center gap-2 rounded-[10px] py-1 pr-1",
-              "text-[0.95rem] font-[650] tracking-[-0.02em] text-ink",
+              "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]",
               "transition-opacity duration-fast ease-snap hover:opacity-70",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+              "active:scale-[0.96] motion-reduce:active:scale-100",
             )}
+            aria-label="Aiditr home"
           >
             <span
               className="inline-block size-[1.15rem] shrink-0 rounded-[3px] bg-primary"
               aria-hidden
             />
-            Aiditr
           </Link>
           {title ? (
-            <>
+            <div className="inline-flex min-w-0 max-w-full items-center gap-0">
               <span
-                className="h-4 w-px shrink-0 bg-border"
-                aria-hidden
-              />
-              <span
-                className="max-w-[28ch] truncate text-[0.88rem] font-medium tracking-[-0.015em] text-ink-secondary"
+                className="min-w-0 whitespace-nowrap text-[0.95rem] font-medium tracking-[-0.02em] text-ink"
                 title={title}
               >
-                {title}
+                {headerTitleLabel(title)}
               </span>
-            </>
+              {onEditTitle ? (
+                <button
+                  type="button"
+                  onClick={onEditTitle}
+                  className={cn(
+                    "inline-flex size-8 shrink-0 items-center justify-center rounded-[9px]",
+                    "text-muted-ink",
+                    "transition-[background-color,color,transform] duration-ui ease-ui",
+                    "hover:bg-ink/6 hover:text-ink",
+                    "active:scale-[0.96]",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    "motion-reduce:transition-none motion-reduce:active:scale-100",
+                  )}
+                  aria-label={editTitleLabel}
+                  title={editTitleLabel}
+                >
+                  {/* Optical nudge: pencil tip reads slightly high when pure-centered */}
+                  <span className="translate-y-px">
+                    <EditTitleIcon />
+                  </span>
+                </button>
+              ) : null}
+            </div>
           ) : null}
           {headerMeta ? (
             <div className="ml-0.5 flex min-w-0 flex-wrap items-center gap-1.5">
@@ -159,9 +225,8 @@ export function PlaygroundShell({
 
       <main
         className={cn(
-          "relative mt-[0.65rem] flex min-h-0 min-w-0 flex-col bg-transparent",
+          "relative flex min-h-0 min-w-0 flex-col bg-transparent",
           "[grid-area:stage]",
-          "max-[1100px]:mt-2",
         )}
         aria-label="Preview"
       >
@@ -188,8 +253,9 @@ export function PlaygroundShell({
 
       <div
         className={cn(
-          "mt-2 hidden gap-[0.35rem] rounded-2xl border border-border-subtle",
-          "bg-surface-elevated p-[0.4rem] shadow-elev",
+          "hidden gap-[0.35rem] rounded-[10px]",
+          "bg-surface-elevated p-[0.4rem]",
+          surfaceEdge,
           "[grid-area:tabs]",
           "max-[1100px]:flex",
         )}

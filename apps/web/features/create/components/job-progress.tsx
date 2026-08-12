@@ -69,7 +69,7 @@ export function JobProgress({
   const failed = st === "failed";
 
   return (
-    <div className="flex flex-col gap-[0.65rem] rounded-xl border border-border-subtle bg-ink/[3.5%] px-[0.95rem] py-[0.85rem]">
+    <div className="flex flex-col gap-[0.65rem] rounded-[10px] bg-ink/[3.5%] px-[0.95rem] py-[0.85rem] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[0.88rem] font-semibold tracking-[-0.015em]">
           {PHASE_LABEL[phase ?? ""] ?? "Generation"}

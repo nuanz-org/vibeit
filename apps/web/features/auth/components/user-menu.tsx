@@ -4,20 +4,53 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { authClient, useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 const ease = "ease-[cubic-bezier(0.4,0,0.2,1)]";
 
-export function UserMenu() {
+function initialsFromUser(name?: string | null, email?: string | null): string {
+  const source = (name?.trim() || email?.trim() || "?").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+  }
+  if (source.includes("@")) {
+    return source.slice(0, 2).toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
+
+export type UserMenuProps = {
+  /**
+   * `default` — marketing chrome: name + Sign out.
+   * `avatar` — playground chrome: circular icon → /profile (Brickspace-clean).
+   */
+  variant?: "default" | "avatar";
+  className?: string;
+};
+
+export function UserMenu({ variant = "default", className }: UserMenuProps) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
   if (isPending) {
+    if (variant === "avatar") {
+      return (
+        <span
+          className={cn(
+            "inline-flex size-9 shrink-0 animate-pulse rounded-full bg-ink/8",
+            className,
+          )}
+          aria-hidden
+        />
+      );
+    }
     return <span className="text-sm text-muted-foreground">Loading…</span>;
   }
 
   if (!session?.user) {
     return (
-      <div className="flex items-center gap-3">
+      <div className={cn("flex items-center gap-3", className)}>
         <Link
           href="/login"
           className="text-[15px] font-medium tracking-[-0.01em] transition-opacity duration-150 hover:opacity-60"
@@ -45,8 +78,36 @@ export function UserMenu() {
     });
   }
 
+  if (variant === "avatar") {
+    const initials = initialsFromUser(session.user.name, session.user.email);
+    const label = session.user.name || session.user.email || "Profile";
+
+    return (
+      <Link
+        href="/profile"
+        className={cn(
+          "inline-flex size-9 shrink-0 items-center justify-center rounded-full",
+          "bg-ink/8 text-[0.72rem] font-semibold tracking-[-0.02em] text-ink",
+          "outline outline-1 outline-black/10 dark:outline-white/10",
+          "transition-[transform,background-color,opacity] duration-150",
+          "hover:bg-ink/12 hover:opacity-95",
+          "active:scale-[0.96]",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          "motion-reduce:transition-none motion-reduce:active:scale-100",
+          className,
+        )}
+        aria-label={`Profile — ${label}`}
+        title={label}
+      >
+        <span className="translate-y-[0.5px] select-none" aria-hidden>
+          {initials}
+        </span>
+      </Link>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-3">
+    <div className={cn("flex items-center gap-3", className)}>
       <span className="max-w-[10rem] truncate text-sm text-muted-foreground">
         {session.user.name || session.user.email}
       </span>

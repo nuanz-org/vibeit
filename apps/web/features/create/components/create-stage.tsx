@@ -84,7 +84,7 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center p-4">
       <motion.div
-        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden border border-border-subtle bg-surface-elevated shadow-elev"
+        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden rounded-[10px] bg-surface-elevated ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
         layout
         initial={false}
         animate={{

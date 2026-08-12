@@ -1,13 +1,43 @@
 /**
  * Shared playground chrome — Tailwind class strings only.
  * Monochrome surfaces + Base Blue for generate/send.
+ *
+ * Edges use shadow/ring only (no `border` property) for soft, premium chrome:
+ * hairline ring + soft lift — works on light; dark: variants flip ring ink.
  */
+/** Soft outer edge: thin ring + lift. Prefer this over `border`. */
+export const surfaceEdge = [
+  "ring-1 ring-black/10 shadow-sm shadow-black/10",
+  "dark:ring-white/10 dark:shadow-black/40",
+].join(" ");
+
+/** Quieter edge for compact controls (buttons, selects). */
+export const controlEdge = [
+  "ring-1 ring-black/10 shadow-sm shadow-black/[0.06]",
+  "dark:ring-white/10 dark:shadow-black/30",
+].join(" ");
+
+/** Inset hairline divider (replaces border-t / border-b on panels). */
+export const dividerTop =
+  "shadow-[inset_0_1px_0_0_rgb(0_0_0/0.06)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)]";
+
+export const dividerBottom =
+  "shadow-[inset_0_-1px_0_0_rgb(0_0_0/0.06)] dark:shadow-[inset_0_-1px_0_0_rgb(255_255_255/0.08)]";
+
 export const playgroundStyles = {
+  /** Elevated card/panel: rounded + soft shadow edge (no border). */
+  surface: [
+    "rounded-[10px] bg-surface-elevated",
+    surfaceEdge,
+  ].join(" "),
+
   panelScroll:
     "flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-3 pt-3 pb-5",
 
-  panelHeader:
-    "flex shrink-0 items-center justify-between gap-2 border-b border-border-subtle px-3.5 py-3",
+  panelHeader: [
+    "flex shrink-0 items-center justify-between gap-2 px-3.5 py-3",
+    dividerBottom,
+  ].join(" "),
 
   panelTitle:
     "m-0 text-[0.72rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
@@ -25,8 +55,9 @@ export const playgroundStyles = {
    */
   frame: [
     "aspect-square w-[min(100%,480px)] max-h-[min(78vh,720px)] max-w-full shrink",
-    "overflow-hidden rounded-2xl border border-border-subtle bg-[#0a0a0c]",
-    "shadow-elev",
+    "overflow-hidden rounded-[10px] bg-[#0a0a0c]",
+    "ring-1 ring-black/10 shadow-sm shadow-black/20",
+    "dark:ring-white/10",
   ].join(" "),
 
   frameWide:
@@ -43,14 +74,15 @@ export const playgroundStyles = {
   chatBody: "flex min-h-0 flex-1 flex-col gap-0 p-0",
 
   chatCard:
-    "flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border-0 bg-transparent",
+    "flex min-h-0 flex-1 flex-col overflow-hidden rounded-none bg-transparent",
 
   chatScroll:
     "flex min-h-0 flex-1 flex-col overflow-hidden px-[0.85rem] pt-[0.65rem] pb-2",
 
   chatComposer: [
-    "flex shrink-0 flex-col gap-[0.55rem] border-t border-border-subtle",
+    "flex shrink-0 flex-col gap-[0.55rem]",
     "bg-surface-elevated/95",
+    dividerTop,
     "px-[0.8rem] pt-[0.7rem] pb-[0.8rem]",
   ].join(" "),
 
@@ -80,10 +112,12 @@ export const playgroundStyles = {
 
   btn: [
     "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center gap-[0.35rem]",
-    "whitespace-nowrap rounded-[10px] border border-border-subtle bg-transparent px-3 py-[0.4rem]",
+    "whitespace-nowrap rounded-[10px] bg-transparent px-3 py-[0.4rem]",
+    controlEdge,
     "text-[0.8rem] font-medium tracking-[-0.01em] text-ink-secondary no-underline [font:inherit]",
-    "transition-[background-color,border-color,color,transform,opacity] duration-ui ease-ui",
-    "not-disabled:hover:border-border not-disabled:hover:bg-surface not-disabled:hover:text-ink",
+    "transition-[background-color,box-shadow,color,transform,opacity] duration-ui ease-ui",
+    "not-disabled:hover:bg-surface not-disabled:hover:text-ink",
+    "not-disabled:hover:ring-black/15 dark:not-disabled:hover:ring-white/15",
     "not-disabled:active:scale-[0.96]",
     "disabled:cursor-not-allowed disabled:opacity-45",
     "motion-reduce:transition-none motion-reduce:active:scale-100",
@@ -91,17 +125,20 @@ export const playgroundStyles = {
 
   // Variant modifiers use ! so they win when composed as `${btn} ${btnPrimary}`
   btnPrimary: [
-    "rounded-[10px]! border-transparent! bg-primary! text-primary-foreground!",
+    "rounded-[10px]! bg-primary! text-primary-foreground!",
+    "ring-0! shadow-none!",
     "not-disabled:hover:bg-base-blue-hover! not-disabled:hover:text-primary-foreground!",
   ].join(" "),
 
   btnAccent: [
-    "rounded-[10px]! border-transparent! bg-cta! text-cta-foreground!",
+    "rounded-[10px]! bg-cta! text-cta-foreground!",
+    "ring-0! shadow-none!",
     "not-disabled:hover:bg-cta-hover! not-disabled:hover:text-cta-foreground!",
   ].join(" "),
 
   btnGhost: [
-    "border-transparent! bg-transparent! font-medium text-muted-ink!",
+    "bg-transparent! font-medium text-muted-ink!",
+    "ring-0! shadow-none!",
     "not-disabled:hover:bg-ink/5! not-disabled:hover:text-ink!",
   ].join(" "),
 
@@ -133,20 +170,22 @@ export const playgroundStyles = {
     "bg-[color-mix(in_oklch,oklch(0.55_0.2_25)_14%,transparent)]! text-[oklch(0.52_0.18_25)]!",
 
   selectCompact: [
-    "max-w-[11rem] rounded-lg border border-border-subtle bg-transparent px-2 py-[0.3rem]",
+    "max-w-[11rem] rounded-lg bg-transparent px-2 py-[0.3rem]",
+    controlEdge,
     "text-[0.75rem] font-medium text-inherit [font:inherit]",
-    "transition-colors duration-150",
-    "not-disabled:hover:border-[color-mix(in_oklch,var(--ink)_22%,transparent)]",
+    "transition-[box-shadow,background-color] duration-150",
+    "not-disabled:hover:ring-black/15 dark:not-disabled:hover:ring-white/15",
     "motion-reduce:transition-none",
   ].join(" "),
 
   attachBtn: [
     "inline-grid size-8 shrink-0 cursor-pointer place-items-center",
-    "rounded-[9px] border border-border-subtle bg-transparent text-muted-ink [font:inherit]",
-    "transition-[background-color,border-color,color] duration-150",
-    "not-has-[input:disabled]:hover:border-[color-mix(in_oklch,var(--ink)_20%,transparent)]",
-    "not-has-[input:disabled]:hover:bg-[color-mix(in_oklch,var(--ink)_5%,transparent)]",
+    "rounded-[9px] bg-transparent text-muted-ink [font:inherit]",
+    controlEdge,
+    "transition-[background-color,box-shadow,color] duration-150",
+    "not-has-[input:disabled]:hover:bg-ink/5",
     "not-has-[input:disabled]:hover:text-ink",
+    "not-has-[input:disabled]:hover:ring-black/15 dark:not-has-[input:disabled]:hover:ring-white/15",
     "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-45",
     "[&_input]:hidden",
     "motion-reduce:transition-none",
@@ -162,14 +201,17 @@ export const playgroundStyles = {
 
   drawer: [
     "fixed top-0 right-0 bottom-0 z-50 flex w-[min(100vw,380px)] flex-col",
-    "border-l border-border-subtle bg-surface-elevated",
-    "shadow-[-8px_0_28px_color-mix(in_oklch,#000_10%,transparent)]",
+    "bg-surface-elevated",
+    "shadow-[-8px_0_28px_rgb(0_0_0/0.10),inset_1px_0_0_0_rgb(0_0_0/0.06)]",
+    "dark:shadow-[-8px_0_28px_rgb(0_0_0/0.45),inset_1px_0_0_0_rgb(255_255_255/0.08)]",
     "animate-in fade-in slide-in-from-right-3 duration-200",
     "motion-reduce:animate-none",
   ].join(" "),
 
-  drawerHeader:
-    "flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-[0.85rem]",
+  drawerHeader: [
+    "flex items-center justify-between gap-3 px-4 py-[0.85rem]",
+    dividerBottom,
+  ].join(" "),
 
   drawerTitle: "m-0 text-[0.95rem] font-[650] tracking-[-0.02em]",
 

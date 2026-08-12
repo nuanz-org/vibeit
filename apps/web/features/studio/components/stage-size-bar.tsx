@@ -70,7 +70,7 @@ export function StageSizeBar({
 
   return (
     <div
-      className="flex shrink-0 flex-wrap items-center justify-center gap-x-[0.55rem] gap-y-[0.45rem] rounded-full border border-border-subtle bg-surface-elevated px-[0.55rem] py-[0.4rem] shadow-panel"
+      className="flex shrink-0 flex-wrap items-center justify-center gap-x-[0.55rem] gap-y-[0.45rem] rounded-full bg-surface-elevated px-[0.55rem] py-[0.4rem] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
       role="group"
       aria-label="Stage size"
     >
@@ -80,7 +80,7 @@ export function StageSizeBar({
         </span>
         <input
           type="number"
-          className="w-[4.25rem] rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50"
+          className="w-[4.25rem] rounded-lg bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums ring-1 ring-black/10 shadow-sm shadow-black/[0.06] focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50 dark:ring-white/10"
           value={wDraft}
           min={64}
           max={4096}
@@ -104,7 +104,7 @@ export function StageSizeBar({
         </span>
         <input
           type="number"
-          className="w-[4.25rem] rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50"
+          className="w-[4.25rem] rounded-lg bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums ring-1 ring-black/10 shadow-sm shadow-black/[0.06] focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50 dark:ring-white/10"
           value={hDraft}
           min={64}
           max={4096}
@@ -123,7 +123,7 @@ export function StageSizeBar({
       </label>
 
       <select
-        className="min-w-[7.5rem] cursor-pointer rounded-lg border border-foreground/14 bg-foreground/[0.04] px-2 py-[0.32rem] text-[0.78rem] font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-w-[7.5rem] cursor-pointer rounded-lg bg-foreground/[0.04] px-2 py-[0.32rem] text-[0.78rem] font-medium text-inherit ring-1 ring-black/10 shadow-sm shadow-black/[0.06] disabled:cursor-not-allowed disabled:opacity-50 dark:ring-white/10"
         value={value.preset}
         disabled={disabled}
         aria-label="Stage size preset"
