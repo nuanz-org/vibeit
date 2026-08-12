@@ -34,7 +34,10 @@ from domain.chat_messages import (
 )
 from domain.job_status import assert_job_transition
 from services.finalize_job import finalize_from_agent_state
-from services.refine_job import base_version_payload
+from services.refine_job import (
+    client_params_from_job_history,
+    refine_runner_inputs,
+)
 
 def _build_llm(settings: Settings) -> LLMClient:
     if not settings.openrouter_api_key:
@@ -203,7 +206,24 @@ async def run_generation_job(
                     clear_errors=True,
                 )
                 return
-            payload = base_version_payload(version)
+            tool_row = await tools.get_tool_by_id(job.tool_id)
+            if tool_row is None:
+                await jobs.update_job_status(
+                    job_id,
+                    status="failed",
+                    error_code="VALIDATION_FAILED",
+                    error_message="refine tool missing",
+                    phase="finalize",
+                    clear_errors=True,
+                )
+                return
+            client_params = client_params_from_job_history(job)
+            payload = refine_runner_inputs(
+                tool=tool_row,
+                version=version,
+                chat_message=job.vision_text,
+                client_params=client_params,
+            )
             refine_wall = float(
                 getattr(settings, "refine_wall_time_seconds", None) or wall
             )
@@ -217,6 +237,8 @@ async def run_generation_job(
                 base_asset_slots=payload["base_asset_slots"],
                 base_version_id=payload["base_version_id"],
                 target=payload["target"],
+                refine_context=payload.get("refine_context"),
+                draft_params=payload.get("draft_params"),
                 max_repairs=max_repairs,
                 wall_time_seconds=refine_wall,
                 job_id=str(job.id),

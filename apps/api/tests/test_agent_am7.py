@@ -230,6 +230,7 @@ def test_refine_param_path_no_codegen_role() -> None:
             base_default_params=_DEFAULTS,
             base_param_schema=_PLAN["params"],
             base_critique_score=None,  # skip non-regression
+            force_patch_mode="param",
             max_repairs=1,
             wall_time_seconds=180.0,
         )
@@ -256,6 +257,7 @@ def test_refine_code_path_for_subtitle_request() -> None:
             base_default_params=_DEFAULTS,
             base_param_schema=_PLAN["params"],
             base_critique_score=4.0,
+            force_patch_mode="code",
             max_repairs=1,
             wall_time_seconds=180.0,
         )
@@ -278,6 +280,7 @@ def test_refine_non_regression_rejects_lower_score() -> None:
             base_default_params=_DEFAULTS,
             base_param_schema=_PLAN["params"],
             base_critique_score=4.5,
+            force_patch_mode="code",
             max_repairs=0,  # no repair room
             wall_time_seconds=180.0,
         )

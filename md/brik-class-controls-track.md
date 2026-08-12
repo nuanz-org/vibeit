@@ -6,7 +6,7 @@
 |--|--|
 | **Owner track** | Track A (canvas2d + process) · Track B (real Three.js) · Track C (craft fidelity) · **Track D (perf craft — experimental)** |
 | **Started** | 2026-08-08 |
-| **Last updated** | 2026-08-08 (Track D experimental landed) |
+| **Last updated** | 2026-08-12 (Control Tool Catalog v1) |
 | **Session plan** | Grok plan mode artifact (A1–A8 / B1–B5 / C1–C7) + experimental perf craft; this file is the **repo source of truth** for status |
 | **Experimental** | **Track D (perf craft)** is experimental — thresholds, helpers, and lint rules may tighten or roll back without a major version bump |
 
@@ -683,14 +683,32 @@ Goal: stop Studio lag on neon/trail/particle tools without banning legitimate st
 
 ---
 
+## Control Tool Catalog (2026-08-12)
+
+**Status:** v1 landed — extensible abstract kinds for Plan.
+
+| Piece | Location |
+|-------|----------|
+| Seed JSON | `packages/contracts/src/control-catalog.seed.json` (+ Python mirror) |
+| Resolve / validate | `apps/api/src/agent/control_catalog/` |
+| Plan inventory field | `ToolPlan.controlInventory` → merges into `params` |
+| Docs | `md/contracts/control-catalog.md` |
+
+Flow: agent **selects** catalog kinds → **skips** clutter → **custom** extras → resolver → user-facing `params`. Adding a new kind = seed row (+ optional Studio uiHint), no graph rewrite.
+
+Studio soft-support: `playPause` button, `textarea`, `presetGrid`→select.
+
+---
+
 ## Recommended next steps
 
-1. **Track C** — start **C1** (vision lock) then **C3** (sweeping-arc golden)  
-2. Smoke **Track D** live: glow/trail vision → confirm no `perf:` false-fail storm; retina Studio stays interactive  
-3. Opt-in three for demos: `AIDITR_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
-4. Optional live Create smoke (kinetic / chroma cube logo vision)  
+1. Live Create smoke: dense interactive vision → verify `controlInventory` usage rate  
+2. **Track C** — start **C1** (vision lock) then **C3** (sweeping-arc golden)  
+3. Smoke **Track D** live: glow/trail vision → confirm no `perf:` false-fail storm; retina Studio stays interactive  
+4. Opt-in three for demos: `AIDITR_TARGET_THREE_ENABLED=1` after `scripts/eval_three.py` green  
 5. **A7** media library / **A8** eval when needed  
-6. Optional OrbitControls product re-export
+6. Real preset-grid UI + host `presetWrites`  
+7. Optional OrbitControls product re-export
 
 ---
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from agent.control_catalog.prompt_block import inventory_summary_for_codegen
 from agent.prompts.perf_craft import PERF_CRAFT_CANVAS2D, PERF_CRAFT_LIGHT
 
 _HARD_RULES = """\
@@ -25,7 +26,10 @@ affect setup/draw visibly (param_coverage gate fails otherwise).
 - **Enum branches**: for every kind=enum param, switch/if on each option value so the look \
 **visibly changes** (shape, assembly motion, material, layout). \
 Do not ignore options or hardcode one variant.
-- Keep group / uiHint / options from the plan on schema fields when present.
+- Keep group / uiHint / options from the plan on schema fields when present \
+(including playPause, textarea, presetGrid).
+- uiHint playPause: boolean — gate animation with isPlaying / similar.
+- uiHint presetGrid / theme enums: each option must change palette or look.
 - Prefer reading params once at the top of draw: `const p = c.params as Record<string, unknown>` \
 or typed destructuring — then use those bindings throughout.
 
@@ -259,6 +263,7 @@ def codegen_user_prompt(
 ) -> str:
     plan_json = json.dumps(plan, indent=2)
     exemplar_block = _format_exemplars(exemplars)
+    inventory_block = inventory_summary_for_codegen(plan)
     style_block = ""
     if isinstance(style_notes, dict) and style_notes:
         style_block = (
@@ -346,10 +351,13 @@ def codegen_user_prompt(
             "Harness auto-renders; product-vendored THREE only via skeletons/three."
         )
 
+    inv_section = f"\n{inventory_block}\n" if inventory_block else ""
+
     return (
         f"Vision:\n{vision_text.strip()}\n\n"
         f"Plan JSON (DesignBrief):\n{plan_json}\n"
         f"{target_line}"
+        f"{inv_section}"
         f"{style_block}"
         f"{multi_block}"
         f"{wire_block}"

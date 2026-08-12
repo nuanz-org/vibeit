@@ -114,6 +114,7 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
       initialThumbnailAssetId={tool.thumbnailAssetId}
       initialThumbnailUrl={tool.thumbnailUrl}
       planAspect={planAspect}
+      initialChatHistory={tool.chatHistory ?? null}
     />
   );
 }

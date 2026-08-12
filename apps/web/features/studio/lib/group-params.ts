@@ -88,10 +88,21 @@ function slugSectionId(label: string): string {
 /** Enum → segmented when uiHint says so, or ≤4 options and not forced select. */
 export function useSegmentedEnum(field: ParamField): boolean {
   if (field.kind !== "enum") return false;
-  if (field.uiHint === "select") return false;
+  // presetGrid / select → dropdown (Studio soft-support until real grid)
+  if (field.uiHint === "select" || field.uiHint === "presetGrid") return false;
   if (field.uiHint === "segmented") return true;
   const n = field.options?.length ?? 0;
   return n > 0 && n <= 4;
+}
+
+/** Boolean with playPause hint (Studio may still use switch chrome). */
+export function usePlayPauseBoolean(field: ParamField): boolean {
+  return field.kind === "boolean" && field.uiHint === "playPause";
+}
+
+/** Text with multiline hint. */
+export function useTextarea(field: ParamField): boolean {
+  return field.kind === "text" && field.uiHint === "textarea";
 }
 
 /** Number → slider unless uiHint forces something else (hidden handled earlier). */

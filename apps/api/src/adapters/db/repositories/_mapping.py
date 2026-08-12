@@ -54,6 +54,12 @@ def tool_from_record(row: Any) -> ToolRow:
         export_smoke_at = row["export_smoke_at"]
     except (KeyError, TypeError):
         export_smoke_at = None
+    try:
+        chat_history = _json_value(row["chat_history"])
+    except (KeyError, TypeError):
+        chat_history = []
+    if not isinstance(chat_history, list):
+        chat_history = []
     return ToolRow(
         id=row["id"],
         public_id=str(row["public_id"]),
@@ -71,6 +77,7 @@ def tool_from_record(row: Any) -> ToolRow:
         published_version_id=published_version_id,
         gallery_ready=gallery_ready,
         export_smoke_at=export_smoke_at,
+        chat_history=chat_history,
     )
 
 

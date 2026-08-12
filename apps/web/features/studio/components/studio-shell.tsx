@@ -82,6 +82,15 @@ export type StudioShellProps = {
    * Seeds stage size when no localStorage override.
    */
   planAspect?: string | null;
+  /** Tool-scoped continuous refine chat */
+  initialChatHistory?: Array<{
+    id?: string;
+    role: string;
+    content: string;
+    kind?: string;
+    createdAt?: string;
+    meta?: Record<string, unknown>;
+  }> | null;
 };
 
 type DrawerKind = "export" | "publish" | null;
@@ -109,7 +118,11 @@ export function StudioShell({
   initialThumbnailAssetId,
   initialThumbnailUrl,
   planAspect,
+  initialChatHistory,
 }: StudioShellProps) {
+  const [liveDraftParams, setLiveDraftParams] = useState<
+    ToolParams | null | undefined
+  >(initialDraftParams);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<DrawerKind>(null);
@@ -238,7 +251,7 @@ export function StudioShell({
     versionDefaultParams: liveDefaults,
     versionParamSchema: liveParamSchema,
     versionAssetSlots: liveAssetSlots,
-    initialDraftParams,
+    initialDraftParams: liveDraftParams,
     initialDraftAssets,
   });
 
@@ -364,10 +377,16 @@ export function StudioShell({
       setLiveDefaults(asParams(v?.defaultParams) ?? null);
       setLiveParamSchema(parseVersionParamSchema(v?.paramSchema));
       setLiveAssetSlots(parseVersionAssetSlots(v?.assetSlots));
+      // Capability agent may have written draft_params — keep Controls in sync
+      setLiveDraftParams(asParams(payload.tool.draftParams) ?? null);
       setRemountToken((n) => n + 1);
     },
     [liveDefaults, liveParamSchema, liveAssetSlots],
   );
+
+  const getClientParams = useCallback(() => {
+    return { ...(runtime.params as Record<string, unknown>) };
+  }, [runtime.params]);
 
   const onRefineRollback = useCallback(() => {
     if (!rollbackSnapshot) return;
@@ -405,6 +424,8 @@ export function StudioShell({
       onRollback={onRefineRollback}
       canRollback={Boolean(rollbackSnapshot)}
       toolLabel={fixture.label}
+      initialHistory={initialChatHistory}
+      getClientParams={getClientParams}
     />
   );
 

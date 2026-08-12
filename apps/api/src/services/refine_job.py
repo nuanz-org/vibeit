@@ -22,6 +22,7 @@ from services.create_job import (
     _utc_iso,
 )
 from services.quota import QuotaSnapshot, get_quota_snapshot
+from services.refine_context import build_refine_context_pack
 
 
 class RefineJobError(CreateJobError):
@@ -83,6 +84,7 @@ async def enqueue_refine_job(
     jobs: JobsRepository,
     settings: Settings | None = None,
     base_version_id: str | None = None,
+    client_params: dict[str, Any] | None = None,
     skip_budget: bool = False,
 ) -> RefineJobResult:
     """
@@ -142,6 +144,20 @@ async def enqueue_refine_job(
         repair_budget = int(settings.create_repair_max)
         token_budget = settings.create_token_budget
 
+    user_meta: dict[str, Any] | None = None
+    if isinstance(client_params, dict) and client_params:
+        user_meta = {"clientParams": client_params}
+    user_msg = user_refine_message(message, meta=user_meta)
+
+    # Tool-scoped continuous history (source of truth for Studio)
+    try:
+        await tools.append_chat_messages(tool.id, [user_msg])
+        refreshed = await tools.get_tool_by_id(tool.id)
+        if refreshed is not None:
+            tool = refreshed
+    except Exception:  # noqa: BLE001 — pre-migrate column
+        pass
+
     job = await jobs.create_job(
         owner_user_id=owner_user_id,
         vision_text=message,
@@ -152,7 +168,7 @@ async def enqueue_refine_job(
         token_budget=token_budget,
         job_kind="refine",
         base_version_id=version.id,
-        message_history=[user_refine_message(message)],
+        message_history=[user_msg],
     )
 
     return RefineJobResult(
@@ -175,3 +191,40 @@ def base_version_payload(version: ToolVersionRow) -> dict[str, Any]:
         "target": version.target or "canvas2d",
         "base_version_id": str(version.id),
     }
+
+
+def client_params_from_job_history(job: GenerationJobRow) -> dict[str, Any] | None:
+    """Extract clientParams snapshot stored on the user refine message meta."""
+    history = job.message_history if isinstance(job.message_history, list) else []
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        if item.get("kind") != "refine" and item.get("role") != "user":
+            continue
+        meta = item.get("meta")
+        if isinstance(meta, dict):
+            cp = meta.get("clientParams") or meta.get("client_params")
+            if isinstance(cp, dict):
+                return cp
+    return None
+
+
+def refine_runner_inputs(
+    *,
+    tool: ToolRow,
+    version: ToolVersionRow,
+    chat_message: str,
+    client_params: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Payload for run_refine_with_repairs including context pack."""
+    payload = base_version_payload(version)
+    pack = build_refine_context_pack(
+        tool=tool,
+        version=version,
+        user_message=chat_message,
+        client_params=client_params,
+    )
+    draft = pack.get("draftParams") if isinstance(pack.get("draftParams"), dict) else {}
+    payload["refine_context"] = pack
+    payload["draft_params"] = draft
+    return payload

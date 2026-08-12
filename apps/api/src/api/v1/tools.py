@@ -69,6 +69,9 @@ def _tool_response(
 ) -> ToolResponse:
     draft_params = tool.draft_params if isinstance(tool.draft_params, dict) else {}
     draft_assets = tool.draft_assets if isinstance(tool.draft_assets, dict) else {}
+    chat_history = (
+        list(tool.chat_history) if isinstance(tool.chat_history, list) else []
+    )
     thumb_id = (
         str(tool.thumbnail_asset_id) if tool.thumbnail_asset_id is not None else None
     )
@@ -98,6 +101,7 @@ def _tool_response(
         latest_version=latest,
         draft_params=draft_params,
         draft_assets=draft_assets,
+        chat_history=chat_history,
     )
 
 
@@ -153,6 +157,7 @@ async def refine_tool(
             jobs=jobs,
             settings=settings,
             base_version_id=body.base_version_id,
+            client_params=body.client_params,
         )
     except ToolNotFoundError as exc:
         raise HTTPException(

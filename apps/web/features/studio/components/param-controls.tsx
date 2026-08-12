@@ -18,7 +18,9 @@ import { cn } from "@/lib/utils";
 
 import {
   groupParamsBySchema,
+  usePlayPauseBoolean,
   useSegmentedEnum,
+  useTextarea,
 } from "../lib/group-params";
 
 /** Segmented option tips only — snappy open; re-enter within timeout is instant. */
@@ -347,6 +349,30 @@ function ParamFieldControl({
     case "text": {
       const text =
         typeof value === "string" ? value : String(field.default ?? "");
+      if (useTextarea(field)) {
+        return (
+          <div className={fieldStack}>
+            <FieldLabel
+              label={label}
+              description={field.description}
+              className="px-1.5"
+            />
+            <textarea
+              value={text}
+              maxLength={field.maxLength}
+              placeholder={field.placeholder}
+              disabled={disabled}
+              rows={3}
+              onChange={(e) => onChange(e.target.value)}
+              className={cn(
+                controlSurface,
+                "min-h-[4.5rem] w-full resize-y px-2.5 py-2 text-left font-inherit text-[0.72rem] font-medium leading-snug text-ink",
+                "disabled:cursor-not-allowed disabled:opacity-45",
+              )}
+            />
+          </div>
+        );
+      }
       return (
         <div className={fieldRow}>
           <FieldLabel label={label} description={field.description} />
@@ -437,6 +463,32 @@ function ParamFieldControl({
     case "boolean": {
       const checked =
         typeof value === "boolean" ? value : Boolean(field.default);
+      // playPause: same boolean value; clearer play/pause chrome
+      if (usePlayPauseBoolean(field)) {
+        return (
+          <div className={fieldRow}>
+            <FieldLabel label={label} description={field.description} />
+            <button
+              type="button"
+              disabled={disabled}
+              aria-pressed={checked}
+              aria-label={checked ? "Pause" : "Play"}
+              onClick={() => onChange(!checked)}
+              className={cn(
+                controlSurface,
+                "inline-flex h-8 min-w-[5.5rem] shrink-0 cursor-pointer items-center justify-center gap-1.5 px-2.5",
+                "font-inherit text-[0.72rem] font-semibold text-ink",
+                "transition-[background-color,transform] duration-ui ease-ui",
+                "hover:bg-ink/[0.08] active:scale-[0.97]",
+                "disabled:cursor-not-allowed disabled:opacity-45",
+                "motion-reduce:active:scale-100",
+              )}
+            >
+              {checked ? "Pause" : "Play"}
+            </button>
+          </div>
+        );
+      }
       return (
         <label className={fieldRow} data-interactive="true">
           <FieldLabel label={label} description={field.description} />

@@ -100,10 +100,15 @@ class ClarifyJobResponse(CamelModel):
 
 
 class RefineJobRequest(CamelModel):
-    """POST /api/v1/tools/{toolId}/refine body (AM7)."""
+    """POST /api/v1/tools/{toolId}/refine body (AM7 + capability agent)."""
 
     message: str = Field(min_length=1)
     base_version_id: str | None = Field(default=None, alias="baseVersionId")
+    # Live Studio slider snapshot (preferred over last draft PATCH)
+    client_params: dict[str, Any] | None = Field(
+        default=None,
+        alias="clientParams",
+    )
 
 
 class RefineBudgetFields(CamelModel):

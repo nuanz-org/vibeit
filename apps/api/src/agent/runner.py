@@ -17,6 +17,7 @@ from agent.nodes.critique import critique_node
 from agent.nodes.ingest import ingest_node
 from agent.nodes.load_fixture import load_fixture_node
 from agent.nodes.plan import plan_node
+from agent.nodes.refine_capability import refine_capability_node
 from agent.nodes.refine_patch import (
     refine_code_patch_node,
     refine_fallback_to_code,
@@ -295,18 +296,22 @@ async def run_refine_with_repairs(
     job_id: str | None = None,
     tool_id: str | None = None,
     force_patch_mode: str | None = None,
+    refine_context: dict[str, Any] | None = None,
+    draft_params: dict[str, Any] | None = None,
     on_phase: PhaseCallback | None = None,
 ) -> CreateGraphState:
     """
-    Control refine pipeline (AM7).
+    Control refine pipeline (AM7 + capability agent).
 
-    Flow: route → param|code patch → validate → smoke → critique
-    - Param-only path uses plan-role model (no full codegen).
-    - Failed param path falls back once to code patch.
-    - Critic score must not regress vs base_critique_score when both present.
-    - On gate failure: repair (code) within budget, same as Create.
+    Default flow: capability ops (controllers/values) → validate → smoke → critique
+    - force_patch_mode "param"|"code" keeps legacy path for tests.
+    - Capability path can raise max/min and set draft values (spacing till 500).
     """
     started = time.monotonic()
+    # Prefer capability unless tests force legacy modes
+    seed_mode = force_patch_mode
+    if seed_mode is None:
+        seed_mode = "capability"
     state = initial_refine_state(
         chat_message=chat_message,
         base_code=base_code,
@@ -320,7 +325,9 @@ async def run_refine_with_repairs(
         max_repairs=max_repairs,
         job_id=job_id,
         tool_id=tool_id,
-        patch_mode=force_patch_mode,
+        patch_mode=seed_mode,
+        refine_context=refine_context,
+        draft_params=draft_params,
     )
 
     chat = (chat_message or "").strip()
@@ -352,9 +359,23 @@ async def run_refine_with_repairs(
             },
         )
 
-    # --- route ---
+    # --- plan / route ---
     await _maybe_await(on_phase, "plan", state)
-    state = _merge(state, refine_route_node(state))
+    mode = state.get("patch_mode") or "capability"
+    if mode in ("param", "code"):
+        state = _merge(state, refine_route_node(state))
+        mode = state.get("patch_mode") or mode
+    else:
+        state = _merge(
+            state,
+            {
+                "phase": "plan",
+                "patch_mode": "capability",
+                "patch_route_rationale": "capability_agent: controller ops (no intent classifier)",
+            },
+        )
+        mode = "capability"
+
     if _timed_out(started, wall_time_seconds):
         return _merge(
             state,
@@ -365,15 +386,44 @@ async def run_refine_with_repairs(
             },
         )
 
-    # --- patch (param first, optional code fallback) ---
+    # --- patch ---
     await _maybe_await(on_phase, "codegen", state)
-    mode = state.get("patch_mode") or "code"
     param_only_ok = False
 
-    if mode == "param":
+    if mode == "capability":
+        state = _merge(state, await refine_capability_node(state, llm=llm))
+        if state.get("error_code"):
+            # Fallback once to legacy code patch
+            state = _merge(
+                state,
+                {
+                    "error_code": None,
+                    "error_message": None,
+                    "patch_mode": "code",
+                    "patch_route_rationale": "code_patch: fallback after capability failure",
+                },
+            )
+            state = _merge(state, await refine_code_patch_node(state, llm=llm))
+            if state.get("error_code"):
+                return state
+        else:
+            # Skip heavy gates when only draft values changed (no version/code)
+            if state.get("capability_changed") and not state.get("needs_version"):
+                if (state.get("code") or "") == (state.get("base_code") or ""):
+                    return _merge(
+                        state,
+                        {
+                            "validate_ok": True,
+                            "smoke_ok": True,
+                            "ready_for_finalize": True,
+                            "phase": "finalize",
+                            "used_param_patch_only": True,
+                        },
+                    )
+            param_only_ok = bool(state.get("used_param_patch_only"))
+    elif mode == "param":
         state = _merge(state, await refine_param_patch_node(state, llm=llm))
         if state.get("error_code"):
-            # Fallback to code patch once
             state = _merge(state, refine_fallback_to_code(state))
             state = _merge(state, await refine_code_patch_node(state, llm=llm))
             if state.get("error_code"):

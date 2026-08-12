@@ -28,7 +28,17 @@
 
 **Sections:** when any param sets `group`, Studio renders **collapsible sections** ordered by first appearance of each group title. Fields without `group` land in **Params**. With no groups, legacy buckets **Colors / Params / Linked slots** remain. `uiHint: "hidden"` omits the field from the panel.
 
-Closed set: do not invent new kinds on the ASAP path without updating this contract.
+**uiHint soft-support (Studio):**
+
+| uiHint | Studio behavior |
+|--------|-----------------|
+| `playPause` | Play/Pause button (boolean value) |
+| `textarea` | Multiline text field |
+| `presetGrid` | Falls back to **select** until a real grid ships |
+
+**Control catalog:** Plan prefers selecting abstract kinds from the [Control Tool Catalog](./control-catalog.md); resolver materializes them into this param schema.
+
+Closed set for **kinds**: do not invent new kinds on the ASAP path without updating this contract. New **uiHints** and catalog templates are the preferred extension path.
 
 ---
 
@@ -44,7 +54,7 @@ Common:
 | `description` | no | Help text |
 | `default` | yes\* | Required for all kinds except `assetRef` (optional there) |
 | `group` | no | Section title for Studio Control (e.g. `"Distortion Effect"`) |
-| `uiHint` | no | `"slider"` \| `"segmented"` \| `"select"` \| `"switch"` \| `"hidden"` |
+| `uiHint` | no | `"slider"` \| `"segmented"` \| `"select"` \| `"switch"` \| `"hidden"` \| `"playPause"` \| `"textarea"` \| `"presetGrid"` |
 
 Per kind:
 

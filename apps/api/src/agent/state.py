@@ -19,8 +19,8 @@ JobPhase = Literal[
     "repair",
     "finalize",
 ]
-# AM7 — Control refine patch mode
-PatchMode = Literal["param", "code"]
+# AM7 — Control refine patch mode (capability = controller ops agent)
+PatchMode = Literal["param", "code", "capability"]
 JobKind = Literal["create", "refine"]
 
 
@@ -113,6 +113,14 @@ class CreateGraphState(TypedDict, total=False):
     asset_slots: NotRequired[list[Any] | None]
     # True when param path used plan-model only (no codegen role call)
     used_param_patch_only: NotRequired[bool]
+    # Capability agent (continuous Studio refine)
+    refine_context: NotRequired[dict[str, Any] | None]
+    draft_params: NotRequired[dict[str, Any] | None]
+    draft_params_patch: NotRequired[dict[str, Any] | None]
+    ops_applied: NotRequired[list[Any] | None]
+    explain: NotRequired[str | None]
+    needs_version: NotRequired[bool]
+    capability_changed: NotRequired[bool]
 
 
 def initial_create_state(
@@ -174,6 +182,8 @@ def initial_refine_state(
     job_id: str | None = None,
     tool_id: str | None = None,
     patch_mode: PatchMode | str | None = None,
+    refine_context: dict[str, Any] | None = None,
+    draft_params: dict[str, Any] | None = None,
 ) -> CreateGraphState:
     """AM7 — seed state for Control refine from an existing tool version."""
     defaults = dict(base_default_params or {})
@@ -181,6 +191,7 @@ def initial_refine_state(
     slots = list(base_asset_slots or [])
     plan = base_plan if isinstance(base_plan, dict) else None
     chat = (chat_message or "").strip()
+    draft = dict(draft_params or {})
     return CreateGraphState(
         vision_text=chat,
         chat_message=chat,
@@ -194,6 +205,8 @@ def initial_refine_state(
         base_asset_slots=slots,
         base_critique_score=base_critique_score,
         patch_mode=patch_mode,
+        refine_context=refine_context,
+        draft_params=draft,
         plan=plan,
         code=base_code,
         default_params=defaults,

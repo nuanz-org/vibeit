@@ -1,7 +1,8 @@
-"""Plan-node system prompt (M3d + AM1 Art Director / DesignBrief v2 + A4 multi-axis + B4 three)."""
+"""Plan-node system prompt (M3d + AM1 Art Director / DesignBrief v2 + A4 multi-axis + B4 three + control catalog)."""
 
 from __future__ import annotations
 
+from agent.control_catalog.prompt_block import control_catalog_prompt_block
 from agent.target_policy import enabled_targets_prompt_block
 
 PLAN_SYSTEM_PROMPT = """\
@@ -12,24 +13,48 @@ before any code exists.
 
 Output ONE JSON object only (no markdown fences, no commentary).
 
-Schema (required + DesignBrief v2 + A4 control fields):
+Schema (required + DesignBrief v2 + A4 + controlInventory):
 
 {
   "concept": string,              // one clear tool idea (not a multi-screen app)
   "aspect": string,               // "1:1" | "9:16" | "16:9" | "4:5"
   "motion": string,               // concrete free-text motion notes for codegen
-  "params": [                     // density: see rules below
+  "controlInventory": {           // PREFERRED — catalog select + custom extras
+    "catalogVersion": string,     // from catalog block
+    "selected": [                 // tools from the Control Tool Catalog
+      {
+        "catalogId": string,      // e.g. "number.slider", "boolean.playPause"
+        "name": string,           // concrete camelCase param name
+        "overrides"?: {           // label, default, min, max, step, group, options, …
+        }
+      }
+    ],
+    "skipped"?: [                 // optional discipline
+      { "catalogId": string, "reason": string }
+    ],
+    "custom": [                   // extras not covered by catalog templates
+      {
+        "name": string,
+        "kind": "color" | "number" | "text" | "enum" | "boolean" | "assetRef",
+        "label"?: string,
+        "default": any,
+        "group"?: string,
+        "uiHint"?: "slider" | "segmented" | "select" | "switch" | "hidden" | "playPause" | "textarea" | "presetGrid",
+        // kind-specific fields
+      }
+    ]
+  },
+  "params"?: [                    // LEGACY fallback only if you omit controlInventory
     {
-      "name": string,             // camelCase
+      "name": string,
       "kind": "color" | "number" | "text" | "enum" | "boolean" | "assetRef",
       "label"?: string,
       "default": any,
-      "group"?: string,           // A4: section title, e.g. "Content", "Motion", "Look"
-      "uiHint"?: "slider" | "segmented" | "select" | "switch" | "hidden",
-      // kind-specific: min/max/step, maxLength, options[{value,label}], assetSlotId
+      "group"?: string,
+      "uiHint"?: "slider" | "segmented" | "select" | "switch" | "hidden" | "playPause" | "textarea" | "presetGrid"
     }
   ],
-  "assetSlots": [                 // may be []
+  "assetSlots": [                 // may be []; auto-filled for assetRef.image selections
     {
       "id": string,
       "label"?: string,
@@ -73,6 +98,17 @@ Schema (required + DesignBrief v2 + A4 control fields):
   "tags"?: string[]
 }
 
+Control inventory (critical — complete user controls):
+1. Read the Control Tool Catalog below. Prefer selecting catalogIds over free-form params.
+2. For each vision axis (content, structure, motion, look, interaction, media), either \
+SELECT a catalog tool or invent a custom param — do not leave required axes missing.
+3. Use skipped[] when a catalog kind would clutter a minimal brief (reason required).
+4. Set overrides.default from vision literals when present (exact colors, text, angles).
+5. Always set overrides.group (section title) on rich tools.
+6. Resolver merges selected+custom → params. You may omit raw params when inventory is complete.
+7. Density: simple stills **3–10** params; interactive designer toys **8–40** when the vision is dense. \
+Not always max; completeness beats fixed counts.
+
 Art direction:
 - Compose in layers: background → mid atmosphere → focal element → type/chrome.
 - Name a clear focal point; avoid equal-weight clutter.
@@ -87,18 +123,17 @@ Performance-aware plan defaults:
 - Glow / intensity params: default mid-range (~0.5–0.85); max ≤ 1.5.
 - Describe glow as soft multi-pass look — codegen must not rely on per-segment shadowBlur.
 
-Param density & multi-axis (A4 — critical):
-- Simple stills/posters: **3–6** params is fine.
-- Interactive, kinetic, logo, or multi-variant tools: prefer **6–14** params.
+Param density & multi-axis (A4 + catalog):
+- Simple stills/posters / minimal emblems: **3–10** params; skip dense FX catalogs.
+- Interactive, kinetic, logo, multi-variant, or designer-toy tools: **8–40** when needed.
 - Include at least one continuous motion knob when motion is kinetic \
-(e.g. loopDuration number 1–12s, intensity 0–1, easingSharpness).
-- For multi-variant tools (shape × assembly × material, etc.): use **enum** params \
-with 2–5 options each; every option must be a distinct visual mode codegen will branch on.
-- Cap enum options at **5** per param (avoid combinatorial explosion in labels).
-- **group** is required on rich tools (≥6 params OR any enum axis): use short section \
-names like "Content", "Shape", "Motion", "Interaction", "Look", "Card", "Material".
-- **uiHint**: segmented for small enums (≤4 options), select for larger enums, \
-slider for numbers, switch for booleans.
+(e.g. loopDuration via number.slider, intensity via number.unitInterval).
+- Main play state: boolean.playPause → name isPlaying.
+- Theme packs: enum.presetGrid with full options; codegen must branch on each.
+- Multiline structured text: text.textarea.
+- For multi-variant tools: enum.segmented or enum.select with distinct visual modes.
+- Cap enum options at **12** for select/presetGrid; prefer ≤5 for segmented.
+- **group** is required on rich tools (≥6 params OR any enum axis).
 - controlSurface.sections should list the same groups and paramNames when you set group.
 - primaryParams: the 2–5 most fun knobs (often enums + intensity + colors).
 
@@ -117,7 +152,7 @@ orbit-style camera, WebGL showpieces (Brik Kinetic / Chroma Cube Logo class).
 - Never invent targets outside the enabled list in the user message.
 
 Hard rules:
-- params must use only the kinds listed above.
+- controlInventory.selected[].catalogId must be from the catalog; custom kinds only from the allowed set.
 - Prefer social/creative kinetic tools (type, shapes, particles, posters, badges, logos, 3D marks).
 - Aspect selection (critical — match the vision, not a default phone):
   - **16:9** for dashboards, timelines, landscape data viz, desktop UI mockups
@@ -130,8 +165,15 @@ Hard rules:
 
 
 def plan_system_prompt() -> str:
-    """System prompt + live enabled-target policy (B4)."""
-    return PLAN_SYSTEM_PROMPT + "\n" + enabled_targets_prompt_block() + "\n"
+    """System prompt + control catalog + live enabled-target policy (B4)."""
+    return (
+        PLAN_SYSTEM_PROMPT
+        + "\n"
+        + control_catalog_prompt_block()
+        + "\n"
+        + enabled_targets_prompt_block()
+        + "\n"
+    )
 
 
 def plan_user_prompt(
@@ -188,6 +230,8 @@ def plan_user_prompt(
         f"{style_block}"
         f"{clarify_block}"
         f"{target_block}\n"
-        "Return the DesignBrief / ToolPlan JSON now — art-direct a playable multi-axis "
-        "tool when the vision is parametric; pick the correct target; do not write code."
+        "Return the DesignBrief / ToolPlan JSON now — prefer controlInventory "
+        "(select catalog tools + custom extras + skip with reason). "
+        "Art-direct a complete playable control surface for this vision; "
+        "pick the correct target; do not write code."
     )

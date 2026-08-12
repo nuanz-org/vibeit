@@ -29,7 +29,13 @@ export type ParamUiHint =
   | "segmented"
   | "select"
   | "switch"
-  | "hidden";
+  | "hidden"
+  /** Main animation play/pause (boolean). Studio may fall back to switch. */
+  | "playPause"
+  /** Multiline text. Studio may fall back to single-line input. */
+  | "textarea"
+  /** Theme/preset grid for enums. Studio may fall back to select. */
+  | "presetGrid";
 
 /** Shared fields on every param schema entry. */
 export interface ParamFieldBase {

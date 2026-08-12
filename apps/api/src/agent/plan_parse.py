@@ -11,13 +11,28 @@ import json
 import re
 from typing import Any
 
+from agent.control_catalog.catalog import PARAM_UI_HINTS as _CATALOG_UI_HINTS
+from agent.control_catalog.resolve import (
+    ControlInventoryError,
+    resolve_control_inventory,
+)
 from agent.target_policy import ASAP_TARGET, resolve_plan_target
+
 _PARAM_KINDS = frozenset(
     {"color", "number", "text", "enum", "boolean", "assetRef"}
 )
 _PARAM_UI_HINTS = frozenset(
-    {"slider", "segmented", "select", "switch", "hidden"}
-)
+    {
+        "slider",
+        "segmented",
+        "select",
+        "switch",
+        "hidden",
+        "playPause",
+        "textarea",
+        "presetGrid",
+    }
+) | _CATALOG_UI_HINTS
 _HEX_RE = re.compile(r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 
 
@@ -237,10 +252,61 @@ def _normalize_control_surface(raw: Any) -> dict[str, Any] | None:
     return out or None
 
 
+def _maybe_resolve_control_inventory(
+    data: dict[str, Any],
+    *,
+    concept: str,
+) -> tuple[list[dict[str, Any]] | None, list[dict[str, Any]] | None, dict[str, Any] | None, list[dict[str, Any]] | None]:
+    """
+    If controlInventory is present and non-empty, resolve to params/slots.
+    Returns (params, slots, inventory, sections) or (None, None, None, None) for legacy.
+    """
+    inv = data.get("controlInventory") or data.get("control_inventory")
+    if not isinstance(inv, dict):
+        return None, None, None, None
+    selected = inv.get("selected")
+    custom = inv.get("custom")
+    has_selected = isinstance(selected, list) and len(selected) > 0
+    has_custom = isinstance(custom, list) and len(custom) > 0
+    if not has_selected and not has_custom:
+        return None, None, None, None
+
+    existing_slots = data.get("assetSlots")
+    if not isinstance(existing_slots, list):
+        existing_slots = []
+
+    try:
+        resolved = resolve_control_inventory(
+            inv,
+            existing_slots=[s for s in existing_slots if isinstance(s, dict)],
+            strict=True,
+        )
+    except ControlInventoryError as exc:
+        # Soft path: if inventory is broken but classic params exist, fall back
+        classic = data.get("params")
+        if isinstance(classic, list) and classic:
+            return None, None, None, None
+        raise PlanParseError(f"controlInventory: {exc}") from exc
+
+    params = resolved["params"]
+    if not params:
+        params = _default_params(concept)
+    else:
+        params = _ensure_min_params(params, concept, minimum=3)
+
+    return (
+        params,
+        list(resolved.get("assetSlots") or []),
+        resolved.get("controlInventory"),
+        resolved.get("sections"),
+    )
+
+
 def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
     """
     Validate required fields; resolve target via AM6 policy (default canvas2d).
     Accepts DesignBrief v2 optional fields; drops invalid ones.
+    When controlInventory is present, it is the authority for params.
     """
     concept = str(data.get("concept") or "").strip()
     if not concept:
@@ -249,32 +315,40 @@ def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
     aspect = str(data.get("aspect") or "1:1").strip() or "1:1"
     motion = str(data.get("motion") or "subtle motion").strip()
 
-    params = data.get("params")
-    if not isinstance(params, list) or len(params) == 0:
-        params = _default_params(concept)
+    inv_params, inv_slots, inv_norm, inv_sections = _maybe_resolve_control_inventory(
+        data, concept=concept
+    )
+
+    if inv_params is not None:
+        params = inv_params
+        cleaned_slots = inv_slots or []
     else:
-        cleaned_params: list[dict[str, Any]] = []
-        for p in params:
-            if not isinstance(p, dict):
+        params = data.get("params")
+        if not isinstance(params, list) or len(params) == 0:
+            params = _default_params(concept)
+        else:
+            cleaned_params: list[dict[str, Any]] = []
+            for p in params:
+                if not isinstance(p, dict):
+                    continue
+                entry = _normalize_param_entry(p)
+                if entry is not None:
+                    cleaned_params.append(entry)
+            params = cleaned_params or _default_params(concept)
+
+        params = _ensure_min_params(params, concept, minimum=3)
+
+        slots = data.get("assetSlots")
+        if not isinstance(slots, list):
+            slots = []
+        cleaned_slots = []
+        for s in slots:
+            if not isinstance(s, dict):
                 continue
-            entry = _normalize_param_entry(p)
-            if entry is not None:
-                cleaned_params.append(entry)
-        params = cleaned_params or _default_params(concept)
-
-    params = _ensure_min_params(params, concept, minimum=3)
-
-    slots = data.get("assetSlots")
-    if not isinstance(slots, list):
-        slots = []
-    cleaned_slots: list[dict[str, Any]] = []
-    for s in slots:
-        if not isinstance(s, dict):
-            continue
-        sid = str(s.get("id") or "").strip()
-        if not sid:
-            continue
-        cleaned_slots.append(s)
+            sid = str(s.get("id") or "").strip()
+            if not sid:
+                continue
+            cleaned_slots.append(s)
 
     palette_raw = data.get("palette")
     palette: list[str] | None = None
@@ -341,7 +415,19 @@ def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
 
     control = _normalize_control_surface(data.get("controlSurface"))
     if control:
+        if inv_sections and not control.get("sections"):
+            control = dict(control)
+            control["sections"] = inv_sections
         plan["controlSurface"] = control
+    elif inv_sections:
+        plan["controlSurface"] = {
+            "intent": "Catalog + custom control inventory",
+            "sections": inv_sections,
+            "primaryParams": [p["name"] for p in params[:5] if p.get("name")],
+        }
+
+    if inv_norm:
+        plan["controlInventory"] = inv_norm
 
     tags = _normalize_string_list(data.get("tags"), limit=12)
     if tags:

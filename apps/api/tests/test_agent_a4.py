@@ -115,9 +115,16 @@ def _multi_axis_plan() -> dict:
 
 
 def test_plan_prompt_multi_axis_density() -> None:
-    assert "6–14" in PLAN_SYSTEM_PROMPT or "6-14" in PLAN_SYSTEM_PROMPT
+    # Density bands (catalog era): interactive toys 8–40; stills 3–10
+    assert (
+        "8–40" in PLAN_SYSTEM_PROMPT
+        or "8-40" in PLAN_SYSTEM_PROMPT
+        or "6–14" in PLAN_SYSTEM_PROMPT
+        or "6-14" in PLAN_SYSTEM_PROMPT
+    )
     assert "group" in PLAN_SYSTEM_PROMPT
     assert "uiHint" in PLAN_SYSTEM_PROMPT
+    assert "controlInventory" in PLAN_SYSTEM_PROMPT
     assert "FORCED ENUM" in PLAN_SYSTEM_PROMPT or "forced" in PLAN_SYSTEM_PROMPT.lower()
     assert "sections" in PLAN_SYSTEM_PROMPT
 

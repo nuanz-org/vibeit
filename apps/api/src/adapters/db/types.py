@@ -29,6 +29,8 @@ class ToolRow:
     # M8b: gallery eligibility after quality gates
     gallery_ready: bool
     export_smoke_at: datetime | None
+    # Studio continuous refine chat (010_tool_chat_history)
+    chat_history: Any = None
 
 
 @dataclass(frozen=True, slots=True)

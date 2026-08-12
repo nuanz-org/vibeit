@@ -13,7 +13,11 @@ from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.db.types import GenerationJobRow, ToolVersionRow
 from agent.state import CreateGraphState
-from domain.chat_messages import assistant_error_message, assistant_success_message
+from domain.chat_messages import (
+    assistant_error_message,
+    assistant_refine_message,
+    assistant_success_message,
+)
 from domain.job_status import IllegalJobTransition, assert_job_transition
 from services.create_job import JobNotFoundError
 from services.quota import estimate_cost_cents
@@ -84,15 +88,54 @@ async def finalize_from_agent_state(
         if not isinstance(asset_slots, list):
             asset_slots = plan.get("assetSlots") if plan else []
         target = (state.get("target") or "canvas2d") or "canvas2d"
-        version = await tools.create_tool_version(
-            tool_id=job.tool_id or state.get("tool_id"),  # type: ignore[arg-type]
-            target=str(target),
-            code=code,
-            param_schema=param_schema or [],
-            default_params=defaults or {},
-            asset_slots=asset_slots or [],
-            plan=plan,
-        )
+        job_kind = getattr(job, "job_kind", None) or "create"
+        tool_id = job.tool_id or state.get("tool_id")
+        base_code = (state.get("base_code") or "").strip()
+        needs_version = state.get("needs_version")
+        if needs_version is None:
+            needs_version = True
+        # Capability draft-only: skip new version when code unchanged
+        write_version = bool(needs_version) or (code != base_code) or job_kind != "refine"
+        if job_kind == "refine" and not write_version and code == base_code:
+            write_version = False
+
+        version: ToolVersionRow | None = None
+        if write_version:
+            version = await tools.create_tool_version(
+                tool_id=tool_id,  # type: ignore[arg-type]
+                target=str(target),
+                code=code,
+                param_schema=param_schema or [],
+                default_params=defaults or {},
+                asset_slots=asset_slots or [],
+                plan=plan,
+            )
+        elif tool_id is not None:
+            # Keep latest version pointer for result API
+            version = await tools.get_latest_tool_version(tool_id)
+
+        # Merge draft param patches from capability agent
+        draft_patch = state.get("draft_params_patch")
+        if (
+            tool_id is not None
+            and isinstance(draft_patch, dict)
+            and draft_patch
+        ):
+            try:
+                existing = await tools.get_tool_by_id(tool_id)
+                prev = (
+                    dict(existing.draft_params)
+                    if existing and isinstance(existing.draft_params, dict)
+                    else {}
+                )
+                prev.update(draft_patch)
+                await tools.update_tool_draft_state(
+                    tool_id,
+                    draft_params=prev,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
         updated = await jobs.update_job_status(
             job_id,
             status="succeeded",
@@ -114,21 +157,42 @@ async def finalize_from_agent_state(
             )
             updated = await jobs.get_job(job_id) or updated
 
-        job_kind = getattr(job, "job_kind", None) or "create"
-        try:
-            with_msg = await jobs.append_job_messages(
-                job_id,
-                [assistant_success_message(job_kind=str(job_kind))],
+        explain = state.get("explain")
+        ops_applied = state.get("ops_applied")
+        success_msg = (
+            assistant_refine_message(
+                str(explain) if isinstance(explain, str) and explain.strip() else "",
+                meta={
+                    "ops": ops_applied if isinstance(ops_applied, list) else [],
+                    "versionId": str(version.id) if version else None,
+                    "jobId": str(job.id),
+                    "needsVersion": bool(write_version),
+                },
             )
+            if job_kind == "refine"
+            else assistant_success_message(job_kind=str(job_kind))
+        )
+        try:
+            with_msg = await jobs.append_job_messages(job_id, [success_msg])
             if with_msg is not None:
                 updated = with_msg
         except Exception:  # noqa: BLE001 — history is best-effort
             pass
 
-        # Public by default: successful tools appear on /gallery + /t/:publicId.
-        # Salvage/failure paths below stay draft and never list.
-        tool_id = job.tool_id or state.get("tool_id")
-        if tool_id is not None and job.owner_user_id:
+        # Tool-scoped continuous chat
+        if job_kind == "refine" and tool_id is not None:
+            try:
+                await tools.append_chat_messages(tool_id, [success_msg])
+            except Exception:  # noqa: BLE001
+                pass
+
+        # Public by default when a new version was written
+        if (
+            write_version
+            and version is not None
+            and tool_id is not None
+            and job.owner_user_id
+        ):
             await tools.set_tool_published(
                 tool_id,
                 owner_user_id=job.owner_user_id,
@@ -159,6 +223,17 @@ async def finalize_from_agent_state(
             f"{err_msg} | salvage_draft=true toolId={job.tool_id} "
             f"versionId={salvage_written.id}"
         )
+
+    # Append refine failure to tool chat history
+    if (getattr(job, "job_kind", None) or "create") == "refine" and job.tool_id:
+        try:
+            fail_msg = assistant_error_message(
+                error_message=err_msg,
+                error_code=str(err_code) if err_code else None,
+            )
+            await tools.append_chat_messages(job.tool_id, [fail_msg])
+        except Exception:  # noqa: BLE001
+            pass
 
     if job.status not in ("failed", "succeeded"):
         try:

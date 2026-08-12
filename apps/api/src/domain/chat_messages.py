@@ -67,11 +67,16 @@ def user_vision_message(vision_text: str) -> dict[str, Any]:
     )
 
 
-def user_refine_message(chat_message: str) -> dict[str, Any]:
+def user_refine_message(
+    chat_message: str,
+    *,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return make_chat_message(
         role="user",
         content=chat_message,
         kind="refine",
+        meta=meta,
     )
 
 
@@ -121,6 +126,38 @@ def assistant_success_message(*, job_kind: str = "create") -> dict[str, Any]:
         content=content,
         kind="success",
     )
+
+
+def assistant_refine_message(
+    content: str,
+    *,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Capability-agent refine result shown in Studio continuous chat."""
+    text = (content or "").strip() or "Refine applied — new version ready."
+    return make_chat_message(
+        role="assistant",
+        content=text[:4000],
+        kind="refine_result",
+        meta=meta,
+    )
+
+
+def truncate_chat_history(
+    history: list[Any] | None,
+    *,
+    max_turns: int = 40,
+) -> list[dict[str, Any]]:
+    """Keep the last max_turns well-formed message dicts."""
+    if not isinstance(history, list) or max_turns <= 0:
+        return []
+    out: list[dict[str, Any]] = []
+    for item in history:
+        if isinstance(item, dict) and item.get("role") and item.get("content") is not None:
+            out.append(item)
+    if len(out) > max_turns:
+        return out[-max_turns:]
+    return out
 
 
 def assistant_error_message(

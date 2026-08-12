@@ -11,6 +11,8 @@ import {
 export type RefineJobRequest = {
   message: string;
   baseVersionId?: string;
+  /** Live Control slider values (preferred over last draft PATCH) */
+  clientParams?: Record<string, unknown>;
 };
 
 export type RefineJobResponse = {
@@ -42,6 +44,7 @@ export async function startRefineJob(
       body: JSON.stringify({
         message: body.message,
         baseVersionId: body.baseVersionId,
+        clientParams: body.clientParams,
       }),
     },
   );

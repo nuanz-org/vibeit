@@ -62,6 +62,11 @@ class ToolResponse(CamelModel):
         default_factory=dict,
         alias="draftAssets",
     )
+    # Continuous Studio refine transcript (tool-scoped)
+    chat_history: list[Any] = Field(
+        default_factory=list,
+        alias="chatHistory",
+    )
 
 
 class ToolPublishRequest(CamelModel):

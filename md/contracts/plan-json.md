@@ -42,9 +42,12 @@ Plan answers: *what are we building, at what aspect, with what motion, params, s
 | `motionSpec` | no | object | AM1: `summary`, `easing`, `tempo`, `loop` |
 | `typography` | no | object | AM1: `scale`, `hierarchy` |
 | `controlSurface` | no | object | AM1+: `intent`, `primaryParams`, optional `sections[]` |
+| `controlInventory` | no | object | Catalog select + custom → resolved into `params` ([control-catalog.md](./control-catalog.md)) |
 | `tags` | no | `string[]` | AM1: golden retrieval tags |
 
-Legacy plans without DesignBrief v2 fields remain valid. Python `plan_parse.normalize_asap_plan` accepts both.
+When `controlInventory.selected` or `custom` is non-empty, the resolver **owns** `params` (model-emitted raw `params` are ignored after a successful resolve).
+
+Legacy plans without DesignBrief v2 / inventory fields remain valid. Python `plan_parse.normalize_asap_plan` accepts both.
 
 ### TypeScript
 

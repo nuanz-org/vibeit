@@ -36,6 +36,23 @@ export type {
   TextParamField,
 } from "./param-schema";
 
+// Control Tool Catalog (plan-time abstract kinds)
+export {
+  CONTROL_CATALOG,
+  CONTROL_CATALOG_VERSION,
+  getActiveControlCatalogEntries,
+  getControlCatalogEntry,
+} from "./control-catalog";
+export type {
+  ControlCatalog,
+  ControlCatalogEntry,
+  ControlCatalogStatus,
+  ControlCatalogTemplate,
+  ControlInventory,
+  ControlInventorySelected,
+  ControlInventorySkipped,
+} from "./control-catalog";
+
 // M0c — Target registry
 export {
   ASAP_TARGET,

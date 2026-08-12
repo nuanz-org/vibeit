@@ -14,7 +14,7 @@ _TOOL_COLUMNS = """
     id, public_id, owner_user_id, status, title, description,
     thumbnail_asset_id, published_at, created_at, updated_at,
     draft_params, draft_assets, tags, published_version_id,
-    gallery_ready, export_smoke_at
+    gallery_ready, export_smoke_at, chat_history
 """
 
 _VERSION_COLUMNS = """
@@ -384,4 +384,40 @@ class ToolsRepository:
         """
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(sql, *args)
+        return tool_from_record(row) if row else None
+
+    async def append_chat_messages(
+        self,
+        tool_id: UUID | str,
+        messages: list[dict[str, Any]],
+        *,
+        max_turns: int = 40,
+    ) -> ToolRow | None:
+        """
+        Append Studio refine chat turns to tools.chat_history (capped).
+        Each message should be a camelCase history dict from domain.chat_messages.
+        """
+        if not messages:
+            return await self.get_tool_by_id(tool_id)
+
+        tool = await self.get_tool_by_id(tool_id)
+        if tool is None:
+            return None
+
+        existing = tool.chat_history if isinstance(tool.chat_history, list) else []
+        merged: list[Any] = list(existing) + list(messages)
+        if max_turns > 0 and len(merged) > max_turns:
+            merged = merged[-max_turns:]
+
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE tools
+                SET chat_history = $2::jsonb, updated_at = now()
+                WHERE id = $1::uuid
+                RETURNING {_TOOL_COLUMNS}
+                """,
+                str(tool_id),
+                json.dumps(merged),
+            )
         return tool_from_record(row) if row else None

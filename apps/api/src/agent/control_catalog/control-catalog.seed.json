@@ -1,0 +1,183 @@
+{
+  "version": "1",
+  "entries": [
+    {
+      "id": "number.slider",
+      "version": 1,
+      "kind": "number",
+      "uiHint": "slider",
+      "label": "Number slider",
+      "whenToUse": "Continuous numeric values: scale, speed, angle, spacing, intensity with a wide range.",
+      "whenNotToUse": "Avoid for pure 0–1 intensity (use number.unitInterval) or discrete modes (use enum.*).",
+      "template": {
+        "kind": "number",
+        "uiHint": "slider",
+        "default": 0,
+        "min": 0,
+        "max": 100,
+        "step": 1
+      },
+      "status": "active"
+    },
+    {
+      "id": "number.unitInterval",
+      "version": 1,
+      "kind": "number",
+      "uiHint": "slider",
+      "label": "Unit interval (0–1)",
+      "whenToUse": "Normalized intensities, opacities, mix amounts, glow strength.",
+      "whenNotToUse": "Avoid for angles, pixel sizes, or counts.",
+      "template": {
+        "kind": "number",
+        "uiHint": "slider",
+        "default": 0.5,
+        "min": 0,
+        "max": 1,
+        "step": 0.01
+      },
+      "status": "active"
+    },
+    {
+      "id": "boolean.switch",
+      "version": 1,
+      "kind": "boolean",
+      "uiHint": "switch",
+      "label": "On/off switch",
+      "whenToUse": "Feature toggles: glitch enable, scanlines, vignette, show cursor.",
+      "whenNotToUse": "Avoid for play/pause of the main animation (use boolean.playPause).",
+      "template": {
+        "kind": "boolean",
+        "uiHint": "switch",
+        "default": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "boolean.playPause",
+      "version": 1,
+      "kind": "boolean",
+      "uiHint": "playPause",
+      "label": "Play / pause",
+      "whenToUse": "Main animation playback state (isPlaying).",
+      "whenNotToUse": "Avoid for unrelated feature flags.",
+      "template": {
+        "kind": "boolean",
+        "uiHint": "playPause",
+        "default": true,
+        "label": "Playing"
+      },
+      "status": "active"
+    },
+    {
+      "id": "color.hex",
+      "version": 1,
+      "kind": "color",
+      "label": "Color",
+      "whenToUse": "Palette colors: bg, ink, accent, glyph, fill.",
+      "whenNotToUse": "Avoid for theme packs that should set several colors at once (use enum.presetGrid + branch).",
+      "template": {
+        "kind": "color",
+        "default": "#ffffff"
+      },
+      "status": "active"
+    },
+    {
+      "id": "text.single",
+      "version": 1,
+      "kind": "text",
+      "label": "Single-line text",
+      "whenToUse": "Titles, labels, short glyph/character inputs.",
+      "whenNotToUse": "Avoid for multiline kerning pairs or long scripts (use text.textarea).",
+      "template": {
+        "kind": "text",
+        "default": "",
+        "maxLength": 64
+      },
+      "status": "active"
+    },
+    {
+      "id": "text.textarea",
+      "version": 1,
+      "kind": "text",
+      "uiHint": "textarea",
+      "label": "Multiline text",
+      "whenToUse": "Kerning pairs, multi-line copy, structured free text.",
+      "whenNotToUse": "Avoid for short single-word titles.",
+      "template": {
+        "kind": "text",
+        "uiHint": "textarea",
+        "default": ""
+      },
+      "status": "active"
+    },
+    {
+      "id": "enum.segmented",
+      "version": 1,
+      "kind": "enum",
+      "uiHint": "segmented",
+      "label": "Segmented enum (≤4)",
+      "whenToUse": "2–4 discrete visual modes the user toggles often.",
+      "whenNotToUse": "Avoid when options > 4 (use enum.select) or theme grids (enum.presetGrid).",
+      "template": {
+        "kind": "enum",
+        "uiHint": "segmented",
+        "default": "a",
+        "options": [
+          { "value": "a", "label": "A" },
+          { "value": "b", "label": "B" }
+        ]
+      },
+      "status": "active"
+    },
+    {
+      "id": "enum.select",
+      "version": 1,
+      "kind": "enum",
+      "uiHint": "select",
+      "label": "Select enum (5+)",
+      "whenToUse": "5+ discrete modes, animation modes, character sets.",
+      "whenNotToUse": "Avoid for 2–3 options (prefer enum.segmented).",
+      "template": {
+        "kind": "enum",
+        "uiHint": "select",
+        "default": "default",
+        "options": [
+          { "value": "default", "label": "Default" },
+          { "value": "alt", "label": "Alt" }
+        ]
+      },
+      "status": "active"
+    },
+    {
+      "id": "enum.presetGrid",
+      "version": 1,
+      "kind": "enum",
+      "uiHint": "presetGrid",
+      "label": "Preset grid (themes)",
+      "whenToUse": "Named theme/look packs (Matrix, C64, Neon). Codegen must branch or map options to colors.",
+      "whenNotToUse": "Avoid for binary choices or continuous values.",
+      "template": {
+        "kind": "enum",
+        "uiHint": "presetGrid",
+        "default": "custom",
+        "options": [
+          { "value": "custom", "label": "Custom" }
+        ]
+      },
+      "status": "active"
+    },
+    {
+      "id": "assetRef.image",
+      "version": 1,
+      "kind": "assetRef",
+      "label": "Image asset slot",
+      "whenToUse": "User photo/background/logo image slots.",
+      "whenNotToUse": "Avoid when the tool has no external image.",
+      "template": {
+        "kind": "assetRef"
+      },
+      "requiresAssetSlot": true,
+      "status": "active"
+    }
+  ]
+}

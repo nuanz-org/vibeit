@@ -36,6 +36,15 @@ export type ToolResponse = {
   draftParams?: Record<string, unknown>;
   /** M5c: slotId → http URL | null */
   draftAssets?: Record<string, string | null>;
+  /** Continuous Studio refine chat (tool-scoped) */
+  chatHistory?: Array<{
+    id?: string;
+    role: string;
+    content: string;
+    kind?: string;
+    createdAt?: string;
+    meta?: Record<string, unknown>;
+  }>;
 };
 
 /** Structured gate failure from gallery publish 422. */

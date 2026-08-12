@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   AiMessage,
@@ -15,6 +15,15 @@ import {
 import { CreateJobApiError } from "@/lib/api/jobs";
 import { pollRefineJob, startRefineJob } from "@/lib/api/refine";
 import { getTool, type ToolResponse } from "@/lib/api/tools";
+
+export type RefineChatMessage = {
+  id?: string;
+  role: string;
+  content: string;
+  kind?: string;
+  createdAt?: string;
+  meta?: Record<string, unknown>;
+};
 
 export type RefineAppliedPayload = {
   tool: ToolResponse;
@@ -35,12 +44,16 @@ export type RefineChatPanelProps = {
   /** When true, fills playground chat column as a console card. */
   consoleLayout?: boolean;
   toolLabel?: string | null;
+  /** Tool-scoped history from GET tool.chatHistory */
+  initialHistory?: RefineChatMessage[] | null;
+  /** Live Control params to send as clientParams */
+  getClientParams?: () => Record<string, unknown>;
 };
 
 type Phase = "idle" | "queued" | "running" | "succeeded" | "failed";
 
 /**
- * AM7b — Studio refine chat (Chat Console layout for playground shell).
+ * AM7b — Studio refine chat (continuous capability agent).
  */
 export function RefineChatPanel({
   toolId,
@@ -52,16 +65,30 @@ export function RefineChatPanel({
   canRollback,
   consoleLayout = false,
   toolLabel,
+  initialHistory,
+  getClientParams,
 }: RefineChatPanelProps) {
   const [message, setMessage] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [lastUserMessage, setLastUserMessage] = useState<string | null>(null);
+  const [history, setHistory] = useState<RefineChatMessage[]>(() =>
+    Array.isArray(initialHistory) ? initialHistory : [],
+  );
 
   const busy = phase === "queued" || phase === "running";
   const enabled = Boolean(toolId && sourceCode?.trim()) && !disabled;
+
+  const thread = useMemo(() => {
+    return history.filter(
+      (m) =>
+        m &&
+        (m.role === "user" || m.role === "assistant") &&
+        typeof m.content === "string" &&
+        m.content.trim(),
+    );
+  }, [history]);
 
   const submit = useCallback(async () => {
     if (!toolId || !message.trim() || busy) return;
@@ -69,16 +96,26 @@ export function RefineChatPanel({
     setPhase("queued");
     setStatusLine("Starting refine…");
     const text = message.trim();
-    setLastUserMessage(text);
     const previous = {
       versionId: versionId ?? null,
       sourceCode: sourceCode ?? null,
     };
 
+    const optimisticUser: RefineChatMessage = {
+      role: "user",
+      content: text,
+      kind: "refine",
+      createdAt: new Date().toISOString(),
+    };
+    setHistory((h) => [...h, optimisticUser]);
+    setMessage("");
+
     try {
+      const clientParams = getClientParams?.() ?? undefined;
       const created = await startRefineJob(toolId, {
         message: text,
         baseVersionId: versionId ?? undefined,
+        clientParams,
       });
       setJobId(created.jobId);
       setStatusLine(
@@ -107,32 +144,69 @@ export function RefineChatPanel({
 
       if (status.status === "failed" || !result) {
         setPhase("failed");
-        setError(
+        const errText =
           status.errorMessage ||
-            status.errorCode ||
-            "Refine failed — previous version kept",
-        );
+          status.errorCode ||
+          "Refine failed — previous version kept";
+        setError(errText);
         setStatusLine("Failed · last-good kept");
+        setHistory((h) => [
+          ...h,
+          {
+            role: "assistant",
+            content: errText,
+            kind: "error",
+          },
+        ]);
         return;
       }
 
       const tool = await getTool(toolId);
+      if (Array.isArray(tool.chatHistory) && tool.chatHistory.length > 0) {
+        setHistory(tool.chatHistory as RefineChatMessage[]);
+      } else {
+        const assistantText =
+          status.messages
+            ?.slice()
+            .reverse()
+            .find((m) => m.role === "assistant")?.content ||
+          "Applied controller updates.";
+        setHistory((h) => [
+          ...h,
+          {
+            role: "assistant",
+            content: assistantText,
+            kind: "refine_result",
+          },
+        ]);
+      }
       setPhase("succeeded");
-      setStatusLine("Applied new version");
-      setMessage("");
+      setStatusLine("Applied");
       onApplied({ tool, previous });
     } catch (err) {
       setPhase("failed");
+      let errText = "Refine failed";
       if (err instanceof CreateJobApiError) {
-        setError(err.message);
+        errText = err.message;
       } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Refine failed");
+        errText = err.message;
       }
+      setError(errText);
       setStatusLine("Failed · last-good kept");
+      setHistory((h) => [
+        ...h,
+        { role: "assistant", content: errText, kind: "error" },
+      ]);
     }
-  }, [toolId, message, busy, versionId, sourceCode, onApplied]);
+  }, [
+    toolId,
+    message,
+    busy,
+    versionId,
+    sourceCode,
+    onApplied,
+    getClientParams,
+  ]);
 
   if (!consoleLayout) {
     if (!toolId) {
@@ -239,17 +313,29 @@ export function RefineChatPanel({
                       {toolLabel?.trim() || "Your tool is ready"}
                     </p>
                     <p className={pg.greetingSub}>
-                      Ask for structural or creative changes. Param tweaks stay
-                      in Controls.
+                      Ask for more range on a control (e.g. gallery arc past 600),
+                      set values, or structural changes. We expand controller
+                      limits first — then you fine-tune in Controls.
                     </p>
                   </div>
                 </ChatThreadItem>
 
-                {lastUserMessage ? (
-                  <ChatThreadItem id="refine-user">
-                    <AiMessage role="user">{lastUserMessage}</AiMessage>
+                {thread.map((m, i) => (
+                  <ChatThreadItem
+                    key={m.id || `${m.role}-${m.createdAt || i}-${i}`}
+                    id={m.id}
+                  >
+                    <AiMessage
+                      role={m.role === "user" ? "user" : "assistant"}
+                      variant={
+                        m.kind === "error" ? "destructive" : undefined
+                      }
+                      header={m.role === "assistant" ? "Aiditr" : undefined}
+                    >
+                      {m.content}
+                    </AiMessage>
                   </ChatThreadItem>
-                ) : null}
+                ))}
 
                 {busy ? (
                   <ChatThreadItem id="refine-busy" scrollAnchor>
@@ -257,35 +343,6 @@ export function RefineChatPanel({
                       Working on it — preview keeps the last good version
                       {statusLine ? ` · ${statusLine}` : null}
                     </ChatStatusMarker>
-                  </ChatThreadItem>
-                ) : null}
-
-                {!busy && statusLine ? (
-                  <ChatThreadItem id="refine-status" scrollAnchor>
-                    {error ? (
-                      <AiMessage
-                        role="assistant"
-                        variant="destructive"
-                        header="Refine failed"
-                        footer={
-                          jobId
-                            ? `${statusLine} · ${jobId.slice(0, 8)}…`
-                            : statusLine
-                        }
-                      >
-                        {error}
-                      </AiMessage>
-                    ) : (
-                      <AiMessage
-                        role="assistant"
-                        header="Aiditr"
-                        footer={
-                          jobId ? `${jobId.slice(0, 8)}…` : undefined
-                        }
-                      >
-                        {statusLine}
-                      </AiMessage>
-                    )}
                   </ChatThreadItem>
                 ) : null}
               </>

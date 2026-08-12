@@ -120,7 +120,21 @@ def repair_user_prompt(
         target = plan["target"].strip().lower() or "canvas2d"
 
     enum_hint = ""
+    inventory_hint = ""
     if isinstance(plan, dict):
+        inv = plan.get("controlInventory")
+        if isinstance(inv, dict):
+            selected = inv.get("selected") if isinstance(inv.get("selected"), list) else []
+            if selected:
+                inventory_hint = (
+                    "\nControl inventory (preserve all wired params): "
+                    + ", ".join(
+                        f"{s.get('name')}←{s.get('catalogId')}"
+                        for s in selected
+                        if isinstance(s, dict)
+                    )[:600]
+                    + "\n"
+                )
         params = plan.get("params") if isinstance(plan.get("params"), list) else []
         enums = []
         for p in params:
@@ -155,6 +169,7 @@ def repair_user_prompt(
         f"Vision:\n{vision_text.strip()}\n"
         f"Plan target: {target}\n"
         f"{plan_block}"
+        f"{inventory_hint}"
         f"{enum_hint}\n"
         f"Errors to fix:\n{err}\n\n"
         f"Broken module:\n```ts\n{code}\n```\n\n"

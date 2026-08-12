@@ -14,6 +14,7 @@
  * Docs: md/contracts/plan-json.md
  */
 
+import type { ControlInventory } from "./control-catalog";
 import type { AssetSlots, ParamSchema } from "./param-schema";
 import { ASAP_TARGET, type TargetId } from "./targets";
 
@@ -172,6 +173,13 @@ export interface ToolPlan {
 
   /** Control-surface intent + primary param names. */
   controlSurface?: PlanControlSurface;
+
+  /**
+   * Plan-time control inventory (catalog select + custom).
+   * Resolver merges into `params`; Studio/codegen read `params` only.
+   * Docs: md/contracts/control-catalog.md
+   */
+  controlInventory?: ControlInventory;
 
   /**
    * Retrieval tags for golden / boilerplate matching (AM1).
