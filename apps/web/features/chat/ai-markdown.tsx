@@ -13,9 +13,9 @@ const components: Components = {
     </p>
   ),
   strong: ({ children }) => (
-    <strong className="font-semibold text-ink">{children}</strong>
+    <strong className="font-semibold text-inherit">{children}</strong>
   ),
-  em: ({ children }) => <em className="italic text-ink/90">{children}</em>,
+  em: ({ children }) => <em className="italic opacity-90">{children}</em>,
   a: ({ href, children }) => (
     <a
       href={href}
@@ -40,27 +40,27 @@ const components: Components = {
     <li className="pl-0.5 [&>p]:mt-0 [&>p]:inline">{children}</li>
   ),
   h1: ({ children }) => (
-    <h1 className="m-0 mb-1.5 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink first:mt-0 [&:not(:first-child)]:mt-3.5">
+    <h1 className="m-0 mb-1.5 text-[1.05rem] font-semibold tracking-[-0.02em] text-inherit first:mt-0 [&:not(:first-child)]:mt-3.5">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="m-0 mb-1.5 text-[1rem] font-semibold tracking-[-0.02em] text-ink first:mt-0 [&:not(:first-child)]:mt-3">
+    <h2 className="m-0 mb-1.5 text-[1rem] font-semibold tracking-[-0.02em] text-inherit first:mt-0 [&:not(:first-child)]:mt-3">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="m-0 mb-1 text-[0.92rem] font-semibold tracking-[-0.015em] text-ink first:mt-0 [&:not(:first-child)]:mt-2.5">
+    <h3 className="m-0 mb-1 text-[0.92rem] font-semibold tracking-[-0.015em] text-inherit first:mt-0 [&:not(:first-child)]:mt-2.5">
       {children}
     </h3>
   ),
   h4: ({ children }) => (
-    <h4 className="m-0 mb-1 text-[0.88rem] font-semibold tracking-[-0.01em] text-ink first:mt-0 [&:not(:first-child)]:mt-2">
+    <h4 className="m-0 mb-1 text-[0.88rem] font-semibold tracking-[-0.01em] text-inherit first:mt-0 [&:not(:first-child)]:mt-2">
       {children}
     </h4>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="m-0 mt-2.5 border-l-2 border-primary/35 py-0.5 pl-3 text-[0.88rem] leading-[1.5] text-muted-ink">
+    <blockquote className="m-0 mt-2.5 border-l-2 border-ink/20 py-0.5 pl-3 text-[0.88rem] leading-[1.5] text-muted-ink dark:border-white/20">
       {children}
     </blockquote>
   ),
@@ -72,7 +72,7 @@ const components: Components = {
     if (!isBlock) {
       return (
         <code
-          className="rounded-[6px] bg-ink/[0.06] px-[0.35em] py-[0.12em] font-mono text-[0.82em] text-ink dark:bg-white/[0.08]"
+          className="rounded-[6px] bg-ink/[0.06] px-[0.35em] py-[0.12em] font-mono text-[0.82em] text-inherit dark:bg-white/[0.08]"
           {...props}
         >
           {children}
@@ -86,12 +86,12 @@ const components: Components = {
     );
   },
   pre: ({ children }) => (
-    <pre className="m-0 mt-2.5 max-w-full overflow-x-auto rounded-[10px] bg-[#0a0a0c] px-3 py-2.5 text-[0.8rem] leading-[1.55] text-[#e8e8ed] ring-1 ring-black/10 shadow-sm shadow-black/15 dark:ring-white/8">
+    <pre className="m-0 mt-2.5 max-w-full overflow-x-auto rounded-[10px] bg-[#0a0a0c] px-3 py-2.5 text-[0.8rem] leading-[1.55] text-[#f5f5f7] ring-1 ring-black/10 shadow-sm shadow-black/20 dark:ring-white/10">
       {children}
     </pre>
   ),
   table: ({ children }) => (
-    <div className="mt-2.5 max-w-full overflow-x-auto rounded-[10px] ring-1 ring-black/8 dark:ring-white/10">
+    <div className="mt-2.5 max-w-full overflow-x-auto rounded-[10px] ring-1 ring-black/10 dark:ring-white/10">
       <table className="w-full min-w-[12rem] border-collapse text-left text-[0.82rem]">
         {children}
       </table>
@@ -128,7 +128,7 @@ export function AiMarkdown({ children, className }: AiMarkdownProps) {
     <div
       data-slot="ai-markdown"
       className={cn(
-        "min-w-0 max-w-full text-[0.9rem] leading-[1.55] text-ink [overflow-wrap:anywhere]",
+        "min-w-0 max-w-full text-[0.9rem] leading-[1.55] text-inherit [overflow-wrap:anywhere]",
         className,
       )}
     >

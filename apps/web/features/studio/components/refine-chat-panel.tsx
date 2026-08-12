@@ -279,11 +279,9 @@ export function RefineChatPanel({
         <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
           <div className="flex min-w-0 items-center gap-2">
             <span
-              className="inline-grid size-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#0000ff_0%,#0735ff_55%,#1c1d1f_140%)] text-[0.55rem] font-bold tracking-[-0.04em] text-white"
+              className="inline-block size-3.5 shrink-0 rounded-[2.5px] bg-primary"
               aria-hidden
-            >
-              Ai
-            </span>
+            />
             <h2 className={pg.panelTitle}>Chat</h2>
           </div>
           <div className="flex shrink-0 items-center gap-0.5">

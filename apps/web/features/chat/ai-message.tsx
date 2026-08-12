@@ -67,7 +67,11 @@ function roleDefaults(role: AiMessageRole): {
     case "user":
       return {
         align: "end",
-        variant: "default",
+        /**
+         * Monochrome user bubble (ink), not primary blue — Base Blue is for
+         * CTAs/brand mark only (see playground styles).
+         */
+        variant: "muted",
         label: "You",
         avatar: "You",
         markdown: false,
@@ -84,8 +88,8 @@ function roleDefaults(role: AiMessageRole): {
     default:
       return {
         align: "start",
-        /** Soft card — readable for long markdown without a harsh outline box. */
-        variant: "secondary",
+        /** Surface card — same monochrome chrome as job progress / panels. */
+        variant: "muted",
         label: "Aiditr",
         avatar: "Ai",
         markdown: true,
@@ -93,19 +97,16 @@ function roleDefaults(role: AiMessageRole): {
   }
 }
 
+/** Flat Base Blue square — matches PlaygroundShell brand mark. */
 function AiditrMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-grid size-full place-items-center rounded-full",
-        "bg-[linear-gradient(145deg,#0000ff_0%,#0735ff_55%,#1c1d1f_140%)]",
-        "text-[0.58rem] font-bold tracking-[-0.04em] text-white",
+        "inline-block size-[0.85rem] shrink-0 rounded-[2.5px] bg-primary",
         className,
       )}
       aria-hidden
-    >
-      Ai
-    </span>
+    />
   );
 }
 
@@ -250,7 +251,7 @@ function MessageCopyButton({
       title={copied ? "Copied" : "Copy"}
     >
       {copied ? (
-        <CheckIcon className="size-3.5 text-primary" aria-hidden />
+        <CheckIcon className="size-3.5 text-ink" aria-hidden />
       ) : (
         <CopyIcon className="size-3.5" aria-hidden />
       )}
@@ -288,6 +289,7 @@ export function AiMessage({
   const isUser = role === "user";
   const isAssistant = role === "assistant";
   const isGhost = bubbleVariant === "ghost";
+  const isDestructive = bubbleVariant === "destructive";
 
   const lineLimit =
     collapseLines !== undefined
@@ -308,8 +310,8 @@ export function AiMessage({
         text={children}
         maxLines={lineLimit}
         toggleClassName={
-          bubbleVariant === "default"
-            ? "text-primary-foreground"
+          isUser
+            ? "text-background/75 hover:text-background"
             : "text-muted-ink hover:text-ink"
         }
       />
@@ -355,23 +357,20 @@ export function AiMessage({
       )}
     >
       {showAvatar ? (
-        <MessageAvatar
-          className={cn(
-            "self-end translate-y-0!",
-            isAssistant &&
-              "rounded-full shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_1px_2px_rgb(0_0_0/0.06)] dark:shadow-[0_0_0_1px_rgb(255_255_255/0.1)]",
-          )}
-        >
+        <MessageAvatar className="self-end translate-y-0!">
           <Avatar
             size="sm"
-            className={cn(isAssistant && "bg-transparent after:hidden")}
+            className={cn(
+              "after:border-black/10 dark:after:border-white/10",
+              isAssistant && "bg-transparent after:hidden",
+            )}
           >
             {isAssistant ? (
               <AvatarFallback className="bg-transparent p-0">
                 <AiditrMark />
               </AvatarFallback>
             ) : (
-              <AvatarFallback className="bg-ink/[0.06] text-[0.62rem] font-semibold text-ink-secondary dark:bg-white/10">
+              <AvatarFallback className="bg-ink/[0.06] text-[0.62rem] font-semibold text-ink-secondary dark:bg-white/[0.08]">
                 {defaults.avatar}
               </AvatarFallback>
             )}
@@ -383,14 +382,13 @@ export function AiMessage({
           isAssistant && "gap-1.5",
           isUser && "max-w-[min(100%,34rem)]",
           isAssistant && "max-w-[min(100%,36rem)]",
-          // Footer sits under bubble; avoid avatar vertical nudge fighting copy row.
           mergedFooter && "gap-1.5",
         )}
       >
         {header !== undefined ? (
           <MessageHeader
             className={cn(
-              "text-[0.68rem] font-semibold tracking-[0.04em] uppercase text-ink-caption",
+              "text-[0.68rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
               isGhost && "px-0",
             )}
           >
@@ -399,7 +397,7 @@ export function AiMessage({
         ) : role !== "user" ? (
           <MessageHeader
             className={cn(
-              "text-[0.68rem] font-semibold tracking-[0.04em] uppercase text-ink-caption",
+              "text-[0.68rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
               isGhost && "px-0",
             )}
           >
@@ -409,25 +407,27 @@ export function AiMessage({
         <Bubble
           variant={bubbleVariant}
           align={align}
-          className={cn(
-            "max-w-full",
-            isAssistant && !isGhost && "max-w-full",
-            isUser && "max-w-full",
-          )}
+          className="max-w-full"
         >
           <BubbleContent
             className={cn(
               "text-[0.9rem] leading-[1.55]",
+              // User: monochrome ink fill (same language as active send / progress).
               isUser &&
-                "rounded-[16px] rounded-br-[6px] px-3.5 py-2.5 font-medium tracking-[-0.01em]",
+                "rounded-[14px] rounded-br-[6px] bg-ink! px-3.5 py-2.5 font-medium tracking-[-0.01em] text-background! ring-0 shadow-none",
+              // Assistant: elevated surface + soft product ring (not blue tint).
               isAssistant &&
                 !isGhost &&
-                "rounded-[16px] rounded-bl-[6px] px-3.5 py-2.5 ring-1 ring-black/[0.05] shadow-sm shadow-black/[0.03] dark:ring-white/[0.06]",
+                !isDestructive &&
+                "rounded-[14px] rounded-bl-[6px] bg-surface! px-3.5 py-2.5 text-ink ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40",
               isAssistant && isGhost && "px-0 py-0",
-              bubbleVariant === "destructive" &&
-                "rounded-[14px] ring-1 ring-destructive/15",
+              isDestructive &&
+                "rounded-[12px] bg-destructive/10! text-destructive! ring-1 ring-destructive/15",
               useMarkdown && "whitespace-normal",
-              !useMarkdown && isPlainString && lineLimit <= 0 && "whitespace-pre-wrap",
+              !useMarkdown &&
+                isPlainString &&
+                lineLimit <= 0 &&
+                "whitespace-pre-wrap",
             )}
           >
             {body}
