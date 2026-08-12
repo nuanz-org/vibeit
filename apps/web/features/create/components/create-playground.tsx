@@ -294,8 +294,16 @@ export function CreatePlayground({
   const chat = (
     <div className={pg.chatBody}>
       <div className={pg.chatCard}>
-        <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
-          <h2 className={pg.panelTitle}>Chat</h2>
+        <div className={pg.panelHeader}>
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className="inline-grid size-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#0000ff_0%,#0735ff_55%,#1c1d1f_140%)] text-[0.55rem] font-bold tracking-[-0.04em] text-white"
+              aria-hidden
+            >
+              Ai
+            </span>
+            <h2 className={pg.panelTitle}>Chat</h2>
+          </div>
           <div className="flex shrink-0 items-center gap-0.5">
             {jobId ? (
               <button
@@ -334,7 +342,7 @@ export function CreatePlayground({
                         <li key={s.label}>
                           <button
                             type="button"
-                            className="cursor-pointer appearance-none rounded-[10px] bg-transparent px-[0.7rem] py-[0.4rem] text-xs font-medium font-[inherit] text-muted-ink ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background-color,box-shadow,color,transform] duration-ui ease-ui hover:-translate-y-px hover:bg-ink/4 hover:text-ink hover:ring-black/15 active:scale-[0.98] dark:ring-white/10 dark:shadow-black/30 dark:hover:ring-white/15 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className="cursor-pointer appearance-none rounded-[10px] bg-surface-elevated px-[0.75rem] py-[0.45rem] text-xs font-medium font-[inherit] text-ink-secondary ring-1 ring-black/8 shadow-sm shadow-black/[0.04] transition-[background-color,box-shadow,color,transform] duration-ui ease-ui hover:-translate-y-px hover:bg-ink/[0.03] hover:text-ink hover:ring-black/12 hover:shadow-md hover:shadow-black/[0.05] active:scale-[0.98] dark:ring-white/10 dark:shadow-black/30 dark:hover:ring-white/15 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             onClick={() => setVisionText(s.vision)}
                           >
                             {s.label}

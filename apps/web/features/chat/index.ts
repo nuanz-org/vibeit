@@ -1,3 +1,4 @@
+export { AiMarkdown, type AiMarkdownProps } from "./ai-markdown";
 export { AiMessage, type AiMessageProps, type AiMessageRole } from "./ai-message";
 export {
   ChatStatusMarker,

@@ -77,20 +77,20 @@ export const playgroundStyles = {
     "flex min-h-0 flex-1 flex-col overflow-hidden rounded-none bg-transparent",
 
   chatScroll:
-    "flex min-h-0 flex-1 flex-col overflow-hidden px-[0.85rem] pt-[0.65rem] pb-2",
+    "flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-2 pb-2.5",
 
   chatComposer: [
     "flex shrink-0 flex-col gap-[0.55rem]",
-    "bg-surface-elevated/95",
+    "bg-surface-elevated/95 backdrop-blur-sm",
     dividerTop,
-    "px-[0.8rem] pt-[0.7rem] pb-[0.8rem]",
+    "px-3.5 pt-3 pb-3.5",
   ].join(" "),
 
   composerInput: [
     "w-full min-h-[4.25rem] max-h-48 resize-none rounded-none border-0 bg-transparent",
-    "px-[0.15rem] py-[0.55rem] text-[0.9rem] leading-normal text-inherit",
+    "px-0.5 py-2 text-[0.92rem] leading-[1.45] text-ink",
     "[field-sizing:content] [font:inherit]",
-    "placeholder:text-muted-ink placeholder:opacity-85",
+    "placeholder:text-muted-ink placeholder:opacity-80",
     "focus:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-55",
   ].join(" "),
@@ -101,14 +101,14 @@ export const playgroundStyles = {
 
   composerActions: "flex shrink-0 items-center gap-[0.4rem]",
 
-  greeting: "flex flex-col gap-[0.4rem] px-[0.35rem] pt-[1.1rem] pb-[0.65rem]",
+  greeting: "flex flex-col gap-[0.45rem] px-0.5 pt-4 pb-3",
 
   greetingTitle: [
-    "m-0 text-[1.15rem] font-[650] leading-snug tracking-[-0.025em] text-ink",
+    "m-0 text-[1.2rem] font-[650] leading-snug tracking-[-0.03em] text-ink",
     "text-balance",
   ].join(" "),
 
-  greetingSub: "m-0 text-[0.88rem] leading-[1.45] text-muted-ink",
+  greetingSub: "m-0 max-w-[36ch] text-[0.88rem] leading-[1.5] text-muted-ink",
 
   btn: [
     "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center gap-[0.35rem]",
