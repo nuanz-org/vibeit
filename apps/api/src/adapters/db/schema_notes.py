@@ -19,6 +19,7 @@ AM7 columns on generation_jobs: job_kind (create|refine), base_version_id.
 007 columns on generation_jobs: llm_model (user-selected OpenRouter id).
 008 columns on generation_jobs: plan_mode (bool), clarify (jsonb);
   status includes awaiting_clarify for A3 planMode pause.
+009 columns on generation_jobs: message_history (jsonb array of chat turns).
 """
 
 from __future__ import annotations

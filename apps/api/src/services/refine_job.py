@@ -13,6 +13,7 @@ from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.db.types import GenerationJobRow, ToolRow, ToolVersionRow
 from core.config import Settings
+from domain.chat_messages import user_refine_message
 from services.create_job import (
     CreateJobError,
     CreateJobResult,
@@ -151,6 +152,7 @@ async def enqueue_refine_job(
         token_budget=token_budget,
         job_kind="refine",
         base_version_id=version.id,
+        message_history=[user_refine_message(message)],
     )
 
     return RefineJobResult(

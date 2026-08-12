@@ -114,6 +114,7 @@ Extend later; do not bikeshed renames on the ASAP path.
 | `resultReady?` | Only when succeeded |
 | `planMode?` | Whether this job used planMode |
 | `clarify?` | A3 bag: `understanding`, `questions[]`, `result`, `answered` |
+| `messages?` | Ordered chat history: `{ id, role, content, kind?, createdAt, meta? }[]` |
 
 ### A3 clarify
 

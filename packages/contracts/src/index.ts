@@ -83,6 +83,7 @@ export type {
   ClarifyResult,
   CreateJobRequest,
   CreateJobResponse,
+  JobChatMessage,
   JobClarifyState,
   JobErrorBody,
   JobErrorCode,

@@ -70,6 +70,8 @@ class GenerationJobRow:
     # A3 planMode clarify (008)
     plan_mode: bool = False
     clarify: Any = None
+    # 009: ordered user/assistant chat turns
+    message_history: Any = None
 
 @dataclass(frozen=True, slots=True)
 class AssetRow:

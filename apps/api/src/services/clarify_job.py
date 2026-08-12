@@ -9,6 +9,7 @@ from typing import Any
 from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.types import GenerationJobRow
 from agent.clarify_parse import normalize_clarify_answers
+from domain.chat_messages import user_clarify_answers_message
 from domain.job_status import IllegalJobTransition, assert_job_transition
 from services.create_job import CreateJobError, JobNotFoundError, get_owned_job
 
@@ -99,4 +100,29 @@ async def submit_clarify_answers(
 
     if updated is None:
         raise JobNotFoundError(job_id)
+
+    # Append user answers turn to chat history (transcript for UI / future LLM context)
+    summary = None
+    if isinstance(result, dict):
+        summary = result.get("summary") if isinstance(result.get("summary"), str) else None
+        transcript = (
+            result.get("transcript") if isinstance(result.get("transcript"), str) else None
+        )
+    else:
+        transcript = None
+    try:
+        with_msg = await jobs.append_job_messages(
+            job_id,
+            [
+                user_clarify_answers_message(
+                    transcript=transcript,
+                    summary=summary,
+                )
+            ],
+        )
+        if with_msg is not None:
+            updated = with_msg
+    except Exception:  # noqa: BLE001 — history must not block clarify resume
+        pass
+
     return updated

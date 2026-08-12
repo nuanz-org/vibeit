@@ -129,6 +129,14 @@ def job_from_record(row: Any) -> GenerationJobRow:
         clarify = {}
     if not isinstance(clarify, dict):
         clarify = {}
+    # 009_job_message_history
+    message_history: Any = []
+    try:
+        message_history = _json_value(row["message_history"]) or []
+    except (KeyError, TypeError):
+        message_history = []
+    if not isinstance(message_history, list):
+        message_history = []
     return GenerationJobRow(
         id=row["id"],
         owner_user_id=str(row["owner_user_id"]),
@@ -151,6 +159,7 @@ def job_from_record(row: Any) -> GenerationJobRow:
         llm_model=llm_model,
         plan_mode=plan_mode,
         clarify=clarify,
+        message_history=message_history,
     )
 
 def asset_from_record(row: Any) -> AssetRow:

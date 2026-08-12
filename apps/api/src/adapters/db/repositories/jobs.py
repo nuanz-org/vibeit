@@ -14,7 +14,7 @@ _JOB_COLUMNS = """
     id, owner_user_id, tool_id, status, vision_text, inspiration_asset_ids,
     error_code, error_message, tokens_used, token_budget, cost_cents,
     repair_budget, repairs_used, phase, created_at, updated_at,
-    job_kind, base_version_id, llm_model, plan_mode, clarify
+    job_kind, base_version_id, llm_model, plan_mode, clarify, message_history
 """
 
 # Pre-006 select list for tests against schemas without refine columns.
@@ -44,6 +44,7 @@ class JobsRepository:
         llm_model: str | None = None,
         plan_mode: bool = False,
         clarify: dict[str, Any] | None = None,
+        message_history: list[dict[str, Any]] | None = None,
     ) -> GenerationJobRow:
         if status not in JOB_STATUSES:
             raise ValueError(f"invalid job status: {status}")
@@ -52,17 +53,19 @@ class JobsRepository:
         ids = inspiration_asset_ids or []
         model = (llm_model or "").strip() or None
         clarify_payload = clarify if isinstance(clarify, dict) else {}
+        history = message_history if isinstance(message_history, list) else []
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 INSERT INTO generation_jobs (
                     owner_user_id, tool_id, status, vision_text,
                     inspiration_asset_ids, repair_budget, token_budget,
-                    job_kind, base_version_id, llm_model, plan_mode, clarify
+                    job_kind, base_version_id, llm_model, plan_mode, clarify,
+                    message_history
                 )
                 VALUES (
                     $1, $2::uuid, $3, $4, $5::jsonb, $6, $7,
-                    $8, $9::uuid, $10, $11, $12::jsonb
+                    $8, $9::uuid, $10, $11, $12::jsonb, $13::jsonb
                 )
                 RETURNING {_JOB_COLUMNS}
                 """,
@@ -78,6 +81,7 @@ class JobsRepository:
                 model,
                 bool(plan_mode),
                 json.dumps(clarify_payload),
+                json.dumps(history),
             )
         assert row is not None
         return job_from_record(row)
@@ -361,5 +365,35 @@ class JobsRepository:
                 token_budget,
                 cost_cents,
                 repairs_used,
+            )
+        return job_from_record(row) if row else None
+
+    async def append_job_messages(
+        self,
+        job_id: UUID | str,
+        messages: list[dict[str, Any]],
+    ) -> GenerationJobRow | None:
+        """
+        Atomically append chat turns to message_history (jsonb array concat).
+        """
+        if not messages:
+            job = await self.get_job(job_id)
+            return job
+        payload = [m for m in messages if isinstance(m, dict)]
+        if not payload:
+            return await self.get_job(job_id)
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE generation_jobs
+                SET
+                    message_history = COALESCE(message_history, '[]'::jsonb)
+                        || $2::jsonb,
+                    updated_at = now()
+                WHERE id = $1::uuid
+                RETURNING {_JOB_COLUMNS}
+                """,
+                str(job_id),
+                json.dumps(payload),
             )
         return job_from_record(row) if row else None

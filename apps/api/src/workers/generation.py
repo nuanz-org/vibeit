@@ -28,6 +28,10 @@ from agent.nodes.clarify import clarify_node
 from agent.runner import run_create_with_repairs, run_refine_with_repairs
 from agent.state import CreateGraphState
 from core.config import Settings, get_settings
+from domain.chat_messages import (
+    assistant_clarify_message,
+    assistant_error_message,
+)
 from domain.job_status import assert_job_transition
 from services.finalize_job import finalize_from_agent_state
 from services.refine_job import base_version_payload
@@ -240,6 +244,18 @@ async def run_generation_job(
                         phase="clarify",
                         clear_errors=True,
                     )
+                    try:
+                        await jobs.append_job_messages(
+                            job_id,
+                            [
+                                assistant_error_message(
+                                    error_message="LLM client required for clarify",
+                                    error_code="INTERNAL",
+                                )
+                            ],
+                        )
+                    except Exception:  # noqa: BLE001
+                        pass
                     return
                 clarify_state: CreateGraphState = {
                     "vision_text": job.vision_text,
@@ -249,17 +265,31 @@ async def run_generation_job(
                 clarify_updates = await clarify_node(clarify_state, llm=client)
                 tokens = int(clarify_updates.get("llm_tokens_used") or 0) or None
                 if clarify_updates.get("error_code"):
+                    err_msg = str(
+                        clarify_updates.get("error_message") or "clarify failed"
+                    )[:500]
+                    err_code = str(clarify_updates.get("error_code"))
                     await jobs.update_job_status(
                         job_id,
                         status="failed",
-                        error_code=str(clarify_updates.get("error_code")),
-                        error_message=str(
-                            clarify_updates.get("error_message") or "clarify failed"
-                        )[:500],
+                        error_code=err_code,
+                        error_message=err_msg,
                         phase="clarify",
                         tokens_used=tokens,
                         clear_errors=True,
                     )
+                    try:
+                        await jobs.append_job_messages(
+                            job_id,
+                            [
+                                assistant_error_message(
+                                    error_message=err_msg,
+                                    error_code=err_code,
+                                )
+                            ],
+                        )
+                    except Exception:  # noqa: BLE001
+                        pass
                     return
 
                 payload = clarify_updates.get("clarify_payload") or {}
@@ -312,6 +342,23 @@ async def run_generation_job(
                         tokens_used=tokens,
                         clear_errors=True,
                     )
+                    understanding = (
+                        str(new_clarify.get("understanding") or "")
+                        if isinstance(new_clarify, dict)
+                        else ""
+                    )
+                    try:
+                        await jobs.append_job_messages(
+                            job_id,
+                            [
+                                assistant_clarify_message(
+                                    understanding=understanding,
+                                    question_count=len(questions),
+                                )
+                            ],
+                        )
+                    except Exception as hist_exc:  # noqa: BLE001
+                        print(f"[worker] message history append failed: {hist_exc}")
                     print(
                         f"[worker] job {job_id} awaiting_clarify "
                         f"({len(questions)} questions)"
@@ -370,6 +417,15 @@ async def run_generation_job(
                 error_message=str(exc)[:500],
                 phase="finalize",
                 clear_errors=True,
+            )
+            await jobs.append_job_messages(
+                job_id,
+                [
+                    assistant_error_message(
+                        error_message=str(exc)[:500],
+                        error_code="INTERNAL",
+                    )
+                ],
             )
         except Exception:  # noqa: BLE001
             pass

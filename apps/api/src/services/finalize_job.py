@@ -13,6 +13,7 @@ from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.db.types import GenerationJobRow, ToolVersionRow
 from agent.state import CreateGraphState
+from domain.chat_messages import assistant_error_message, assistant_success_message
 from domain.job_status import IllegalJobTransition, assert_job_transition
 from services.create_job import JobNotFoundError
 from services.quota import estimate_cost_cents
@@ -113,6 +114,17 @@ async def finalize_from_agent_state(
             )
             updated = await jobs.get_job(job_id) or updated
 
+        job_kind = getattr(job, "job_kind", None) or "create"
+        try:
+            with_msg = await jobs.append_job_messages(
+                job_id,
+                [assistant_success_message(job_kind=str(job_kind))],
+            )
+            if with_msg is not None:
+                updated = with_msg
+        except Exception:  # noqa: BLE001 — history is best-effort
+            pass
+
         # Public by default: successful tools appear on /gallery + /t/:publicId.
         # Salvage/failure paths below stay draft and never list.
         tool_id = job.tool_id or state.get("tool_id")
@@ -175,4 +187,18 @@ async def finalize_from_agent_state(
             repairs_used=int(repairs or 0),
         )
         updated = await jobs.get_job(job_id) or updated
+    try:
+        with_msg = await jobs.append_job_messages(
+            job_id,
+            [
+                assistant_error_message(
+                    error_message=err_msg,
+                    error_code=str(err_code) if err_code else None,
+                )
+            ],
+        )
+        if with_msg is not None:
+            updated = with_msg
+    except Exception:  # noqa: BLE001 — history is best-effort
+        pass
     return updated

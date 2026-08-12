@@ -81,6 +81,16 @@ export type CreateJobResponse = {
   planMode?: boolean;
 };
 
+/** Persisted chat turn on a generation job. */
+export type JobChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  kind?: string | null;
+  createdAt: string;
+  meta?: Record<string, unknown> | null;
+};
+
 export type JobStatusResponse = {
   jobId: string;
   status: JobStatus;
@@ -101,6 +111,8 @@ export type JobStatusResponse = {
   quota?: QuotaFields | null;
   planMode?: boolean | null;
   clarify?: JobClarifyState | null;
+  /** Ordered user/assistant history for this job. */
+  messages?: JobChatMessage[] | null;
 };
 
 export type ClarifyJobRequest = {

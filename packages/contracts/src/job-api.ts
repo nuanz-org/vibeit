@@ -279,6 +279,21 @@ export interface ClarifyJobResponse {
 }
 
 /**
+ * One persisted chat turn on a generation job (user vision, clarify, outcome, …).
+ * Stored in generation_jobs.message_history; returned on status poll.
+ */
+export interface JobChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  /** Semantic tag: vision | refine | clarify | clarify_answers | status | error | success */
+  kind?: string;
+  /** ISO-8601 */
+  createdAt: string;
+  meta?: Record<string, unknown>;
+}
+
+/**
  * GET job status — poll until terminal or awaiting_clarify.
  * SSE is optional later; MVP is refetchInterval polling.
  */
@@ -311,6 +326,11 @@ export interface JobStatusResponse {
    * Clients render chips from `clarify.questions`.
    */
   clarify?: JobClarifyState;
+  /**
+   * Ordered user/assistant chat history for this job.
+   * Seeded with the vision (or refine) message at enqueue; agent turns append.
+   */
+  messages?: JobChatMessage[];
 }
 /**
  * GET job result — success payload only.

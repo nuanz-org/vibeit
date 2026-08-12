@@ -121,6 +121,8 @@ export function CreatePlayground({
   const isSuccess = status?.status === "succeeded";
   const isFailed = status?.status === "failed";
   const isAwaitingClarify = status?.status === "awaiting_clarify";
+  /** Server-persisted chat history (user vision + agent turns). */
+  const historyMessages = status?.messages ?? null;
 
   const resultQuery = useJobResult(jobId, Boolean(isSuccess));
 
@@ -262,7 +264,22 @@ export function CreatePlayground({
     (userEmail ? userEmail.split("@")[0] : null) ||
     null;
 
-  const showStarters = !jobId && !lastSubmitted;
+  const historyUserMessages =
+    historyMessages?.filter((m) => m.role === "user") ?? [];
+  const historyAssistantMessages =
+    historyMessages?.filter(
+      (m) =>
+        m.role === "assistant" &&
+        (m.kind === "clarify" ||
+          m.kind === "success" ||
+          m.kind === "error" ||
+          m.kind === "status"),
+    ) ?? [];
+  /** Prefer server history; fall back to optimistic local submit. */
+  const showUserFromLocal =
+    Boolean(lastSubmitted) && historyUserMessages.length === 0;
+  const showStarters =
+    !jobId && !lastSubmitted && historyUserMessages.length === 0;
 
   const stageMode: CreateStageMode = generating
     ? "generating"
@@ -330,13 +347,65 @@ export function CreatePlayground({
               </div>
             </ChatThreadItem>
 
-            {lastSubmitted ? (
+            {historyUserMessages.map((m) => (
+              <ChatThreadItem key={m.id} id={`msg-${m.id}`}>
+                <AiMessage role="user">{m.content}</AiMessage>
+              </ChatThreadItem>
+            ))}
+            {showUserFromLocal && lastSubmitted ? (
               <ChatThreadItem id="user-vision">
                 <AiMessage role="user">{lastSubmitted}</AiMessage>
               </ChatThreadItem>
             ) : null}
 
-            {jobId && !isAwaitingClarify ? (
+            {historyAssistantMessages.map((m) => {
+              if (m.kind === "error") {
+                return (
+                  <ChatThreadItem key={m.id} id={`msg-${m.id}`}>
+                    <AiMessage
+                      role="assistant"
+                      variant="destructive"
+                      header="Generation failed"
+                      footer={
+                        salvageToolId ? (
+                          <Link
+                            href={`/studio/${encodeURIComponent(salvageToolId)}`}
+                            className="text-primary underline-offset-3 hover:underline"
+                          >
+                            Open salvage draft in Studio
+                          </Link>
+                        ) : undefined
+                      }
+                    >
+                      {m.content}
+                    </AiMessage>
+                  </ChatThreadItem>
+                );
+              }
+              if (m.kind === "clarify") {
+                return (
+                  <ChatThreadItem key={m.id} id={`msg-${m.id}`}>
+                    <AiMessage
+                      role="assistant"
+                      header="Aiditr"
+                      variant="ghost"
+                      showAvatar
+                    >
+                      {m.content}
+                    </AiMessage>
+                  </ChatThreadItem>
+                );
+              }
+              return (
+                <ChatThreadItem key={m.id} id={`msg-${m.id}`}>
+                  <AiMessage role="assistant" header="Aiditr" showAvatar>
+                    {m.content}
+                  </AiMessage>
+                </ChatThreadItem>
+              );
+            })}
+
+            {jobId && !isAwaitingClarify && !isSuccess && !isFailed ? (
               <ChatThreadItem id="job-progress" scrollAnchor>
                 <AiMessage
                   role="assistant"
@@ -400,7 +469,8 @@ export function CreatePlayground({
               </ChatThreadItem>
             ) : null}
 
-            {isFailed ? (
+            {isFailed &&
+            !historyAssistantMessages.some((m) => m.kind === "error") ? (
               <ChatThreadItem id="job-failed" scrollAnchor>
                 <AiMessage
                   role="assistant"

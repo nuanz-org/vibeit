@@ -13,6 +13,7 @@ from adapters.db.repositories.jobs import JobsRepository
 from adapters.db.repositories.tools import ToolsRepository
 from adapters.db.types import GenerationJobRow, ToolRow, ToolVersionRow
 from core.config import Settings
+from domain.chat_messages import messages_for_wire, user_vision_message
 from domain.job_status import (
     IllegalJobTransition,
     assert_job_transition,
@@ -136,6 +137,7 @@ async def enqueue_create_job(
         token_budget=token_budget,
         llm_model=llm_model,
         plan_mode=bool(plan_mode),
+        message_history=[user_vision_message(vision)],
     )
     if settings is not None:
         quota_after = await get_quota_snapshot(
@@ -220,6 +222,10 @@ def job_to_status_fields(
         "result_ready": job_result_ready(job.status),
         "plan_mode": bool(job.plan_mode),
         "clarify": clarify if clarify else None,
+        "messages": messages_for_wire(
+            getattr(job, "message_history", None),
+            vision_text=job.vision_text,
+        ),
     }
 
 async def get_job_result_for_owner(

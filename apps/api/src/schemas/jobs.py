@@ -123,6 +123,17 @@ class RefineJobResponse(CamelModel):
     refine: RefineBudgetFields | None = None
 
 
+class JobChatMessage(CamelModel):
+    """One persisted chat turn on a generation job."""
+
+    id: str
+    role: Literal["user", "assistant"]
+    content: str
+    kind: str | None = None
+    created_at: str = Field(alias="createdAt")
+    meta: dict[str, Any] | None = None
+
+
 class JobStatusResponse(CamelModel):
     """GET /api/v1/jobs/:jobId poll response (M3 + A3)."""
 
@@ -138,6 +149,8 @@ class JobStatusResponse(CamelModel):
     result_ready: bool | None = Field(default=None, alias="resultReady")
     plan_mode: bool | None = Field(default=None, alias="planMode")
     clarify: dict[str, Any] | None = None
+    # Ordered user/assistant history (vision, clarify, success/error, …)
+    messages: list[JobChatMessage] | None = None
 
 
 class JobResultResponse(CamelModel):
