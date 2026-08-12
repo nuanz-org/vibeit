@@ -19,11 +19,6 @@ const btn = cn(
   "disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
 );
 
-const btnSolid = cn(
-  "border-transparent bg-cta text-cta-foreground",
-  "hover:enabled:border-transparent hover:enabled:bg-cta-hover hover:enabled:text-cta-foreground",
-);
-
 const btnPrimary = cn(
   "border-transparent bg-primary text-primary-foreground",
   "hover:enabled:border-transparent hover:enabled:bg-base-blue-hover",

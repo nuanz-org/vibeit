@@ -22,7 +22,7 @@ export function GalleryShell({ children, className }: GalleryShellProps) {
         className,
       )}
     >
-      <AppHeader />
+      <AppHeader className="shrink-0" />
       {children}
     </div>
   );
