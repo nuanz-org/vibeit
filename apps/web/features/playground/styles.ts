@@ -1,17 +1,16 @@
 /**
- * Shared playground chrome class names (Base.org product language).
- * Monochrome surfaces + Base Blue accent via design tokens.
- * Exported as string constants so create/studio can keep using
- * `playgroundStyles` without CSS modules.
+ * Shared playground chrome — Tailwind class strings only.
+ * Monochrome surfaces + Base Blue for generate/send.
  */
 export const playgroundStyles = {
   panelScroll:
-    "flex min-h-0 flex-1 flex-col gap-[0.85rem] overflow-auto px-[0.9rem] pt-[0.85rem] pb-5",
+    "flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-3 pt-3 pb-5",
 
   panelHeader:
-    "flex shrink-0 items-center justify-between gap-2 px-[0.95rem] pt-3",
+    "flex shrink-0 items-center justify-between gap-2 border-b border-border-subtle px-3.5 py-3",
 
-  panelTitle: "m-0 text-[0.78rem] font-[650] tracking-[-0.01em] text-ink",
+  panelTitle:
+    "m-0 text-[0.72rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
 
   stageInner: [
     "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-[0.85rem] px-6 py-5",
@@ -26,8 +25,8 @@ export const playgroundStyles = {
    */
   frame: [
     "aspect-square w-[min(100%,480px)] max-h-[min(78vh,720px)] max-w-full shrink",
-    "overflow-hidden rounded-xl border border-border-subtle bg-[#0a0a0c]",
-    "shadow-[0_4px_16px_color-mix(in_oklch,#000_10%,transparent),0_20px_48px_color-mix(in_oklch,#000_8%,transparent)]",
+    "overflow-hidden rounded-2xl border border-border-subtle bg-[#0a0a0c]",
+    "shadow-elev",
   ].join(" "),
 
   frameWide:
@@ -36,7 +35,8 @@ export const playgroundStyles = {
   emptyStage:
     "flex max-w-[32ch] flex-col items-center justify-center gap-[0.55rem] p-6 text-center",
 
-  emptyStageTitle: "m-0 text-[0.95rem] font-semibold tracking-[-0.02em]",
+  emptyStageTitle:
+    "m-0 text-[0.95rem] font-semibold tracking-[-0.02em] text-ink",
 
   emptyStageHint: "m-0 text-[0.85rem] leading-[1.45] text-muted-ink",
 
@@ -50,7 +50,7 @@ export const playgroundStyles = {
 
   chatComposer: [
     "flex shrink-0 flex-col gap-[0.55rem] border-t border-border-subtle",
-    "bg-[color-mix(in_oklch,var(--surface-elevated)_92%,var(--stage-bg))]",
+    "bg-surface-elevated/95",
     "px-[0.8rem] pt-[0.7rem] pb-[0.8rem]",
   ].join(" "),
 
@@ -72,59 +72,59 @@ export const playgroundStyles = {
   greeting: "flex flex-col gap-[0.4rem] px-[0.35rem] pt-[1.1rem] pb-[0.65rem]",
 
   greetingTitle: [
-    "m-0 text-[1.15rem] font-[650] leading-snug tracking-[-0.025em]",
+    "m-0 text-[1.15rem] font-[650] leading-snug tracking-[-0.025em] text-ink",
     "text-balance",
   ].join(" "),
 
   greetingSub: "m-0 text-[0.88rem] leading-[1.45] text-muted-ink",
 
   btn: [
-    "inline-flex min-h-[2.15rem] cursor-pointer items-center justify-center gap-[0.35rem]",
-    "whitespace-nowrap rounded-[10px] border border-border-subtle bg-transparent px-[0.85rem] py-[0.4rem]",
-    "text-[0.82rem] font-semibold text-inherit no-underline [font:inherit]",
-    "transition-[background-color,border-color,transform] duration-[180ms]",
-    "[transition-timing-function:cubic-bezier(0.2,0,0,1)]",
-    "not-disabled:hover:bg-[color-mix(in_oklch,var(--ink)_5%,transparent)]",
-    "not-disabled:active:scale-[0.98]",
+    "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center gap-[0.35rem]",
+    "whitespace-nowrap rounded-[10px] border border-border-subtle bg-transparent px-3 py-[0.4rem]",
+    "text-[0.8rem] font-medium tracking-[-0.01em] text-ink-secondary no-underline [font:inherit]",
+    "transition-[background-color,border-color,color,transform,opacity] duration-ui ease-ui",
+    "not-disabled:hover:border-border not-disabled:hover:bg-surface not-disabled:hover:text-ink",
+    "not-disabled:active:scale-[0.96]",
     "disabled:cursor-not-allowed disabled:opacity-45",
-    "motion-reduce:transition-none",
+    "motion-reduce:transition-none motion-reduce:active:scale-100",
   ].join(" "),
 
   // Variant modifiers use ! so they win when composed as `${btn} ${btnPrimary}`
-  // (create/studio join class strings; Tailwind source order is not className order).
   btnPrimary: [
-    "rounded-full! border-transparent! bg-primary! text-primary-foreground!",
-    "not-disabled:hover:bg-base-blue-hover!",
+    "rounded-[10px]! border-transparent! bg-primary! text-primary-foreground!",
+    "not-disabled:hover:bg-base-blue-hover! not-disabled:hover:text-primary-foreground!",
   ].join(" "),
 
   btnAccent: [
-    "rounded-full! border-transparent! bg-accent! text-accent-ink!",
-    "not-disabled:hover:bg-base-blue-hover!",
+    "rounded-[10px]! border-transparent! bg-cta! text-cta-foreground!",
+    "not-disabled:hover:bg-cta-hover! not-disabled:hover:text-cta-foreground!",
   ].join(" "),
 
-  btnGhost: "border-transparent! font-medium opacity-75",
+  btnGhost: [
+    "border-transparent! bg-transparent! font-medium text-muted-ink!",
+    "not-disabled:hover:bg-ink/5! not-disabled:hover:text-ink!",
+  ].join(" "),
 
-  btnIcon: "min-h-[2.15rem] min-w-[2.15rem] p-[0.35rem]",
+  btnIcon: "min-h-9 min-w-9 p-[0.35rem]",
 
   btnSend: [
-    "inline-flex min-h-[2.15rem] min-w-[2.15rem] cursor-pointer items-center justify-center",
+    "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center",
     "rounded-full border-0 bg-primary p-[0.4rem] text-primary-foreground",
-    "transition-[background-color,transform,opacity] duration-150",
-    "[transition-timing-function:cubic-bezier(0.4,0,0.2,1)]",
+    "transition-[background-color,transform,opacity] duration-ui ease-ui",
     "not-disabled:hover:bg-base-blue-hover",
     "not-disabled:active:scale-[0.96]",
     "disabled:cursor-not-allowed disabled:translate-y-0",
     "disabled:bg-primary/40 disabled:opacity-35",
-    "motion-reduce:transition-none",
+    "motion-reduce:transition-none motion-reduce:active:scale-100",
   ].join(" "),
 
   chip: [
-    "inline-flex items-center rounded-full px-2 py-[0.2rem]",
-    "bg-[color-mix(in_oklch,var(--ink)_7%,transparent)] text-[0.72rem] font-semibold text-muted-ink",
+    "inline-flex items-center rounded-[10px] px-2 py-[0.2rem]",
+    "bg-surface text-[0.7rem] font-medium tracking-[-0.01em] text-muted-ink",
   ].join(" "),
 
   chipLive:
-    "bg-[color-mix(in_oklch,oklch(0.55_0.14_150)_14%,transparent)]! text-[oklch(0.48_0.12_150)]!",
+    "bg-ink/8! text-ink!",
 
   chipWarn:
     "bg-[color-mix(in_oklch,oklch(0.65_0.14_75)_14%,transparent)]! text-[oklch(0.55_0.12_75)]!",

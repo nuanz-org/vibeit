@@ -24,11 +24,11 @@ import { cn } from "@/lib/utils";
 const SPEED = 1;
 
 const SURFACE = {
-  idleW: 280,
-  idleH: 200,
+  idleW: 288,
+  idleH: 208,
   genW: 320,
   genH: 240,
-  idleRadius: 20,
+  idleRadius: 16,
   genRadius: 16,
   spring: {
     type: "spring" as const,
@@ -84,7 +84,7 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center p-4">
       <motion.div
-        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden border border-border-subtle bg-surface-elevated shadow-panel"
+        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden border border-border-subtle bg-surface-elevated shadow-elev"
         layout
         initial={false}
         animate={{
@@ -220,8 +220,8 @@ function copyFor(mode: CreateStageMode): { title: string; hint: string } {
       };
     default:
       return {
-        title: "Your tool will appear here",
-        hint: "Describe a vision in chat to generate a live design tool.",
+        title: "Your tool appears here",
+        hint: "Describe a vision in chat — params, export, and share come free.",
       };
   }
 }

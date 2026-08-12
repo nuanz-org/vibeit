@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Aiditr product tokens — Base.org visual language.
- * Monochrome first (white / near-black / gray), one accent: Base Blue #0000FF.
- * Grayscale and space outweigh blue. Snappy motion, institutional calm.
+ * Aiditr product tokens — restrained monochrome + Base Blue accent.
+ * Marketing CTAs use --cta-solid (charcoal); product Send stays --primary (blue).
+ * Consume via Tailwind: bg-cta, text-ink-muted, shadow-elev, duration-ui, ease-ui, etc.
  */
 :root {
   --base-blue: #0000ff;
@@ -17,32 +17,53 @@
   --surface: #fafafa;
   --surface-elevated: #ffffff;
   --stage-bg: #fafafa;
-  --border-subtle: #efefef;
-  /* Slightly deeper muted for AA body secondary on white */
+  --border-subtle: #e4e7ec;
+  /* AA body secondary on white */
   --muted-ink: #5c5c5c;
-  --ink: #171717;
+  /* Dual-tone second line / captions (not long body) */
+  --ink-caption: #6f7988;
+  --ink-secondary: #2e3238;
+  --ink: #1c1d1f;
   --accent: #0000ff;
   --accent-ink: #ffffff;
+  /* Marketing solid CTA (Attio-style charcoal) */
+  --cta-solid: #202124;
+  --cta-solid-hover: #2e3238;
+  --cta-solid-fg: #f3f4f6;
   --panel-shadow:
     0 1px 2px rgb(0 0 0 / 4%),
     0 8px 24px rgb(0 0 0 / 4%);
+  /* Multi-stop cool elevation (product frames / gallery) */
+  --elev-shadow:
+    rgba(11, 13, 24, 0.06) 0 0 0 1px,
+    rgba(11, 13, 24, 0.024) 0 1px 2px 0,
+    rgba(11, 13, 24, 0.03) 0 3px 6px 0,
+    rgba(11, 13, 24, 0.035) 0 8px 14px 0,
+    rgba(11, 13, 24, 0.04) 0 16px 28px 0;
+  --elev-shadow-hover:
+    rgba(11, 13, 24, 0.08) 0 0 0 1px,
+    rgba(11, 13, 24, 0.03) 0 2px 4px 0,
+    rgba(11, 13, 24, 0.04) 0 6px 12px 0,
+    rgba(11, 13, 24, 0.05) 0 12px 24px 0,
+    rgba(11, 13, 24, 0.06) 0 20px 40px 0;
   --panel-radius: 12px;
+  --radius-control: 10px;
 
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #1c1d1f;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #1c1d1f;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1c1d1f;
   --primary: #0000ff;
   --primary-foreground: #ffffff;
   --secondary: #fafafa;
-  --secondary-foreground: #171717;
+  --secondary-foreground: #1c1d1f;
   --muted: #fafafa;
   --muted-foreground: #5c5c5c;
   --accent-foreground: #ffffff;
   --destructive: #fc401f;
-  --border: #efefef;
+  --border: #e4e7ec;
   --input: #eef0f3;
   --ring: #0000ff;
   --chart-1: #0000ff;
@@ -52,16 +73,20 @@
   --chart-5: #dee1e7;
   --radius: 0.625rem;
   --sidebar: #fafafa;
-  --sidebar-foreground: #171717;
+  --sidebar-foreground: #1c1d1f;
   --sidebar-primary: #0000ff;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f8f8f8;
-  --sidebar-accent-foreground: #171717;
-  --sidebar-border: #efefef;
+  --sidebar-accent-foreground: #1c1d1f;
+  --sidebar-border: #e4e7ec;
   --sidebar-ring: #0000ff;
 
   --ease-base: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  --ease-snap: cubic-bezier(0, 0, 0, 1);
   --dur-base: 150ms;
+  --dur-fast: 150ms;
+  --dur-ui: 300ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -71,12 +96,27 @@
     --stage-bg: #0a0b0d;
     --border-subtle: #32353d;
     --muted-ink: #a1a1aa;
+    --ink-caption: #8b93a0;
+    --ink-secondary: #c8cdd5;
     --ink: #f5f5f7;
     --accent: #0000ff;
     --accent-ink: #ffffff;
+    --cta-solid: #f3f4f6;
+    --cta-solid-hover: #e4e7ec;
+    --cta-solid-fg: #1c1d1f;
     --panel-shadow:
       0 1px 2px rgb(0 0 0 / 28%),
       0 10px 28px rgb(0 0 0 / 22%);
+    --elev-shadow:
+      rgba(0, 0, 0, 0.4) 0 0 0 1px,
+      rgba(0, 0, 0, 0.2) 0 1px 2px 0,
+      rgba(0, 0, 0, 0.22) 0 4px 10px 0,
+      rgba(0, 0, 0, 0.25) 0 12px 28px 0;
+    --elev-shadow-hover:
+      rgba(0, 0, 0, 0.45) 0 0 0 1px,
+      rgba(0, 0, 0, 0.25) 0 2px 6px 0,
+      rgba(0, 0, 0, 0.3) 0 8px 20px 0,
+      rgba(0, 0, 0, 0.35) 0 20px 40px 0;
 
     --background: #0a0b0d;
     --foreground: #f5f5f7;
@@ -198,13 +238,21 @@ body {
   --color-surface-elevated: var(--surface-elevated);
   --color-stage: var(--stage-bg);
   --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-caption: var(--ink-caption);
   --color-muted-ink: var(--muted-ink);
   --color-accent-ink: var(--accent-ink);
   --color-border-subtle: var(--border-subtle);
   --color-base-blue: var(--base-blue);
   --color-base-blue-hover: var(--base-blue-hover);
+  --color-cta: var(--cta-solid);
+  --color-cta-hover: var(--cta-solid-hover);
+  --color-cta-foreground: var(--cta-solid-fg);
   --shadow-panel: var(--panel-shadow);
+  --shadow-elev: var(--elev-shadow);
+  --shadow-elev-hover: var(--elev-shadow-hover);
   --radius-panel: var(--panel-radius);
+  --radius-control: var(--radius-control);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -214,6 +262,10 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
   --animate-phase-pulse: phasePulse 1.4s ease-in-out infinite;
   --ease-base: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  --ease-snap: cubic-bezier(0, 0, 0, 1);
+  --duration-fast: 150ms;
+  --duration-ui: 300ms;
 }
 
 @keyframes phasePulse {
@@ -234,12 +286,27 @@ body {
   --stage-bg: #0a0b0d;
   --border-subtle: #32353d;
   --muted-ink: #a1a1aa;
+  --ink-caption: #8b93a0;
+  --ink-secondary: #c8cdd5;
   --ink: #f5f5f7;
   --accent: #0000ff;
   --accent-ink: #ffffff;
+  --cta-solid: #f3f4f6;
+  --cta-solid-hover: #e4e7ec;
+  --cta-solid-fg: #1c1d1f;
   --panel-shadow:
     0 1px 2px rgb(0 0 0 / 28%),
     0 10px 28px rgb(0 0 0 / 22%);
+  --elev-shadow:
+    rgba(0, 0, 0, 0.4) 0 0 0 1px,
+    rgba(0, 0, 0, 0.2) 0 1px 2px 0,
+    rgba(0, 0, 0, 0.22) 0 4px 10px 0,
+    rgba(0, 0, 0, 0.25) 0 12px 28px 0;
+  --elev-shadow-hover:
+    rgba(0, 0, 0, 0.45) 0 0 0 1px,
+    rgba(0, 0, 0, 0.25) 0 2px 6px 0,
+    rgba(0, 0, 0, 0.3) 0 8px 20px 0,
+    rgba(0, 0, 0, 0.35) 0 20px 40px 0;
   --background: #0a0b0d;
   --foreground: #f5f5f7;
   --card: #111111;

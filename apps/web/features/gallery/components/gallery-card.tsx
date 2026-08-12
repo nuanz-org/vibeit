@@ -148,12 +148,15 @@ export function GalleryCard({ card, href }: GalleryCardProps) {
   return (
     <Link
       href={to}
-      className="group mb-3 block w-full break-inside-avoid overflow-visible rounded-none border-none bg-transparent text-inherit no-underline transition-opacity hover:opacity-[0.96] focus-visible:rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring motion-reduce:transition-none min-[1100px]:mb-3.5"
+      className="group mb-3 block w-full break-inside-avoid overflow-visible rounded-none border-none bg-transparent text-inherit no-underline focus-visible:rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring min-[1100px]:mb-3.5"
       title={fullTitle}
     >
       <div
         className={cn(
-          "relative w-full aspect-[4/3] overflow-hidden rounded-[10px] bg-muted",
+          "relative w-full aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-elev",
+          "transition-[box-shadow,transform] duration-ui ease-ui",
+          "group-hover:-translate-y-0.5 group-hover:shadow-elev-hover",
+          "motion-reduce:transition-none motion-reduce:group-hover:translate-y-0",
           wrapAspect,
         )}
       >
@@ -162,7 +165,7 @@ export function GalleryCard({ card, href }: GalleryCardProps) {
           <img
             src={thumbSrc}
             alt=""
-            className="block size-full object-cover transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            className="block size-full object-cover transition-transform duration-ui ease-ui group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             loading="lazy"
             decoding="async"
           />
@@ -181,16 +184,16 @@ export function GalleryCard({ card, href }: GalleryCardProps) {
             }
             aria-hidden
           >
-            <span className="size-7 rounded-md border-[1.5px] border-foreground/14 opacity-35" />
+            <span className="size-7 rounded-[10px] border-[1.5px] border-foreground/14 opacity-35" />
           </div>
         )}
       </div>
-      <div className="flex min-h-0 flex-col gap-[0.15rem] px-[0.15rem] pt-[0.65rem] pb-[0.35rem]">
-        <div className="line-clamp-2 text-sm font-medium leading-snug tracking-tight text-foreground">
+      <div className="flex min-h-0 flex-col gap-0.5 px-0.5 pt-3 pb-1">
+        <div className="line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-ink">
           {title}
         </div>
         {tags.length > 0 ? (
-          <div className="line-clamp-1 text-xs leading-snug tracking-tight text-muted-foreground">
+          <div className="line-clamp-1 text-xs leading-snug tracking-[-0.01em] text-ink-caption">
             {tags.join(" · ")}
           </div>
         ) : null}

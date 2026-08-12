@@ -1,395 +1,256 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useInView, useReducedMotion } from "motion/react";
+import { useRef } from "react";
 
-import { UserMenu } from "@/features/auth/components/user-menu";
+import { AppHeader, LogoMark } from "@/components/app-header";
 import { cn } from "@/lib/utils";
 
-/**
- * Marketing landing — Base restraint + Aiditr craft product POV.
- * Canvas is the star; no SaaS metrics, fake logos, or decorative 3D CSS.
- */
+import { ControlPlayground } from "./components/control-playground";
+import { HeroCollage } from "./components/hero-collage";
+import { StoryFlow } from "./components/story-flow";
+import { EASE_UI, HERO_TIMING } from "./motion";
 
-const easeOut = [0.16, 1, 0.3, 1] as const;
+/* ─────────────────────────────────────────────────────────
+ * ANIMATION STORYBOARD — Landing (story: vision → control → real)
+ *
+ * HERO
+ *    0ms   atmosphere (in collage)
+ *   60ms   eyebrow
+ *  100ms   H1 line 1
+ *  180ms   H1 line 2 + sub
+ *  260ms   CTAs (stagger 60ms)
+ *  300ms+  collage (frame, messy chip out, satellites)
+ *
+ * ACT 2 / 3 / FINAL — in-view staggers in child components
+ * ───────────────────────────────────────────────────────── */
 
-const pillPrimary = cn(
-  "inline-flex h-12 items-center justify-center rounded-full bg-primary px-6",
-  "text-[15px] font-medium text-primary-foreground",
-  "transition-[background-color,transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-  "hover:bg-base-blue-hover active:scale-[0.96]",
+const ctaSolid = cn(
+  "inline-flex h-11 min-w-10 items-center justify-center rounded-[10px] bg-cta px-5",
+  "text-[14px] font-medium tracking-[-0.01em] text-cta-foreground",
+  "transition-[background-color,transform,opacity] duration-ui ease-ui",
+  "hover:bg-cta-hover active:scale-[0.96]",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+  "motion-reduce:transition-none motion-reduce:active:scale-100",
 );
 
-const pillSecondary = cn(
-  "inline-flex h-12 items-center justify-center rounded-full border border-border bg-background px-6",
-  "text-[15px] font-medium text-foreground",
-  "transition-[background-color,transform,border-color] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-  "hover:bg-[#F8F8F8] active:scale-[0.96] dark:hover:bg-secondary",
+const ctaOutline = cn(
+  "inline-flex h-11 min-w-10 items-center justify-center rounded-[10px] border border-border bg-background px-5",
+  "text-[14px] font-medium tracking-[-0.01em] text-ink-secondary",
+  "transition-[background-color,border-color,color,transform] duration-ui ease-ui",
+  "hover:bg-surface hover:text-ink active:scale-[0.96]",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+  "motion-reduce:transition-none motion-reduce:active:scale-100",
 );
 
-function LogoMark({ className }: { className?: string }) {
+function FadeIn({
+  delayMs,
+  reduce,
+  className,
+  children,
+}: {
+  delayMs: number;
+  reduce: boolean | null;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <span
-      className={cn(
-        "inline-block size-6 shrink-0 rounded-[2px] bg-primary",
-        className,
-      )}
-      aria-hidden
-    />
-  );
-}
-
-/** Product chrome mock — reads as Studio, not illustration filler. */
-function StudioStageMock() {
-  return (
-    <div
-      className={cn(
-        "relative w-full max-w-[560px]",
-        "rounded-[14px] border border-border bg-surface-elevated",
-        "shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_40px_rgb(0_0_0/0.06)]",
-        "dark:shadow-[0_1px_2px_rgb(0_0_0/0.4),0_16px_48px_rgb(0_0_0/0.35)]",
-      )}
+    <motion.div
+      className={className}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={
+        reduce
+          ? { duration: 0 }
+          : {
+              duration: 0.45,
+              delay: delayMs / 1000,
+              ease: EASE_UI,
+            }
+      }
     >
-      {/* Title bar */}
-      <div className="flex items-center justify-between gap-3 border-b border-border px-3.5 py-2.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <LogoMark className="size-4 rounded-[1.5px]" />
-          <span className="truncate text-[12px] font-medium tracking-[-0.01em] text-ink">
-            Social frame · draft
-          </span>
-          <span className="hidden rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium text-muted-ink sm:inline">
-            Saved
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span className="hidden h-7 items-center rounded-full border border-border px-2.5 text-[11px] font-medium text-muted-ink sm:inline-flex">
-            Export
-          </span>
-          <span className="inline-flex h-7 items-center rounded-full bg-primary px-2.5 text-[11px] font-medium text-primary-foreground">
-            Share
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_148px]">
-        {/* Stage */}
-        <div className="flex flex-col gap-3 p-3 sm:p-4">
-          <div
-            className={cn(
-              "relative mx-auto aspect-[9/16] w-full max-w-[220px] overflow-hidden rounded-[10px]",
-              "bg-[#0a0a0c] outline outline-1 outline-black/10 dark:outline-white/10",
-            )}
-          >
-            {/* Living design tool preview — abstract type poster, not doodles */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_20%,rgb(0_0_255/0.35),transparent_65%)]" />
-            <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 to-transparent" />
-            <div className="absolute inset-x-5 top-[18%] flex flex-col gap-2">
-              <div className="h-[3px] w-10 rounded-full bg-white/35" />
-              <p className="m-0 text-[22px] font-medium leading-[1.05] tracking-[-0.03em] text-white">
-                Drop
-                <br />
-                the beat
-              </p>
-              <p className="m-0 max-w-[12ch] text-[10px] leading-snug tracking-[-0.01em] text-white/55">
-                Headline · pulse · logo slot
-              </p>
-            </div>
-            <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between">
-              <div className="size-8 rounded-full bg-white/90" />
-              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/15">
-                <div className="h-full w-2/3 rounded-full bg-primary" />
-              </div>
-            </div>
-            {/* Soft vignette edge */}
-            <div className="pointer-events-none absolute inset-0 rounded-[10px] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)]" />
-          </div>
-          <p className="m-0 text-center text-[11px] text-muted-ink">
-            9:16 · parametric · live
-          </p>
-        </div>
-
-        {/* Control rail */}
-        <div className="flex flex-col gap-3 border-t border-border p-3 sm:border-t-0 sm:border-l sm:p-3.5">
-          <p className="m-0 text-[10px] font-medium tracking-[0.04em] text-muted-ink uppercase">
-            Control
-          </p>
-          {[
-            { label: "Accent", value: "Blue" },
-            { label: "Pulse", value: "1.2s" },
-            { label: "Type", value: "Tight" },
-          ].map((row) => (
-            <div key={row.label} className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] text-muted-ink">{row.label}</span>
-                <span className="text-[11px] font-medium tabular-nums text-ink">
-                  {row.value}
-                </span>
-              </div>
-              <div className="h-1 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/10">
-                <div
-                  className="h-full rounded-full bg-ink/35 dark:bg-white/35"
-                  style={{
-                    width:
-                      row.label === "Accent"
-                        ? "72%"
-                        : row.label === "Pulse"
-                          ? "48%"
-                          : "64%",
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-          <div className="mt-auto hidden rounded-[8px] border border-border bg-surface p-2 sm:block">
-            <p className="m-0 text-[10px] leading-snug text-muted-ink">
-              “Make the pulse sharper”
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      {children}
+    </motion.div>
   );
 }
 
-const flow = [
-  {
-    title: "Describe",
-    body: "A short vision — optional reference frames. Aiditr plans the tool, not a static mock.",
-  },
-  {
-    title: "Control",
-    body: "Params, assets, and chat refine. The canvas stays center; chrome stays quiet.",
-  },
-  {
-    title: "Ship",
-    body: "Export PNG or video, share a link, embed, or publish to the gallery.",
-  },
-] as const;
+function ControlSection({ reduce }: { reduce: boolean | null }) {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const show = inView || reduce;
 
+  return (
+    <section
+      ref={ref}
+      className="mx-auto max-w-[1120px] px-5 py-20 md:px-6 md:py-28"
+      aria-labelledby="controls-heading"
+    >
+      <div className="grid gap-12 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-start md:gap-16">
+        <div className="flex flex-col gap-5 md:sticky md:top-28">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+            transition={
+              reduce ? { duration: 0 } : { duration: 0.45, ease: EASE_UI }
+            }
+          >
+            <h2
+              id="controls-heading"
+              className="m-0 text-[clamp(1.5rem,2.8vw,1.85rem)] font-medium leading-[1.15] tracking-[-0.025em] text-balance text-ink"
+            >
+              <span className="block">Your vision.</span>
+              <span className="mt-1 block text-ink-caption">Your controls.</span>
+            </h2>
+            <p className="mt-4 mb-0 max-w-[36ch] text-[16px] leading-[1.6] text-pretty text-muted-ink">
+              We generate the tool. You shape the feeling — motion, type, color,
+              slots — until it matches what you meant.
+            </p>
+            <Link
+              href="/create"
+              className={cn(
+                "mt-6 inline-flex h-10 min-w-10 items-center text-[14px] font-medium tracking-[-0.01em] text-ink",
+                "underline-offset-4 transition-[opacity,transform] duration-ui ease-ui",
+                "hover:opacity-60 active:scale-[0.96]",
+                "focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                "motion-reduce:active:scale-100",
+              )}
+            >
+              Open Create →
+            </Link>
+          </motion.div>
+        </div>
+        <div className="flex justify-center md:justify-end">
+          <ControlPlayground />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Story landing — messy vision → living tool you can play with → ship.
+ * Tailwind + motion; Attio-caliber restraint.
+ */
 export function LandingPage() {
   const reduceMotion = useReducedMotion();
-  const fade = reduceMotion
-    ? { initial: false as const, animate: { opacity: 1 } }
-    : {
-        initial: { opacity: 0, y: 10 },
-        animate: { opacity: 1, y: 0 },
-      };
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
-      {/* Nav */}
-      <header className="sticky top-0 z-20 border-b border-border/80 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-4 px-5 md:px-6">
-          <div className="flex min-w-0 items-center gap-7">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 text-[15px] font-medium tracking-[-0.02em]"
-            >
-              <LogoMark />
-              Aiditr
-            </Link>
-            <nav
-              className="hidden items-center gap-6 md:flex"
-              aria-label="Primary"
-            >
-              <Link
-                href="/create"
-                className="text-[14px] font-medium text-ink/80 transition-opacity duration-150 hover:opacity-55"
-              >
-                Create
-              </Link>
-              <Link
-                href="/gallery"
-                className="text-[14px] font-medium text-ink/80 transition-opacity duration-150 hover:opacity-55"
-              >
-                Gallery
-              </Link>
-            </nav>
-          </div>
-          <UserMenu />
-        </div>
-      </header>
+      <AppHeader />
 
       <main>
-        {/* Hero — product stage is the visual, not a prop sculpture */}
-        <section className="mx-auto grid max-w-[1120px] gap-12 px-5 pt-14 pb-20 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:items-center md:gap-10 md:px-6 md:pt-20 md:pb-28 lg:gap-16">
-          <div className="flex flex-col items-start gap-6 md:max-w-[34rem]">
-            <motion.p
-              {...fade}
-              transition={{ duration: 0.45, ease: easeOut }}
-              className="m-0 text-[13px] font-medium tracking-[-0.01em] text-muted-ink"
-            >
-              Living design tools
-            </motion.p>
-            <motion.h1
-              {...fade}
-              transition={{ duration: 0.5, delay: 0.04, ease: easeOut }}
-              className="m-0 text-[clamp(2.25rem,4.8vw,3.5rem)] font-medium leading-[1.06] tracking-[-0.03em] text-balance text-foreground"
-            >
-              Turn a vision into a tool you can actually use
-            </motion.h1>
-            <motion.p
-              {...fade}
-              transition={{ duration: 0.5, delay: 0.08, ease: easeOut }}
-              className="m-0 max-w-[36ch] text-[17px] leading-[1.55] text-pretty text-ink/75 md:text-[18px]"
-            >
-              Describe what you want. Aiditr generates a freeform interactive
-              design tool — params, assets, export, share — without writing code.
-            </motion.p>
-            <motion.div
-              {...fade}
-              transition={{ duration: 0.5, delay: 0.12, ease: easeOut }}
-              className="flex flex-wrap items-center gap-3 pt-1"
-            >
-              <Link href="/create" className={pillPrimary}>
-                Start creating
-              </Link>
-              <Link href="/gallery" className={pillSecondary}>
-                Browse gallery
-              </Link>
-            </motion.div>
-          </div>
+        {/* ACT 1 — Hero */}
+        <section className="relative overflow-hidden">
+          <div className="mx-auto grid max-w-[1120px] gap-12 px-5 pt-14 pb-20 md:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] md:items-center md:gap-12 md:px-6 md:pt-20 md:pb-28 lg:gap-16">
+            <div className="flex flex-col items-start gap-6 md:max-w-[34rem]">
+              <FadeIn delayMs={HERO_TIMING.eyebrow} reduce={reduceMotion}>
+                <p className="m-0 text-[13px] font-medium tracking-[-0.01em] text-ink-caption">
+                  Vision → living tool
+                </p>
+              </FadeIn>
 
-          <motion.div
-            {...fade}
-            transition={{ duration: 0.55, delay: 0.1, ease: easeOut }}
-            className="flex justify-center md:justify-end"
-          >
-            <StudioStageMock />
-          </motion.div>
-        </section>
+              <h1 className="m-0 text-[clamp(2.25rem,4.6vw,3.5rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-balance text-ink">
+                <FadeIn delayMs={HERO_TIMING.title} reduce={reduceMotion}>
+                  <span className="block">Make your vision real.</span>
+                </FadeIn>
+                <FadeIn delayMs={HERO_TIMING.titleLine2} reduce={reduceMotion}>
+                  <span className="mt-1 block font-medium text-ink-caption">
+                    Then play with it until it’s yours.
+                  </span>
+                </FadeIn>
+              </h1>
 
-        {/* Flow — real sequence, not a 3-up feature card grid */}
-        <section className="border-y border-border bg-surface">
-          <div className="mx-auto max-w-[1120px] px-5 py-16 md:px-6 md:py-20">
-            <h2 className="m-0 mb-10 max-w-[20ch] text-[clamp(1.5rem,2.8vw,1.85rem)] font-medium leading-[1.15] tracking-[-0.025em] text-balance">
-              From brief to living craft in one loop
-            </h2>
-            <ol className="m-0 grid list-none gap-10 p-0 md:grid-cols-3 md:gap-8">
-              {flow.map((step, i) => (
-                <li key={step.title} className="relative flex flex-col gap-2.5">
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-mono text-[12px] tabular-nums text-muted-ink">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="m-0 text-[17px] font-medium tracking-[-0.02em]">
-                      {step.title}
-                    </h3>
-                  </div>
-                  <p className="m-0 max-w-[32ch] pl-[calc(1.5rem+0.75rem)] text-[15px] leading-[1.55] text-pretty text-ink/70">
-                    {step.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+              <FadeIn delayMs={HERO_TIMING.body} reduce={reduceMotion}>
+                <p className="m-0 max-w-[38ch] text-[17px] leading-[1.55] text-pretty text-muted-ink md:text-[18px]">
+                  Aiditr turns a messy brief into an interactive design tool —
+                  with controls you can tune, assets you drop in, and export
+                  when it’s right. No code.
+                </p>
+              </FadeIn>
 
-        {/* Principle — single deep section, not four icon tiles */}
-        <section className="mx-auto max-w-[1120px] px-5 py-20 md:px-6 md:py-28">
-          <div className="grid gap-12 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-start md:gap-16">
-            <div className="flex flex-col gap-4 md:sticky md:top-24">
-              <h2 className="m-0 text-[clamp(1.5rem,2.8vw,1.85rem)] font-medium leading-[1.15] tracking-[-0.025em] text-balance">
-                The canvas is the stage
-              </h2>
-              <p className="m-0 max-w-[36ch] text-[16px] leading-[1.6] text-pretty text-ink/70">
-                Tool chrome stays secondary. Preview takes the center and the
-                space. Chat creates; controls personalize. Labels over lectures.
-              </p>
+              <FadeIn delayMs={HERO_TIMING.ctas} reduce={reduceMotion}>
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  <Link href="/create" className={ctaSolid}>
+                    Start with a vision
+                  </Link>
+                  <Link href="/gallery" className={ctaOutline}>
+                    See tools people ship
+                  </Link>
+                </div>
+              </FadeIn>
             </div>
-            <ul className="m-0 flex list-none flex-col gap-0 border-t border-border p-0">
-              {[
-                {
-                  title: "Parametric by default",
-                  body: "Generated tools expose real knobs — color, type, motion, assets — not locked artboards.",
-                },
-                {
-                  title: "Refine in chat",
-                  body: "Push the craft with short instructions. Drafts persist; the stage stays live.",
-                },
-                {
-                  title: "Export & publish",
-                  body: "PNG, short video, share URL, embed. Gallery publish only after system gates.",
-                },
-                {
-                  title: "Sandboxed runtime",
-                  body: "Public tools never leak owner APIs or source. Preview runs isolated.",
-                },
-              ].map((row) => (
-                <li
-                  key={row.title}
-                  className="border-b border-border py-5 first:pt-0 last:pb-0"
-                >
-                  <h3 className="m-0 mb-1.5 text-[15px] font-medium tracking-[-0.015em]">
-                    {row.title}
-                  </h3>
-                  <p className="m-0 max-w-[48ch] text-[15px] leading-[1.55] text-pretty text-ink/70">
-                    {row.body}
-                  </p>
-                </li>
-              ))}
-            </ul>
+
+            <div className="flex justify-center pt-6 md:justify-end md:pt-0">
+              <HeroCollage reduce={reduceMotion} />
+            </div>
           </div>
         </section>
 
-        {/* Quiet proof — not fake logo marquee or metric vanity */}
+        {/* ACT 2 — Controls & play */}
+        <ControlSection reduce={reduceMotion} />
+
+        {/* ACT 3 — Loop */}
+        <StoryFlow />
+
+        {/* Proof */}
         <section className="border-t border-border bg-background">
           <div className="mx-auto flex max-w-[1120px] flex-col gap-6 px-5 py-14 md:flex-row md:items-end md:justify-between md:px-6 md:py-16">
             <div className="max-w-md">
-              <h2 className="m-0 text-[clamp(1.35rem,2.4vw,1.65rem)] font-medium leading-[1.2] tracking-[-0.025em] text-balance">
-                See what people ship
+              <h2 className="m-0 text-[clamp(1.35rem,2.4vw,1.65rem)] font-medium leading-[1.2] tracking-[-0.025em] text-balance text-ink">
+                Reality, shared.
               </h2>
-              <p className="mt-2 mb-0 text-[15px] leading-[1.55] text-pretty text-ink/70">
+              <p className="mt-2 mb-0 text-[15px] leading-[1.55] text-pretty text-muted-ink">
                 Open any gallery tool and play — no account required.
               </p>
             </div>
             <Link
               href="/gallery"
-              className={cn(
-                pillSecondary,
-                "shrink-0 self-start md:self-auto",
-              )}
+              className={cn(ctaOutline, "shrink-0 self-start md:self-auto")}
             >
               Open gallery
             </Link>
           </div>
         </section>
 
-        {/* Bottom CTA — drenched blue, no decorative orbs */}
-        <section className="bg-primary px-5 py-20 text-white md:px-6 md:py-24">
+        {/* Final CTA */}
+        <section className="bg-cta px-5 py-20 text-cta-foreground md:px-6 md:py-24">
           <div className="mx-auto flex max-w-[1120px] flex-col items-start gap-6 md:flex-row md:items-end md:justify-between">
             <div className="max-w-xl">
               <h2 className="m-0 text-[clamp(1.75rem,3.2vw,2.5rem)] font-medium leading-[1.1] tracking-[-0.03em] text-balance">
-                Start with a vision.
+                Stop explaining the idea.
+                <span className="mt-1 block text-cta-foreground/65">
+                  Ship the tool.
+                </span>
               </h2>
-              <p className="mt-3 mb-0 max-w-[34ch] text-[16px] leading-[1.55] text-pretty text-white/80">
-                Open Create, describe the craft, and generate a tool people can
-                control and share.
+              <p className="mt-3 mb-0 max-w-[34ch] text-[16px] leading-[1.55] text-pretty text-cta-foreground/70">
+                Open Create, dump the messy vision, and leave with something you
+                can control.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5">
               <Link
                 href="/create"
                 className={cn(
-                  "inline-flex h-12 items-center justify-center rounded-full bg-white px-6",
-                  "text-[15px] font-medium text-primary",
-                  "transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                  "inline-flex h-11 min-w-10 items-center justify-center rounded-[10px] bg-background px-5",
+                  "text-[14px] font-medium tracking-[-0.01em] text-ink",
+                  "transition-[opacity,transform] duration-ui ease-ui",
                   "hover:opacity-90 active:scale-[0.96]",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-background",
+                  "motion-reduce:transition-none motion-reduce:active:scale-100",
                 )}
               >
-                Get started
+                Make it real
               </Link>
               <Link
                 href="/signup"
                 className={cn(
-                  "inline-flex h-12 items-center justify-center rounded-full border border-white/30 bg-transparent px-6",
-                  "text-[15px] font-medium text-white",
-                  "transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-                  "hover:bg-white/10 active:scale-[0.96]",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+                  "inline-flex h-11 min-w-10 items-center justify-center rounded-[10px] border border-cta-foreground/25 bg-transparent px-5",
+                  "text-[14px] font-medium tracking-[-0.01em] text-cta-foreground",
+                  "transition-[background-color,transform] duration-ui ease-ui",
+                  "hover:bg-cta-foreground/10 active:scale-[0.96]",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-background",
+                  "motion-reduce:transition-none motion-reduce:active:scale-100",
                 )}
               >
                 Create account
@@ -404,43 +265,35 @@ export function LandingPage() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2.5">
               <LogoMark />
-              <span className="text-[14px] font-medium tracking-[-0.02em]">
+              <span className="text-[14px] font-medium tracking-[-0.02em] text-ink">
                 Aiditr
               </span>
             </div>
             <p className="m-0 max-w-[28ch] text-[13px] leading-relaxed text-muted-ink">
-              Living design tools from a vision.
+              Messy vision in. Living tool out — yours to play with.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-10 gap-y-4 text-[13px]">
-            <Link
-              href="/create"
-              className="text-muted-ink transition-opacity duration-150 hover:opacity-70"
-            >
-              Create
-            </Link>
-            <Link
-              href="/gallery"
-              className="text-muted-ink transition-opacity duration-150 hover:opacity-70"
-            >
-              Gallery
-            </Link>
-            <Link
-              href="/login"
-              className="text-muted-ink transition-opacity duration-150 hover:opacity-70"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="text-muted-ink transition-opacity duration-150 hover:opacity-70"
-            >
-              Sign up
-            </Link>
+            {(
+              [
+                ["/create", "Create"],
+                ["/gallery", "Gallery"],
+                ["/login", "Sign in"],
+                ["/signup", "Sign up"],
+              ] as const
+            ).map(([href, label]) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-muted-ink transition-colors duration-fast ease-snap hover:text-ink"
+              >
+                {label}
+              </Link>
+            ))}
           </div>
         </div>
         <div className="mx-auto max-w-[1120px] border-t border-border px-5 py-5 md:px-6">
-          <p className="m-0 text-[12px] text-muted-ink">
+          <p className="m-0 text-[12px] text-ink-caption">
             © {new Date().getFullYear()} Aiditr
           </p>
         </div>

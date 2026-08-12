@@ -10,11 +10,24 @@ import { cn } from "@/lib/utils";
 import { normalizePublicAssetUrl } from "../lib/asset-url";
 import { GalleryShell } from "./gallery-shell";
 
-const btn =
-  "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-border bg-card px-4 py-[0.55rem] text-sm font-medium text-inherit no-underline transition-[border-color,background,opacity] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:enabled:bg-[#F8F8F8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none dark:hover:enabled:bg-secondary";
+const btn = cn(
+  "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
+  "text-sm font-medium text-ink-secondary no-underline",
+  "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
+  "hover:enabled:bg-surface hover:enabled:text-ink",
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+  "disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
+);
 
-const btnPrimary =
-  "border-transparent bg-primary font-medium text-primary-foreground hover:enabled:border-transparent hover:enabled:bg-base-blue-hover";
+const btnSolid = cn(
+  "border-transparent bg-cta text-cta-foreground",
+  "hover:enabled:border-transparent hover:enabled:bg-cta-hover hover:enabled:text-cta-foreground",
+);
+
+const btnPrimary = cn(
+  "border-transparent bg-primary text-primary-foreground",
+  "hover:enabled:border-transparent hover:enabled:bg-base-blue-hover",
+);
 
 function hashHue(seed: string): number {
   let h = 0;

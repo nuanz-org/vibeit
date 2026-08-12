@@ -30,15 +30,29 @@ export type ParamControlsProps = {
   disabled?: boolean;
 };
 
-const fieldRow =
-  "flex min-h-8 items-center justify-between gap-3 data-[interactive=true]:cursor-pointer";
-const fieldRowLabel =
-  "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[0.8rem] font-[450] leading-snug tracking-tight text-muted-ink";
-const fieldStack = "flex flex-col gap-[0.4rem] py-[0.15rem]";
+const fieldRow = cn(
+  "group/field flex min-h-10 items-center justify-between gap-3 rounded-[10px] px-1.5 py-1",
+  "transition-[background-color] duration-ui ease-ui",
+  "data-[interactive=true]:cursor-pointer data-[interactive=true]:hover:bg-surface",
+);
+
+const fieldRowLabel = cn(
+  "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap",
+  "text-[0.8rem] font-medium leading-snug tracking-[-0.01em] text-muted-ink",
+  "transition-colors duration-ui ease-ui group-hover/field:text-ink",
+);
+
+const fieldStack = "flex flex-col gap-1.5 py-1";
+
+const controlSurface = cn(
+  "rounded-[10px] border-none bg-ink/[0.05] dark:bg-white/10",
+  "transition-[box-shadow,background-color] duration-ui ease-ui",
+  "focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-ink/25",
+);
 
 /**
- * Brik-class schema-driven Control fields.
- * Flat accordion sections · horizontal label | control rows · fill-bar numbers.
+ * Premium schema-driven Control fields.
+ * Soft surfaces, fill-bar numbers, snappy segmented enums — vision tuning pleasure.
  */
 export function ParamControls({
   schema,
@@ -58,16 +72,25 @@ export function ParamControls({
   }, []);
 
   if (schema.length === 0 || sections.length === 0) {
-    return <p className="text-sm opacity-55">No params for this tool.</p>;
+    return (
+      <p className="px-1 text-sm text-muted-ink">No params for this tool.</p>
+    );
   }
 
   return (
     <div className="flex flex-col gap-0">
       {!hideReset && onResetDefaults ? (
-        <div className="mb-[0.15rem] flex justify-end">
+        <div className="mb-1 flex justify-end">
           <button
             type="button"
-            className="inline-flex cursor-pointer items-center gap-[0.35rem] rounded-md border-none bg-transparent px-[0.35rem] py-[0.3rem] font-inherit text-[0.78rem] font-medium text-muted-ink transition-colors duration-150 hover:bg-ink/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            className={cn(
+              "inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-[10px] border-none bg-transparent px-2 py-1.5",
+              "font-inherit text-[0.78rem] font-medium text-muted-ink",
+              "transition-[background-color,color,transform] duration-ui ease-ui",
+              "hover:bg-ink/5 hover:text-ink active:scale-[0.96]",
+              "disabled:cursor-not-allowed disabled:opacity-40",
+              "motion-reduce:transition-none motion-reduce:active:scale-100",
+            )}
             disabled={disabled}
             onClick={() => onResetDefaults()}
             title="Restore default parameters"
@@ -78,31 +101,48 @@ export function ParamControls({
         </div>
       ) : null}
 
-      <div className="-mx-[0.15rem] flex flex-col">
+      <div className="flex flex-col">
         {sections.map((section) => {
           const isCollapsed = Boolean(collapsed[section.id]);
           const open = !isCollapsed;
           return (
             <div
               key={section.id}
-              className="flex flex-col overflow-hidden border-b border-border-subtle bg-transparent last:border-b-0"
+              className="flex flex-col border-b border-border-subtle last:border-b-0"
               data-section={section.id}
               data-open={open ? "true" : "false"}
             >
               <button
                 type="button"
-                className="m-0 flex min-h-[2.6rem] w-full cursor-pointer items-center justify-between gap-3 border-none bg-transparent px-[0.15rem] py-[0.8rem] text-left font-inherit text-inherit transition-opacity duration-150 hover:opacity-[0.82] active:opacity-70"
+                className={cn(
+                  "m-0 flex min-h-11 w-full cursor-pointer items-center justify-between gap-3",
+                  "rounded-[10px] border-none bg-transparent px-1.5 py-2.5 text-left font-inherit text-inherit",
+                  "transition-[background-color,opacity] duration-ui ease-ui",
+                  "hover:bg-surface active:opacity-80",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  "motion-reduce:transition-none",
+                )}
                 onClick={() => toggle(section.id)}
                 aria-expanded={open}
                 aria-controls={`${section.id}-body`}
                 id={`${section.id}-header`}
               >
-                <span className="text-[0.84rem] font-semibold tracking-tight text-ink">
-                  {section.label}
+                <span className="flex min-w-0 items-baseline gap-2">
+                  <span className="text-[0.84rem] font-semibold tracking-[-0.015em] text-ink">
+                    {section.label}
+                  </span>
+                  <span className="text-[0.7rem] font-medium tabular-nums text-ink-caption">
+                    {section.fields.length}
+                  </span>
                 </span>
                 <span
-                  className="inline-flex items-center justify-center text-muted-ink transition-transform duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] data-[open=false]:-rotate-90 motion-reduce:transition-none"
-                  data-open={open ? "true" : "false"}
+                  className={cn(
+                    "inline-flex size-7 shrink-0 items-center justify-center rounded-[8px] text-muted-ink",
+                    "transition-[transform,background-color,color] duration-ui ease-ui",
+                    "group-hover:bg-ink/5",
+                    open ? "rotate-0" : "-rotate-90",
+                    "motion-reduce:transition-none",
+                  )}
                   aria-hidden
                 >
                   <ChevronIcon />
@@ -110,12 +150,12 @@ export function ParamControls({
               </button>
               {open ? (
                 <div
-                  className="flex animate-control-section-in flex-col gap-[0.35rem] px-[0.15rem] pb-[0.95rem] motion-reduce:animate-none"
+                  className="flex animate-control-section-in flex-col gap-0.5 px-0.5 pb-3 motion-reduce:animate-none"
                   id={`${section.id}-body`}
                   role="region"
                   aria-labelledby={`${section.id}-header`}
                 >
-                  <div className="flex flex-col gap-[0.55rem]">
+                  <div className="flex flex-col gap-0.5">
                     {section.fields.map((field) => (
                       <ParamFieldControl
                         key={field.name}
@@ -168,14 +208,21 @@ function ParamFieldControl({
           <span className={fieldRowLabel} title={field.description}>
             {label}
           </span>
-          <div className="inline-flex max-w-[58%] shrink-0 items-center gap-[0.3rem]">
-            <label className="relative h-[1.55rem] w-[1.55rem] shrink-0 cursor-pointer overflow-hidden rounded-[5px] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--ink,var(--foreground))_14%,transparent)]">
+          <div className="inline-flex max-w-[58%] shrink-0 items-center gap-1.5">
+            <label
+              className={cn(
+                "relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-[8px]",
+                "shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]",
+                "transition-transform duration-ui ease-ui active:scale-[0.96]",
+                "motion-reduce:active:scale-100",
+              )}
+            >
               <input
                 type="color"
                 value={hex}
                 disabled={disabled}
                 onChange={(e) => onChange(e.target.value.toUpperCase())}
-                className="absolute inset-0 m-0 h-full w-full cursor-pointer border-none p-0 opacity-0"
+                className="absolute inset-0 m-0 h-full w-full cursor-pointer border-none p-0 opacity-0 disabled:cursor-not-allowed"
                 aria-label={`${label} color`}
               />
               <span
@@ -189,7 +236,11 @@ function ParamFieldControl({
               value={typeof value === "string" ? value.toUpperCase() : hex}
               disabled={disabled}
               onChange={(e) => onChange(e.target.value)}
-              className="w-[5.6rem] min-w-0 rounded-md border-none bg-black/[0.06] px-[0.4rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] tracking-[0.01em] text-ink uppercase tabular-nums focus:outline-2 focus:outline-offset-1 focus:outline-primary/30 disabled:opacity-50 dark:bg-white/10"
+              className={cn(
+                controlSurface,
+                "w-[5.6rem] min-w-0 px-2 py-1.5 font-inherit text-[0.72rem] font-medium tracking-[0.01em] text-ink uppercase tabular-nums",
+                "disabled:opacity-50",
+              )}
               spellCheck={false}
               aria-label={`${label} hex`}
             />
@@ -221,19 +272,32 @@ function ParamFieldControl({
           </span>
           <div
             className={cn(
-              "group relative h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 select-none overflow-hidden rounded-md bg-black/[0.06] data-[disabled=true]:opacity-45 dark:bg-white/10",
+              "group relative h-8 w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 select-none overflow-hidden rounded-[10px]",
+              "bg-ink/[0.05] dark:bg-white/10",
+              "transition-[box-shadow,transform] duration-ui ease-ui",
+              "hover:bg-ink/[0.07] dark:hover:bg-white/[0.12]",
+              "data-[disabled=true]:opacity-45",
+              "focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-ink/25",
             )}
             data-high={highFill ? "true" : "false"}
             data-disabled={disabled ? "true" : "false"}
           >
             <div
-              className="pointer-events-none absolute inset-y-0 left-0 rounded-l-md bg-primary transition-[width] duration-[80ms] ease-linear group-data-[high=false]:rounded-md motion-reduce:transition-none"
+              className={cn(
+                "pointer-events-none absolute inset-y-0 left-0 rounded-[10px] bg-cta",
+                "transition-[width] duration-fast ease-ui",
+                "group-data-[high=false]:rounded-[10px]",
+                "motion-reduce:transition-none",
+              )}
               style={{ width: `${pct}%` }}
               aria-hidden
             />
             <span
               className={cn(
-                "pointer-events-none relative z-[1] grid h-full place-items-center text-[0.72rem] font-semibold tracking-tight tabular-nums text-ink transition-colors duration-[120ms] group-data-[high=true]:text-primary-foreground",
+                "pointer-events-none relative z-[1] grid h-full place-items-center",
+                "text-[0.72rem] font-semibold tracking-tight tabular-nums text-ink",
+                "transition-colors duration-fast ease-ui",
+                "group-data-[high=true]:text-cta-foreground",
               )}
             >
               {display}
@@ -268,7 +332,11 @@ function ParamFieldControl({
             placeholder={field.placeholder}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className="h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 rounded-md border-none bg-black/[0.06] px-[0.55rem] text-center font-inherit text-[0.72rem] font-[550] text-ink focus:outline-2 focus:outline-offset-1 focus:outline-primary/30 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-white/10"
+            className={cn(
+              controlSurface,
+              "h-8 w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 px-2.5 text-center font-inherit text-[0.72rem] font-medium text-ink",
+              "disabled:cursor-not-allowed disabled:opacity-45",
+            )}
           />
         </div>
       );
@@ -281,11 +349,11 @@ function ParamFieldControl({
       if (segmented) {
         return (
           <div className={fieldStack}>
-            <span className={fieldRowLabel} title={field.description}>
+            <span className={cn(fieldRowLabel, "px-1.5")} title={field.description}>
               {label}
             </span>
             <div
-              className="flex flex-wrap gap-[0.2rem] rounded-lg bg-black/[0.06] p-[0.18rem] dark:bg-white/10"
+              className="flex flex-wrap gap-0.5 rounded-[10px] bg-ink/[0.05] p-0.5 dark:bg-white/10"
               role="radiogroup"
               aria-label={label}
             >
@@ -298,14 +366,15 @@ function ParamFieldControl({
                     role="radio"
                     aria-checked={selected}
                     className={cn(
-                      "min-h-[1.7rem] min-w-[3.5rem] flex-1 cursor-pointer rounded-md border-none px-[0.45rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] transition-[background-color,color,transform] duration-[140ms] ease-[cubic-bezier(0.2,0,0,1)]",
-                      "enabled:active:scale-[0.97]",
+                      "min-h-8 min-w-[3.5rem] flex-1 cursor-pointer rounded-[8px] border-none px-2 py-1.5",
+                      "font-inherit text-[0.72rem] font-medium tracking-[-0.01em]",
+                      "transition-[background-color,color,transform,box-shadow] duration-ui ease-ui",
+                      "enabled:active:scale-[0.96]",
                       "disabled:cursor-not-allowed disabled:opacity-45",
-                      "motion-reduce:transition-none",
-                      // Selected styles applied via JS so hover cannot override (TW hover vs data race)
+                      "motion-reduce:transition-none motion-reduce:active:scale-100",
                       selected
-                        ? "bg-primary font-semibold text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                        : "bg-transparent text-muted-ink enabled:hover:bg-black/[0.06] enabled:hover:text-ink dark:enabled:hover:bg-white/10",
+                        ? "bg-cta font-semibold text-cta-foreground shadow-sm hover:bg-cta-hover"
+                        : "bg-transparent text-muted-ink enabled:hover:bg-ink/[0.06] enabled:hover:text-ink dark:enabled:hover:bg-white/10",
                     )}
                     data-selected={selected ? "true" : "false"}
                     disabled={disabled}
@@ -329,7 +398,13 @@ function ParamFieldControl({
             value={current}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className="h-[1.7rem] w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 appearance-none rounded-md border-none bg-black/[0.06] bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2712%27%20height%3D%2712%27%20viewBox%3D%270%200%2016%2016%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M4%206L8%2010L12%206%27%20stroke%3D%27%23888%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E')] bg-[length:12px] bg-[position:right_0.45rem_center] bg-no-repeat py-0 pr-[1.4rem] pl-[0.55rem] text-left font-inherit text-[0.72rem] font-[550] text-ink focus:outline-2 focus:outline-offset-1 focus:outline-primary/30 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-white/10"
+            className={cn(
+              controlSurface,
+              "h-8 w-[min(52%,9.5rem)] min-w-[5.5rem] shrink-0 appearance-none",
+              "bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2712%27%20height%3D%2712%27%20viewBox%3D%270%200%2016%2016%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M4%206L8%2010L12%206%27%20stroke%3D%27%23888%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E')] bg-[length:12px] bg-[position:right_0.45rem_center] bg-no-repeat",
+              "py-0 pr-6 pl-2.5 text-left font-inherit text-[0.72rem] font-medium text-ink",
+              "disabled:cursor-not-allowed disabled:opacity-45",
+            )}
             aria-label={label}
           >
             {field.options.map((opt) => (
@@ -351,20 +426,29 @@ function ParamFieldControl({
           </span>
           <span
             className={cn(
-              "group/sw relative h-[1.3rem] w-[2.35rem] shrink-0 rounded-full bg-black/[0.12] transition-colors duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] dark:bg-white/15 data-[checked=true]:bg-primary",
+              "group/sw relative h-6 w-10 shrink-0 rounded-full",
+              "bg-ink/12 transition-colors duration-ui ease-ui dark:bg-white/15",
+              "data-[checked=true]:bg-cta",
             )}
             data-checked={checked ? "true" : "false"}
           >
             <input
               type="checkbox"
-              className="peer absolute inset-0 z-[1] m-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+              className="peer absolute inset-0 z-[1] m-0 h-full w-full min-h-0 min-w-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
               checked={checked}
               disabled={disabled}
               onChange={(e) => onChange(e.target.checked)}
               aria-label={label}
             />
             <span
-              className="pointer-events-none absolute top-[0.14rem] left-[0.14rem] h-[1.02rem] w-[1.02rem] rounded-full bg-white shadow-[0_1px_2px_color-mix(in_oklch,#000_22%,transparent)] transition-transform duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] peer-disabled:opacity-55 group-data-[checked=true]/sw:translate-x-[1.05rem] motion-reduce:transition-none"
+              className={cn(
+                "pointer-events-none absolute top-0.5 left-0.5 size-5 rounded-full bg-white",
+                "shadow-[0_1px_2px_rgba(0,0,0,0.18)]",
+                "transition-transform duration-ui ease-ui",
+                "peer-disabled:opacity-55",
+                "group-data-[checked=true]/sw:translate-x-4",
+                "motion-reduce:transition-none",
+              )}
               aria-hidden
             />
           </span>
@@ -380,7 +464,14 @@ function ParamFieldControl({
           </span>
           <button
             type="button"
-            className="max-w-[58%] cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap rounded-md border-none bg-ink/8 px-[0.55rem] py-[0.28rem] font-inherit text-[0.72rem] font-[550] text-inherit disabled:cursor-not-allowed disabled:opacity-40 enabled:hover:bg-ink/12"
+            className={cn(
+              "max-w-[58%] min-h-8 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap",
+              "rounded-[10px] border-none bg-ink/8 px-2.5 py-1.5 font-inherit text-[0.72rem] font-medium text-ink",
+              "transition-[background-color,transform] duration-ui ease-ui",
+              "enabled:hover:bg-ink/12 enabled:active:scale-[0.96]",
+              "disabled:cursor-not-allowed disabled:opacity-40",
+              "motion-reduce:active:scale-100",
+            )}
             disabled={disabled}
             onClick={() => onFocusAssetSlot?.(slotId)}
           >

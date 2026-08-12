@@ -12,14 +12,23 @@ import { GalleryShell } from "./gallery-shell";
 
 const PAGE_SIZE = 24;
 
-const btn =
-  "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-border bg-card px-4 py-[0.55rem] text-sm font-medium text-inherit no-underline transition-[border-color,background,opacity] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:enabled:bg-[#F8F8F8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none dark:hover:enabled:bg-secondary";
+const btn = cn(
+  "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
+  "text-sm font-medium text-ink-secondary no-underline",
+  "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
+  "hover:enabled:bg-surface hover:enabled:text-ink",
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+  "motion-reduce:transition-none",
+);
 
-const btnPrimary =
-  "border-transparent bg-primary font-medium text-primary-foreground hover:enabled:border-transparent hover:enabled:bg-base-blue-hover";
+const btnSolid = cn(
+  "border-transparent bg-cta text-cta-foreground",
+  "hover:enabled:border-transparent hover:enabled:bg-cta-hover hover:enabled:text-cta-foreground",
+);
 
 const masonry =
-  "columns-1 gap-x-3 min-[560px]:columns-2 min-[1100px]:columns-3 min-[1100px]:gap-x-3.5";
+  "columns-1 gap-x-3.5 min-[560px]:columns-2 min-[1100px]:columns-3 min-[1100px]:gap-x-4";
 
 function SkeletonGrid({ count = 8 }: { count?: number }) {
   return (
@@ -32,11 +41,11 @@ function SkeletonGrid({ count = 8 }: { count?: number }) {
       aria-hidden
     >
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="mb-3 break-inside-avoid bg-transparent">
-          <div className="aspect-[4/3] animate-pulse rounded-[10px] bg-foreground/[0.08]" />
-          <div className="flex flex-col gap-1.5 px-[0.15rem] pt-[0.65rem] pb-[0.35rem]">
-            <div className="h-[0.65rem] w-[72%] animate-pulse rounded bg-foreground/[0.09]" />
-            <div className="h-[0.65rem] w-[42%] animate-pulse rounded bg-foreground/[0.09]" />
+        <div key={i} className="mb-3.5 break-inside-avoid bg-transparent">
+          <div className="aspect-[4/3] animate-pulse rounded-2xl bg-ink/6 shadow-elev" />
+          <div className="flex flex-col gap-1.5 px-0.5 pt-3 pb-1">
+            <div className="h-2.5 w-[72%] animate-pulse rounded bg-ink/8" />
+            <div className="h-2.5 w-[42%] animate-pulse rounded bg-ink/6" />
           </div>
         </div>
       ))}
@@ -76,42 +85,46 @@ export function GalleryList() {
 
   return (
     <GalleryShell>
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-5 pb-[4.5rem] md:px-6 md:pt-7 md:pb-20">
-        <header className="mb-7 flex max-w-[52rem] flex-col gap-[0.65rem] md:mb-9 md:gap-[0.85rem]">
+      <main className="relative mx-auto w-full max-w-[1200px] flex-1 px-4 pt-6 pb-[4.5rem] md:px-6 md:pt-8 md:pb-20">
+        <header className="mb-8 flex max-w-[40rem] flex-col gap-3 md:mb-10 md:gap-4">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <h1 className="m-0 text-base font-semibold leading-tight tracking-tight">
+            <p className="m-0 text-[13px] font-medium tracking-[-0.01em] text-ink-caption">
               Gallery
-            </h1>
+            </p>
             {countLabel ? (
-              <span className="shrink-0 rounded-full bg-foreground/[0.06] px-[0.7rem] py-[0.35rem] text-xs font-medium text-muted-foreground">
+              <span className="shrink-0 rounded-[10px] bg-surface px-2.5 py-1 text-xs font-medium text-muted-ink">
                 {countLabel}
               </span>
             ) : null}
           </div>
-          <p className="m-0 max-w-[40rem] text-[clamp(1.35rem,3.6vw,2.15rem)] font-medium leading-tight tracking-tight text-pretty text-muted-ink">
-            Explore interactive design tools from the community. Open any piece
-            to play — no sign-in required.
-          </p>
+          <h1 className="m-0 text-[clamp(1.5rem,3.4vw,2.15rem)] font-semibold leading-[1.1] tracking-[-0.03em] text-pretty text-ink">
+            Explore interactive design tools.
+            <span className="mt-1 block font-medium text-ink-caption">
+              Open any piece to play — no sign-in.
+            </span>
+          </h1>
         </header>
 
         {loadingFirst ? <SkeletonGrid /> : null}
 
         {error ? (
-          <div className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center [&_h1]:m-0 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-balance [&_p]:m-0 [&_p]:max-w-[26rem] [&_p]:text-[0.95rem] [&_p]:leading-relaxed [&_p]:text-muted-foreground">
+          <div className="mx-auto mt-16 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center">
             <div
-              className="mb-[0.35rem] size-[4.5rem] rounded-xl bg-[radial-gradient(70%_70%_at_50%_40%,color-mix(in_oklch,var(--foreground)_10%,transparent),transparent_72%),color-mix(in_oklch,var(--foreground)_5%,transparent)]"
+              className="mb-1 size-[4.5rem] rounded-2xl bg-[radial-gradient(70%_80%_at_50%_40%,rgb(188,203,255)_0%,transparent_70%)] opacity-80"
               aria-hidden
             />
-            <h1>Could not load gallery</h1>
-            <p>
+            <h2 className="m-0 text-xl font-semibold tracking-[-0.02em] text-balance text-ink">
+              Could not load gallery
+            </h2>
+            <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted-ink">
               {q.error instanceof Error
                 ? q.error.message
                 : "Something went wrong while fetching public tools."}
             </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-[0.65rem]">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
               <button
                 type="button"
-                className={cn(btn, btnPrimary)}
+                className={cn(btn, btnSolid)}
                 onClick={() => void q.refetch()}
               >
                 Try again
@@ -124,18 +137,20 @@ export function GalleryList() {
         ) : null}
 
         {empty ? (
-          <div className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center [&_h1]:m-0 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-balance [&_p]:m-0 [&_p]:max-w-[26rem] [&_p]:text-[0.95rem] [&_p]:leading-relaxed [&_p]:text-muted-foreground">
+          <div className="relative mx-auto mt-16 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center">
             <div
-              className="mb-[0.35rem] size-[4.5rem] rounded-xl bg-[radial-gradient(70%_70%_at_50%_40%,color-mix(in_oklch,var(--foreground)_10%,transparent),transparent_72%),color-mix(in_oklch,var(--foreground)_5%,transparent)]"
+              className="pointer-events-none absolute -inset-x-16 -top-10 -z-10 h-48 rounded-[50%] bg-[radial-gradient(90%_80%_at_50%_100%,rgb(230,236,255)_0%,rgb(188,203,255)_50%,transparent_75%)] opacity-60 dark:opacity-20"
               aria-hidden
             />
-            <h1>No tools yet</h1>
-            <p>
-              Published tools land here. Create one, capture a thumbnail, and
-              publish to seed the gallery.
+            <h2 className="m-0 text-xl font-semibold tracking-[-0.02em] text-balance text-ink">
+              Nothing published yet
+            </h2>
+            <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted-ink">
+              Create a tool, capture a thumbnail, and publish to seed the
+              gallery.
             </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-[0.65rem]">
-              <Link href="/create" className={cn(btn, btnPrimary)}>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              <Link href="/create" className={cn(btn, btnSolid)}>
                 Create a tool
               </Link>
             </div>
@@ -149,7 +164,7 @@ export function GalleryList() {
                 <GalleryCard key={card.publicId} card={card} />
               ))}
             </div>
-            <div className="mt-7 flex flex-wrap items-center gap-[0.65rem]">
+            <div className="mt-8 flex flex-wrap items-center gap-2.5">
               {q.hasNextPage ? (
                 <button
                   type="button"
@@ -160,7 +175,7 @@ export function GalleryList() {
                   {q.isFetchingNextPage ? "Loading…" : "Load more"}
                 </button>
               ) : null}
-              <Link href="/create" className={cn(btn, btnPrimary)}>
+              <Link href="/create" className={cn(btn, btnSolid)}>
                 Create your own
               </Link>
             </div>

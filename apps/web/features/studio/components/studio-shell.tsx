@@ -470,6 +470,7 @@ export function StudioShell({
       >
         Export
       </button>
+      <span className="mx-0.5 hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden />
       <UserMenu />
     </>
   );
@@ -539,10 +540,15 @@ export function StudioShell({
   const controls = (
     <>
       <div className={pg.panelHeader}>
-        <h2 className={pg.panelTitle}>Controls</h2>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h2 className={pg.panelTitle}>Controls</h2>
+          <p className="m-0 text-[0.7rem] leading-snug text-ink-caption">
+            Tune your vision
+          </p>
+        </div>
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center gap-[0.35rem] rounded-md border-none bg-transparent px-[0.35rem] py-[0.3rem] font-inherit text-[0.78rem] font-medium text-muted-ink transition-colors duration-150 hover:bg-ink/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className={`${pg.btn} ${pg.btnGhost} min-h-9! px-2.5! text-[0.78rem]!`}
           disabled={!runtime.mounted || runtime.busy}
           onClick={() => runtime.resetParams()}
           title="Restore default parameters"
@@ -554,9 +560,9 @@ export function StudioShell({
         </button>
       </div>
       <div className={pg.panelScroll}>
-        <section className="flex flex-col gap-[0.55rem]">
+        <section className="flex flex-col gap-1">
           {runtime.mounted && runtime.paramSchema.length === 0 ? (
-            <p className="text-sm opacity-55">No controls for this tool.</p>
+            <p className="text-sm text-muted-ink">No controls for this tool.</p>
           ) : (
             <ParamControls
               schema={runtime.paramSchema}
@@ -571,11 +577,11 @@ export function StudioShell({
         </section>
 
         <section
-          className="mt-[0.35rem] flex flex-col gap-[0.55rem] border-t border-border-subtle pt-[0.85rem]"
+          className="mt-1 flex flex-col gap-2 border-t border-border-subtle pt-4"
           ref={assetsSectionRef}
           id="studio-assets"
         >
-          <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
+          <h2 className="m-0 text-[0.72rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase">
             Assets
           </h2>
           {runtime.mounted && runtime.assetSlots.length > 0 ? (

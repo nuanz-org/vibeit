@@ -313,7 +313,7 @@ export function CreatePlayground({
                         <li key={s.label}>
                           <button
                             type="button"
-                            className="cursor-pointer appearance-none rounded-full border border-border-subtle bg-transparent px-[0.7rem] py-[0.4rem] text-xs font-medium font-[inherit] text-muted-ink transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:-translate-y-px hover:border-ink/22 hover:bg-ink/4 hover:text-ink active:scale-[0.98] motion-reduce:transition-none"
+                            className="cursor-pointer appearance-none rounded-[10px] border border-border-subtle bg-transparent px-[0.7rem] py-[0.4rem] text-xs font-medium font-[inherit] text-muted-ink transition-[background-color,border-color,color,transform] duration-ui ease-ui hover:-translate-y-px hover:border-ink/22 hover:bg-ink/4 hover:text-ink active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             onClick={() => setVisionText(s.vision)}
                           >
                             {s.label}
