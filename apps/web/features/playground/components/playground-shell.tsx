@@ -9,9 +9,9 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-
 import { cn } from "@/lib/utils";
 
 import { playgroundStyles, surfaceEdge } from "../styles";
@@ -22,10 +22,11 @@ const CHAT_COLLAPSED_KEY = "aiditr.playground.chatCollapsed";
  * ANIMATION STORYBOARD — chat panel open / close (desktop)
  *
  *    0ms   user toggles collapse (panel icon or reopen FAB)
- *  0–320ms grid track + column-gap ease-in-out (0 ↔ open width)
- *  0–280ms chat panel opacity ease-in-out (fade with width)
+ *  0–320ms chat column + gap ease-in-out (0 ↔ open width)
+ *  0–280ms chat inner opacity ease-in-out (fade with width)
  *  0–280ms reopen FAB fades/scales in (when collapsed)
  *
+ * Inner chat rail stays at the open-track width; the aside clips.
  * Reduced motion: all durations → 0 (instant).
  * ───────────────────────────────────────────────────────── */
 
@@ -37,11 +38,9 @@ const CONTROLS_TRACK = 300;
 const CHAT_COLLAPSE = {
   /** Full open/close track + gap duration */
   durationMs: 320,
-  /** Opacity / FAB slightly shorter so content settles with the track */
-  fadeMs: 280,
-  /** Symmetric ease — accelerates mid-way, soft at both ends */
-  ease: "ease-in-out" as const,
 };
+
+const COL_GAP_OPEN_PX = 12;
 
 type PlaygroundChatUi = {
   /** Desktop: hide chat column and expand stage. */
@@ -89,7 +88,7 @@ export type PlaygroundShellProps = {
  * Brickspace-class floating shell:
  * nav touches the top; L/R/B gutters float panels on the stage.
  *
- * Desktop chat open/close animates grid track width + opacity with ease-in-out.
+ * Desktop chat open/close animates aside width + opacity with ease-in-out.
  * Mobile still uses full-width overlays + bottom tabs (no collapse animation).
  */
 const shellClass = cn(
@@ -98,7 +97,6 @@ const shellClass = cn(
   // No top gutter — nav bar flushes to top; L/R/B stage shows through
   "px-3 pb-3 pt-0",
   "gap-y-3",
-  // column-gap driven by --pg-col-gap so it can ease closed with the track
   "[column-gap:var(--pg-col-gap,0.75rem)]",
   // Mobile: stage full width + bottom tabs; side panels become overlays
   "max-[1100px]:grid-cols-1!",
@@ -129,18 +127,15 @@ const sidePanelClass = cn(
   "max-[1100px]:data-[mobile-hidden=true]:hidden",
 );
 
-/** Desktop-only: chat track content fades while width eases (avoids squashed text). */
-const chatTrackMotionClass = cn(
-  "min-[1101px]:min-w-0",
-  "min-[1101px]:overflow-hidden",
-  "min-[1101px]:transition-[opacity]",
-  "min-[1101px]:duration-[280ms]",
-  "min-[1101px]:ease-in-out",
+/**
+ * Holds chat at the open-track width so collapse/open clips the column
+ * instead of wrapping greeting, bubbles, and composer chrome.
+ */
+const chatTrackInnerClass = cn(
+  "flex min-h-0 min-w-0 flex-1 flex-col",
+  "min-[1101px]:h-full min-[1101px]:w-[var(--pg-chat-track)] min-[1101px]:shrink-0",
+  "min-[1101px]:transition-opacity min-[1101px]:duration-[280ms] min-[1101px]:ease-in-out",
   "motion-reduce:transition-none!",
-  // Collapsed: invisible + non-interactive (width handled by grid track → 0)
-  "min-[1101px]:data-[desktop-collapsed=true]:opacity-0",
-  "min-[1101px]:data-[desktop-collapsed=true]:pointer-events-none",
-  "min-[1101px]:data-[desktop-collapsed=false]:opacity-100",
 );
 
 const mobileTabClass = cn(
@@ -276,21 +271,43 @@ function writeCollapsedPref(collapsed: boolean) {
 function desktopGridColumns(opts: {
   hasControls: boolean;
   controlsLeft: boolean;
-  chatCollapsed: boolean;
+  chatColPx: number;
 }): string {
-  const chatOpen = opts.hasControls ? CHAT_TRACK_STUDIO : CHAT_TRACK_CREATE;
-  const chatPx = opts.chatCollapsed ? 0 : chatOpen;
+  // Literal px track — CSS var() inside minmax() will not shrink to 0.
+  const chatCol = `minmax(0,${Math.max(0, opts.chatColPx)}px)`;
   const ctrlPx = CONTROLS_TRACK;
 
   if (!opts.hasControls) {
-    return `${chatPx}px minmax(0,1fr)`;
+    return `${chatCol} minmax(0,1fr)`;
   }
   if (opts.controlsLeft) {
-    // controls | stage | chat
-    return `${ctrlPx}px minmax(0,1fr) ${chatPx}px`;
+    return `${ctrlPx}px minmax(0,1fr) ${chatCol}`;
   }
-  // chat | stage | controls
-  return `${chatPx}px minmax(0,1fr) ${ctrlPx}px`;
+  return `${chatCol} minmax(0,1fr) ${ctrlPx}px`;
+}
+
+function animateLength(
+  from: number,
+  to: number,
+  durationMs: number,
+  onUpdate: (value: number) => void,
+): { stop: () => void } {
+  const started = performance.now();
+  let stopped = false;
+  const tick = () => {
+    if (stopped) return;
+    const t = Math.min(1, (performance.now() - started) / durationMs);
+    const eased = t < 0.5 ? 2 * t * t : 1 - (2 - 2 * t) ** 2 / 2;
+    onUpdate(from + (to - from) * eased);
+    if (t < 1) timer = window.setTimeout(tick, 16);
+  };
+  let timer = window.setTimeout(tick, 16);
+  return {
+    stop() {
+      stopped = true;
+      window.clearTimeout(timer);
+    },
+  };
 }
 
 /**
@@ -316,12 +333,15 @@ export function PlaygroundShell({
     "stage",
   );
   const [chatCollapsed, setChatCollapsed] = useState(false);
-  const [prefReady, setPrefReady] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [chatColPx, setChatColPx] = useState(CHAT_TRACK_CREATE);
+  const [colGapPx, setColGapPx] = useState(COL_GAP_OPEN_PX);
+  const chatColRef = useRef(CHAT_TRACK_CREATE);
+  const colGapRef = useRef(COL_GAP_OPEN_PX);
+  const skipChatMotion = useRef(true);
 
   useEffect(() => {
     setChatCollapsed(readCollapsedPref());
-    setPrefReady(true);
   }, []);
 
   useEffect(() => {
@@ -356,36 +376,63 @@ export function PlaygroundShell({
 
   /** Chat sits on the left of stage unless Studio swaps to controls-left. */
   const chatOnLeft = !controlsLeft;
-  /** Desktop collapsed state for motion attrs (after pref hydrate). */
-  const chatDesktopCollapsed = prefReady && chatCollapsed;
+  const chatDesktopCollapsed = chatCollapsed;
+
+  const chatTrackPx = hasControls ? CHAT_TRACK_STUDIO : CHAT_TRACK_CREATE;
 
   const shellStyle = useMemo(() => {
     const cols = desktopGridColumns({
       hasControls,
       controlsLeft,
-      chatCollapsed: chatDesktopCollapsed,
+      chatColPx,
     });
-    const colGap = chatDesktopCollapsed ? "0px" : "0.75rem";
-    const transition =
-      prefReady && !reduceMotion
-        ? `grid-template-columns ${CHAT_COLLAPSE.durationMs}ms ${CHAT_COLLAPSE.ease}, column-gap ${CHAT_COLLAPSE.durationMs}ms ${CHAT_COLLAPSE.ease}`
-        : "none";
-
     return {
       gridTemplateAreas: areas,
-      // Desktop tracks — mobile media query forces single column
-      ["--pg-col-gap" as string]: colGap,
+      ["--pg-chat-track" as string]: `${chatTrackPx}px`,
+      ["--pg-col-gap" as string]: `${colGapPx}px`,
       gridTemplateColumns: cols,
-      transition,
     } as CSSProperties;
-  }, [
-    areas,
-    chatDesktopCollapsed,
-    controlsLeft,
-    hasControls,
-    prefReady,
-    reduceMotion,
-  ]);
+  }, [areas, chatColPx, chatTrackPx, colGapPx, controlsLeft, hasControls]);
+
+  useEffect(() => {
+    const colTo = chatCollapsed ? 0 : chatTrackPx;
+    const gapTo = chatCollapsed ? 0 : COL_GAP_OPEN_PX;
+    const instant = skipChatMotion.current || reduceMotion;
+    skipChatMotion.current = false;
+
+    const setCol = (v: number) => {
+      chatColRef.current = v;
+      setChatColPx(v);
+    };
+    const setGap = (v: number) => {
+      colGapRef.current = v;
+      setColGapPx(v);
+    };
+
+    if (instant) {
+      setCol(colTo);
+      setGap(gapTo);
+      return;
+    }
+
+    const colAnim = animateLength(
+      chatColRef.current,
+      colTo,
+      CHAT_COLLAPSE.durationMs,
+      setCol,
+    );
+    const gapAnim = animateLength(
+      colGapRef.current,
+      gapTo,
+      CHAT_COLLAPSE.durationMs,
+      setGap,
+    );
+
+    return () => {
+      colAnim.stop();
+      gapAnim.stop();
+    };
+  }, [chatCollapsed, chatTrackPx, reduceMotion]);
 
   return (
     <PlaygroundChatUiContext.Provider value={chatUi}>
@@ -394,6 +441,11 @@ export function PlaygroundShell({
         @keyframes pg-chat-fab-in {
           from { opacity: 0; transform: scale(0.92); }
           to { opacity: 1; transform: scale(1); }
+        }
+        @media (min-width: 1101px) {
+          [data-desktop-collapsed="true"] {
+            pointer-events: none;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
           @keyframes pg-chat-fab-in {
@@ -478,7 +530,6 @@ export function PlaygroundShell({
           className={cn(
             sidePanelClass,
             controlsLeft ? "[grid-area:controls]" : "[grid-area:chat]",
-            !controlsLeft && chatTrackMotionClass,
           )}
           data-desktop-collapsed={
             !controlsLeft && chatDesktopCollapsed ? "true" : "false"
@@ -493,7 +544,16 @@ export function PlaygroundShell({
             !controlsLeft && chatDesktopCollapsed ? true : undefined
           }
         >
-          {controlsLeft ? controls : chat}
+          {controlsLeft ? (
+            controls
+          ) : (
+            <div
+              className={chatTrackInnerClass}
+              style={chatCollapsed ? { opacity: 0 } : { opacity: 1 }}
+            >
+              {chat}
+            </div>
+          )}
         </aside>
 
         <main
@@ -527,7 +587,6 @@ export function PlaygroundShell({
               sidePanelClass,
               "overflow-auto",
               controlsLeft ? "[grid-area:chat]" : "[grid-area:controls]",
-              controlsLeft && chatTrackMotionClass,
             )}
             data-desktop-collapsed={
               controlsLeft && chatDesktopCollapsed ? "true" : "false"
@@ -542,7 +601,16 @@ export function PlaygroundShell({
               controlsLeft && chatDesktopCollapsed ? true : undefined
             }
           >
-            {controlsLeft ? chat : controls}
+            {controlsLeft ? (
+              <div
+                className={chatTrackInnerClass}
+                style={chatCollapsed ? { opacity: 0 } : { opacity: 1 }}
+              >
+                {chat}
+              </div>
+            ) : (
+              controls
+            )}
           </aside>
         ) : null}
 
