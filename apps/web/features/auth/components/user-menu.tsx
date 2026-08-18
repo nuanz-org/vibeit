@@ -106,11 +106,32 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
     );
   }
 
+  const initials = initialsFromUser(session.user.name, session.user.email);
+  const label = session.user.name || session.user.email || "Profile";
+
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <span className="max-w-[10rem] truncate text-sm text-muted-foreground">
-        {session.user.name || session.user.email}
-      </span>
+      <Link
+        href="/profile"
+        className={cn(
+          "flex min-h-11 items-center gap-2 rounded-full pr-1",
+          "text-sm text-muted-foreground",
+          "transition-opacity duration-150 hover:opacity-70",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        )}
+        aria-label={`Profile — ${label}`}
+        title={label}
+      >
+        <span
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[0.68rem] font-semibold tracking-[-0.02em] text-ink outline outline-1 outline-black/10 dark:outline-white/10"
+          aria-hidden
+        >
+          {initials}
+        </span>
+        <span className="hidden max-w-[10rem] truncate sm:inline">
+          {label}
+        </span>
+      </Link>
       <button
         type="button"
         onClick={handleSignOut}

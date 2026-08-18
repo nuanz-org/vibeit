@@ -109,6 +109,59 @@ class ToolsRepository:
             )
         return tool_from_record(row) if row else None
 
+    async def list_tools_for_owner(
+        self,
+        *,
+        owner_user_id: str,
+        kind: str = "all",
+        limit: int = 24,
+        offset: int = 0,
+    ) -> list[tuple[ToolRow, bool]]:
+        """
+        Owner library: every tool they own, newest updated first.
+        kind=created → originals (no fork lineage); remixed → forks.
+        Fetch limit+1 so callers can detect has_more.
+        Second tuple item is has_runnable_version (non-empty version code).
+        """
+        lim = max(1, min(int(limit), 100))
+        off = max(0, int(offset))
+        kind_norm = (kind or "all").strip().lower()
+        extra = ""
+        if kind_norm == "created":
+            extra = "AND t.forked_from_tool_id IS NULL"
+        elif kind_norm == "remixed":
+            extra = "AND t.forked_from_tool_id IS NOT NULL"
+
+        cols = ", ".join(
+            f"t.{part.strip()}"
+            for part in _TOOL_COLUMNS.split(",")
+            if part.strip()
+        )
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"""
+                SELECT {cols},
+                       EXISTS (
+                         SELECT 1
+                         FROM tool_versions v
+                         WHERE v.tool_id = t.id
+                           AND length(btrim(v.code)) > 0
+                       ) AS has_runnable_version
+                FROM tools t
+                WHERE t.owner_user_id = $1
+                  {extra}
+                ORDER BY t.updated_at DESC, t.public_id ASC
+                LIMIT $2 OFFSET $3
+                """,
+                owner_user_id,
+                lim + 1,
+                off,
+            )
+        return [
+            (tool_from_record(r), bool(r["has_runnable_version"]))
+            for r in rows
+        ]
+
     async def list_gallery_tools(
         self,
         *,

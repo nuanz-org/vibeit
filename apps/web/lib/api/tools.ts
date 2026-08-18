@@ -97,6 +97,64 @@ export type PublicToolResponse = {
   version: PublicToolVersionResponse;
 };
 
+export type OwnerToolKind = "all" | "created" | "remixed";
+
+/** Thin owner library card from GET /api/v1/tools — no code / draft / chat. */
+export type OwnerToolCard = {
+  id: string;
+  publicId: string;
+  title?: string | null;
+  status: string;
+  galleryReady?: boolean;
+  thumbnailUrl?: string | null;
+  updatedAt: string;
+  publishedAt?: string | null;
+  isRemix: boolean;
+  hasRunnableVersion: boolean;
+  tags?: string[];
+};
+
+export type OwnerToolListResponse = {
+  items: OwnerToolCard[];
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+};
+
+export type ListMyToolsOptions = {
+  limit?: number;
+  offset?: number;
+  kind?: OwnerToolKind;
+};
+
+/**
+ * GET /api/v1/tools — signed-in owner's library (profile).
+ */
+export async function listMyTools(
+  options?: ListMyToolsOptions,
+): Promise<OwnerToolListResponse> {
+  const params = new URLSearchParams();
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  if (options?.offset != null) params.set("offset", String(options.offset));
+  if (options?.kind && options.kind !== "all") params.set("kind", options.kind);
+  const qs = params.toString();
+  const url = `${getApiBaseUrl()}/api/v1/tools${qs ? `?${qs}` : ""}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `List tools failed (${res.status})${text ? `: ${text}` : ""}`,
+    );
+  }
+
+  return res.json() as Promise<OwnerToolListResponse>;
+}
+
 /** Structured error from POST /tools/fork/{publicId}. */
 export class ForkToolError extends Error {
   readonly status: number;

@@ -104,6 +104,29 @@ class PublishGatesFailedDetail(CamelModel):
     gates: list[PublishGateFailureItem] = Field(default_factory=list)
 
 
+class OwnerToolCardResponse(CamelModel):
+    """Thin library card — no code, draft bags, or chat."""
+
+    id: str
+    public_id: str = Field(alias="publicId")
+    title: str | None = None
+    status: str
+    gallery_ready: bool = Field(default=False, alias="galleryReady")
+    thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
+    updated_at: str = Field(alias="updatedAt")
+    published_at: str | None = Field(default=None, alias="publishedAt")
+    is_remix: bool = Field(alias="isRemix")
+    has_runnable_version: bool = Field(alias="hasRunnableVersion")
+    tags: list[str] = Field(default_factory=list)
+
+
+class OwnerToolListResponse(CamelModel):
+    items: list[OwnerToolCardResponse]
+    limit: int
+    offset: int
+    has_more: bool = Field(alias="hasMore")
+
+
 class ToolDraftPatchRequest(CamelModel):
     """
     Full-replace bags for fields that are present.

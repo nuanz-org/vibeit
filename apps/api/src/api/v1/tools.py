@@ -1,6 +1,7 @@
 """
 Tools HTTP surface (M3g + M5c + M7d + M8a + M8b + M8c + AM7 refine).
 
+GET  /api/v1/tools                  — owner library (profile; thin cards)
 GET  /api/v1/tools/{toolId}         — owner read + latest version + draft state
 PATCH /api/v1/tools/{toolId}/draft  — owner replace draft params / asset bindings
 POST /api/v1/tools/{toolId}/publish — owner publish (share + gallery gates + thumb)
@@ -12,7 +13,9 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from typing import Literal
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 
 from adapters.auth.types import AuthUser
@@ -25,11 +28,13 @@ from core.deps import get_assets_repo, get_jobs_repo, get_tools_repo
 from core.security import get_current_user
 from schemas.jobs import JobErrorBody, RefineBudgetFields, RefineJobRequest, RefineJobResponse
 from schemas.tools import (
+    OwnerToolListResponse,
     ToolDraftPatchRequest,
     ToolPublishRequest,
     ToolResponse,
     ToolVersionResponse,
 )
+from services.list_owner_tools import list_owner_tools
 from services.create_job import _utc_iso
 from services.fork_tool import ForkSourceNotFoundError, fork_published_tool
 from services.public_tool import (
@@ -49,6 +54,8 @@ from services.upload_asset import asset_public_url
 from workers.generation import run_generation_job
 
 router = APIRouter(prefix="/tools", tags=["tools"])
+
+OwnerToolKind = Literal["all", "created", "remixed"]
 
 
 def _utc_iso(dt: datetime | None) -> str | None:
@@ -104,6 +111,33 @@ def _tool_response(
         draft_params=draft_params,
         draft_assets=draft_assets,
         chat_history=chat_history,
+    )
+
+
+@router.get(
+    "",
+    response_model=OwnerToolListResponse,
+    summary="List the caller's tools (profile library)",
+)
+async def list_my_tools(
+    user: AuthUser = Depends(get_current_user),
+    tools: ToolsRepository = Depends(get_tools_repo),
+    settings: Settings = Depends(get_settings),
+    limit: int = Query(default=24, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    kind: OwnerToolKind = Query(default="all"),
+) -> OwnerToolListResponse:
+    """
+    Owner-only thin cards. No code, draft bags, or chat.
+    Declared above /{tool_id} so FastAPI never treats the collection as an id.
+    """
+    return await list_owner_tools(
+        tools=tools,
+        owner_user_id=user.id,
+        api_public_base_url=settings.api_public_base_url,
+        kind=kind,
+        limit=limit,
+        offset=offset,
     )
 
 
