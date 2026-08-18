@@ -100,6 +100,12 @@ export function PublicToolShell({
           <Link href="/gallery" className="text-[0.8rem] text-inherit underline opacity-65">
             Gallery
           </Link>
+          <Link
+            href={`/remix/${encodeURIComponent(publicId)}`}
+            className="text-[0.8rem] text-inherit underline opacity-65"
+          >
+            Remix in Studio
+          </Link>
           <Link href="/create" className="text-[0.8rem] text-inherit underline opacity-65">
             Create your own
           </Link>

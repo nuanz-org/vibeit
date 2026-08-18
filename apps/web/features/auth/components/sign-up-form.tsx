@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
@@ -24,6 +24,8 @@ const link = "font-medium text-primary underline underline-offset-2 hover:opacit
 
 export function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/create";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,7 +50,7 @@ export function SignUpForm() {
       return;
     }
 
-    router.push("/create");
+    router.push(next);
     router.refresh();
   }
 
@@ -130,7 +132,10 @@ export function SignUpForm() {
 
       <p className={footer}>
         Already have an account?{" "}
-        <Link className={link} href="/login">
+        <Link
+          className={link}
+          href={next && next !== "/create" ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+        >
           Sign in
         </Link>
       </p>

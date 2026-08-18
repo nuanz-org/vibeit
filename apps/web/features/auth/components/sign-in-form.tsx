@@ -125,7 +125,14 @@ export function SignInForm() {
 
       <p className={footer}>
         No account?{" "}
-        <Link className={link} href="/signup">
+        <Link
+          className={link}
+          href={
+            next && next !== "/create"
+              ? `/signup?next=${encodeURIComponent(next)}`
+              : "/signup"
+          }
+        >
           Create one
         </Link>
       </p>

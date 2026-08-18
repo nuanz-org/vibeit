@@ -20,6 +20,7 @@ AM7 columns on generation_jobs: job_kind (create|refine), base_version_id.
 008 columns on generation_jobs: plan_mode (bool), clarify (jsonb);
   status includes awaiting_clarify for A3 planMode pause.
 009 columns on generation_jobs: message_history (jsonb array of chat turns).
+011 columns on tools: forked_from_tool_id (FK → tools, gallery remix lineage).
 """
 
 from __future__ import annotations

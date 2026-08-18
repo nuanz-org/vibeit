@@ -96,6 +96,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   const desc = card.description?.trim() || null;
   const tags = card.tags ?? [];
   const runHref = `/t/${encodeURIComponent(card.publicId)}`;
+  const remixHref = `/remix/${encodeURIComponent(card.publicId)}`;
   const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
   const hue = hashHue(card.publicId || title);
 
@@ -165,6 +166,9 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
             <div className="mt-7 flex flex-wrap items-center gap-[0.65rem]">
               <Link href={runHref} className={cn(btn, btnPrimary)}>
                 Open tool
+              </Link>
+              <Link href={remixHref} className={btn}>
+                Remix in Studio
               </Link>
               <Link href="/gallery" className={btn}>
                 Back to gallery

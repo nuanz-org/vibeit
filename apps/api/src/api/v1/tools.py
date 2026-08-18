@@ -5,6 +5,7 @@ GET  /api/v1/tools/{toolId}         — owner read + latest version + draft stat
 PATCH /api/v1/tools/{toolId}/draft  — owner replace draft params / asset bindings
 POST /api/v1/tools/{toolId}/publish — owner publish (share + gallery gates + thumb)
 POST /api/v1/tools/{toolId}/refine  — owner chat refine (AM7)
+POST /api/v1/tools/fork/{publicId}  — clone published tool as caller-owned draft
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from schemas.tools import (
     ToolVersionResponse,
 )
 from services.create_job import _utc_iso
+from services.fork_tool import ForkSourceNotFoundError, fork_published_tool
 from services.public_tool import (
     PublicToolError,
     PublishGateError,
@@ -102,6 +104,42 @@ def _tool_response(
         draft_params=draft_params,
         draft_assets=draft_assets,
         chat_history=chat_history,
+    )
+
+
+@router.post(
+    "/fork/{public_id}",
+    response_model=ToolResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Fork a published tool into a private draft owned by the caller",
+)
+async def fork_tool(
+    public_id: str,
+    user: AuthUser = Depends(get_current_user),
+    tools: ToolsRepository = Depends(get_tools_repo),
+    settings: Settings = Depends(get_settings),
+) -> ToolResponse:
+    """
+    Declare above /{tool_id} routes so a future greedy POST /{tool_id} cannot
+    swallow /fork/{public_id}.
+    """
+    try:
+        tool = await fork_published_tool(
+            public_id=public_id,
+            user=user,
+            tools=tools,
+        )
+    except ForkSourceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool not found",
+        ) from exc
+
+    latest = await _latest_version_response(tools, tool.id)
+    return _tool_response(
+        tool,
+        latest=latest,
+        api_public_base_url=settings.api_public_base_url,
     )
 
 

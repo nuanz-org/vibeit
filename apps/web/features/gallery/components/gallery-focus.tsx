@@ -137,6 +137,7 @@ function FocusPanel({
   const tags = card.tags ?? [];
   const published = formatPublished(card.publishedAt);
   const runHref = `/t/${encodeURIComponent(card.publicId)}`;
+  const remixHref = `/remix/${encodeURIComponent(card.publicId)}`;
   const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
   const hue = hashHue(card.publicId || shortTitle);
   const layoutId = `gallery-media-${instanceId}`;
@@ -330,6 +331,18 @@ function FocusPanel({
               )}
             >
               Use tool
+            </Link>
+            <Link
+              href={remixHref}
+              className={cn(
+                "inline-flex h-11 items-center justify-center rounded-[10px] border border-border bg-card px-5",
+                "text-sm font-medium text-ink-secondary no-underline",
+                "transition-[border-color,background-color,color] duration-ui ease-ui",
+                "hover:bg-surface hover:text-ink",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+              )}
+            >
+              Remix in Studio
             </Link>
             <button
               type="button"

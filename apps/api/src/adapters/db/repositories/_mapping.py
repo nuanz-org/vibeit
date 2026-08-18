@@ -60,6 +60,10 @@ def tool_from_record(row: Any) -> ToolRow:
         chat_history = []
     if not isinstance(chat_history, list):
         chat_history = []
+    try:
+        forked_from_tool_id = row["forked_from_tool_id"]
+    except (KeyError, TypeError):
+        forked_from_tool_id = None
     return ToolRow(
         id=row["id"],
         public_id=str(row["public_id"]),
@@ -78,6 +82,7 @@ def tool_from_record(row: Any) -> ToolRow:
         gallery_ready=gallery_ready,
         export_smoke_at=export_smoke_at,
         chat_history=chat_history,
+        forked_from_tool_id=forked_from_tool_id,
     )
 
 

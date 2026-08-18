@@ -97,6 +97,41 @@ export type PublicToolResponse = {
   version: PublicToolVersionResponse;
 };
 
+/** Structured error from POST /tools/fork/{publicId}. */
+export class ForkToolError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ForkToolError";
+    this.status = status;
+  }
+}
+
+/**
+ * POST /api/v1/tools/fork/{publicId} — clone a published tool as a draft.
+ * Caller becomes the owner. 401/404/other preserved on ForkToolError.status.
+ */
+export async function forkTool(publicId: string): Promise<ToolResponse> {
+  const res = await fetch(
+    `${getApiBaseUrl()}/api/v1/tools/fork/${encodeURIComponent(publicId)}`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new ForkToolError(
+      `Fork tool failed (${res.status})${text ? `: ${text}` : ""}`,
+      res.status,
+    );
+  }
+
+  return res.json() as Promise<ToolResponse>;
+}
+
 /** GET /api/v1/tools/{toolId} — owner only. */
 export async function getTool(toolId: string): Promise<ToolResponse> {
   const res = await fetch(

@@ -31,6 +31,8 @@ class ToolRow:
     export_smoke_at: datetime | None
     # Studio continuous refine chat (010_tool_chat_history)
     chat_history: Any = None
+    # Gallery remix lineage (011_fork_lineage). Null = original.
+    forked_from_tool_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)

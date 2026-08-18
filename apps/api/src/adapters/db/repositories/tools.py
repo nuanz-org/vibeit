@@ -14,7 +14,7 @@ _TOOL_COLUMNS = """
     id, public_id, owner_user_id, status, title, description,
     thumbnail_asset_id, published_at, created_at, updated_at,
     draft_params, draft_assets, tags, published_version_id,
-    gallery_ready, export_smoke_at, chat_history
+    gallery_ready, export_smoke_at, chat_history, forked_from_tool_id
 """
 
 _VERSION_COLUMNS = """
@@ -384,6 +384,38 @@ class ToolsRepository:
         """
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(sql, *args)
+        return tool_from_record(row) if row else None
+
+    async def set_tool_fork_metadata(
+        self,
+        tool_id: UUID | str,
+        *,
+        forked_from_tool_id: UUID | str,
+        tags: list[str] | None = None,
+        thumbnail_asset_id: UUID | str | None = None,
+    ) -> ToolRow | None:
+        """
+        Copy gallery remix fields onto a newly created draft.
+        Returns the updated row (RETURNING) so callers skip a re-fetch.
+        """
+        tag_list = list(tags) if tags is not None else []
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE tools
+                SET
+                    forked_from_tool_id = $2::uuid,
+                    tags = $3::text[],
+                    thumbnail_asset_id = $4::uuid,
+                    updated_at = now()
+                WHERE id = $1::uuid
+                RETURNING {_TOOL_COLUMNS}
+                """,
+                str(tool_id),
+                str(forked_from_tool_id),
+                tag_list,
+                str(thumbnail_asset_id) if thumbnail_asset_id is not None else None,
+            )
         return tool_from_record(row) if row else None
 
     async def append_chat_messages(
