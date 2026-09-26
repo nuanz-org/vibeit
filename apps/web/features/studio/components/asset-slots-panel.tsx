@@ -43,7 +43,7 @@ type LibraryItem = {
 const fileLabel =
   "inline-flex w-fit cursor-pointer items-center justify-center rounded-lg border border-foreground/14 px-3 py-[0.4rem] text-[0.8rem] font-medium appearance-none has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-45 [&_input]:hidden";
 const fileLabelPrimary =
-  "border-[#d97706]/40 bg-[#b45309]/12 font-semibold";
+  "border-[#d97706]/40 bg-[#b45309]/12 font-medium";
 const fieldHint = "block text-[0.75rem] leading-snug opacity-55";
 const fieldLabelCls = "flex items-baseline justify-between font-medium";
 const muted = "text-sm opacity-55";
@@ -357,7 +357,7 @@ export function AssetSlotsPanel({
                       alt=""
                       className="block h-full w-full object-cover"
                     />
-                    <span className="pointer-events-none absolute bottom-1 left-1 min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-bold leading-[1.1rem] text-white">
+                    <span className="pointer-events-none absolute bottom-1 left-1 min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-medium leading-[1.1rem] text-white">
                       {index + 1}
                     </span>
                   </button>
@@ -529,7 +529,7 @@ function AssetSlotRow({
             aria-hidden
             title="Placeholder until you add an image"
           >
-            <span className="text-[0.85rem] font-bold tracking-[0.02em] text-white opacity-95 [text-shadow:0_1px_2px_color-mix(in_srgb,#000_35%,transparent)]">
+            <span className="text-[0.85rem] font-medium tracking-[0.02em] text-white opacity-95 [text-shadow:0_1px_2px_color-mix(in_srgb,#000_35%,transparent)]">
               {mark}
             </span>
           </div>

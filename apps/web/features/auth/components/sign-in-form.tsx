@@ -9,20 +9,20 @@ import { authClient } from "@/lib/auth-client";
 const card =
   "w-full max-w-[400px] rounded-[12px] border border-border bg-card p-8";
 const title = "mb-1.5 text-2xl font-medium tracking-[-0.03em]";
-const subtitle = "mb-6 text-[0.95rem] leading-snug text-ink/70";
+const subtitle = "mb-6 text-[0.95rem] leading-snug text-fg/70";
 const form = "flex flex-col gap-4";
 const field = "flex flex-col gap-1.5";
 const label = "text-[0.85rem] font-medium";
 const input =
-  "w-full appearance-none rounded-[10px] border border-border bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-primary/50 focus:shadow-[0_0_0_3px_rgb(0_0_255/0.12)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full appearance-none rounded-[10px] border border-border bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-accent-text/50 focus:shadow-[0_0_0_3px_rgb(0_0_255/0.12)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
 const submit =
-  "mt-1 h-12 cursor-pointer rounded-full border-none bg-primary px-4 text-[0.95rem] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-55";
+  "mt-1 h-12 cursor-pointer rounded-full border-none bg-primary px-4 text-[0.95rem] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-55";
 const error =
   "rounded-[10px] border border-[#FC401F]/25 bg-[#FC401F]/10 px-3 py-2.5 text-sm leading-snug text-[#FC401F]";
-const footer = "mt-5 text-center text-sm text-muted-foreground";
-const link = "font-medium text-primary underline underline-offset-2 hover:opacity-80";
+const footer = "mt-5 text-center text-sm text-muted";
+const link = "font-medium text-accent-text underline underline-offset-2 hover:opacity-80";
 const mutedLink =
-  "text-[0.8rem] text-muted-foreground underline underline-offset-2 hover:text-foreground";
+  "text-[0.8rem] text-muted underline underline-offset-2 hover:text-foreground";
 
 export function SignInForm() {
   const router = useRouter();

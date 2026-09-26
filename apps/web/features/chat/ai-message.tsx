@@ -239,8 +239,8 @@ function MessageCopyButton({
       type="button"
       className={cn(
         "inline-flex size-7 items-center justify-center rounded-lg",
-        "text-muted-ink transition-[background-color,color,transform] duration-ui ease-ui",
-        "hover:bg-ink/6 hover:text-ink",
+        "text-muted transition-[background-color,color,transform] duration-ui ease-ui",
+        "hover:bg-ink/6 hover:text-fg",
         "active:scale-[0.96]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         "motion-reduce:transition-none motion-reduce:active:scale-100",
@@ -251,7 +251,7 @@ function MessageCopyButton({
       title={copied ? "Copied" : "Copy"}
     >
       {copied ? (
-        <CheckIcon className="size-3.5 text-ink" aria-hidden />
+        <CheckIcon className="size-3.5 text-fg" aria-hidden />
       ) : (
         <CopyIcon className="size-3.5" aria-hidden />
       )}
@@ -312,7 +312,7 @@ export function AiMessage({
         toggleClassName={
           isUser
             ? "text-background/75 hover:text-background"
-            : "text-muted-ink hover:text-ink"
+            : "text-muted hover:text-fg"
         }
       />
     );
@@ -351,7 +351,7 @@ export function AiMessage({
     <Message
       align={align}
       className={cn(
-        "animate-[ai-msg-in_280ms_var(--ease-ui,cubic-bezier(0.2,0,0,1))_both]",
+        "animate-[ai-msg-in_280ms_var(--ease)_both]",
         "motion-reduce:animate-none",
         className,
       )}
@@ -370,7 +370,7 @@ export function AiMessage({
                 <AiditrMark />
               </AvatarFallback>
             ) : (
-              <AvatarFallback className="bg-ink/[0.06] text-[0.62rem] font-semibold text-ink-secondary dark:bg-white/[0.08]">
+              <AvatarFallback className="bg-ink/[0.06] text-[0.62rem] font-medium text-fg dark:bg-white/[0.08]">
                 {defaults.avatar}
               </AvatarFallback>
             )}
@@ -388,7 +388,7 @@ export function AiMessage({
         {header !== undefined ? (
           <MessageHeader
             className={cn(
-              "text-[0.68rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
+              "text-[0.68rem] font-medium tracking-[-0.01em] text-muted uppercase",
               isGhost && "px-0",
             )}
           >
@@ -397,7 +397,7 @@ export function AiMessage({
         ) : role !== "user" ? (
           <MessageHeader
             className={cn(
-              "text-[0.68rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
+              "text-[0.68rem] font-medium tracking-[-0.01em] text-muted uppercase",
               isGhost && "px-0",
             )}
           >
@@ -419,7 +419,7 @@ export function AiMessage({
               isAssistant &&
                 !isGhost &&
                 !isDestructive &&
-                "rounded-[14px] rounded-bl-[6px] bg-surface! px-3.5 py-2.5 text-ink ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40",
+                "rounded-[14px] rounded-bl-[6px] bg-band! px-3.5 py-2.5 text-fg ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40",
               isAssistant && isGhost && "px-0 py-0",
               isDestructive &&
                 "rounded-[12px] bg-destructive/10! text-destructive! ring-1 ring-destructive/15",

@@ -13,7 +13,7 @@ const components: Components = {
     </p>
   ),
   strong: ({ children }) => (
-    <strong className="font-semibold text-inherit">{children}</strong>
+    <strong className="font-medium text-inherit">{children}</strong>
   ),
   em: ({ children }) => <em className="italic opacity-90">{children}</em>,
   a: ({ href, children }) => (
@@ -21,18 +21,18 @@ const components: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-medium text-primary underline decoration-primary/30 underline-offset-[3px] transition-colors duration-ui ease-ui hover:decoration-primary"
+      className="font-medium text-accent-text underline decoration-accent-text/30 underline-offset-[3px] transition-colors duration-ui ease-ui hover:decoration-accent-text"
     >
       {children}
     </a>
   ),
   ul: ({ children }) => (
-    <ul className="m-0 mt-2.5 list-disc space-y-1 pl-[1.15rem] text-[0.9rem] leading-[1.5] marker:text-muted-ink">
+    <ul className="m-0 mt-2.5 list-disc space-y-1 pl-[1.15rem] text-[0.9rem] leading-[1.5] marker:text-muted">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="m-0 mt-2.5 list-decimal space-y-1 pl-[1.15rem] text-[0.9rem] leading-[1.5] marker:font-medium marker:text-muted-ink">
+    <ol className="m-0 mt-2.5 list-decimal space-y-1 pl-[1.15rem] text-[0.9rem] leading-[1.5] marker:font-medium marker:text-muted">
       {children}
     </ol>
   ),
@@ -40,27 +40,27 @@ const components: Components = {
     <li className="pl-0.5 [&>p]:mt-0 [&>p]:inline">{children}</li>
   ),
   h1: ({ children }) => (
-    <h1 className="m-0 mb-1.5 text-[1.05rem] font-semibold tracking-[-0.02em] text-inherit first:mt-0 [&:not(:first-child)]:mt-3.5">
+    <h1 className="m-0 mb-1.5 text-[1.05rem] font-medium tracking-[-0.02em] text-inherit first:mt-0 [&:not(:first-child)]:mt-3.5">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="m-0 mb-1.5 text-[1rem] font-semibold tracking-[-0.02em] text-inherit first:mt-0 [&:not(:first-child)]:mt-3">
+    <h2 className="m-0 mb-1.5 text-[1rem] font-medium tracking-[-0.02em] text-inherit first:mt-0 [&:not(:first-child)]:mt-3">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="m-0 mb-1 text-[0.92rem] font-semibold tracking-[-0.015em] text-inherit first:mt-0 [&:not(:first-child)]:mt-2.5">
+    <h3 className="m-0 mb-1 text-[0.92rem] font-medium tracking-[-0.015em] text-inherit first:mt-0 [&:not(:first-child)]:mt-2.5">
       {children}
     </h3>
   ),
   h4: ({ children }) => (
-    <h4 className="m-0 mb-1 text-[0.88rem] font-semibold tracking-[-0.01em] text-inherit first:mt-0 [&:not(:first-child)]:mt-2">
+    <h4 className="m-0 mb-1 text-[0.88rem] font-medium tracking-[-0.01em] text-inherit first:mt-0 [&:not(:first-child)]:mt-2">
       {children}
     </h4>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="m-0 mt-2.5 border-l-2 border-ink/20 py-0.5 pl-3 text-[0.88rem] leading-[1.5] text-muted-ink dark:border-white/20">
+    <blockquote className="m-0 mt-2.5 border-l-2 border-fg/20 py-0.5 pl-3 text-[0.88rem] leading-[1.5] text-muted dark:border-white/20">
       {children}
     </blockquote>
   ),
@@ -98,13 +98,13 @@ const components: Components = {
     </div>
   ),
   thead: ({ children }) => (
-    <thead className="bg-ink/[0.04] text-ink dark:bg-white/[0.05]">{children}</thead>
+    <thead className="bg-ink/[0.04] text-fg dark:bg-white/[0.05]">{children}</thead>
   ),
   th: ({ children }) => (
-    <th className="px-2.5 py-1.5 font-semibold tracking-[-0.01em]">{children}</th>
+    <th className="px-2.5 py-1.5 font-medium tracking-[-0.01em]">{children}</th>
   ),
   td: ({ children }) => (
-    <td className="border-t border-black/6 px-2.5 py-1.5 text-muted-ink dark:border-white/8">
+    <td className="border-t border-black/6 px-2.5 py-1.5 text-muted dark:border-white/8">
       {children}
     </td>
   ),

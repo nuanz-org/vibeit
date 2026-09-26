@@ -162,7 +162,7 @@ function FocusPanel({
 
       <motion.div
         className={cn(
-          "relative z-[1] grid w-full max-w-[920px] overflow-hidden rounded-2xl bg-card shadow-elev",
+          "relative z-[1] grid w-full max-w-[920px] overflow-hidden rounded-2xl bg-card shadow-panel",
           "md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]",
         )}
         initial={reduce ? false : { opacity: 0, scale: FOCUS.initialScale }}
@@ -181,7 +181,7 @@ function FocusPanel({
       >
         <motion.div
           layoutId={reduce ? undefined : layoutId}
-          className="relative aspect-[4/3] w-full overflow-hidden bg-muted md:aspect-auto md:min-h-[380px] md:h-full"
+          className="relative aspect-[4/3] w-full overflow-hidden bg-band md:aspect-auto md:min-h-[380px] md:h-full"
         >
           {thumbSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -223,27 +223,27 @@ function FocusPanel({
             }
           >
             <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="m-0 text-[12px] font-medium tracking-[-0.01em] text-ink-caption">
+              <p className="m-0 text-[12px] font-medium tracking-[-0.01em] text-muted">
                 Tool detail
               </p>
               {published ? (
-                <span className="text-[12px] text-ink-caption">
+                <span className="text-[12px] text-muted">
                   · Published {published}
                 </span>
               ) : null}
               {detailQ.isFetching && !detailQ.data ? (
-                <span className="text-[11px] text-muted-ink">Updating…</span>
+                <span className="text-[11px] text-muted">Updating…</span>
               ) : null}
             </div>
             <h2
               id={titleId}
-              className="m-0 text-[clamp(1.25rem,2.2vw,1.65rem)] font-semibold leading-tight tracking-[-0.03em] text-balance text-ink"
+              className="m-0 text-[clamp(1.25rem,2.2vw,1.65rem)] font-medium leading-tight tracking-[-0.03em] text-balance text-fg"
               title={fullTitle}
             >
               {shortTitle}
             </h2>
             {showFull ? (
-              <p className="mt-1.5 mb-0 line-clamp-3 text-[13px] leading-snug text-ink-caption">
+              <p className="mt-1.5 mb-0 line-clamp-3 text-[13px] leading-snug text-muted">
                 {fullTitle}
               </p>
             ) : null}
@@ -262,11 +262,11 @@ function FocusPanel({
             }
           >
             {desc ? (
-              <p className="m-0 max-w-[38ch] text-[0.95rem] leading-relaxed text-pretty text-muted-ink">
+              <p className="m-0 max-w-[38ch] text-[0.95rem] leading-relaxed text-pretty text-muted">
                 {desc}
               </p>
             ) : (
-              <p className="m-0 max-w-[38ch] text-[0.95rem] leading-relaxed text-muted-ink">
+              <p className="m-0 max-w-[38ch] text-[0.95rem] leading-relaxed text-muted">
                 Interactive design tool from the public gallery. Open it to play
                 with live controls — no sign-in, no source download.
               </p>
@@ -290,7 +290,7 @@ function FocusPanel({
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded-[10px] bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-ink"
+                  className="rounded-[10px] bg-band px-2.5 py-1 text-[11px] font-medium text-muted"
                 >
                   {t}
                 </span>
@@ -299,7 +299,7 @@ function FocusPanel({
           ) : null}
 
           <motion.p
-            className="m-0 text-sm leading-snug text-ink-caption"
+            className="m-0 text-sm leading-snug text-muted"
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: stage >= 2 || reduce ? 1 : 0 }}
             transition={
@@ -326,7 +326,7 @@ function FocusPanel({
                 "inline-flex h-11 items-center justify-center rounded-[10px] px-5",
                 "bg-primary text-sm font-medium text-primary-foreground no-underline",
                 "transition-[background-color,opacity] duration-ui ease-ui",
-                "hover:bg-base-blue-hover",
+                "hover:bg-accent-hover",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
               )}
             >
@@ -336,9 +336,9 @@ function FocusPanel({
               href={remixHref}
               className={cn(
                 "inline-flex h-11 items-center justify-center rounded-[10px] border border-border bg-card px-5",
-                "text-sm font-medium text-ink-secondary no-underline",
+                "text-sm font-medium text-fg no-underline",
                 "transition-[border-color,background-color,color] duration-ui ease-ui",
-                "hover:bg-surface hover:text-ink",
+                "hover:bg-band hover:text-fg",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
               )}
             >
@@ -349,9 +349,9 @@ function FocusPanel({
               onClick={onClose}
               className={cn(
                 "inline-flex h-11 items-center justify-center rounded-[10px] border border-border bg-card px-5",
-                "text-sm font-medium text-ink-secondary",
+                "text-sm font-medium text-fg",
                 "transition-[border-color,background-color,color] duration-ui ease-ui",
-                "hover:bg-surface hover:text-ink",
+                "hover:bg-band hover:text-fg",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
               )}
             >

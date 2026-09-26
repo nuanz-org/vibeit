@@ -53,11 +53,11 @@ const muted = "text-sm opacity-55";
 const shareField = "flex flex-col gap-[0.35rem]";
 const fieldLabel = "block font-medium";
 const textInput =
-  "w-full rounded-lg border border-border-subtle bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
+  "w-full rounded-lg border border-border bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
 const embedTextarea =
-  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-[family-name:var(--font-geist-mono),ui-monospace,monospace] text-[0.75rem] leading-snug text-inherit";
+  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-mono text-[0.75rem] leading-snug text-inherit";
 const badge =
-  "rounded-full bg-foreground/8 px-[0.55rem] py-[0.2rem] text-xs font-semibold";
+  "rounded-full bg-foreground/8 px-[0.55rem] py-[0.2rem] text-xs font-medium";
 
 /**
  * M8f — Studio gallery publish panel (metadata + gates + thumb + unpublish).

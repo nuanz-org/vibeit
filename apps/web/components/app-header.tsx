@@ -46,7 +46,7 @@ export function AppHeader({ actions, className }: AppHeaderProps) {
         <div className="flex min-w-0 items-center gap-7">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-[15px] font-medium tracking-[-0.02em] text-ink transition-opacity duration-fast ease-snap hover:opacity-70 focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="flex items-center gap-2.5 text-[15px] font-medium tracking-[-0.02em] text-fg transition-opacity duration-fast ease-snap hover:opacity-70 focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <LogoMark />
             Aiditr
@@ -60,8 +60,8 @@ export function AppHeader({ actions, className }: AppHeaderProps) {
               className={cn(
                 "rounded-[10px] px-3 py-1.5 text-[14px] font-medium tracking-[-0.01em] transition-[color,background-color] duration-ui ease-ui focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none",
                 onCreate
-                  ? "bg-surface text-ink"
-                  : "text-ink-secondary hover:bg-surface hover:text-ink",
+                  ? "bg-band text-fg"
+                  : "text-fg hover:bg-band hover:text-fg",
               )}
               aria-current={onCreate ? "page" : undefined}
             >
@@ -72,8 +72,8 @@ export function AppHeader({ actions, className }: AppHeaderProps) {
               className={cn(
                 "rounded-[10px] px-3 py-1.5 text-[14px] font-medium tracking-[-0.01em] transition-[color,background-color] duration-ui ease-ui focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none",
                 onGallery
-                  ? "bg-surface text-ink"
-                  : "text-ink-secondary hover:bg-surface hover:text-ink",
+                  ? "bg-band text-fg"
+                  : "text-fg hover:bg-band hover:text-fg",
               )}
               aria-current={onGallery ? "page" : undefined}
             >

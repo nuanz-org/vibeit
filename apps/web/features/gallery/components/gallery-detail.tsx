@@ -12,16 +12,16 @@ import { GalleryShell } from "./gallery-shell";
 
 const btn = cn(
   "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-ink-secondary no-underline",
+  "text-sm font-medium text-fg no-underline",
   "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:enabled:bg-surface hover:enabled:text-ink",
+  "hover:enabled:bg-band hover:enabled:text-fg",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   "disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
 );
 
 const btnPrimary = cn(
   "border-transparent bg-primary text-primary-foreground",
-  "hover:enabled:border-transparent hover:enabled:bg-base-blue-hover",
+  "hover:enabled:border-transparent hover:enabled:bg-accent-hover",
 );
 
 function hashHue(seed: string): number {
@@ -47,7 +47,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
     return (
       <GalleryShell>
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-5 pb-[4.5rem] md:px-6 md:pt-7 md:pb-20">
-          <p className="m-0 text-sm leading-snug text-muted-foreground">
+          <p className="m-0 text-sm leading-snug text-muted">
             Loading…
           </p>
         </main>
@@ -64,7 +64,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
 
     return (
       <GalleryShell>
-        <main className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center [&_h1]:m-0 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-balance [&_p]:m-0 [&_p]:max-w-[26rem] [&_p]:text-[0.95rem] [&_p]:leading-relaxed [&_p]:text-muted-foreground">
+        <main className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center [&_h1]:m-0 [&_h1]:text-xl [&_h1]:font-medium [&_h1]:tracking-tight [&_h1]:text-balance [&_p]:m-0 [&_p]:max-w-[26rem] [&_p]:text-[0.95rem] [&_p]:leading-relaxed [&_p]:text-muted">
           <div
             className="mb-[0.35rem] size-[4.5rem] rounded-xl bg-[radial-gradient(70%_70%_at_50%_40%,color-mix(in_oklch,var(--foreground)_10%,transparent),transparent_72%),color-mix(in_oklch,var(--foreground)_5%,transparent)]"
             aria-hidden
@@ -81,7 +81,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
             </Link>
             <Link
               href="/"
-              className="text-[0.85rem] text-muted-foreground underline underline-offset-[3px] hover:text-foreground"
+              className="text-[0.85rem] text-muted underline underline-offset-[3px] hover:text-foreground"
             >
               Home
             </Link>
@@ -105,13 +105,13 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
       <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-5 pb-[4.5rem] md:px-6 md:pt-7 md:pb-20">
         <Link
           href="/gallery"
-          className="mb-5 inline-flex items-center gap-[0.35rem] rounded-md px-[0.15rem] py-1 text-sm font-medium text-muted-foreground no-underline hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="mb-5 inline-flex items-center gap-[0.35rem] rounded-md px-[0.15rem] py-1 text-sm font-medium text-muted no-underline hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           ← Back to Gallery
         </Link>
 
         <div className="grid gap-7 min-[720px]:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] min-[720px]:items-start min-[720px]:gap-9">
-          <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted [&_img]:block [&_img]:size-full [&_img]:object-cover">
+          <div className="aspect-[4/3] overflow-hidden rounded-xl bg-band [&_img]:block [&_img]:size-full [&_img]:object-cover">
             {thumbSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={thumbSrc} alt="" decoding="async" />
@@ -136,11 +136,11 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
           </div>
 
           <div>
-            <h1 className="mt-0 mb-[0.65rem] text-[clamp(1.4rem,2.5vw,1.85rem)] font-semibold leading-tight tracking-tight text-balance">
+            <h1 className="mt-0 mb-[0.65rem] text-[clamp(1.4rem,2.5vw,1.85rem)] font-medium leading-tight tracking-tight text-balance">
               {title}
             </h1>
             {desc ? (
-              <p className="m-0 mb-[1.1rem] max-w-[42rem] text-[0.95rem] leading-relaxed text-muted-foreground">
+              <p className="m-0 mb-[1.1rem] max-w-[42rem] text-[0.95rem] leading-relaxed text-muted">
                 {desc}
               </p>
             ) : null}
@@ -150,7 +150,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
                 {tags.map((t) => (
                   <span
                     key={t}
-                    className="rounded-[5px] bg-foreground/[0.06] px-[0.4rem] py-[0.12rem] text-[0.68rem] font-medium text-muted-foreground"
+                    className="rounded-[5px] bg-foreground/[0.06] px-[0.4rem] py-[0.12rem] text-[0.68rem] font-medium text-muted"
                   >
                     {t}
                   </span>
@@ -158,7 +158,7 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
               </div>
             ) : null}
 
-            <p className="text-sm leading-snug text-muted-foreground">
+            <p className="text-sm leading-snug text-muted">
               Interactive preview — view only. No source download or Studio
               controls.
             </p>

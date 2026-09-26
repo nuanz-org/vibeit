@@ -48,9 +48,9 @@ export function GalleryCard({ card, href }: GalleryCardProps) {
     >
       <div
         className={cn(
-          "relative w-full aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-elev",
+          "relative w-full aspect-[4/3] overflow-hidden rounded-2xl bg-band shadow-panel",
           "transition-[box-shadow,transform] duration-ui ease-ui",
-          "group-hover:-translate-y-0.5 group-hover:shadow-elev-hover",
+          "group-hover:-translate-y-0.5 group-hover:shadow-panel",
           "motion-reduce:transition-none motion-reduce:group-hover:translate-y-0",
           wrapAspect,
         )}
@@ -84,11 +84,11 @@ export function GalleryCard({ card, href }: GalleryCardProps) {
         )}
       </div>
       <div className="flex min-h-0 flex-col gap-0.5 px-0.5 pt-3 pb-1">
-        <div className="line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-ink">
+        <div className="line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-fg">
           {title}
         </div>
         {tags.length > 0 ? (
-          <div className="line-clamp-1 text-xs leading-snug tracking-[-0.01em] text-ink-caption">
+          <div className="line-clamp-1 text-xs leading-snug tracking-[-0.01em] text-muted">
             {tags.join(" · ")}
           </div>
         ) : null}

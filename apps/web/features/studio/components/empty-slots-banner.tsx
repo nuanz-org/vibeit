@@ -90,7 +90,7 @@ export function EmptySlotsBanner({
       </div>
       <button
         type="button"
-        className="shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-none bg-[#b45309] px-[0.7rem] py-[0.4rem] font-inherit text-[0.78rem] font-semibold text-[#fffbeb] hover:bg-[#92400e]"
+        className="shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-none bg-[#b45309] px-[0.7rem] py-[0.4rem] font-inherit text-[0.78rem] font-medium text-[#fffbeb] hover:bg-[#92400e]"
         onClick={() => onFocusSlot?.(primary.id)}
       >
         {isLogoLike ? "Add logo" : `Add ${label}`}

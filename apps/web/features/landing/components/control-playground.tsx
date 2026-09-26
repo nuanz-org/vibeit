@@ -112,7 +112,7 @@ export function ControlPlayground() {
         setHoverRow(null);
       }}
     >
-      <div className="overflow-hidden rounded-2xl bg-surface-elevated shadow-elev">
+      <div className="overflow-hidden rounded-2xl bg-surface shadow-panel">
         {/* Canvas */}
         <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-[#0a0a0c] outline outline-1 outline-black/10 dark:outline-white/10">
           <div
@@ -192,7 +192,7 @@ export function ControlPlayground() {
                   "flex min-h-11 w-full cursor-default flex-col justify-center gap-1.5 rounded-[10px] px-3 py-2 text-left",
                   "transition-[background-color] duration-ui ease-ui",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                  active ? "bg-surface" : "bg-transparent hover:bg-surface/80",
+                  active ? "bg-band" : "bg-transparent hover:bg-band/80",
                 )}
                 initial={reduce ? false : { opacity: 0, y: 8 }}
                 animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
@@ -217,12 +217,12 @@ export function ControlPlayground() {
                   <span
                     className={cn(
                       "text-[12px] font-medium tracking-[-0.01em] transition-colors duration-ui ease-ui",
-                      active ? "text-ink" : "text-muted-ink",
+                      active ? "text-fg" : "text-muted",
                     )}
                   >
                     {row.label}
                   </span>
-                  <span className="text-[12px] font-medium tabular-nums text-ink">
+                  <span className="text-[12px] font-medium tabular-nums text-fg">
                     {valueLabel}
                   </span>
                 </div>
@@ -244,7 +244,7 @@ export function ControlPlayground() {
         </div>
       </div>
 
-      <p className="mt-3 mb-0 flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[12px] text-ink-caption">
+      <p className="mt-3 mb-0 flex flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[12px] text-muted">
         <span>Tune motion</span>
         <span aria-hidden>·</span>
         <span>Drop assets</span>

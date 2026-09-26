@@ -35,7 +35,7 @@ export function StoryFlow() {
   return (
     <section
       ref={ref}
-      className="border-y border-border bg-surface"
+      className="border-y border-border bg-band"
       aria-labelledby="story-flow-heading"
     >
       <div className="mx-auto max-w-[1120px] px-5 py-16 md:px-6 md:py-20">
@@ -48,11 +48,11 @@ export function StoryFlow() {
         >
           <h2
             id="story-flow-heading"
-            className="m-0 max-w-[18ch] text-[clamp(1.5rem,2.8vw,1.85rem)] font-medium leading-[1.15] tracking-[-0.025em] text-balance text-ink"
+            className="m-0 max-w-[18ch] text-[clamp(1.5rem,2.8vw,1.85rem)] font-medium leading-[1.15] tracking-[-0.025em] text-balance text-fg"
           >
             From messy to made.
           </h2>
-          <p className="mt-3 mb-10 max-w-[40ch] text-[15px] leading-[1.55] text-pretty text-muted-ink">
+          <p className="mt-3 mb-10 max-w-[40ch] text-[15px] leading-[1.55] text-pretty text-muted">
             Describe once. Play with the controls. Export when it’s real.
           </p>
         </motion.div>
@@ -75,14 +75,14 @@ export function StoryFlow() {
               }
             >
               <div className="flex items-baseline gap-3">
-                <span className="font-mono text-[12px] tabular-nums text-ink-caption">
+                <span className="font-mono text-[12px] tabular-nums text-muted">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="m-0 text-[17px] font-medium tracking-[-0.02em] text-ink">
+                <h3 className="m-0 text-[17px] font-medium tracking-[-0.02em] text-fg">
                   {step.title}
                 </h3>
               </div>
-              <p className="m-0 max-w-[32ch] pl-[calc(1.5rem+0.75rem)] text-[15px] leading-[1.55] text-pretty text-muted-ink">
+              <p className="m-0 max-w-[32ch] pl-[calc(1.5rem+0.75rem)] text-[15px] leading-[1.55] text-pretty text-muted">
                 {step.body}
               </p>
             </motion.li>

@@ -84,7 +84,7 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center p-4">
       <motion.div
-        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden rounded-[10px] bg-surface-elevated ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
+        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden rounded-[10px] bg-surface ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
         layout
         initial={false}
         animate={{
@@ -128,10 +128,10 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
                 damping: 36,
               }}
             >
-              <p className="m-0 text-[0.95rem] font-semibold tracking-[-0.02em] text-ink">
+              <p className="m-0 text-[0.95rem] font-medium tracking-[-0.02em] text-fg">
                 {copy.title}
               </p>
-              <p className="m-0 text-[0.82rem] leading-[1.45] text-muted-ink">
+              <p className="m-0 text-[0.82rem] leading-[1.45] text-muted">
                 {copy.hint}
               </p>
             </motion.div>
@@ -164,9 +164,9 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
                     >
                       <span
                         className={cn(
-                          "grid size-4 place-items-center rounded-full border-[1.5px] border-ink/16 bg-transparent text-background",
-                          "group-data-[state=done]:border-ink group-data-[state=done]:bg-ink",
-                          "group-data-[state=active]:border-accent",
+                          "grid size-4 place-items-center rounded-full border-[1.5px] border-fg/16 bg-transparent text-background",
+                          "group-data-[state=done]:border-fg group-data-[state=done]:bg-ink",
+                          "group-data-[state=active]:border-accent-text",
                         )}
                         aria-hidden
                       >
@@ -178,8 +178,8 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
                       </span>
                       <span
                         className={cn(
-                          "text-[0.72rem] font-[550] text-muted-ink",
-                          "group-data-[state=active]:text-ink group-data-[state=done]:text-ink",
+                          "text-[0.72rem] font-[550] text-muted",
+                          "group-data-[state=active]:text-fg group-data-[state=done]:text-fg",
                         )}
                       >
                         {p.label}

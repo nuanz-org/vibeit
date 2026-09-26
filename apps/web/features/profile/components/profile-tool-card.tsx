@@ -37,11 +37,11 @@ export function ProfileToolCard({ card }: ProfileToolCardProps) {
     <article className="min-w-0">
       <div
         className={cn(
-          "group relative block overflow-hidden rounded-2xl bg-muted shadow-elev",
+          "group relative block overflow-hidden rounded-2xl bg-band shadow-panel",
           "aspect-[4/3]",
           "transition-[box-shadow,transform] duration-ui ease-ui",
           openable &&
-            "hover:-translate-y-0.5 hover:shadow-elev-hover",
+            "hover:-translate-y-0.5 hover:shadow-panel",
           "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         )}
       >
@@ -89,29 +89,29 @@ export function ProfileToolCard({ card }: ProfileToolCardProps) {
         {openable ? (
           <Link
             href={studioHref}
-            className="line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-ink no-underline hover:opacity-80 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-fg no-underline hover:opacity-80 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             title={fullTitle}
           >
             {title}
           </Link>
         ) : (
           <p
-            className="m-0 line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-ink"
+            className="m-0 line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-fg"
             title={fullTitle}
           >
             {title}
           </p>
         )}
         <div className="mt-0.5 flex items-baseline justify-between gap-3">
-          <p className="m-0 min-w-0 truncate text-xs leading-snug tracking-[-0.01em] text-ink-caption">
+          <p className="m-0 min-w-0 truncate text-xs leading-snug tracking-[-0.01em] text-muted">
             {metaParts.join(" · ")}
           </p>
           {published ? (
             <Link
               href={publicHref}
               className={cn(
-                "relative shrink-0 text-xs font-medium tracking-[-0.01em] text-ink-secondary no-underline",
-                "transition-colors duration-fast ease-ui hover:text-ink",
+                "relative shrink-0 text-xs font-medium tracking-[-0.01em] text-fg no-underline",
+                "transition-colors duration-fast ease-ui hover:text-fg",
                 "before:absolute before:-inset-y-3 before:-inset-x-2 before:content-['']",
                 "focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 "motion-reduce:transition-none",

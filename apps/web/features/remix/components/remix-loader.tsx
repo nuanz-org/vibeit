@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 
 const btn = cn(
   "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-ink-secondary no-underline",
+  "text-sm font-medium text-fg no-underline",
   "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:enabled:bg-surface hover:enabled:text-ink",
+  "hover:enabled:bg-band hover:enabled:text-fg",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   "disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
 );
@@ -52,7 +52,7 @@ export function RemixLoader({ publicId }: { publicId: string }) {
     return (
       <GalleryShell>
         <main className="mx-auto w-full max-w-[480px] flex-1 px-4 pt-16 pb-20 text-center">
-          <p className="m-0 text-sm leading-snug text-muted-foreground">
+          <p className="m-0 text-sm leading-snug text-muted">
             {is401 ? "Redirecting to sign in…" : "Opening Studio…"}
           </p>
         </main>
@@ -64,10 +64,10 @@ export function RemixLoader({ publicId }: { publicId: string }) {
     return (
       <GalleryShell>
         <main className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center">
-          <h1 className="m-0 text-xl font-semibold tracking-tight text-balance">
+          <h1 className="m-0 text-xl font-medium tracking-tight text-balance">
             This tool is no longer available
           </h1>
-          <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted-foreground">
+          <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted">
             It may have been unpublished or removed from the gallery.
           </p>
           <Link href="/gallery" className={cn(btn, "mt-6")}>
@@ -84,10 +84,10 @@ export function RemixLoader({ publicId }: { publicId: string }) {
     return (
       <GalleryShell>
         <main className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center">
-          <h1 className="m-0 text-xl font-semibold tracking-tight">
+          <h1 className="m-0 text-xl font-medium tracking-tight">
             Could not remix this tool
           </h1>
-          <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted-foreground">
+          <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted">
             {msg}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
@@ -113,7 +113,7 @@ export function RemixLoader({ publicId }: { publicId: string }) {
   return (
     <GalleryShell>
       <main className="mx-auto w-full max-w-[480px] flex-1 px-4 pt-16 pb-20 text-center">
-        <p className="m-0 text-sm leading-snug text-muted-foreground">
+        <p className="m-0 text-sm leading-snug text-muted">
           Preparing your copy…
         </p>
       </main>

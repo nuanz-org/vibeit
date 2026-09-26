@@ -291,7 +291,7 @@ export function CreateForm() {
                     alt={p.name}
                     className="block size-full object-cover"
                   />
-                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-bold leading-[1.1rem] text-white">
+                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-medium leading-[1.1rem] text-white">
                     {index + 1}
                   </span>
                   <button
@@ -352,7 +352,7 @@ export function CreateForm() {
         <div className="flex flex-wrap items-center gap-[0.65rem]">
           <button
             type="submit"
-            className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             disabled={
               pending ||
               generating ||

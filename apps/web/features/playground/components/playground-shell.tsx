@@ -92,7 +92,7 @@ export type PlaygroundShellProps = {
  * Mobile still uses full-width overlays + bottom tabs (no collapse animation).
  */
 const shellClass = cn(
-  "grid h-dvh max-h-dvh overflow-hidden bg-stage text-ink",
+  "grid h-dvh max-h-dvh overflow-hidden bg-workspace text-fg",
   "grid-rows-[auto_minmax(0,1fr)]",
   // No top gutter — nav bar flushes to top; L/R/B stage shows through
   "px-3 pb-3 pt-0",
@@ -111,13 +111,13 @@ const headerClass = cn(
   // Flush top; L/R align with shell gutters (spans all columns)
   "[grid-area:header]",
   // Square top corners against the viewport; soft radius only on bottom
-  "rounded-b-[10px] bg-surface-elevated px-4 py-2",
+  "rounded-b-[10px] bg-surface px-4 py-2",
   surfaceEdge,
 );
 
 const sidePanelClass = cn(
   "flex min-h-0 min-w-0 flex-col overflow-hidden",
-  "rounded-[10px] bg-surface-elevated",
+  "rounded-[10px] bg-surface",
   surfaceEdge,
   // Mobile overlay panels — inset matches shell gutter
   "max-[1100px]:fixed max-[1100px]:inset-x-2",
@@ -140,19 +140,19 @@ const chatTrackInnerClass = cn(
 
 const mobileTabClass = cn(
   "min-h-11 flex-1 cursor-pointer rounded-[10px] border-0 bg-transparent",
-  "text-[0.82rem] font-semibold text-muted-ink [font:inherit]",
+  "text-[0.82rem] font-medium text-muted [font:inherit]",
   "transition-[background-color,color] duration-ui ease-ui",
   "data-[active=true]:bg-ink/8",
-  "data-[active=true]:text-ink",
+  "data-[active=true]:text-fg",
   "motion-reduce:transition-none",
 );
 
 /** Quiet icon control — collapse / reopen chat (Brik-class). */
 const iconBtnClass = cn(
   "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center",
-  "rounded-[9px] border-0 bg-transparent p-0 text-muted-ink [font:inherit]",
+  "rounded-[9px] border-0 bg-transparent p-0 text-muted [font:inherit]",
   "transition-[background-color,color,transform] duration-ui ease-ui",
-  "hover:bg-ink/6 hover:text-ink",
+  "hover:bg-ink/6 hover:text-fg",
   "active:scale-[0.96]",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   "motion-reduce:transition-none motion-reduce:active:scale-100",
@@ -162,10 +162,10 @@ const iconBtnClass = cn(
 const reopenFabClass = cn(
   "pointer-events-auto absolute top-3 z-[6] hidden size-9",
   "cursor-pointer items-center justify-center rounded-[10px]",
-  "border-0 bg-surface-elevated text-muted-ink [font:inherit]",
+  "border-0 bg-surface text-muted [font:inherit]",
   surfaceEdge,
   "transition-[background-color,color,transform,box-shadow,opacity] duration-ui ease-ui",
-  "hover:bg-surface hover:text-ink",
+  "hover:bg-band hover:text-fg",
   "active:scale-[0.96]",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   "motion-reduce:transition-none motion-reduce:active:scale-100",
@@ -481,7 +481,7 @@ export function PlaygroundShell({
             {title ? (
               <div className="inline-flex min-w-0 max-w-full items-center gap-0">
                 <span
-                  className="min-w-0 whitespace-nowrap text-[0.95rem] font-medium tracking-[-0.02em] text-ink"
+                  className="min-w-0 whitespace-nowrap text-[0.95rem] font-medium tracking-[-0.02em] text-fg"
                   title={title}
                 >
                   {headerTitleLabel(title)}
@@ -492,9 +492,9 @@ export function PlaygroundShell({
                     onClick={onEditTitle}
                     className={cn(
                       "inline-flex size-8 shrink-0 items-center justify-center rounded-[9px]",
-                      "text-muted-ink",
+                      "text-muted",
                       "transition-[background-color,color,transform] duration-ui ease-ui",
-                      "hover:bg-ink/6 hover:text-ink",
+                      "hover:bg-ink/6 hover:text-fg",
                       "active:scale-[0.96]",
                       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                       "motion-reduce:transition-none motion-reduce:active:scale-100",
@@ -617,7 +617,7 @@ export function PlaygroundShell({
         <div
           className={cn(
             "hidden gap-[0.35rem] rounded-[10px]",
-            "bg-surface-elevated p-[0.4rem]",
+            "bg-surface p-[0.4rem]",
             surfaceEdge,
             "[grid-area:tabs]",
             "max-[1100px]:flex",

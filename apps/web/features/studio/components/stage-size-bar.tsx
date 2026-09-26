@@ -70,7 +70,7 @@ export function StageSizeBar({
 
   return (
     <div
-      className="flex shrink-0 flex-wrap items-center justify-center gap-x-[0.55rem] gap-y-[0.45rem] rounded-full bg-surface-elevated px-[0.55rem] py-[0.4rem] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
+      className="flex shrink-0 flex-wrap items-center justify-center gap-x-[0.55rem] gap-y-[0.45rem] rounded-full bg-surface px-[0.55rem] py-[0.4rem] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
       role="group"
       aria-label="Stage size"
     >

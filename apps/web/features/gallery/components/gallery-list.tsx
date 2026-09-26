@@ -14,17 +14,17 @@ const PAGE_SIZE = 24;
 
 const btn = cn(
   "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-ink-secondary no-underline",
+  "text-sm font-medium text-fg no-underline",
   "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:enabled:bg-surface hover:enabled:text-ink",
+  "hover:enabled:bg-band hover:enabled:text-fg",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   "disabled:cursor-not-allowed disabled:opacity-50",
   "motion-reduce:transition-none",
 );
 
 const btnSolid = cn(
-  "border-transparent bg-cta text-cta-foreground",
-  "hover:enabled:border-transparent hover:enabled:bg-cta-hover hover:enabled:text-cta-foreground",
+  "border-transparent bg-ink text-ink-fg",
+  "hover:enabled:border-transparent hover:enabled:bg-ink-hover hover:enabled:text-ink-fg",
 );
 
 /**
@@ -68,21 +68,21 @@ export function GalleryList() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         {/* Floating chrome over the canvas */}
         <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 px-4 pt-4 md:px-6 md:pt-5">
-          <div className="pointer-events-auto max-w-[min(100%,28rem)] rounded-2xl bg-background/80 px-4 py-3 shadow-elev backdrop-blur-sm">
+          <div className="pointer-events-auto max-w-[min(100%,28rem)] rounded-2xl bg-background/80 px-4 py-3 shadow-panel backdrop-blur-sm">
             <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <p className="m-0 text-[13px] font-medium tracking-[-0.01em] text-ink-caption">
+              <p className="m-0 text-[13px] font-medium tracking-[-0.01em] text-muted">
                 Gallery
               </p>
               {countLabel ? (
-                <span className="rounded-[10px] bg-surface px-2 py-0.5 text-[11px] font-medium text-muted-ink">
+                <span className="rounded-[10px] bg-band px-2 py-0.5 text-[11px] font-medium text-muted">
                   {countLabel}
                 </span>
               ) : null}
             </div>
-            <h1 className="m-0 text-[clamp(1.15rem,2.4vw,1.45rem)] font-semibold leading-tight tracking-[-0.03em] text-balance text-ink">
+            <h1 className="m-0 text-[clamp(1.15rem,2.4vw,1.45rem)] font-medium leading-tight tracking-[-0.03em] text-balance text-fg">
               Explore interactive design tools
             </h1>
-            <p className="mt-1 mb-0 text-[12px] leading-snug text-ink-caption">
+            <p className="mt-1 mb-0 text-[12px] leading-snug text-muted">
               Drag to pan · click a card for details
             </p>
           </div>
@@ -108,10 +108,10 @@ export function GalleryList() {
         </header>
 
         {loadingFirst ? (
-          <div className="flex flex-1 items-center justify-center bg-stage">
+          <div className="flex flex-1 items-center justify-center bg-workspace">
             <div className="flex flex-col items-center gap-3" aria-busy>
-              <div className="size-10 animate-pulse rounded-2xl bg-ink/8 shadow-elev" />
-              <p className="m-0 text-sm text-muted-ink">Loading gallery…</p>
+              <div className="size-10 animate-pulse rounded-2xl bg-ink/8 shadow-panel" />
+              <p className="m-0 text-sm text-muted">Loading gallery…</p>
             </div>
           </div>
         ) : null}
@@ -123,10 +123,10 @@ export function GalleryList() {
                 className="mb-1 size-[4.5rem] rounded-2xl bg-[radial-gradient(70%_80%_at_50%_40%,rgb(188,203,255)_0%,transparent_70%)] opacity-80"
                 aria-hidden
               />
-              <h2 className="m-0 text-xl font-semibold tracking-[-0.02em] text-balance text-ink">
+              <h2 className="m-0 text-xl font-medium tracking-[-0.02em] text-balance text-fg">
                 Could not load gallery
               </h2>
-              <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted-ink">
+              <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted">
                 {q.error instanceof Error
                   ? q.error.message
                   : "Something went wrong while fetching public tools."}
@@ -154,10 +154,10 @@ export function GalleryList() {
               aria-hidden
             />
             <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
-              <h2 className="m-0 text-xl font-semibold tracking-[-0.02em] text-balance text-ink">
+              <h2 className="m-0 text-xl font-medium tracking-[-0.02em] text-balance text-fg">
                 Nothing published yet
               </h2>
-              <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted-ink">
+              <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted">
                 Create a tool, capture a thumbnail, and publish to seed the
                 gallery.
               </p>

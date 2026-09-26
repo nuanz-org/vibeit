@@ -86,12 +86,12 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
   return (
     <div className="flex flex-col gap-[0.85rem] rounded-[10px] bg-[#1d4ed8]/6 px-[1.1rem] py-4 ring-1 ring-[#1d4ed8]/25 shadow-sm shadow-black/10">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[0.88rem] font-semibold tracking-[-0.015em]">
+        <span className="text-[0.88rem] font-medium tracking-[-0.015em]">
           Plan with me
         </span>
         <span
           className={cn(
-            "rounded-full bg-ink/8 px-2 py-[0.18rem] text-[0.68rem] font-[650] tracking-[0.02em] text-muted-ink",
+            "rounded-full bg-ink/8 px-2 py-[0.18rem] text-[0.68rem] font-[650] tracking-[0.02em] text-muted",
             "data-[status=awaiting_clarify]:bg-[oklch(0.55_0.16_260)]/14 data-[status=awaiting_clarify]:text-[oklch(0.48_0.14_260)]",
           )}
           data-status="awaiting_clarify"
@@ -113,7 +113,7 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
           const current = answers[q.id];
           return (
             <div key={q.id} className="flex flex-col gap-2">
-              <p className="m-0 text-[0.9rem] font-semibold leading-[1.4]">
+              <p className="m-0 text-[0.9rem] font-medium leading-[1.4]">
                 {q.group ? (
                   <span className="font-medium opacity-70">{q.group} · </span>
                 ) : null}
@@ -173,7 +173,7 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
       <div className="flex flex-wrap items-center gap-[0.65rem]">
         <button
           type="button"
-          className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!allAnswered || pending}
           onClick={handleBuild}
         >

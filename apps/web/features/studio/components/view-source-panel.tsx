@@ -48,7 +48,7 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
         >
           {open ? "Hide source" : "View source"}
         </button>
-        <span className="text-[0.7rem] font-semibold tracking-[0.03em] uppercase opacity-50">
+        <span className="text-[0.7rem] font-medium tracking-[0.03em] uppercase opacity-50">
           View only · no download
         </span>
       </div>

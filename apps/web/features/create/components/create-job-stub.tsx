@@ -49,7 +49,7 @@ export function CreateJobStub() {
       <button
         type="submit"
         disabled={pending || !visionText.trim()}
-        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-semibold text-background disabled:cursor-wait disabled:opacity-60"
+        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-medium text-background disabled:cursor-wait disabled:opacity-60"
       >
         {pending ? "Starting…" : "Start create job (stub)"}
       </button>

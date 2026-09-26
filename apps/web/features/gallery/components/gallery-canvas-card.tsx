@@ -123,9 +123,9 @@ export function GalleryCanvasCard({
         <motion.div
           layoutId={reduce ? undefined : layoutId}
           className={cn(
-            "relative w-full overflow-hidden rounded-2xl bg-muted shadow-elev",
+            "relative w-full overflow-hidden rounded-2xl bg-band shadow-panel",
             "ring-0 transition-[box-shadow] duration-ui ease-ui",
-            "group-hover:shadow-elev-hover group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background",
+            "group-hover:shadow-panel group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background",
             "motion-reduce:transition-none",
           )}
           style={{ height: slot.h }}

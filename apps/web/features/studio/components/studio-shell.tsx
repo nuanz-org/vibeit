@@ -482,7 +482,7 @@ export function StudioShell({
       <div className={pg.panelHeader}>
         <div className="flex min-w-0 flex-col gap-0.5">
           <h2 className={pg.panelTitle}>Controls</h2>
-          <p className="m-0 text-[0.7rem] leading-snug text-ink-caption">
+          <p className="m-0 text-[0.7rem] leading-snug text-muted">
             Tune your vision
           </p>
         </div>
@@ -502,7 +502,7 @@ export function StudioShell({
       <div className={pg.panelScroll}>
         <section className="flex flex-col gap-1">
           {runtime.mounted && runtime.paramSchema.length === 0 ? (
-            <p className="text-sm text-muted-ink">No controls for this tool.</p>
+            <p className="text-sm text-muted">No controls for this tool.</p>
           ) : (
             <ParamControls
               schema={runtime.paramSchema}
@@ -517,11 +517,11 @@ export function StudioShell({
         </section>
 
         <section
-          className="mt-1 flex flex-col gap-2 border-t border-border-subtle pt-4"
+          className="mt-1 flex flex-col gap-2 border-t border-border pt-4"
           ref={assetsSectionRef}
           id="studio-assets"
         >
-          <h2 className="m-0 text-[0.72rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase">
+          <h2 className="m-0 text-[0.72rem] font-medium tracking-[-0.01em] text-muted uppercase">
             Assets
           </h2>
           {runtime.mounted && runtime.assetSlots.length > 0 ? (
@@ -580,7 +580,7 @@ export function StudioShell({
           versionId={liveVersionId}
         />
 
-        <details className="rounded-xl border border-foreground/10 px-[0.7rem] py-[0.55rem] [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:text-[0.78rem] [&_summary]:font-semibold [&_summary]:opacity-65 [&_summary::-webkit-details-marker]:hidden">
+        <details className="rounded-xl border border-foreground/10 px-[0.7rem] py-[0.55rem] [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:text-[0.78rem] [&_summary]:font-medium [&_summary]:opacity-65 [&_summary::-webkit-details-marker]:hidden">
           <summary>Advanced</summary>
           <div className="mt-[0.65rem] flex flex-col gap-[0.55rem]">
             <div className="flex flex-wrap gap-2">

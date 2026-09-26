@@ -67,21 +67,21 @@ export function PublicToolShell({
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-foreground/10 px-5 py-3.5">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <Link href="/" className="font-semibold tracking-tight text-inherit hover:opacity-80">
+          <Link href="/" className="font-medium tracking-tight text-inherit hover:opacity-80">
             Aiditr
           </Link>
-          <span className="rounded-full bg-foreground/8 px-2.5 py-0.5 text-xs font-semibold">
+          <span className="rounded-full bg-foreground/8 px-2.5 py-0.5 text-xs font-medium">
             Public
           </span>
           <span
-            className="max-w-[min(40vw,280px)] truncate text-[0.95rem] font-semibold tracking-tight"
+            className="max-w-[min(40vw,280px)] truncate text-[0.95rem] font-medium tracking-tight"
             title={label}
           >
             {label}
           </span>
           <span
             className={cn(
-              "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+              "rounded-full px-2.5 py-0.5 text-xs font-medium",
               statusReady && "bg-[#15803d]/14 text-[#15803d]",
               statusError && "bg-[#b91c1c]/14 text-[#b91c1c]",
               !statusReady && !statusError && "bg-[#a16207]/14 text-[#a16207]",

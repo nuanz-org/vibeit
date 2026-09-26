@@ -71,12 +71,12 @@ export function JobProgress({
   return (
     <div className="flex flex-col gap-[0.65rem] rounded-[10px] bg-ink/[3.5%] px-[0.95rem] py-[0.85rem] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[0.88rem] font-semibold tracking-[-0.015em]">
+        <span className="text-[0.88rem] font-medium tracking-[-0.015em]">
           {PHASE_LABEL[phase ?? ""] ?? "Generation"}
         </span>
         <span
           className={cn(
-            "rounded-full bg-ink/8 px-2 py-[0.18rem] text-[0.68rem] font-[650] tracking-[0.02em] text-muted-ink",
+            "rounded-full bg-ink/8 px-2 py-[0.18rem] text-[0.68rem] font-[650] tracking-[0.02em] text-muted",
             "data-[status=running]:bg-[oklch(0.65_0.14_75)]/14 data-[status=running]:text-[oklch(0.55_0.12_75)]",
             "data-[status=queued]:bg-[oklch(0.65_0.14_75)]/14 data-[status=queued]:text-[oklch(0.55_0.12_75)]",
             "data-[status=succeeded]:bg-[oklch(0.55_0.14_150)]/14 data-[status=succeeded]:text-[oklch(0.48_0.12_150)]",
@@ -108,9 +108,9 @@ export function JobProgress({
             >
               <span
                 className={cn(
-                  "relative grid size-[1.05rem] shrink-0 place-items-center rounded-full border-[1.5px] border-ink/18 bg-transparent text-background transition-[background-color,border-color] duration-200 ease-in-out",
-                  "group-data-[state=done]:border-ink group-data-[state=done]:bg-ink",
-                  "group-data-[state=active]:border-accent group-data-[state=active]:bg-accent/14",
+                  "relative grid size-[1.05rem] shrink-0 place-items-center rounded-full border-[1.5px] border-fg/18 bg-transparent text-background transition-[background-color,border-color] duration-200 ease-in-out",
+                  "group-data-[state=done]:border-fg group-data-[state=done]:bg-ink",
+                  "group-data-[state=active]:border-accent-text group-data-[state=active]:bg-accent/14",
                   "group-data-[state=error]:border-[oklch(0.55_0.2_25)] group-data-[state=error]:bg-[oklch(0.55_0.2_25)]/18",
                 )}
                 aria-hidden
@@ -133,8 +133,8 @@ export function JobProgress({
               </span>
               <span
                 className={cn(
-                  "overflow-hidden text-ellipsis whitespace-nowrap text-[0.72rem] font-[550] text-muted-ink",
-                  "group-data-[state=active]:text-ink group-data-[state=done]:text-ink",
+                  "overflow-hidden text-ellipsis whitespace-nowrap text-[0.72rem] font-[550] text-muted",
+                  "group-data-[state=active]:text-fg group-data-[state=done]:text-fg",
                 )}
               >
                 {id === "plan"
@@ -164,7 +164,7 @@ export function JobProgress({
 
       <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
         Job{" "}
-        <code className="font-[var(--font-geist-mono),ui-monospace,monospace] text-[0.8em]">
+        <code className="font-mono text-[0.8em]">
           {jobId.slice(0, 8)}…
         </code>
         {status?.repair && status.repair.repairsUsed > 0

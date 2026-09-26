@@ -61,7 +61,7 @@ export function UploadAssetStub() {
       <button
         type="submit"
         disabled={pending || !file}
-        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-semibold text-background disabled:cursor-not-allowed disabled:opacity-60"
+        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-medium text-background disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Uploading…" : "Upload image"}
       </button>

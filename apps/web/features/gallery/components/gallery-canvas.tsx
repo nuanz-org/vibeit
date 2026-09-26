@@ -296,7 +296,7 @@ export function GalleryCanvas({
           aria-label="Infinite gallery canvas. Drag to pan, click a card for tool details."
           className={cn(
             "absolute inset-0 touch-none overflow-hidden outline-none",
-            "bg-stage",
+            "bg-workspace",
             isDragging ? "cursor-grabbing" : "cursor-grab",
             selected && "cursor-default",
           )}

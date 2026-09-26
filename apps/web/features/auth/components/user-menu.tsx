@@ -45,7 +45,7 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
         />
       );
     }
-    return <span className="text-sm text-muted-foreground">Loading…</span>;
+    return <span className="text-sm text-muted">Loading…</span>;
   }
 
   if (!session?.user) {
@@ -59,7 +59,7 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
         </Link>
         <Link
           href="/signup"
-          className={`inline-flex h-10 items-center justify-center rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground transition-colors duration-150 ${ease} hover:bg-base-blue-hover`}
+          className={`inline-flex h-10 items-center justify-center rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground transition-colors duration-150 ${ease} hover:bg-accent-hover`}
         >
           Get Started
         </Link>
@@ -87,7 +87,7 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
         href="/profile"
         className={cn(
           "inline-flex size-9 shrink-0 items-center justify-center rounded-full",
-          "bg-ink/8 text-[0.72rem] font-semibold tracking-[-0.02em] text-ink",
+          "bg-ink/8 text-[0.72rem] font-medium tracking-[-0.02em] text-fg",
           "outline outline-1 outline-black/10 dark:outline-white/10",
           "transition-[transform,background-color,opacity] duration-150",
           "hover:bg-ink/12 hover:opacity-95",
@@ -115,7 +115,7 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
         href="/profile"
         className={cn(
           "flex min-h-11 items-center gap-2 rounded-full pr-1",
-          "text-sm text-muted-foreground",
+          "text-sm text-muted",
           "transition-opacity duration-150 hover:opacity-70",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         )}
@@ -123,7 +123,7 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
         title={label}
       >
         <span
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[0.68rem] font-semibold tracking-[-0.02em] text-ink outline outline-1 outline-black/10 dark:outline-white/10"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[0.68rem] font-medium tracking-[-0.02em] text-fg outline outline-1 outline-black/10 dark:outline-white/10"
           aria-hidden
         >
           {initials}

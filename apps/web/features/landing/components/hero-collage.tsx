@@ -32,7 +32,7 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
       <motion.div
         className={cn(
           "absolute -top-2 left-1/2 z-[4] w-[min(100%,280px)] -translate-x-1/2 sm:-left-4 sm:top-8 sm:translate-x-0",
-          "rounded-[10px] border border-border bg-surface-elevated/95 px-3 py-2.5 shadow-elev",
+          "rounded-[10px] border border-border bg-surface/95 px-3 py-2.5 shadow-panel",
         )}
         initial={reduce ? false : { opacity: 1, y: 0 }}
         animate={
@@ -51,18 +51,18 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
         }
         aria-hidden={reduce ? undefined : true}
       >
-        <p className="m-0 text-[10px] font-medium tracking-[-0.01em] text-ink-caption">
+        <p className="m-0 text-[10px] font-medium tracking-[-0.01em] text-muted">
           Messy vision
         </p>
-        <p className="mt-1 mb-0 font-mono text-[11px] leading-snug tracking-[-0.02em] text-ink/80">
+        <p className="mt-1 mb-0 font-mono text-[11px] leading-snug tracking-[-0.02em] text-fg/80">
           kinetic logo, soft spring, brand blue, export loop…
         </p>
       </motion.div>
 
       <motion.div
         className={cn(
-          "relative z-[2] w-full overflow-hidden rounded-2xl bg-surface-elevated/90 shadow-elev",
-          "dark:bg-surface-elevated",
+          "relative z-[2] w-full overflow-hidden rounded-2xl bg-surface/90 shadow-panel",
+          "dark:bg-surface",
         )}
         initial={reduce ? false : { opacity: 0, scale: FRAME_MOTION.initialScale }}
         animate={{ opacity: 1, scale: FRAME_MOTION.finalScale }}
@@ -75,18 +75,18 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
         <div className="flex items-center justify-between gap-3 border-b border-border px-3.5 py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <LogoMark className="size-4 rounded-[1.5px]" />
-            <span className="truncate text-[12px] font-medium tracking-[-0.01em] text-ink">
+            <span className="truncate text-[12px] font-medium tracking-[-0.01em] text-fg">
               Kinetic mark · live
             </span>
-            <span className="hidden rounded-[10px] bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:inline">
+            <span className="hidden rounded-[10px] bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-accent-text sm:inline">
               Live
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            <span className="hidden h-7 min-w-[2.5rem] items-center justify-center rounded-[10px] border border-border px-2.5 text-[11px] font-medium text-muted-ink sm:inline-flex">
+            <span className="hidden h-7 min-w-[2.5rem] items-center justify-center rounded-[10px] border border-border px-2.5 text-[11px] font-medium text-muted sm:inline-flex">
               Export
             </span>
-            <span className="inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded-[10px] bg-cta px-2.5 text-[11px] font-medium text-cta-foreground">
+            <span className="inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded-[10px] bg-ink px-2.5 text-[11px] font-medium text-ink-fg">
               Share
             </span>
           </div>
@@ -110,13 +110,13 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
               />
               <div className="pointer-events-none absolute inset-0 rounded-[10px] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]" />
             </div>
-            <p className="m-0 text-center text-[11px] tabular-nums text-muted-ink">
+            <p className="m-0 text-center text-[11px] tabular-nums text-muted">
               9:16 · parametric · yours
             </p>
           </div>
 
           <div className="flex flex-col gap-3 border-t border-border p-3 sm:border-t-0 sm:border-l sm:p-3.5">
-            <p className="m-0 text-[10px] font-medium tracking-[0.04em] text-muted-ink uppercase">
+            <p className="m-0 text-[10px] font-medium tracking-[0.04em] text-muted uppercase">
               Your controls
             </p>
             {[
@@ -126,8 +126,8 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
             ].map((row) => (
               <div key={row.label} className="flex min-h-10 flex-col justify-center gap-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-muted-ink">{row.label}</span>
-                  <span className="text-[11px] font-medium tabular-nums text-ink">
+                  <span className="text-[11px] text-muted">{row.label}</span>
+                  <span className="text-[11px] font-medium tabular-nums text-fg">
                     {row.value}
                   </span>
                 </div>
@@ -139,8 +139,8 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
                 </div>
               </div>
             ))}
-            <div className="mt-auto hidden rounded-[10px] border border-border bg-surface p-2 sm:block">
-              <p className="m-0 text-[10px] leading-snug text-muted-ink">
+            <div className="mt-auto hidden rounded-[10px] border border-border bg-band p-2 sm:block">
+              <p className="m-0 text-[10px] leading-snug text-muted">
                 “Softer spring — keep the blue”
               </p>
             </div>
@@ -150,8 +150,8 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
 
       <motion.div
         className={cn(
-          "absolute -left-2 top-[22%] z-[3] hidden w-[168px] overflow-hidden rounded-2xl bg-surface-elevated/95 p-3 shadow-elev sm:block",
-          "dark:bg-surface-elevated",
+          "absolute -left-2 top-[22%] z-[3] hidden w-[168px] overflow-hidden rounded-2xl bg-surface/95 p-3 shadow-panel sm:block",
+          "dark:bg-surface",
         )}
         initial={reduce ? false : { opacity: 0, y: SATELLITE_MOTION.offsetY }}
         animate={{ opacity: 1, y: 0 }}
@@ -164,16 +164,16 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
               }
         }
       >
-        <p className="m-0 text-[10px] font-medium text-ink-caption">Refine</p>
-        <p className="mt-1.5 mb-0 text-[11px] leading-snug tracking-[-0.01em] text-ink">
+        <p className="m-0 text-[10px] font-medium text-muted">Refine</p>
+        <p className="mt-1.5 mb-0 text-[11px] leading-snug tracking-[-0.01em] text-fg">
           Soften the spring and lock brand blue
         </p>
       </motion.div>
 
       <motion.div
         className={cn(
-          "absolute -right-1 bottom-[20%] z-[3] hidden w-[148px] overflow-hidden rounded-2xl bg-surface-elevated/95 p-3 shadow-elev sm:block",
-          "dark:bg-surface-elevated",
+          "absolute -right-1 bottom-[20%] z-[3] hidden w-[148px] overflow-hidden rounded-2xl bg-surface/95 p-3 shadow-panel sm:block",
+          "dark:bg-surface",
         )}
         initial={reduce ? false : { opacity: 0, y: SATELLITE_MOTION.offsetY }}
         animate={{ opacity: 1, y: 0 }}
@@ -187,8 +187,8 @@ export function HeroCollage({ reduce }: { reduce: boolean | null }) {
         }
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] text-muted-ink">Play</span>
-          <span className="text-[10px] font-medium tabular-nums text-ink">
+          <span className="text-[10px] text-muted">Play</span>
+          <span className="text-[10px] font-medium tabular-nums text-fg">
             Tuned
           </span>
         </div>

@@ -10,19 +10,19 @@ const buttonVariants = cva(
       variant: {
         /** Product primary — Base Blue (Send / generate) */
         default:
-          "rounded-[10px] bg-primary text-primary-foreground hover:bg-base-blue-hover",
+          "rounded-[10px] bg-primary text-primary-foreground hover:bg-accent-hover",
         /** Marketing solid CTA — charcoal */
         solid:
-          "rounded-[10px] bg-cta text-cta-foreground hover:bg-cta-hover",
+          "rounded-[10px] bg-ink text-ink-fg hover:bg-ink-hover",
         outline:
-          "rounded-[10px] border-border bg-background text-ink-secondary hover:bg-surface hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "rounded-[10px] border-border bg-background text-fg hover:bg-band hover:text-foreground aria-expanded:bg-band aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
-          "rounded-[10px] bg-secondary text-secondary-foreground hover:bg-surface aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:hover:bg-secondary/80",
+          "rounded-[10px] bg-secondary text-secondary-foreground hover:bg-band aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:hover:bg-secondary/80",
         ghost:
-          "rounded-[10px] hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "rounded-[10px] hover:bg-band hover:text-foreground aria-expanded:bg-band aria-expanded:text-foreground dark:hover:bg-band/50",
         destructive:
           "rounded-[10px] bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "rounded-none text-primary underline-offset-4 hover:underline",
+        link: "rounded-none text-accent-text underline-offset-4 hover:underline",
       },
       size: {
         default:

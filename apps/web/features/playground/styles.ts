@@ -27,7 +27,7 @@ export const dividerBottom =
 export const playgroundStyles = {
   /** Elevated card/panel: rounded + soft shadow edge (no border). */
   surface: [
-    "rounded-[10px] bg-surface-elevated",
+    "rounded-[10px] bg-surface",
     surfaceEdge,
   ].join(" "),
 
@@ -40,7 +40,7 @@ export const playgroundStyles = {
   ].join(" "),
 
   panelTitle:
-    "m-0 text-[0.72rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase",
+    "m-0 text-[0.72rem] font-medium tracking-[-0.01em] text-muted uppercase",
 
   stageInner: [
     "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-[0.85rem] px-6 py-5",
@@ -67,9 +67,9 @@ export const playgroundStyles = {
     "flex max-w-[32ch] flex-col items-center justify-center gap-[0.55rem] p-6 text-center",
 
   emptyStageTitle:
-    "m-0 text-[0.95rem] font-semibold tracking-[-0.02em] text-ink",
+    "m-0 text-[0.95rem] font-medium tracking-[-0.02em] text-fg",
 
-  emptyStageHint: "m-0 text-[0.85rem] leading-[1.45] text-muted-ink",
+  emptyStageHint: "m-0 text-[0.85rem] leading-[1.45] text-muted",
 
   chatBody: "flex min-h-0 flex-1 flex-col gap-0 p-0",
 
@@ -81,16 +81,16 @@ export const playgroundStyles = {
 
   chatComposer: [
     "flex shrink-0 flex-col gap-[0.55rem]",
-    "bg-surface-elevated/95 backdrop-blur-sm",
+    "bg-surface/95 backdrop-blur-sm",
     dividerTop,
     "px-3.5 pt-3 pb-3.5",
   ].join(" "),
 
   composerInput: [
     "w-full min-h-[4.25rem] max-h-48 resize-none rounded-none border-0 bg-transparent",
-    "px-0.5 py-2 text-[0.92rem] leading-[1.45] text-ink",
+    "px-0.5 py-2 text-[0.92rem] leading-[1.45] text-fg",
     "[field-sizing:content] [font:inherit]",
-    "placeholder:text-muted-ink placeholder:opacity-80",
+    "placeholder:text-muted placeholder:opacity-80",
     "focus:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-55",
   ].join(" "),
@@ -104,19 +104,19 @@ export const playgroundStyles = {
   greeting: "flex flex-col gap-[0.45rem] px-0.5 pt-4 pb-3",
 
   greetingTitle: [
-    "m-0 text-[1.2rem] font-[650] leading-snug tracking-[-0.03em] text-ink",
+    "m-0 text-[1.2rem] font-[650] leading-snug tracking-[-0.03em] text-fg",
     "text-balance",
   ].join(" "),
 
-  greetingSub: "m-0 max-w-[36ch] text-[0.88rem] leading-[1.5] text-muted-ink",
+  greetingSub: "m-0 max-w-[36ch] text-[0.88rem] leading-[1.5] text-muted",
 
   btn: [
     "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center gap-[0.35rem]",
     "whitespace-nowrap rounded-[10px] bg-transparent px-3 py-[0.4rem]",
     controlEdge,
-    "text-[0.8rem] font-medium tracking-[-0.01em] text-ink-secondary no-underline [font:inherit]",
+    "text-[0.8rem] font-medium tracking-[-0.01em] text-fg no-underline [font:inherit]",
     "transition-[background-color,box-shadow,color,transform,opacity] duration-ui ease-ui",
-    "not-disabled:hover:bg-surface not-disabled:hover:text-ink",
+    "not-disabled:hover:bg-band not-disabled:hover:text-fg",
     "not-disabled:hover:ring-black/15 dark:not-disabled:hover:ring-white/15",
     "not-disabled:active:scale-[0.96]",
     "disabled:cursor-not-allowed disabled:opacity-45",
@@ -127,19 +127,19 @@ export const playgroundStyles = {
   btnPrimary: [
     "rounded-[10px]! bg-primary! text-primary-foreground!",
     "ring-0! shadow-none!",
-    "not-disabled:hover:bg-base-blue-hover! not-disabled:hover:text-primary-foreground!",
+    "not-disabled:hover:bg-accent-hover! not-disabled:hover:text-primary-foreground!",
   ].join(" "),
 
   btnAccent: [
-    "rounded-[10px]! bg-cta! text-cta-foreground!",
+    "rounded-[10px]! bg-ink! text-ink-fg!",
     "ring-0! shadow-none!",
-    "not-disabled:hover:bg-cta-hover! not-disabled:hover:text-cta-foreground!",
+    "not-disabled:hover:bg-ink-hover! not-disabled:hover:text-ink-fg!",
   ].join(" "),
 
   btnGhost: [
-    "bg-transparent! font-medium text-muted-ink!",
+    "bg-transparent! font-medium text-muted!",
     "ring-0! shadow-none!",
-    "not-disabled:hover:bg-ink/5! not-disabled:hover:text-ink!",
+    "not-disabled:hover:bg-ink/5! not-disabled:hover:text-fg!",
   ].join(" "),
 
   btnIcon: "min-h-9 min-w-9 p-[0.35rem]",
@@ -148,7 +148,7 @@ export const playgroundStyles = {
     "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center",
     "rounded-full border-0 bg-primary p-[0.4rem] text-primary-foreground",
     "transition-[background-color,transform,opacity] duration-ui ease-ui",
-    "not-disabled:hover:bg-base-blue-hover",
+    "not-disabled:hover:bg-accent-hover",
     "not-disabled:active:scale-[0.96]",
     "disabled:cursor-not-allowed disabled:translate-y-0",
     "disabled:bg-primary/40 disabled:opacity-35",
@@ -157,11 +157,11 @@ export const playgroundStyles = {
 
   chip: [
     "inline-flex items-center rounded-[10px] px-2 py-[0.2rem]",
-    "bg-surface text-[0.7rem] font-medium tracking-[-0.01em] text-muted-ink",
+    "bg-band text-[0.7rem] font-medium tracking-[-0.01em] text-muted",
   ].join(" "),
 
   chipLive:
-    "bg-ink/8! text-ink!",
+    "bg-ink/8! text-fg!",
 
   chipWarn:
     "bg-[color-mix(in_oklch,oklch(0.65_0.14_75)_14%,transparent)]! text-[oklch(0.55_0.12_75)]!",
@@ -180,18 +180,18 @@ export const playgroundStyles = {
 
   attachBtn: [
     "inline-grid size-8 shrink-0 cursor-pointer place-items-center",
-    "rounded-[9px] bg-transparent text-muted-ink [font:inherit]",
+    "rounded-[9px] bg-transparent text-muted [font:inherit]",
     controlEdge,
     "transition-[background-color,box-shadow,color] duration-150",
     "not-has-[input:disabled]:hover:bg-ink/5",
-    "not-has-[input:disabled]:hover:text-ink",
+    "not-has-[input:disabled]:hover:text-fg",
     "not-has-[input:disabled]:hover:ring-black/15 dark:not-has-[input:disabled]:hover:ring-white/15",
     "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-45",
     "[&_input]:hidden",
     "motion-reduce:transition-none",
   ].join(" "),
 
-  muted: "m-0 text-[0.8rem] leading-snug text-muted-ink",
+  muted: "m-0 text-[0.8rem] leading-snug text-muted",
 
   drawerBackdrop: [
     "fixed inset-0 z-40 bg-[color-mix(in_oklch,#000_28%,transparent)]",
@@ -201,7 +201,7 @@ export const playgroundStyles = {
 
   drawer: [
     "fixed top-0 right-0 bottom-0 z-50 flex w-[min(100vw,380px)] flex-col",
-    "bg-surface-elevated",
+    "bg-surface",
     "shadow-[-8px_0_28px_rgb(0_0_0/0.10),inset_1px_0_0_0_rgb(0_0_0/0.06)]",
     "dark:shadow-[-8px_0_28px_rgb(0_0_0/0.45),inset_1px_0_0_0_rgb(255_255_255/0.08)]",
     "animate-in fade-in slide-in-from-right-3 duration-200",

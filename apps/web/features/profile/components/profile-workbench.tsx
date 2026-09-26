@@ -19,18 +19,18 @@ const KINDS: { id: OwnerToolKind; label: string }[] = [
 
 const btn = cn(
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-ink-secondary no-underline",
+  "text-sm font-medium text-fg no-underline",
   "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:bg-surface hover:text-ink",
+  "hover:bg-band hover:text-fg",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-card disabled:hover:text-ink-secondary",
+  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-card disabled:hover:text-fg",
   "motion-reduce:transition-none",
 );
 
 const btnSolid = cn(
-  "border-transparent bg-cta text-cta-foreground",
-  "hover:border-transparent hover:bg-cta-hover hover:text-cta-foreground",
-  "disabled:hover:bg-cta disabled:hover:text-cta-foreground",
+  "border-transparent bg-ink text-ink-fg",
+  "hover:border-transparent hover:bg-ink-hover hover:text-ink-fg",
+  "disabled:hover:bg-ink disabled:hover:text-ink-fg",
 );
 
 function parseKind(raw: string | null): OwnerToolKind {
@@ -89,16 +89,16 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
     <main className="mx-auto w-full max-w-[1120px] px-5 py-10 md:px-6 md:py-12">
       <header className="flex items-center gap-4">
         <div
-          className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[1rem] font-semibold tracking-[-0.02em] text-ink outline outline-1 outline-black/10 dark:outline-white/10"
+          className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[1rem] font-medium tracking-[-0.02em] text-fg outline outline-1 outline-black/10 dark:outline-white/10"
           aria-hidden
         >
           <span className="translate-y-[0.5px]">{initials}</span>
         </div>
         <div className="min-w-0">
-          <h1 className="m-0 text-balance text-[1.35rem] font-semibold tracking-[-0.025em] text-ink">
+          <h1 className="m-0 text-balance text-[1.35rem] font-medium tracking-[-0.025em] text-fg">
             {name || "Your account"}
           </h1>
-          <p className="m-0 mt-1 truncate text-[0.9rem] text-muted-ink">
+          <p className="m-0 mt-1 truncate text-[0.9rem] text-muted">
             {email}
           </p>
         </div>
@@ -109,7 +109,7 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
           <div className="min-w-0">
             <h2
               id="your-tools-heading"
-              className="m-0 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
+              className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg"
             >
               Your tools
             </h2>
@@ -133,8 +133,8 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
                       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                       "motion-reduce:transition-none",
                       selected
-                        ? "bg-surface font-semibold text-ink"
-                        : "font-medium text-ink-secondary hover:bg-surface hover:text-ink",
+                        ? "bg-band font-medium text-fg"
+                        : "font-medium text-fg hover:bg-band hover:text-fg",
                     )}
                   >
                     {item.label}
@@ -144,7 +144,7 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
             </div>
           </div>
           {countLabel ? (
-            <p className="m-0 text-[13px] text-muted-ink">{countLabel}</p>
+            <p className="m-0 text-[13px] text-muted">{countLabel}</p>
           ) : null}
         </div>
 
@@ -166,10 +166,10 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
 
         {error ? (
           <div className="mt-10 max-w-md">
-            <p className="m-0 text-[0.95rem] leading-relaxed text-ink">
+            <p className="m-0 text-[0.95rem] leading-relaxed text-fg">
               Couldn’t load your tools.
             </p>
-            <p className="m-0 mt-1 text-[0.9rem] leading-relaxed text-muted-ink">
+            <p className="m-0 mt-1 text-[0.9rem] leading-relaxed text-muted">
               {q.error instanceof Error
                 ? q.error.message
                 : "Something went wrong while fetching your library."}
@@ -192,7 +192,7 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
               className={cn(
                 "mt-6 m-0 grid list-none grid-cols-1 gap-x-5 gap-y-8 p-0",
                 "sm:grid-cols-2 lg:grid-cols-3",
-                "motion-safe:animate-[profile-grid-in_220ms_var(--ease-ui)]",
+                "motion-safe:animate-[profile-grid-in_220ms_var(--ease)]",
               )}
             >
               {items.map((card) => (
@@ -217,7 +217,7 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
         ) : null}
       </section>
 
-      <div className="mt-16 border-t border-border-subtle pt-6">
+      <div className="mt-16 border-t border-border pt-6">
         <ProfileSignOut className="w-full sm:w-auto" />
       </div>
     </main>
@@ -228,10 +228,10 @@ function EmptyState({ kind }: { kind: OwnerToolKind }) {
   if (kind === "remixed") {
     return (
       <div className="mt-10 max-w-md">
-        <p className="m-0 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+        <p className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg">
           You haven’t remixed anything.
         </p>
-        <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted-ink">
+        <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted">
           Open a published tool in the gallery and make your own copy.
         </p>
         <Link href="/gallery" className={cn(btn, btnSolid, "mt-5")}>
@@ -244,10 +244,10 @@ function EmptyState({ kind }: { kind: OwnerToolKind }) {
   if (kind === "created") {
     return (
       <div className="mt-10 max-w-md">
-        <p className="m-0 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+        <p className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg">
           No originals yet.
         </p>
-        <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted-ink">
+        <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted">
           Start from a vision and Aiditr will generate a tool you can keep
           editing.
         </p>
@@ -260,10 +260,10 @@ function EmptyState({ kind }: { kind: OwnerToolKind }) {
 
   return (
     <div className="mt-10 max-w-md">
-      <p className="m-0 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+      <p className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg">
         Nothing here yet.
       </p>
-      <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted-ink">
+      <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted">
         Create a tool from a vision, or remix one from the gallery.
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-2.5">

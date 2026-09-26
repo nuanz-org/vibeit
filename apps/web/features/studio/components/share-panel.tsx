@@ -44,9 +44,9 @@ const muted = "text-sm opacity-55";
 const shareField = "flex flex-col gap-[0.35rem]";
 const fieldLabel = "block font-medium";
 const textInput =
-  "w-full min-w-0 rounded-lg border border-border-subtle bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
+  "w-full min-w-0 rounded-lg border border-border bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
 const embedTextarea =
-  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-[family-name:var(--font-geist-mono),ui-monospace,monospace] text-[0.75rem] leading-snug text-inherit";
+  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-mono text-[0.75rem] leading-snug text-inherit";
 
 /**
  * M7f — Studio share + embed + thin make-public.
@@ -151,7 +151,7 @@ export function SharePanel({
             {publishing ? "Publishing…" : "Make public link"}
           </button>
         ) : (
-          <span className="rounded-full bg-[#15803d]/14 px-[0.55rem] py-[0.2rem] text-xs font-semibold text-[#15803d]">
+          <span className="rounded-full bg-[#15803d]/14 px-[0.55rem] py-[0.2rem] text-xs font-medium text-[#15803d]">
             Public
           </span>
         )}

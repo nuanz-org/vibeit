@@ -332,7 +332,7 @@ export function CreatePlayground({
                 </p>
                 {showStarters ? (
                   <>
-                    <p className="mt-[0.15rem] mb-0 w-full text-[0.72rem] text-muted-ink">
+                    <p className="mt-[0.15rem] mb-0 w-full text-[0.72rem] text-muted">
                       Or try one of these
                     </p>
                     <ul className="mt-[0.35rem] mb-0 flex list-none flex-wrap gap-[0.4rem] p-0">
@@ -340,7 +340,7 @@ export function CreatePlayground({
                         <li key={s.label}>
                           <button
                             type="button"
-                            className="cursor-pointer appearance-none rounded-[10px] bg-transparent px-[0.75rem] py-[0.45rem] text-xs font-medium font-[inherit] text-ink-secondary ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background-color,box-shadow,color,transform] duration-ui ease-ui hover:-translate-y-px hover:bg-surface hover:text-ink hover:ring-black/15 active:scale-[0.98] dark:ring-white/10 dark:shadow-black/30 dark:hover:ring-white/15 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className="cursor-pointer appearance-none rounded-[10px] bg-transparent px-[0.75rem] py-[0.45rem] text-xs font-medium font-[inherit] text-fg ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background-color,box-shadow,color,transform] duration-ui ease-ui hover:-translate-y-px hover:bg-band hover:text-fg hover:ring-black/15 active:scale-[0.98] dark:ring-white/10 dark:shadow-black/30 dark:hover:ring-white/15 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             onClick={() => setVisionText(s.vision)}
                           >
                             {s.label}
@@ -376,7 +376,7 @@ export function CreatePlayground({
                         salvageToolId ? (
                           <Link
                             href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                            className="text-primary underline-offset-3 hover:underline"
+                            className="text-accent-text underline-offset-3 hover:underline"
                           >
                             Open salvage draft in Studio
                           </Link>
@@ -486,7 +486,7 @@ export function CreatePlayground({
                     salvageToolId ? (
                       <Link
                         href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                        className="text-primary underline-offset-3 hover:underline"
+                        className="text-accent-text underline-offset-3 hover:underline"
                       >
                         Open salvage draft in Studio
                       </Link>
@@ -535,7 +535,7 @@ export function CreatePlayground({
                     alt={p.name}
                     className="block size-full object-cover"
                   />
-                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-bold leading-[1.1rem] text-white">
+                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-medium leading-[1.1rem] text-white">
                     {index + 1}
                   </span>
                   <button
@@ -656,7 +656,7 @@ export function CreatePlayground({
                     : {
                         scale: canSend ? 1 : 0.96,
                         backgroundColor: canSend
-                          ? "var(--ink, var(--foreground))"
+                          ? "var(--ink)"
                           : undefined,
                       }
                 }

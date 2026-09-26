@@ -3,7 +3,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
+import { useSystemThemeSync } from "@/lib/theme";
+
 export function Providers({ children }: { children: ReactNode }) {
+  useSystemThemeSync();
   const [queryClient] = useState(
     () =>
       new QueryClient({
