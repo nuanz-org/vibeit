@@ -28,9 +28,7 @@ export function displayTitle(raw: string | null | undefined): string {
 
   t = t.replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").trim();
 
-  const called = t.match(
-    /(?:called|named)\s+["'“”‘’]([^"'“”‘’\n]{2,56})/i,
-  );
+  const called = t.match(/(?:called|named)\s+["'“”‘’]([^"'“”‘’\n]{2,56})/i);
   if (called?.[1]) {
     const name = called[1].replace(/[.,;:\-—…"']+$/u, "").trim();
     if (name.length >= 2 && !looksTruncatedToken(name)) {
@@ -43,10 +41,7 @@ export function displayTitle(raw: string | null | undefined): string {
       /^(build|create|make|design|generate|i want|i need|please)\s+(an|a|me|my)?\s*/i,
       "",
     )
-    .replace(
-      /^(remixable\s+)?(creative\s+)?(motion\s+)?tool\s*/i,
-      "",
-    )
+    .replace(/^(remixable\s+)?(creative\s+)?(motion\s+)?tool\s*/i, "")
     .replace(/^a\s+tool\s*/i, "")
     .replace(/^(which|that|whihc|simple)\s+/i, "")
     .replace(/^(these are|this is|here(?:'s| are))\s+/i, "")
@@ -79,18 +74,36 @@ export function displayTitle(raw: string | null | undefined): string {
 
   t = clipAtWord(t, 44);
 
-  const body = t.replace(/…$/, "");
-  const wordCount = body.split(/\s+/).filter(Boolean).length;
-  if (
-    body.length > 0 &&
-    body === body.toLowerCase() &&
-    wordCount > 0 &&
-    wordCount <= 6
-  ) {
-    t = t.replace(/\b\w/g, (c) => c.toUpperCase());
-  }
+  // Sentence case, like all Aiditr copy: capitalise the first letter only.
+  t = t.charAt(0).toUpperCase() + t.slice(1);
 
   return t || "Untitled tool";
+}
+
+/** "12 Sep 2026" — or null when the date is missing or unparseable. */
+export function formatPublished(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return null;
+  }
+}
+
+/** Mono meta line under a tile: first tags, else the publish date. */
+export function tileMeta(card: {
+  tags?: string[] | null;
+  publishedAt?: string | null;
+}): string {
+  const tags = (card.tags ?? []).filter(Boolean).slice(0, 2);
+  if (tags.length) return tags.join(" · ");
+  return formatPublished(card.publishedAt) ?? "Published tool";
 }
 
 export function hashHue(seed: string): number {

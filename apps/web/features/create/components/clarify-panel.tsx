@@ -2,14 +2,27 @@
 
 import { useMemo, useState } from "react";
 
+import { ArrowRight } from "@/components/icons";
 import type {
   ClarifyAnswerValue,
   ClarifyQuestion,
   JobClarifyState,
 } from "@/lib/api/jobs";
-import { cn } from "@/lib/utils";
 
 const ALL_OPTIONS_KEY = "__all_options__";
+
+/**
+ * Quick-reply pill (landing §3.6): hairline outline, muted until chosen;
+ * chosen flips to ink (bg-fg text-bg). Selection is never blue.
+ */
+const chipClass = [
+  "hit inline-flex h-8 cursor-pointer items-center rounded-full border px-3 text-[12.5px] pointer-coarse:h-11",
+  "transition-colors duration-fast ease-standard",
+  "data-[selected=false]:border-border data-[selected=false]:bg-surface data-[selected=false]:text-muted",
+  "enabled:data-[selected=false]:hover:border-fg enabled:data-[selected=false]:hover:text-fg",
+  "data-[selected=true]:border-fg data-[selected=true]:bg-fg data-[selected=true]:text-bg",
+  "disabled:cursor-not-allowed disabled:opacity-45",
+].join(" ");
 
 type Props = {
   clarify: JobClarifyState;
@@ -84,24 +97,23 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-[0.85rem] rounded-[10px] bg-[#1d4ed8]/6 px-[1.1rem] py-4 ring-1 ring-[#1d4ed8]/25 shadow-sm shadow-black/10">
+    <div className="flex flex-col gap-4 rounded-[10px] border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[0.88rem] font-medium tracking-[-0.015em]">
-          Plan with me
-        </span>
+        <span className="t-label text-muted">Plan with me</span>
         <span
-          className={cn(
-            "rounded-full bg-ink/8 px-2 py-[0.18rem] text-[0.68rem] font-[650] tracking-[0.02em] text-muted",
-            "data-[status=awaiting_clarify]:bg-[oklch(0.55_0.16_260)]/14 data-[status=awaiting_clarify]:text-[oklch(0.48_0.14_260)]",
-          )}
+          className="t-label inline-flex h-5 shrink-0 items-center gap-1.5 rounded-full border border-border px-2 text-[10px] text-muted"
           data-status="awaiting_clarify"
         >
-          awaiting answers
+          <span
+            className="size-1.5 rounded-full bg-accent-text"
+            aria-hidden="true"
+          />
+          Awaiting answers
         </span>
       </div>
 
       {clarify.understanding ? (
-        <p className="m-0 text-[0.92rem] leading-normal opacity-90">
+        <p className="m-0 text-[13.5px] leading-[1.55] text-fg">
           {clarify.understanding}
         </p>
       ) : null}
@@ -111,78 +123,70 @@ export function ClarifyPanel({ clarify, pending, onSubmit }: Props) {
           const multi = Boolean(q.multiSelect);
           const allowAll = q.allowAllOptions !== false;
           const current = answers[q.id];
+          const allSelected = isSelected(current, ALL_OPTIONS_KEY, false);
           return (
             <div key={q.id} className="flex flex-col gap-2">
-              <p className="m-0 text-[0.9rem] font-medium leading-[1.4]">
+              <p className="m-0 text-[13.5px] leading-[1.4] font-medium tracking-[-0.005em] text-fg">
                 {q.group ? (
-                  <span className="font-medium opacity-70">{q.group} · </span>
+                  <span className="font-normal text-muted">{q.group} · </span>
                 ) : null}
                 {q.prompt}
               </p>
-              <div className="flex flex-wrap gap-[0.45rem]" role="group" aria-label={q.prompt}>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label={q.prompt}>
                 {allowAll ? (
                   <button
                     type="button"
-                    className={cn(
-                      "cursor-pointer rounded-full bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background,box-shadow] duration-150 ease-in-out dark:ring-white/10",
-                      "enabled:hover:ring-black/20 dark:enabled:hover:ring-white/20",
-                      "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[selected=true]:ring-primary data-[selected=true]:shadow-none",
-                      "disabled:cursor-not-allowed disabled:opacity-50",
-                    )}
-                    data-selected={
-                      isSelected(current, ALL_OPTIONS_KEY, false)
-                        ? "true"
-                        : "false"
-                    }
+                    className={chipClass}
+                    data-selected={allSelected ? "true" : "false"}
+                    aria-pressed={allSelected}
                     disabled={pending}
                     onClick={() => setAllOptions(q.id)}
                   >
                     All options
                   </button>
                 ) : null}
-                {q.options.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    className={cn(
-                      "cursor-pointer rounded-full bg-transparent px-3 py-[0.4rem] text-[0.82rem] font-medium text-inherit font-[inherit] ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background,box-shadow] duration-150 ease-in-out dark:ring-white/10",
-                      "enabled:hover:ring-black/20 dark:enabled:hover:ring-white/20",
-                      "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[selected=true]:ring-primary data-[selected=true]:shadow-none",
-                      "disabled:cursor-not-allowed disabled:opacity-50",
-                    )}
-                    data-selected={
-                      isSelected(current, opt.value, multi) ? "true" : "false"
-                    }
-                    title={opt.description}
-                    disabled={pending}
-                    onClick={() =>
-                      multi
-                        ? toggleMulti(q.id, opt.value)
-                        : setSingle(q.id, opt.value)
-                    }
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+                {q.options.map((opt) => {
+                  const selected = isSelected(current, opt.value, multi);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={chipClass}
+                      data-selected={selected ? "true" : "false"}
+                      aria-pressed={selected}
+                      title={opt.description}
+                      disabled={pending}
+                      onClick={() =>
+                        multi
+                          ? toggleMulti(q.id, opt.value)
+                          : setSingle(q.id, opt.value)
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-[0.65rem]">
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3.5">
         <button
           type="button"
-          className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn btn-primary btn-sm"
           disabled={!allAnswered || pending}
           onClick={handleBuild}
         >
           {pending ? "Starting build…" : "Build it"}
+          {pending ? null : <ArrowRight size={14} className="btn-arrow" />}
         </button>
       </div>
-      <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
-        Choosing <strong>All options</strong> turns that axis into a Studio enum
-        control so you can switch variants later.
+      <p className="m-0 text-[12.5px] leading-[1.5] text-muted">
+        Choosing <strong className="font-medium text-fg">All options</strong>{" "}
+        turns that axis into a Studio enum control so you can switch variants
+        later.
       </p>
     </div>
   );

@@ -2,41 +2,25 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { useState } from "react";
 
+import { ArrowLeft, ArrowRight, Remix } from "@/components/icons";
 import { getGalleryItem } from "@/lib/api/gallery";
-import { cn } from "@/lib/utils";
 
 import { normalizePublicAssetUrl } from "../lib/asset-url";
+import { displayTitle, formatPublished } from "../lib/display-title";
 import { GalleryShell } from "./gallery-shell";
+import { ToolThumb } from "./tool-thumb";
 
-const btn = cn(
-  "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-fg no-underline",
-  "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:enabled:bg-band hover:enabled:text-fg",
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-  "disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
-);
-
-const btnPrimary = cn(
-  "border-transparent bg-primary text-primary-foreground",
-  "hover:enabled:border-transparent hover:enabled:bg-accent-hover",
-);
-
-function hashHue(seed: string): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return h % 360;
-}
+const backLink =
+  "inline-flex h-9 items-center gap-1.5 rounded-full pr-3 pl-2 text-[14px] text-muted transition-colors duration-fast ease-standard hover:bg-band hover:text-fg";
 
 /**
- * Gallery detail card → open live /t/:publicId.
+ * Gallery detail page → open live /t/:publicId, or remix it.
  * No source download or Studio owner controls.
  */
 export function GalleryDetail({ publicId }: { publicId: string }) {
+  const [ratio, setRatio] = useState(1);
   const q = useQuery({
     queryKey: ["public-gallery-item", publicId],
     queryFn: () => getGalleryItem(publicId),
@@ -46,9 +30,16 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   if (q.isLoading) {
     return (
       <GalleryShell>
-        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-5 pb-[4.5rem] md:px-6 md:pt-7 md:pb-20">
-          <p className="m-0 text-sm leading-snug text-muted">
-            Loading…
+        <main className="wrap flex flex-1 items-center justify-center py-20">
+          <p
+            className="t-label flex items-center gap-2 text-muted"
+            role="status"
+          >
+            <span
+              className="live-dot size-1.5 rounded-full bg-accent-text"
+              aria-hidden
+            />
+            Loading tool
           </p>
         </main>
       </GalleryShell>
@@ -58,32 +49,24 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   if (q.isError || !q.data) {
     const msg =
       q.error instanceof Error ? q.error.message : "Could not load this tool.";
-    const notFound =
-      /404|not found/i.test(msg) ||
-      msg.includes("Get gallery item failed (404)");
+    const notFound = /404|not found/i.test(msg);
 
     return (
       <GalleryShell>
-        <main className="mx-auto mt-14 mb-8 flex max-w-md flex-col items-center gap-3 px-2 text-center [&_h1]:m-0 [&_h1]:text-xl [&_h1]:font-medium [&_h1]:tracking-tight [&_h1]:text-balance [&_p]:m-0 [&_p]:max-w-[26rem] [&_p]:text-[0.95rem] [&_p]:leading-relaxed [&_p]:text-muted">
-          <div
-            className="mb-[0.35rem] size-[4.5rem] rounded-xl bg-[radial-gradient(70%_70%_at_50%_40%,color-mix(in_oklch,var(--foreground)_10%,transparent),transparent_72%),color-mix(in_oklch,var(--foreground)_5%,transparent)]"
-            aria-hidden
-          />
-          <h1>{notFound ? "Not in gallery" : "Could not open"}</h1>
-          <p>
-            {notFound
-              ? "This tool is not in the public gallery. It may be private or unpublished."
-              : msg}
-          </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-[0.65rem]">
-            <Link href="/gallery" className={btn}>
+        <main className="wrap flex flex-1 items-center justify-center py-20">
+          <div className="flex w-full max-w-md flex-col items-center rounded-[12px] border border-border bg-surface px-6 py-10 text-center md:px-10">
+            <p className="t-label text-muted">Gallery</p>
+            <h1 className="t-h3 mt-3 text-balance">
+              {notFound
+                ? "This tool isn’t in the gallery."
+                : "This tool didn’t open."}
+            </h1>
+            <p className="mt-2 max-w-[34ch] text-[15px] leading-[1.55] text-pretty text-muted">
+              {notFound ? "It may be private, or it was unpublished." : msg}
+            </p>
+            <Link href="/gallery" className="btn btn-outline btn-sm mt-6">
+              <ArrowLeft size={14} />
               Back to gallery
-            </Link>
-            <Link
-              href="/"
-              className="text-[0.85rem] text-muted underline underline-offset-[3px] hover:text-foreground"
-            >
-              Home
             </Link>
           </div>
         </main>
@@ -92,91 +75,91 @@ export function GalleryDetail({ publicId }: { publicId: string }) {
   }
 
   const card = q.data;
-  const title = card.title?.trim() || "Untitled tool";
+  const title = displayTitle(card.title);
+  const fullTitle = card.title?.trim() || "Untitled tool";
   const desc = card.description?.trim() || null;
   const tags = card.tags ?? [];
+  const published = formatPublished(card.publishedAt);
   const runHref = `/t/${encodeURIComponent(card.publicId)}`;
   const remixHref = `/remix/${encodeURIComponent(card.publicId)}`;
   const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
-  const hue = hashHue(card.publicId || title);
 
   return (
     <GalleryShell>
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-5 pb-[4.5rem] md:px-6 md:pt-7 md:pb-20">
-        <Link
-          href="/gallery"
-          className="mb-5 inline-flex items-center gap-[0.35rem] rounded-md px-[0.15rem] py-1 text-sm font-medium text-muted no-underline hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          ← Back to Gallery
+      <main className="wrap flex-1 pt-6 pb-20 md:pt-8 md:pb-28">
+        <Link href="/gallery" className={`${backLink} -ml-2`}>
+          <ArrowLeft size={14} />
+          Gallery
         </Link>
 
-        <div className="grid gap-7 min-[720px]:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] min-[720px]:items-start min-[720px]:gap-9">
-          <div className="aspect-[4/3] overflow-hidden rounded-xl bg-band [&_img]:block [&_img]:size-full [&_img]:object-cover">
-            {thumbSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumbSrc} alt="" decoding="async" />
-            ) : (
-              <div
-                className={cn(
-                  "relative flex size-full items-center justify-center",
-                  "bg-[radial-gradient(120%_90%_at_20%_15%,oklch(0.78_0.04_var(--ph-hue)/0.55),transparent_55%),radial-gradient(100%_80%_at_85%_90%,oklch(0.72_0.035_calc(var(--ph-hue)+50)/0.4),transparent_50%),oklch(0.82_0.02_var(--ph-hue))]",
-                  "[@media(prefers-color-scheme:dark)]:bg-[radial-gradient(120%_90%_at_20%_15%,oklch(0.32_0.05_var(--ph-hue)/0.7),transparent_55%),radial-gradient(100%_80%_at_85%_90%,oklch(0.28_0.04_calc(var(--ph-hue)+50)/0.55),transparent_50%),oklch(0.2_0.025_var(--ph-hue))]",
-                  "after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--foreground)_6%,transparent)] after:content-['']",
-                )}
-                style={
-                  {
-                    ["--ph-hue" as string]: String(hue),
-                  } as CSSProperties
-                }
-                aria-hidden
-              >
-                <span className="size-7 rounded-md border-[1.5px] border-foreground/14 opacity-35" />
+        <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:gap-12">
+          <div className="workspace-grid grid min-h-[320px] place-items-center rounded-[12px] border border-border p-10 lg:col-span-7 lg:min-h-[520px]">
+            <div
+              className="frame-marks relative shadow-frame"
+              style={{
+                aspectRatio: ratio,
+                width: `min(100%, 520px, calc(min(60vh, 520px) * ${ratio}))`,
+              }}
+            >
+              <div className="absolute inset-0 overflow-hidden bg-surface">
+                <ToolThumb src={thumbSrc} eager onRatio={setRatio} />
               </div>
-            )}
+              <span className="mark-b" aria-hidden />
+            </div>
           </div>
 
-          <div>
-            <h1 className="mt-0 mb-[0.65rem] text-[clamp(1.4rem,2.5vw,1.85rem)] font-medium leading-tight tracking-tight text-balance">
+          <div className="flex flex-col lg:col-span-5 lg:pt-2">
+            <p className="t-label flex flex-wrap items-center gap-x-2 text-muted">
+              <span>Tool</span>
+              {published ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>Published {published}</span>
+                </>
+              ) : null}
+            </p>
+            <h1
+              className="t-h2 mt-4 text-[clamp(2rem,1.4rem+1.6vw,2.75rem)]"
+              title={fullTitle}
+            >
               {title}
             </h1>
-            {desc ? (
-              <p className="m-0 mb-[1.1rem] max-w-[42rem] text-[0.95rem] leading-relaxed text-muted">
-                {desc}
-              </p>
-            ) : null}
-
-            {tags.length > 0 ? (
-              <div className="mb-4 flex flex-wrap gap-[0.3rem]">
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    className="rounded-[5px] bg-foreground/[0.06] px-[0.4rem] py-[0.12rem] text-[0.68rem] font-medium text-muted"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-
-            <p className="text-sm leading-snug text-muted">
-              Interactive preview — view only. No source download or Studio
-              controls.
+            <p className="t-lead mt-5 max-w-[40ch]">
+              {desc && desc !== fullTitle
+                ? desc
+                : "A live design tool from the gallery. Open it to play with its controls, or remix it into your own."}
             </p>
 
-            <div className="mt-7 flex flex-wrap items-center gap-[0.65rem]">
-              <Link href={runHref} className={cn(btn, btnPrimary)}>
-                Open tool
+            {tags.length > 0 ? (
+              <ul className="mt-5 flex flex-wrap gap-1.5">
+                {tags.map((t) => (
+                  <li
+                    key={t}
+                    className="t-mono rounded-[5px] border border-border px-1.5 py-0.5 text-[10.5px] text-muted"
+                  >
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <div className="mt-8 flex flex-wrap items-center gap-2.5">
+              <Link href={runHref} className="btn btn-primary">
+                Use tool
+                <ArrowRight size={16} className="btn-arrow" />
               </Link>
-              <Link href={remixHref} className={btn}>
-                Remix in Studio
-              </Link>
-              <Link href="/gallery" className={btn}>
-                Back to gallery
-              </Link>
-              <Link href="/create" className={btn}>
-                Create your own
+              <Link href={remixHref} className="btn btn-outline">
+                <Remix size={15} />
+                Remix
               </Link>
             </div>
+            <p className="mt-4 flex items-center gap-2 text-[13px] text-muted">
+              <span
+                className="size-1 rounded-full bg-accent-text"
+                aria-hidden
+              />
+              Opens a live, view-only session. Remix copies it into your Studio.
+            </p>
           </div>
         </div>
       </main>

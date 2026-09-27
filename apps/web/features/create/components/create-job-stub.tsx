@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Alert } from "@/components/icons";
 import { createJob, type CreateJobResponse } from "@/lib/api/jobs";
 
 /**
@@ -35,29 +36,34 @@ export function CreateJobStub() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3">
-      <label className="text-[0.9rem] font-medium">
-        Vision (stub create job)
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[12.5px] font-medium leading-none tracking-[-0.005em] text-fg">
+          Vision (stub create job)
+        </span>
         <textarea
           value={visionText}
           onChange={(e) => setVisionText(e.target.value)}
           rows={3}
           required
-          className="mt-1.5 block w-full resize-y rounded-lg border border-foreground/14 bg-transparent px-3 py-2.5 text-inherit [font:inherit]"
+          className="block w-full resize-y rounded-[8px] border border-border bg-bg px-3 py-2 text-[13.5px] leading-[1.35] text-fg transition-colors duration-fast ease-standard placeholder:text-muted hover:border-border-strong focus:border-fg focus:outline-none focus-visible:outline-none"
         />
       </label>
       <button
         type="submit"
         disabled={pending || !visionText.trim()}
-        className="cursor-pointer self-start rounded-lg border-none bg-foreground px-4 py-[0.55rem] font-medium text-background disabled:cursor-wait disabled:opacity-60"
+        className="btn btn-ink btn-sm self-start"
       >
         {pending ? "Starting…" : "Start create job (stub)"}
       </button>
       {error ? (
-        <p className="m-0 text-sm text-[#dc143c]">{error}</p>
+        <p className="m-0 flex items-start gap-1.5 text-[12.5px] leading-[1.45] text-fg">
+          <Alert size={14} className="mt-px shrink-0 text-danger" />
+          {error}
+        </p>
       ) : null}
       {result ? (
-        <pre className="m-0 overflow-auto rounded-lg bg-foreground/[0.06] p-3 text-[0.8rem]">
+        <pre className="t-mono m-0 overflow-auto rounded-[8px] border border-border bg-band p-3 text-[11.5px] leading-[1.5] text-fg">
           {JSON.stringify(result, null, 2)}
         </pre>
       ) : null}

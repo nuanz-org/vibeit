@@ -1,37 +1,23 @@
 /* ─────────────────────────────────────────────────────────
- * ANIMATION STORYBOARD — Gallery infinite canvas
+ * Gallery motion — the house curve, nothing bounces.
  *
- * Canvas idle
- *    0ms   cards rest in world space; inertia pan free
+ * Canvas
+ *    0ms   tiles fade + rise 10px, staggered 30ms (first paint only)
+ *          inertia pan with drag / wheel / arrow keys
  *
- * Card open (click)
- *    0ms   selected card press scale 1 → 0.97
- *   40ms   backdrop fade 0 → 1 + canvas dim
- *    0ms   layoutId morph: canvas tile → focus frame (spring)
- *  160ms   title + meta slide up (stagger 50ms)
- *  260ms   primary actions fade in
- *  300ms   “Open tool” gains focus ring pulse (once)
+ * Tool detail (click a tile)
+ *    0ms   backdrop fades in (180ms)
+ *    0ms   panel `panel-in`: fade + 8px rise (240ms)
+ *   40ms   copy block rises in, actions at 80ms
  *
- * Card close (Esc / backdrop)
- *    0ms   actions fade out
- *   40ms   meta fade
- *   80ms   layoutId morph back + backdrop out
+ * Reduced motion: everything instant; pan without inertia.
  * ───────────────────────────────────────────────────────── */
 
-export const OPEN_TIMING = {
-  press: 0,
-  backdrop: 40,
-  morph: 0,
-  meta: 160,
-  actions: 260,
-  focusPulse: 300,
-} as const;
+/** cubic-bezier(0.4, 0, 0.2, 1) — the only easing curve. */
+export const EASE = [0.4, 0, 0.2, 1] as const;
 
-export const CLOSE_TIMING = {
-  actions: 0,
-  meta: 40,
-  morph: 80,
-} as const;
+/** Seconds, matching --dur-1/2/3. */
+export const DUR = { press: 0.12, fast: 0.18, ui: 0.24 } as const;
 
 export const CANVAS_PHYSICS = {
   /** Lerp factor toward target velocity while dragging. */
@@ -49,54 +35,9 @@ export const CANVAS_PHYSICS = {
 } as const;
 
 export const CARD_MOTION = {
-  initialScale: 0.96,
-  pressScale: 0.97,
-  hoverScale: 1.03,
-  hoverY: -4,
-  restSpring: {
-    type: "spring" as const,
-    stiffness: 380,
-    damping: 32,
-    bounce: 0,
-  },
-  hoverSpring: {
-    type: "spring" as const,
-    stiffness: 420,
-    damping: 28,
-    bounce: 0,
-  },
-};
-
-export const FOCUS = {
-  initialScale: 0.94,
-  finalScale: 1,
-  spring: {
-    type: "spring" as const,
-    stiffness: 320,
-    damping: 34,
-    bounce: 0,
-  },
-  metaOffsetY: 12,
-  metaStagger: 0.05,
-  metaSpring: {
-    type: "spring" as const,
-    stiffness: 360,
-    damping: 30,
-    bounce: 0,
-  },
-  backdrop: {
-    duration: 0.28,
-    ease: [0.2, 0, 0, 1] as const,
-  },
-};
-
-export const CANVAS_ENTER = {
-  stagger: 0.035,
-  offsetY: 18,
-  spring: {
-    type: "spring" as const,
-    stiffness: 300,
-    damping: 30,
-    bounce: 0,
-  },
-};
+  /** Entrance rise in px. */
+  enterY: 10,
+  /** Per-tile entrance delay in seconds, capped. */
+  stagger: 0.03,
+  maxDelay: 0.4,
+} as const;

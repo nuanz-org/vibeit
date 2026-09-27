@@ -1,221 +1,211 @@
 /**
- * Shared playground chrome — Tailwind class strings only.
- * Monochrome surfaces + Base Blue for generate/send.
+ * Shared playground chrome (Create + Studio) — Tailwind class strings only.
  *
- * Edges use shadow/ring only (no `border` property) for soft, premium chrome:
- * hairline ring + soft lift — works on light; dark: variants flip ring ink.
+ * Ported from the landing's Studio panel (aiditr-landing/features/landing/ui/Studio.tsx)
+ * and its chat / status recipes (sections/HowItWorks.tsx). See
+ * md/design-language.md §3.14–3.17. Monochrome chrome, 1px hairlines before
+ * shadows, pills for buttons, blue only for "go" (send / generate).
  */
-/** Soft outer edge: thin ring + lift. Prefer this over `border`. */
-export const surfaceEdge = [
-  "ring-1 ring-black/10 shadow-sm shadow-black/10",
-  "dark:ring-white/10 dark:shadow-black/40",
-].join(" ");
 
-/** Quieter edge for compact controls (buttons, selects). */
-export const controlEdge = [
-  "ring-1 ring-black/10 shadow-sm shadow-black/[0.06]",
-  "dark:ring-white/10 dark:shadow-black/30",
-].join(" ");
+/** 1px hairline edge for cards and floating panels. */
+export const surfaceEdge = "border border-border";
 
-/** Inset hairline divider (replaces border-t / border-b on panels). */
-export const dividerTop =
-  "shadow-[inset_0_1px_0_0_rgb(0_0_0/0.06)] dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.08)]";
+/** Edge for compact outline controls (buttons, selects). */
+export const controlEdge = "border border-border-strong";
 
-export const dividerBottom =
-  "shadow-[inset_0_-1px_0_0_rgb(0_0_0/0.06)] dark:shadow-[inset_0_-1px_0_0_rgb(255_255_255/0.08)]";
+/** Hairline dividers between panel sections. */
+export const dividerTop = "border-t border-border";
+
+export const dividerBottom = "border-b border-border";
 
 export const playgroundStyles = {
-  /** Elevated card/panel: rounded + soft shadow edge (no border). */
-  surface: [
-    "rounded-[10px] bg-surface",
-    surfaceEdge,
-  ].join(" "),
+  /** Inner card: 10px radius, hairline, no shadow. */
+  surface: ["rounded-[10px] bg-surface", surfaceEdge].join(" "),
 
-  panelScroll:
-    "flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-3 pt-3 pb-5",
+  panelScroll: "flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4",
 
+  /** 48px panel title row, like the landing Studio top bar. */
   panelHeader: [
-    "flex shrink-0 items-center justify-between gap-2 px-3.5 py-3",
+    "flex h-12 shrink-0 items-center justify-between gap-2 px-4",
     dividerBottom,
   ].join(" "),
 
-  panelTitle:
-    "m-0 text-[0.72rem] font-medium tracking-[-0.01em] text-muted uppercase",
+  /** Group / panel headers are mono labels: CONTROLS, CHAT, ASSETS. */
+  panelTitle: "t-label m-0 text-muted",
 
   stageInner: [
-    "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-[0.85rem] px-6 py-5",
+    "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 py-5",
     "data-[stage-layout=pinned-bar]:justify-start",
-    "data-[stage-layout=pinned-bar]:gap-[0.65rem]",
-    "data-[stage-layout=pinned-bar]:pb-[0.85rem]",
+    "data-[stage-layout=pinned-bar]:gap-3",
+    "data-[stage-layout=pinned-bar]:pb-4",
   ].join(" "),
 
+  /** Mono dimension label, top-left of the workspace: SQUARE · 1080 × 1080. */
+  stageLabel:
+    "t-label pointer-events-none absolute top-3.5 left-4 z-[1] flex items-center gap-1.5 text-muted",
+
   /**
-   * Preview chrome only — size is driven by inline style from StageSizeBar (C6).
-   * Fallback square when no inline size is set (create empty stage).
+   * Canvas frame: square corners, registration marks outside (so no
+   * overflow clipping here — see frameClip), canvas-frame lift.
+   * Size comes from inline style (StageSizeBar); the fallback is a square.
    */
   frame: [
-    "aspect-square w-[min(100%,480px)] max-h-[min(78vh,720px)] max-w-full shrink",
-    "overflow-hidden rounded-[10px] bg-[#0a0a0c]",
-    "ring-1 ring-black/10 shadow-sm shadow-black/20",
-    "dark:ring-white/10",
+    "relative aspect-square w-[min(100%,480px)] max-h-[min(78vh,720px)] max-w-full shrink",
+    "bg-surface shadow-frame",
   ].join(" "),
+
+  /** Clips the live canvas inside the frame. */
+  frameClip: "absolute inset-0 overflow-hidden",
 
   frameWide:
     "aspect-auto h-[min(78vh,640px)] w-[min(100%,720px)] max-h-[min(78vh,720px)]",
 
   emptyStage:
-    "flex max-w-[32ch] flex-col items-center justify-center gap-[0.55rem] p-6 text-center",
+    "flex max-w-[34ch] flex-col items-center justify-center gap-2 p-6 text-center",
 
   emptyStageTitle:
-    "m-0 text-[0.95rem] font-medium tracking-[-0.02em] text-fg",
+    "m-0 text-[15px] font-medium tracking-[-0.01em] text-fg text-balance",
 
-  emptyStageHint: "m-0 text-[0.85rem] leading-[1.45] text-muted",
+  emptyStageHint: "m-0 text-[13.5px] leading-[1.5] text-muted text-pretty",
 
   chatBody: "flex min-h-0 flex-1 flex-col gap-0 p-0",
 
-  chatCard:
-    "flex min-h-0 flex-1 flex-col overflow-hidden rounded-none bg-transparent",
+  chatCard: "flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent",
 
-  chatScroll:
-    "flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-2 pb-2.5",
+  chatScroll: "flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-2 pb-3",
 
+  /** Composer dock: hairline above, input card inside. */
   chatComposer: [
-    "flex shrink-0 flex-col gap-[0.55rem]",
-    "bg-surface/95 backdrop-blur-sm",
+    "flex shrink-0 flex-col gap-2 bg-surface px-3 pt-3 pb-3",
     dividerTop,
-    "px-3.5 pt-3 pb-3.5",
   ].join(" "),
 
   composerInput: [
     "w-full min-h-[4.25rem] max-h-48 resize-none rounded-none border-0 bg-transparent",
-    "px-0.5 py-2 text-[0.92rem] leading-[1.45] text-fg",
-    "[field-sizing:content] [font:inherit]",
-    "placeholder:text-muted placeholder:opacity-80",
-    "focus:outline-none",
-    "disabled:cursor-not-allowed disabled:opacity-55",
+    "px-1 py-1.5 text-[13.5px] leading-[1.5] text-fg",
+    "[field-sizing:content]",
+    "placeholder:text-muted",
+    "focus:outline-none focus-visible:outline-none",
+    "disabled:cursor-not-allowed disabled:opacity-45",
   ].join(" "),
 
   composerFooter: "flex flex-wrap items-center justify-between gap-2",
 
-  composerMeta: "flex min-w-0 flex-wrap items-center gap-[0.4rem]",
+  composerMeta: "flex min-w-0 flex-wrap items-center gap-1.5",
 
-  composerActions: "flex shrink-0 items-center gap-[0.4rem]",
+  composerActions: "flex shrink-0 items-center gap-1.5",
 
-  greeting: "flex flex-col gap-[0.45rem] px-0.5 pt-4 pb-3",
+  greeting: "flex flex-col gap-1.5 px-0.5 pt-4 pb-3",
 
-  greetingTitle: [
-    "m-0 text-[1.2rem] font-[650] leading-snug tracking-[-0.03em] text-fg",
-    "text-balance",
-  ].join(" "),
+  greetingTitle:
+    "m-0 text-[15px] font-medium leading-snug tracking-[-0.01em] text-fg text-balance",
 
-  greetingSub: "m-0 max-w-[36ch] text-[0.88rem] leading-[1.5] text-muted",
+  greetingSub: "m-0 max-w-[36ch] text-[13.5px] leading-[1.5] text-muted",
 
+  /** Outline pill, 36px (landing `btn btn-outline btn-sm`). */
   btn: [
-    "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center gap-[0.35rem]",
-    "whitespace-nowrap rounded-[10px] bg-transparent px-3 py-[0.4rem]",
+    "inline-flex h-9 min-w-9 cursor-pointer items-center justify-center gap-2",
+    "whitespace-nowrap rounded-full bg-bg px-3.5",
     controlEdge,
-    "text-[0.8rem] font-medium tracking-[-0.01em] text-fg no-underline [font:inherit]",
-    "transition-[background-color,box-shadow,color,transform,opacity] duration-ui ease-ui",
-    "not-disabled:hover:bg-band not-disabled:hover:text-fg",
-    "not-disabled:hover:ring-black/15 dark:not-disabled:hover:ring-white/15",
-    "not-disabled:active:scale-[0.96]",
+    "text-[13px] font-medium tracking-[-0.01em] text-fg",
+    "transition-[background-color,border-color,color,opacity,transform] duration-fast ease-standard",
+    "not-disabled:hover:border-fg",
+    "not-disabled:active:scale-[0.985]",
     "disabled:cursor-not-allowed disabled:opacity-45",
-    "motion-reduce:transition-none motion-reduce:active:scale-100",
   ].join(" "),
 
-  // Variant modifiers use ! so they win when composed as `${btn} ${btnPrimary}`
+  // Variant modifiers use ! so they win when composed as `${btn} ${btnPrimary}`.
+  /** Accent fill — the one "go" action on screen. */
   btnPrimary: [
-    "rounded-[10px]! bg-primary! text-primary-foreground!",
-    "ring-0! shadow-none!",
-    "not-disabled:hover:bg-accent-hover! not-disabled:hover:text-primary-foreground!",
+    "border-transparent! bg-accent! text-accent-fg!",
+    "not-disabled:hover:bg-accent-hover!",
   ].join(" "),
 
+  /** Ink fill — secondary solid action inside tools (Export, Publish). */
   btnAccent: [
-    "rounded-[10px]! bg-ink! text-ink-fg!",
-    "ring-0! shadow-none!",
-    "not-disabled:hover:bg-ink-hover! not-disabled:hover:text-ink-fg!",
+    "border-transparent! bg-ink! text-ink-fg!",
+    "not-disabled:hover:bg-ink-hover!",
   ].join(" "),
 
+  /** Quiet: muted text, band on hover (landing nav links). */
   btnGhost: [
-    "bg-transparent! font-medium text-muted!",
-    "ring-0! shadow-none!",
-    "not-disabled:hover:bg-ink/5! not-disabled:hover:text-fg!",
+    "border-transparent! bg-transparent! text-muted!",
+    "not-disabled:hover:bg-band! not-disabled:hover:text-fg!",
   ].join(" "),
 
-  btnIcon: "min-h-9 min-w-9 p-[0.35rem]",
+  btnIcon: "w-9 px-0!",
 
+  /** Send: 32px accent circle with an up arrow. */
   btnSend: [
-    "inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center",
-    "rounded-full border-0 bg-primary p-[0.4rem] text-primary-foreground",
-    "transition-[background-color,transform,opacity] duration-ui ease-ui",
+    "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center",
+    "rounded-full border-0 bg-accent text-accent-fg",
+    "transition-[background-color,opacity,transform] duration-fast ease-standard",
     "not-disabled:hover:bg-accent-hover",
-    "not-disabled:active:scale-[0.96]",
-    "disabled:cursor-not-allowed disabled:translate-y-0",
-    "disabled:bg-primary/40 disabled:opacity-35",
-    "motion-reduce:transition-none motion-reduce:active:scale-100",
+    "not-disabled:active:scale-[0.985]",
+    "disabled:cursor-not-allowed disabled:opacity-45",
   ].join(" "),
 
+  /** Status pill: 20px, mono 10px, hairline (landing LIVE pill). */
   chip: [
-    "inline-flex items-center rounded-[10px] px-2 py-[0.2rem]",
-    "bg-band text-[0.7rem] font-medium tracking-[-0.01em] text-muted",
+    "t-label inline-flex h-5 shrink-0 items-center gap-1.5 rounded-full",
+    "border border-border px-2 text-[10px] text-muted",
   ].join(" "),
 
-  chipLive:
-    "bg-ink/8! text-fg!",
+  chipLive: "text-muted!",
 
-  chipWarn:
-    "bg-[color-mix(in_oklch,oklch(0.65_0.14_75)_14%,transparent)]! text-[oklch(0.55_0.12_75)]!",
+  chipWarn: "border-border-strong! text-fg!",
 
-  chipError:
-    "bg-[color-mix(in_oklch,oklch(0.55_0.2_25)_14%,transparent)]! text-[oklch(0.52_0.18_25)]!",
+  chipError: "border-border-strong! text-danger!",
+
+  /** 6px blinking accent dot for "live" / "working". */
+  liveDot: "live-dot size-1.5 shrink-0 rounded-full bg-accent-text",
 
   selectCompact: [
-    "max-w-[11rem] rounded-lg bg-transparent px-2 py-[0.3rem]",
+    "h-8 max-w-[11rem] cursor-pointer rounded-full bg-bg pr-7 pl-3",
     controlEdge,
-    "text-[0.75rem] font-medium text-inherit [font:inherit]",
-    "transition-[box-shadow,background-color] duration-150",
-    "not-disabled:hover:ring-black/15 dark:not-disabled:hover:ring-white/15",
-    "motion-reduce:transition-none",
+    "text-[12.5px] font-medium text-fg",
+    "transition-[border-color,background-color] duration-fast ease-standard",
+    "not-disabled:hover:border-fg",
+    "disabled:cursor-not-allowed disabled:opacity-45",
   ].join(" "),
 
+  /** 32px outline icon button wrapping a hidden file input. */
   attachBtn: [
-    "inline-grid size-8 shrink-0 cursor-pointer place-items-center",
-    "rounded-[9px] bg-transparent text-muted [font:inherit]",
+    "hit inline-grid size-8 shrink-0 cursor-pointer place-items-center",
+    "rounded-full bg-bg text-muted",
     controlEdge,
-    "transition-[background-color,box-shadow,color] duration-150",
-    "not-has-[input:disabled]:hover:bg-ink/5",
+    "transition-[border-color,color] duration-fast ease-standard",
+    "not-has-[input:disabled]:hover:border-fg",
     "not-has-[input:disabled]:hover:text-fg",
-    "not-has-[input:disabled]:hover:ring-black/15 dark:not-has-[input:disabled]:hover:ring-white/15",
     "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-45",
-    "[&_input]:hidden",
-    "motion-reduce:transition-none",
+    // Visually hidden, still focusable: the ring follows keyboard focus.
+    "[&_input]:sr-only",
+    "has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2",
+    "has-[input:focus-visible]:outline-solid has-[input:focus-visible]:outline-(--focus)",
   ].join(" "),
 
-  muted: "m-0 text-[0.8rem] leading-snug text-muted",
+  muted: "m-0 text-[12.5px] leading-snug text-muted",
 
   drawerBackdrop: [
-    "fixed inset-0 z-40 bg-[color-mix(in_oklch,#000_28%,transparent)]",
-    "animate-in fade-in duration-150",
-    "motion-reduce:animate-none",
+    "fixed inset-0 z-40 bg-bg/70",
+    "animate-in fade-in duration-ui",
   ].join(" "),
 
+  /** Side sheet: surface, hairline edge, panel lift. */
   drawer: [
     "fixed top-0 right-0 bottom-0 z-50 flex w-[min(100vw,380px)] flex-col",
-    "bg-surface",
-    "shadow-[-8px_0_28px_rgb(0_0_0/0.10),inset_1px_0_0_0_rgb(0_0_0/0.06)]",
-    "dark:shadow-[-8px_0_28px_rgb(0_0_0/0.45),inset_1px_0_0_0_rgb(255_255_255/0.08)]",
-    "animate-in fade-in slide-in-from-right-3 duration-200",
-    "motion-reduce:animate-none",
+    "border-l border-border bg-surface shadow-panel",
+    "animate-in fade-in slide-in-from-right-3 duration-ui",
   ].join(" "),
 
   drawerHeader: [
-    "flex items-center justify-between gap-3 px-4 py-[0.85rem]",
+    "flex h-12 shrink-0 items-center justify-between gap-3 px-4",
     dividerBottom,
   ].join(" "),
 
-  drawerTitle: "m-0 text-[0.95rem] font-[650] tracking-[-0.02em]",
+  drawerTitle: "m-0 text-[13.5px] font-medium tracking-[-0.01em] text-fg",
 
-  drawerBody: "flex flex-1 flex-col gap-[1.1rem] overflow-auto p-4",
+  drawerBody: "flex flex-1 flex-col gap-5 overflow-auto p-4",
 } as const;
 
 export type PlaygroundStyleKey = keyof typeof playgroundStyles;

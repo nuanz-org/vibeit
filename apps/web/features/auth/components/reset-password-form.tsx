@@ -4,35 +4,21 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { ArrowLeft } from "@/components/icons";
 import { authClient } from "@/lib/auth-client";
 
-const card =
-  "w-full max-w-[400px] rounded-[12px] border border-border bg-card p-8";
-const title = "mb-1.5 text-2xl font-medium tracking-[-0.03em]";
-const subtitle = "mb-6 text-[0.95rem] leading-snug text-fg/70";
+import {
+  AuthCard,
+  Field,
+  FormError,
+  backLinkCls,
+  footerCls,
+  formCls,
+  inputCls,
+  submitCls,
+} from "./auth-ui";
 
-function AuthBrand() {
-  return (
-    <div className="mb-5 flex items-center gap-2.5">
-      <span
-        className="inline-block size-6 shrink-0 rounded-[2px] bg-primary"
-        aria-hidden
-      />
-      <p className="m-0 text-[15px] font-medium tracking-[-0.02em]">Aiditr</p>
-    </div>
-  );
-}
-const form = "flex flex-col gap-4";
-const field = "flex flex-col gap-1.5";
-const label = "text-[0.85rem] font-medium";
-const input =
-  "w-full appearance-none rounded-[10px] border border-border bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-accent-text/50 focus:shadow-[0_0_0_3px_rgb(0_0_255/0.12)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
-const submit =
-  "mt-1 h-12 cursor-pointer rounded-full border-none bg-primary px-4 text-[0.95rem] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-55";
-const error =
-  "rounded-[10px] border border-[#FC401F]/25 bg-[#FC401F]/10 px-3 py-2.5 text-sm leading-snug text-[#FC401F]";
-const footer = "mt-5 text-center text-sm text-muted";
-const link = "font-medium text-accent-text underline underline-offset-2 hover:opacity-80";
+const MISMATCH = "Passwords don’t match.";
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -59,7 +45,7 @@ export function ResetPasswordForm() {
     }
 
     if (password !== confirm) {
-      setErrorMsg("Passwords do not match.");
+      setErrorMsg(MISMATCH);
       return;
     }
 
@@ -73,7 +59,7 @@ export function ResetPasswordForm() {
     setLoading(false);
 
     if (resetError) {
-      setErrorMsg(resetError.message || "Could not reset password.");
+      setErrorMsg(resetError.message || "Couldn’t reset your password.");
       return;
     }
 
@@ -83,86 +69,77 @@ export function ResetPasswordForm() {
 
   if (!token && !urlError) {
     return (
-      <div className={card}>
-        <AuthBrand />
-        <h1 className={title}>Invalid link</h1>
-        <p className={subtitle}>
-          This password reset page needs a valid token from your email link.
-        </p>
-        <p className={footer}>
-          <Link className={link} href="/forgot-password">
-            Request a new link
-          </Link>
-        </p>
-      </div>
+      <AuthCard
+        eyebrow="Password reset"
+        title="Invalid link"
+        lead="This password reset page needs a valid token from your email link."
+      >
+        <Link className="btn btn-primary mt-6 w-full" href="/forgot-password">
+          Request a new link
+        </Link>
+      </AuthCard>
     );
   }
 
+  const mismatch = errorMsg === MISMATCH;
+
   return (
-    <div className={card}>
-      <AuthBrand />
-      <h1 className={title}>Choose a new password</h1>
-      <p className={subtitle}>
-        Use at least 8 characters. Other sessions will be signed out after reset.
-      </p>
+    <>
+      <AuthCard
+        title="Choose a new password"
+        lead="Use at least 8 characters. Other sessions will be signed out after reset."
+      >
+        <form className={formCls} onSubmit={onSubmit}>
+          <Field id="password" label="New password">
+            <input
+              id="password"
+              className={inputCls}
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              maxLength={128}
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              disabled={loading || !token}
+            />
+          </Field>
 
-      <form className={form} onSubmit={onSubmit}>
-        {errorMsg ? (
-          <div className={error} role="alert">
-            {errorMsg}
-          </div>
-        ) : null}
+          <Field id="confirm" label="Confirm password">
+            <input
+              id="confirm"
+              className={inputCls}
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              maxLength={128}
+              value={confirm}
+              onChange={(ev) => setConfirm(ev.target.value)}
+              disabled={loading || !token}
+              aria-invalid={mismatch ? true : undefined}
+              aria-describedby={mismatch ? "reset-error" : undefined}
+            />
+          </Field>
 
-        <div className={field}>
-          <label className={label} htmlFor="password">
-            New password
-          </label>
-          <input
-            id="password"
-            className={input}
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
+          {errorMsg ? <FormError id="reset-error">{errorMsg}</FormError> : null}
+
+          <button
+            className={submitCls}
+            type="submit"
             disabled={loading || !token}
-          />
-        </div>
+          >
+            {loading ? "Updating…" : "Update password"}
+          </button>
+        </form>
+      </AuthCard>
 
-        <div className={field}>
-          <label className={label} htmlFor="confirm">
-            Confirm password
-          </label>
-          <input
-            id="confirm"
-            className={input}
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-            value={confirm}
-            onChange={(ev) => setConfirm(ev.target.value)}
-            disabled={loading || !token}
-          />
-        </div>
-
-        <button
-          className={submit}
-          type="submit"
-          disabled={loading || !token}
-        >
-          {loading ? "Updating…" : "Update password"}
-        </button>
-      </form>
-
-      <p className={footer}>
-        <Link className={link} href="/login">
+      <p className={footerCls}>
+        <Link className={backLinkCls} href="/login">
+          <ArrowLeft size={14} />
           Back to sign in
         </Link>
       </p>
-    </div>
+    </>
   );
 }

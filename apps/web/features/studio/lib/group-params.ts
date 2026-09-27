@@ -14,7 +14,8 @@ export type ParamSection = {
 };
 
 const UNGROUPED = "Params";
-const COLORS = "Colors";
+/** Visible group title — British spelling (the section id stays `legacy-colors`). */
+const COLORS = "Colours";
 const LINKED = "Linked slots";
 
 function isHidden(field: ParamField): boolean {

@@ -28,8 +28,6 @@ export type CanvasSlot = {
   h: number;
   /** Maps onto finite media via modulo. */
   mediaIndex: number;
-  /** Subtle resting rotation in degrees. */
-  rotate: number;
 };
 
 const SIZE_VARIANTS: CardSize[] = [
@@ -100,7 +98,6 @@ export function generateChunkSlots(cx: number, cy: number): CanvasSlot[] {
       w: size.w,
       h: size.h,
       mediaIndex: Math.floor(seededIn(s + 5, 0, 1_000_000)),
-      rotate: seededIn(s + 7, -2.2, 2.2),
     });
   }
 
@@ -110,10 +107,7 @@ export function generateChunkSlots(cx: number, cy: number): CanvasSlot[] {
 const planeCache = new Map<string, CanvasSlot[]>();
 const MAX_CACHE = 128;
 
-export function generateChunkSlotsCached(
-  cx: number,
-  cy: number,
-): CanvasSlot[] {
+export function generateChunkSlotsCached(cx: number, cy: number): CanvasSlot[] {
   const key = `${cx},${cy}`;
   const hit = planeCache.get(key);
   if (hit) {

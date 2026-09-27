@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 
 import { getPublicTool } from "@/lib/api/tools";
 
@@ -9,11 +8,7 @@ import { resolveRuntimeTarget } from "@/features/studio/lib/resolve-runtime-targ
 import { asParams } from "@/features/studio/lib/version-metadata";
 
 import { PublicToolShell } from "./public-tool-shell";
-
-const centerMsg = "mx-auto max-w-md px-6 py-10 text-left";
-const centerHeading = "mb-2 text-xl tracking-tight";
-const centerBody = "mb-4 leading-relaxed opacity-70";
-const linkMuted = "text-[0.8rem] text-inherit underline opacity-65";
+import { PublicToolLoading, PublicToolMessage } from "./public-tool-state";
 
 /**
  * Load published tool by publicId (M7e). No session cookies.
@@ -26,33 +21,23 @@ export function PublicToolLoader({ publicId }: { publicId: string }) {
   });
 
   if (q.isLoading) {
-    return (
-      <main className={centerMsg}>
-        <p className="m-0 opacity-70">Loading tool…</p>
-      </main>
-    );
+    return <PublicToolLoading label="Loading tool" />;
   }
 
   if (q.isError || !q.data) {
     const msg =
-      q.error instanceof Error ? q.error.message : "Could not load this tool.";
+      q.error instanceof Error ? q.error.message : "Couldn’t load this tool.";
     const notFound =
       /404|not found/i.test(msg) || msg.includes("Get public tool failed (404)");
 
-    return (
-      <main className={centerMsg}>
-        <h1 className={centerHeading}>
-          {notFound ? "Tool not found" : "Could not open tool"}
-        </h1>
-        <p className={centerBody}>
-          {notFound
-            ? "This link may be private, unpublished, or invalid. Ask the creator to make the tool public."
-            : msg}
-        </p>
-        <Link href="/" className={linkMuted}>
-          Back to Aiditr
-        </Link>
-      </main>
+    return notFound ? (
+      <PublicToolMessage
+        eyebrow="404"
+        title="Tool not found."
+        body="This link may be private, unpublished or invalid. Ask the creator to make the tool public."
+      />
+    ) : (
+      <PublicToolMessage eyebrow="Error" title="Couldn’t open this tool." body={msg} />
     );
   }
 
@@ -60,13 +45,11 @@ export function PublicToolLoader({ publicId }: { publicId: string }) {
   const code = tool.version?.code?.trim() ?? "";
   if (!code) {
     return (
-      <main className={centerMsg}>
-        <h1 className={centerHeading}>No runnable source</h1>
-        <p className={centerBody}>This published tool has no code to run.</p>
-        <Link href="/" className={linkMuted}>
-          Back to Aiditr
-        </Link>
-      </main>
+      <PublicToolMessage
+        eyebrow="Unavailable"
+        title="No runnable source."
+        body="This published tool has no code to run."
+      />
     );
   }
 

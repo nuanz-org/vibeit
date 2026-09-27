@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PublicToolLoader } from "@/features/public-tool/components/public-tool-loader";
+import { PublicToolMessage } from "@/features/public-tool/components/public-tool-state";
 
 type PageProps = {
   params: Promise<{ publicId: string }>;
@@ -28,10 +29,11 @@ export default async function PublicToolPage({ params }: PageProps) {
 
   if (!id) {
     return (
-      <main className="mx-auto max-w-[420px] px-6 py-10">
-        <h1 className="text-xl">Tool not found</h1>
-        <p className="opacity-70">Missing public id.</p>
-      </main>
+      <PublicToolMessage
+        eyebrow="404"
+        title="Tool not found."
+        body="This link is missing its public ID."
+      />
     );
   }
 

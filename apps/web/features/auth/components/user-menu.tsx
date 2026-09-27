@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { authClient, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-
-const ease = "ease-[cubic-bezier(0.4,0,0.2,1)]";
 
 function initialsFromUser(name?: string | null, email?: string | null): string {
   const source = (name?.trim() || email?.trim() || "?").trim();
@@ -14,94 +11,51 @@ function initialsFromUser(name?: string | null, email?: string | null): string {
   if (parts.length >= 2) {
     return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
   }
-  if (source.includes("@")) {
-    return source.slice(0, 2).toUpperCase();
-  }
   return source.slice(0, 2).toUpperCase();
 }
 
 export type UserMenuProps = {
   /**
-   * `default` — marketing chrome: name + Sign out.
-   * `avatar` — playground chrome: circular icon → /profile (Brickspace-clean).
+   * `default` — app header: muted "Sign in" when signed out, avatar when in.
+   * `avatar` — playground chrome: avatar only (routes there are auth-gated).
    */
   variant?: "default" | "avatar";
   className?: string;
 };
 
+const avatarCls = cn(
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-full",
+  "border border-border bg-band text-[11.5px] font-medium tracking-[-0.01em] text-fg",
+  "transition-colors duration-[180ms] ease-standard hover:border-fg",
+);
+
+/** Account control. Sign out lives on /profile. */
 export function UserMenu({ variant = "default", className }: UserMenuProps) {
-  const router = useRouter();
   const { data: session, isPending } = useSession();
 
   if (isPending) {
-    if (variant === "avatar") {
-      return (
-        <span
-          className={cn(
-            "inline-flex size-9 shrink-0 animate-pulse rounded-full bg-ink/8",
-            className,
-          )}
-          aria-hidden
-        />
-      );
-    }
-    return <span className="text-sm text-muted">Loading…</span>;
-  }
-
-  if (!session?.user) {
     return (
-      <div className={cn("flex items-center gap-3", className)}>
-        <Link
-          href="/login"
-          className="text-[15px] font-medium tracking-[-0.01em] transition-opacity duration-150 hover:opacity-60"
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/signup"
-          className={`inline-flex h-10 items-center justify-center rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground transition-colors duration-150 ${ease} hover:bg-accent-hover`}
-        >
-          Get Started
-        </Link>
-      </div>
+      <span
+        className={cn(
+          "inline-flex size-8 shrink-0 rounded-full border border-border bg-band",
+          className,
+        )}
+        aria-hidden
+      />
     );
   }
 
-  async function handleSignOut() {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/login");
-          router.refresh();
-        },
-      },
-    });
-  }
-
-  if (variant === "avatar") {
-    const initials = initialsFromUser(session.user.name, session.user.email);
-    const label = session.user.name || session.user.email || "Profile";
-
+  if (!session?.user) {
+    if (variant === "avatar") return null;
     return (
       <Link
-        href="/profile"
+        href="/login"
         className={cn(
-          "inline-flex size-9 shrink-0 items-center justify-center rounded-full",
-          "bg-ink/8 text-[0.72rem] font-medium tracking-[-0.02em] text-fg",
-          "outline outline-1 outline-black/10 dark:outline-white/10",
-          "transition-[transform,background-color,opacity] duration-150",
-          "hover:bg-ink/12 hover:opacity-95",
-          "active:scale-[0.96]",
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-          "motion-reduce:transition-none motion-reduce:active:scale-100",
+          "h-10 items-center rounded-full px-3.5 text-[14px] text-muted transition-colors duration-[180ms] hover:text-fg",
           className,
         )}
-        aria-label={`Profile — ${label}`}
-        title={label}
       >
-        <span className="translate-y-[0.5px] select-none" aria-hidden>
-          {initials}
-        </span>
+        Sign in
       </Link>
     );
   }
@@ -110,35 +64,15 @@ export function UserMenu({ variant = "default", className }: UserMenuProps) {
   const label = session.user.name || session.user.email || "Profile";
 
   return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <Link
-        href="/profile"
-        className={cn(
-          "flex min-h-11 items-center gap-2 rounded-full pr-1",
-          "text-sm text-muted",
-          "transition-opacity duration-150 hover:opacity-70",
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        )}
-        aria-label={`Profile — ${label}`}
-        title={label}
-      >
-        <span
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[0.68rem] font-medium tracking-[-0.02em] text-fg outline outline-1 outline-black/10 dark:outline-white/10"
-          aria-hidden
-        >
-          {initials}
-        </span>
-        <span className="hidden max-w-[10rem] truncate sm:inline">
-          {label}
-        </span>
-      </Link>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        className={`cursor-pointer rounded-full border border-border bg-transparent px-3.5 py-1.5 text-sm font-medium text-foreground transition-colors duration-150 ${ease} hover:bg-[#F8F8F8] dark:hover:bg-secondary`}
-      >
-        Sign out
-      </button>
-    </div>
+    <Link
+      href="/profile"
+      className={cn(avatarCls, "mx-1", className)}
+      aria-label={`Your tools, signed in as ${label}`}
+      title={label}
+    >
+      <span className="select-none" aria-hidden>
+        {initials}
+      </span>
+    </Link>
   );
 }

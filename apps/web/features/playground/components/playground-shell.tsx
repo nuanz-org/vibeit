@@ -12,6 +12,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { PanelLeft, Pencil } from "@/components/icons";
+import { Mark } from "@/components/wordmark";
 import { cn } from "@/lib/utils";
 
 import { playgroundStyles, surfaceEdge } from "../styles";
@@ -22,9 +24,9 @@ const CHAT_COLLAPSED_KEY = "aiditr.playground.chatCollapsed";
  * ANIMATION STORYBOARD — chat panel open / close (desktop)
  *
  *    0ms   user toggles collapse (panel icon or reopen FAB)
- *  0–320ms chat column + gap ease-in-out (0 ↔ open width)
- *  0–280ms chat inner opacity ease-in-out (fade with width)
- *  0–280ms reopen FAB fades/scales in (when collapsed)
+ *  0–240ms chat column eases (0 ↔ open width)
+ *  0–240ms chat inner opacity fades with width
+ *  0–240ms reopen FAB fades/scales in (when collapsed)
  *
  * Inner chat rail stays at the open-track width; the aside clips.
  * Reduced motion: all durations → 0 (instant).
@@ -33,14 +35,13 @@ const CHAT_COLLAPSED_KEY = "aiditr.playground.chatCollapsed";
 /** Fixed desktop chat track (px) — animates cleanly 0 ↔ open. */
 const CHAT_TRACK_CREATE = 360;
 const CHAT_TRACK_STUDIO = 300;
-const CONTROLS_TRACK = 300;
+/** Design language: controls column is a fixed 248px. */
+const CONTROLS_TRACK = 248;
 
 const CHAT_COLLAPSE = {
-  /** Full open/close track + gap duration */
-  durationMs: 320,
+  /** Full open/close track duration (--dur-3) */
+  durationMs: 240,
 };
-
-const COL_GAP_OPEN_PX = 12;
 
 type PlaygroundChatUi = {
   /** Desktop: hide chat column and expand stage. */
@@ -85,45 +86,38 @@ export type PlaygroundShellProps = {
 };
 
 /**
- * Brickspace-class floating shell:
- * nav touches the top; L/R/B gutters float panels on the stage.
+ * Studio frame: 48px top bar, flush columns separated by 1px borders,
+ * dot-grid workspace in the middle.
  *
  * Desktop chat open/close animates aside width + opacity with ease-in-out.
  * Mobile still uses full-width overlays + bottom tabs (no collapse animation).
  */
 const shellClass = cn(
-  "grid h-dvh max-h-dvh overflow-hidden bg-workspace text-fg",
+  "grid h-dvh max-h-dvh overflow-hidden bg-bg text-fg",
   "grid-rows-[auto_minmax(0,1fr)]",
-  // No top gutter — nav bar flushes to top; L/R/B stage shows through
-  "px-3 pb-3 pt-0",
-  "gap-y-3",
-  "[column-gap:var(--pg-col-gap,0.75rem)]",
   // Mobile: stage full width + bottom tabs; side panels become overlays
   "max-[1100px]:grid-cols-1!",
   "max-[1100px]:grid-rows-[auto_minmax(0,1fr)_auto]",
   "max-[1100px]:[grid-template-areas:'header'_'stage'_'tabs']",
-  "max-[1100px]:gap-2 max-[1100px]:px-2 max-[1100px]:pb-2 max-[1100px]:pt-0",
-  "max-[1100px]:[column-gap:0.5rem]",
 );
 
 const headerClass = cn(
-  "z-20 flex min-h-[3.25rem] items-center justify-between gap-4",
-  // Flush top; L/R align with shell gutters (spans all columns)
+  "z-20 flex h-12 items-center justify-between gap-4",
   "[grid-area:header]",
-  // Square top corners against the viewport; soft radius only on bottom
-  "rounded-b-[10px] bg-surface px-4 py-2",
-  surfaceEdge,
+  "border-b border-border bg-bg px-3 sm:px-4",
 );
 
 const sidePanelClass = cn(
-  "flex min-h-0 min-w-0 flex-col overflow-hidden",
-  "rounded-[10px] bg-surface",
-  surfaceEdge,
-  // Mobile overlay panels — inset matches shell gutter
+  "flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface",
+  "min-[1101px]:data-[desktop-collapsed=true]:border-0",
+  // Mobile overlay panels float over the workspace
   "max-[1100px]:fixed max-[1100px]:inset-x-2",
-  "max-[1100px]:top-[calc(3.25rem+0.5rem)]",
-  "max-[1100px]:bottom-[calc(0.5rem+3.25rem+0.5rem)]",
+  "max-[1100px]:top-[calc(3rem+0.5rem)]",
+  "max-[1100px]:bottom-[calc(0.5rem+3rem+0.5rem)]",
   "max-[1100px]:z-20",
+  "max-[1100px]:rounded-panel max-[1100px]:shadow-panel",
+  surfaceEdge,
+  "min-[1101px]:border-y-0",
   "max-[1100px]:data-[mobile-hidden=true]:hidden",
 );
 
@@ -134,99 +128,47 @@ const sidePanelClass = cn(
 const chatTrackInnerClass = cn(
   "flex min-h-0 min-w-0 flex-1 flex-col",
   "min-[1101px]:h-full min-[1101px]:w-[var(--pg-chat-track)] min-[1101px]:shrink-0",
-  "min-[1101px]:transition-opacity min-[1101px]:duration-[280ms] min-[1101px]:ease-in-out",
-  "motion-reduce:transition-none!",
+  "min-[1101px]:transition-opacity min-[1101px]:duration-ui min-[1101px]:ease-ui",
 );
 
+/** Segmented control option (light thumb) for mobile panel tabs. */
 const mobileTabClass = cn(
-  "min-h-11 flex-1 cursor-pointer rounded-[10px] border-0 bg-transparent",
-  "text-[0.82rem] font-medium text-muted [font:inherit]",
-  "transition-[background-color,color] duration-ui ease-ui",
-  "data-[active=true]:bg-ink/8",
-  "data-[active=true]:text-fg",
-  "motion-reduce:transition-none",
+  "h-9 flex-1 cursor-pointer rounded-full border border-transparent bg-transparent",
+  "text-[13px] font-medium text-muted",
+  "transition-[background-color,border-color,color] duration-ui ease-ui",
+  "data-[active=true]:border-border data-[active=true]:bg-surface",
+  "data-[active=true]:text-fg data-[active=true]:shadow-knob",
 );
 
-/** Quiet icon control — collapse / reopen chat (Brik-class). */
+/** Quiet icon control — collapse / reopen chat, edit title. */
 const iconBtnClass = cn(
   "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center",
-  "rounded-[9px] border-0 bg-transparent p-0 text-muted [font:inherit]",
-  "transition-[background-color,color,transform] duration-ui ease-ui",
-  "hover:bg-ink/6 hover:text-fg",
-  "active:scale-[0.96]",
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-  "motion-reduce:transition-none motion-reduce:active:scale-100",
+  "rounded-full border-0 bg-transparent p-0 text-muted",
+  "transition-[background-color,color,transform] duration-fast ease-ui",
+  "hover:bg-band hover:text-fg",
+  "active:scale-[0.985]",
+  "motion-reduce:active:scale-100",
 );
 
 /** Floating reopen control on stage edge when chat is docked away. */
 const reopenFabClass = cn(
-  "pointer-events-auto absolute top-3 z-[6] hidden size-9",
-  "cursor-pointer items-center justify-center rounded-[10px]",
-  "border-0 bg-surface text-muted [font:inherit]",
-  surfaceEdge,
-  "transition-[background-color,color,transform,box-shadow,opacity] duration-ui ease-ui",
-  "hover:bg-band hover:text-fg",
-  "active:scale-[0.96]",
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-  "motion-reduce:transition-none motion-reduce:active:scale-100",
+  "pointer-events-auto absolute top-3 z-[6] hidden size-8",
+  "cursor-pointer items-center justify-center rounded-full",
+  "border border-border bg-surface text-muted",
+  "transition-[border-color,color,transform] duration-fast ease-ui",
+  "hover:border-fg hover:text-fg",
+  "active:scale-[0.985]",
+  "motion-reduce:active:scale-100",
   // Desktop only — mobile uses bottom tabs
   "min-[1101px]:inline-flex",
-  // Enter: fade + slight scale with ease-in-out
-  "min-[1101px]:animate-[pg-chat-fab-in_280ms_ease-in-out_both]",
-  "motion-reduce:animate-none!",
+  "min-[1101px]:animate-in min-[1101px]:fade-in min-[1101px]:duration-ui",
 );
-
-function EditTitleIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M11.2 2.35a1.35 1.35 0 0 1 1.91 1.91L5.4 12 2.5 12.75l.75-2.9 7.95-7.5Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.85 3.7 11.55 5.4"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-/** Left-dock panel icon (Brik Chat Console collapse / reopen). */
-function PanelDockIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <rect
-        x="1.75"
-        y="2.25"
-        width="12.5"
-        height="11.5"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <path
-        d="M6 2.25V13.75"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 /**
  * Collapse control for the chat panel title row (right of "CHAT").
  * Renders nothing outside a PlaygroundShell, or on mobile breakpoints.
  */
-export function ChatPanelCollapseButton({
-  className,
-}: {
-  className?: string;
-}) {
+export function ChatPanelCollapseButton({ className }: { className?: string }) {
   const ui = usePlaygroundChatUi();
   if (!ui) return null;
 
@@ -239,8 +181,32 @@ export function ChatPanelCollapseButton({
       aria-controls="playground-chat-panel"
       title="Close chat"
     >
-      <PanelDockIcon />
+      <PanelLeft />
     </button>
+  );
+}
+
+/** Corner registration marks 6px outside a canvas frame (landing `.frame-marks`). */
+export function RegistrationMarks() {
+  const corners = [
+    "-top-1.5 -left-1.5 border-t border-l",
+    "-top-1.5 -right-1.5 border-t border-r",
+    "-bottom-1.5 -left-1.5 border-b border-l",
+    "-bottom-1.5 -right-1.5 border-b border-r",
+  ];
+  return (
+    <>
+      {corners.map((pos) => (
+        <span
+          key={pos}
+          className={cn(
+            "pointer-events-none absolute size-[9px] border-muted opacity-55",
+            pos,
+          )}
+          aria-hidden
+        />
+      ))}
+    </>
   );
 }
 
@@ -324,7 +290,7 @@ export function PlaygroundShell({
   chat,
   stage,
   controls,
-  brandHref = "/",
+  brandHref = "/gallery",
   panelOrder = "chat-left",
 }: PlaygroundShellProps) {
   const hasControls = controls != null;
@@ -335,9 +301,7 @@ export function PlaygroundShell({
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [chatColPx, setChatColPx] = useState(CHAT_TRACK_CREATE);
-  const [colGapPx, setColGapPx] = useState(COL_GAP_OPEN_PX);
   const chatColRef = useRef(CHAT_TRACK_CREATE);
-  const colGapRef = useRef(COL_GAP_OPEN_PX);
   const skipChatMotion = useRef(true);
 
   useEffect(() => {
@@ -389,14 +353,12 @@ export function PlaygroundShell({
     return {
       gridTemplateAreas: areas,
       ["--pg-chat-track" as string]: `${chatTrackPx}px`,
-      ["--pg-col-gap" as string]: `${colGapPx}px`,
       gridTemplateColumns: cols,
     } as CSSProperties;
-  }, [areas, chatColPx, chatTrackPx, colGapPx, controlsLeft, hasControls]);
+  }, [areas, chatColPx, chatTrackPx, controlsLeft, hasControls]);
 
   useEffect(() => {
     const colTo = chatCollapsed ? 0 : chatTrackPx;
-    const gapTo = chatCollapsed ? 0 : COL_GAP_OPEN_PX;
     const instant = skipChatMotion.current || reduceMotion;
     skipChatMotion.current = false;
 
@@ -404,14 +366,9 @@ export function PlaygroundShell({
       chatColRef.current = v;
       setChatColPx(v);
     };
-    const setGap = (v: number) => {
-      colGapRef.current = v;
-      setColGapPx(v);
-    };
 
     if (instant) {
       setCol(colTo);
-      setGap(gapTo);
       return;
     }
 
@@ -421,36 +378,15 @@ export function PlaygroundShell({
       CHAT_COLLAPSE.durationMs,
       setCol,
     );
-    const gapAnim = animateLength(
-      colGapRef.current,
-      gapTo,
-      CHAT_COLLAPSE.durationMs,
-      setGap,
-    );
-
-    return () => {
-      colAnim.stop();
-      gapAnim.stop();
-    };
+    return () => colAnim.stop();
   }, [chatCollapsed, chatTrackPx, reduceMotion]);
 
   return (
     <PlaygroundChatUiContext.Provider value={chatUi}>
-      {/* FAB enter keyframes — scoped once per shell mount */}
       <style>{`
-        @keyframes pg-chat-fab-in {
-          from { opacity: 0; transform: scale(0.92); }
-          to { opacity: 1; transform: scale(1); }
-        }
         @media (min-width: 1101px) {
           [data-desktop-collapsed="true"] {
             pointer-events: none;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          @keyframes pg-chat-fab-in {
-            from { opacity: 1; transform: none; }
-            to { opacity: 1; transform: none; }
           }
         }
       `}</style>
@@ -465,23 +401,15 @@ export function PlaygroundShell({
           <div className="flex min-w-0 shrink items-center gap-1.5">
             <Link
               href={brandHref}
-              className={cn(
-                "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]",
-                "transition-opacity duration-fast ease-snap hover:opacity-70",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                "active:scale-[0.96] motion-reduce:active:scale-100",
-              )}
-              aria-label="Aiditr home"
+              className="wm-link inline-flex size-8 shrink-0 items-center justify-center rounded-[8px]"
+              aria-label="Aiditr gallery"
             >
-              <span
-                className="inline-block size-[1.15rem] shrink-0 rounded-[3px] bg-primary"
-                aria-hidden
-              />
+              <Mark />
             </Link>
             {title ? (
               <div className="inline-flex min-w-0 max-w-full items-center gap-0">
                 <span
-                  className="min-w-0 whitespace-nowrap text-[0.95rem] font-medium tracking-[-0.02em] text-fg"
+                  className="ml-1 min-w-0 whitespace-nowrap text-[13.5px] font-medium tracking-[-0.01em] text-fg"
                   title={title}
                 >
                   {headerTitleLabel(title)}
@@ -490,22 +418,11 @@ export function PlaygroundShell({
                   <button
                     type="button"
                     onClick={onEditTitle}
-                    className={cn(
-                      "inline-flex size-8 shrink-0 items-center justify-center rounded-[9px]",
-                      "text-muted",
-                      "transition-[background-color,color,transform] duration-ui ease-ui",
-                      "hover:bg-ink/6 hover:text-fg",
-                      "active:scale-[0.96]",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                      "motion-reduce:transition-none motion-reduce:active:scale-100",
-                    )}
+                    className={iconBtnClass}
                     aria-label={editTitleLabel}
                     title={editTitleLabel}
                   >
-                    {/* Optical nudge: pencil tip reads slightly high when pure-centered */}
-                    <span className="translate-y-px">
-                      <EditTitleIcon />
-                    </span>
+                    <Pencil size={14} />
                   </button>
                 ) : null}
               </div>
@@ -529,6 +446,7 @@ export function PlaygroundShell({
           id={controlsLeft ? undefined : "playground-chat-panel"}
           className={cn(
             sidePanelClass,
+            "min-[1101px]:border-l-0",
             controlsLeft ? "[grid-area:controls]" : "[grid-area:chat]",
           )}
           data-desktop-collapsed={
@@ -540,9 +458,7 @@ export function PlaygroundShell({
               : "false"
           }
           aria-label={controlsLeft ? "Controls" : "Chat"}
-          aria-hidden={
-            !controlsLeft && chatDesktopCollapsed ? true : undefined
-          }
+          aria-hidden={!controlsLeft && chatDesktopCollapsed ? true : undefined}
         >
           {controlsLeft ? (
             controls
@@ -558,7 +474,7 @@ export function PlaygroundShell({
 
         <main
           className={cn(
-            "relative flex min-h-0 min-w-0 flex-col bg-transparent",
+            "workspace-grid relative flex min-h-0 min-w-0 flex-col",
             "[grid-area:stage]",
           )}
           aria-label="Preview"
@@ -566,15 +482,12 @@ export function PlaygroundShell({
           {chatCollapsed ? (
             <button
               type="button"
-              className={cn(
-                reopenFabClass,
-                chatOnLeft ? "left-3" : "right-3",
-              )}
+              className={cn(reopenFabClass, chatOnLeft ? "left-3" : "right-3")}
               onClick={() => setCollapsed(false)}
               aria-label="Open chat panel"
               title="Open chat"
             >
-              <PanelDockIcon />
+              <PanelLeft />
             </button>
           ) : null}
           {stage}
@@ -585,7 +498,7 @@ export function PlaygroundShell({
             id={controlsLeft ? "playground-chat-panel" : undefined}
             className={cn(
               sidePanelClass,
-              "overflow-auto",
+              "overflow-auto min-[1101px]:border-r-0",
               controlsLeft ? "[grid-area:chat]" : "[grid-area:controls]",
             )}
             data-desktop-collapsed={
@@ -616,9 +529,8 @@ export function PlaygroundShell({
 
         <div
           className={cn(
-            "hidden gap-[0.35rem] rounded-[10px]",
-            "bg-surface p-[0.4rem]",
-            surfaceEdge,
+            "m-2 mt-0 hidden gap-1 rounded-full border border-border",
+            "bg-workspace p-[3px]",
             "[grid-area:tabs]",
             "max-[1100px]:flex",
           )}

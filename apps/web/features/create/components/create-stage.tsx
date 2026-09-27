@@ -1,50 +1,17 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import React from "react";
-
+import { Alert, Check, ImageIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-/* ─────────────────────────────────────────────────────────
- * ANIMATION STORYBOARD — Create empty stage
- *
- * Idle
- *    0ms   soft frame sits on stage
- *  600ms   ambient glow breathes (loop)
- *
- * Generating
- *    0ms   frame morphs larger + tighter radius
- *  120ms   phase rail fades in
- *  200ms+  active phase dot pulses
- *
- * Success / clarify
- *    0ms   title cross-fades; frame settles
- * ───────────────────────────────────────────────────────── */
-
-const SPEED = 1;
-
-const SURFACE = {
-  idleW: 288,
-  idleH: 208,
-  genW: 320,
-  genH: 240,
-  idleRadius: 16,
-  genRadius: 16,
-  spring: {
-    type: "spring" as const,
-    stiffness: 420 / SPEED,
-    damping: 38,
-    mass: 0.75,
-  },
-};
-
-const DOT = {
-  spring: {
-    type: "spring" as const,
-    stiffness: 500 / SPEED,
-    damping: 28,
-  },
-};
+/*
+ * Create empty stage — the derived empty-state recipe (design-language §3.21)
+ * on the workspace dot grid: a dashed slot awaiting output, a t-label
+ * eyebrow, one declarative line, one muted sentence. While building, the
+ * steps read as a mono flow (Plan → Code → Validate) under a live-dot
+ * "Building" label. Each mode swap re-mounts and rises in with panel-in (240ms).
+ * No springs, no glow, no accent fills — the composer's send is the one
+ * accent on screen.
+ */
 
 const PHASES = [
   { id: "plan", label: "Plan" },
@@ -75,167 +42,114 @@ function phaseIndex(phase: string | null | undefined): number {
 }
 
 export function CreateStage({ mode, phase }: CreateStageProps) {
-  const reduce = useReducedMotion();
   const generating = mode === "generating";
   const active = phaseIndex(phase);
-
   const copy = copyFor(mode);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center p-4">
-      <motion.div
-        className="relative flex max-w-[min(100%,360px)] flex-col items-stretch justify-center overflow-hidden rounded-[10px] bg-surface ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
-        layout
-        initial={false}
-        animate={{
-          width: generating ? SURFACE.genW : SURFACE.idleW,
-          height: generating ? SURFACE.genH : SURFACE.idleH,
-          borderRadius: generating ? SURFACE.genRadius : SURFACE.idleRadius,
-        }}
-        transition={reduce ? { duration: 0 } : SURFACE.spring}
+      <div
+        key={mode + (phase ?? "")}
+        className="flex max-w-[30rem] animate-panel-in flex-col items-center text-center motion-reduce:animate-none"
       >
-        {/* Ambient accent dot — layoutId continuity like Morph Surface */}
-        <motion.div
-          layoutId="create-surface-dot"
-          className="absolute z-[2] size-[0.55rem] rounded-full bg-accent"
-          transition={reduce ? { duration: 0 } : DOT.spring}
-          style={{
-            top: generating ? 18 : 22,
-            left: generating ? 18 : 22,
-          }}
-        />
-
-        {!reduce && generating ? (
-          <motion.div
-            className="pointer-events-none absolute -inset-[20%] z-0 bg-[radial-gradient(circle_at_30%_30%,color-mix(in_oklch,var(--accent)_18%,transparent),transparent_55%)]"
-            aria-hidden
-            animate={{ opacity: [0.35, 0.7, 0.35], scale: [1, 1.04, 1] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ) : null}
-
-        <div className="relative z-[1] flex h-full flex-col items-center justify-center gap-4 px-6 pt-8 pb-6 text-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode + (phase ?? "")}
-              className="flex max-w-[26ch] flex-col gap-[0.4rem]"
-              initial={reduce ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -4 }}
-              transition={{
-                type: "spring",
-                stiffness: 480 / SPEED,
-                damping: 36,
-              }}
-            >
-              <p className="m-0 text-[0.95rem] font-medium tracking-[-0.02em] text-fg">
-                {copy.title}
-              </p>
-              <p className="m-0 text-[0.82rem] leading-[1.45] text-muted">
-                {copy.hint}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {generating ? (
-              <motion.ol
-                key="phases"
-                className="m-0 flex list-none items-center justify-center gap-3 p-0"
-                initial={reduce ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: 4 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400 / SPEED,
-                  damping: 34,
-                  delay: reduce ? 0 : 0.08,
-                }}
-                aria-label="Generation phases"
-              >
-                {PHASES.map((p, i) => {
-                  const state =
-                    i < active ? "done" : i === active ? "active" : "todo";
-                  return (
-                    <li
-                      key={p.id}
-                      className="group inline-flex items-center gap-[0.35rem]"
-                      data-state={state}
-                    >
-                      <span
-                        className={cn(
-                          "grid size-4 place-items-center rounded-full border-[1.5px] border-fg/16 bg-transparent text-background",
-                          "group-data-[state=done]:border-fg group-data-[state=done]:bg-ink",
-                          "group-data-[state=active]:border-accent-text",
-                        )}
-                        aria-hidden
-                      >
-                        {state === "done" ? (
-                          <CheckMini />
-                        ) : state === "active" ? (
-                          <span className="block size-[0.35rem] animate-phase-pulse rounded-full bg-accent motion-reduce:animate-none" />
-                        ) : null}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-[0.72rem] font-[550] text-muted",
-                          "group-data-[state=active]:text-fg group-data-[state=done]:text-fg",
-                        )}
-                      >
-                        {p.label}
-                      </span>
-                    </li>
-                  );
-                })}
-              </motion.ol>
-            ) : null}
-          </AnimatePresence>
+        <div
+          aria-hidden="true"
+          className="mb-7 grid h-[132px] w-[106px] place-items-center rounded-[2px] border border-dashed border-border-strong text-muted"
+        >
+          {mode === "opening" ? (
+            <Check size={16} />
+          ) : mode === "failed" ? (
+            <Alert size={16} />
+          ) : (
+            <ImageIcon size={16} />
+          )}
         </div>
-      </motion.div>
+
+        <p className="t-label m-0 flex items-center gap-2 text-muted">
+          {generating ? (
+            <span
+              className="live-dot size-1.5 rounded-full bg-accent-text"
+              aria-hidden="true"
+            />
+          ) : null}
+          {copy.eyebrow}
+        </p>
+        <p className="t-h3 m-0 mt-3 text-balance text-fg">{copy.title}</p>
+        <p className="m-0 mt-2 max-w-[34ch] text-[15px] leading-[1.55] text-pretty text-muted">
+          {copy.hint}
+        </p>
+
+        {generating ? (
+          <ol
+            className="t-label m-0 mt-6 flex list-none flex-wrap items-center justify-center gap-x-3 gap-y-2 p-0 text-muted"
+            aria-label="Generation phases"
+          >
+            {PHASES.map((p, i) => {
+              const state =
+                i < active ? "done" : i === active ? "active" : "todo";
+              return (
+                <li key={p.id} className="inline-flex items-center gap-3">
+                  {i > 0 ? (
+                    <span aria-hidden="true" className="text-muted">
+                      →
+                    </span>
+                  ) : null}
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 transition-colors duration-fast ease-standard",
+                      state === "todo" ? "text-muted" : "text-fg",
+                    )}
+                    data-state={state}
+                    aria-current={state === "active" ? "step" : undefined}
+                  >
+                    {state === "done" ? <Check size={11} /> : null}
+                    {p.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-function copyFor(mode: CreateStageMode): { title: string; hint: string } {
+function copyFor(mode: CreateStageMode): {
+  eyebrow: string;
+  title: string;
+  hint: string;
+} {
   switch (mode) {
     case "generating":
       return {
-        title: "Building your tool…",
+        eyebrow: "Building",
+        title: "Building your tool.",
         hint: "Plan → code → validate. Hang tight.",
       };
     case "clarify":
       return {
-        title: "Answer a few questions",
+        eyebrow: "Plan with me",
+        title: "Answer a few questions.",
         hint: "A clearer brief makes a better tool.",
       };
     case "opening":
       return {
+        eyebrow: "Tool ready",
         title: "Opening Studio…",
         hint: "Your live canvas is ready.",
       };
     case "failed":
       return {
-        title: "Something went wrong",
-        hint: "Check chat for details, or try a new vision.",
+        eyebrow: "Build failed",
+        title: "Something went wrong.",
+        hint: "Check the chat for details, or try a new vision.",
       };
     default:
       return {
-        title: "Your tool appears here",
-        hint: "Describe a vision in chat — params, export, and share come free.",
+        eyebrow: "New tool",
+        title: "Your tool appears here.",
+        hint: "Describe a vision in chat. Controls, export and sharing come free.",
       };
   }
-}
-
-function CheckMini() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M5 13L9 17L19 7"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }

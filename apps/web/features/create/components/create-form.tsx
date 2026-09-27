@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { Alert, Close } from "@/components/icons";
 import { ClarifyPanel } from "@/features/create/components/clarify-panel";
 import { JobProgress } from "@/features/create/components/job-progress";
 import {
@@ -31,6 +32,29 @@ const DEFAULT_VISION =
   "A kinetic 9:16 social frame with a bold headline, purple accent pulse, and a logo slot";
 
 const MAX_INSPIRATION = 4;
+
+/* Landing controls (ui/controls.tsx §3.9 / §3.13): label, field, helper. */
+const labelCls =
+  "text-[12.5px] font-medium leading-none tracking-[-0.005em] text-fg";
+
+const fieldCls =
+  "block w-full rounded-[8px] border border-border bg-bg px-3 text-[13.5px] leading-[1.35] text-fg transition-colors duration-fast ease-standard placeholder:text-muted hover:border-border-strong focus:border-fg focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45";
+
+const helperCls = "m-0 text-[12.5px] leading-[1.5] text-muted";
+
+/** Native file input dressed as an outline pill. */
+const fileCls =
+  "max-w-full text-[12.5px] text-muted file:mr-3 file:h-8 file:cursor-pointer file:rounded-full file:border file:border-border-strong file:bg-bg file:px-3 file:text-[12.5px] file:font-medium file:text-fg file:transition-colors file:duration-fast file:ease-standard hover:file:border-fg disabled:cursor-not-allowed disabled:opacity-45";
+
+/** Error line: ink text with an alert icon — no red fills. */
+function ErrorLine({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="m-0 flex items-start gap-1.5 text-[12.5px] leading-[1.45] text-fg">
+      <Alert size={14} className="mt-px shrink-0 text-danger" />
+      <span className="min-w-0">{children}</span>
+    </p>
+  );
+}
 
 /**
  * Create form: vision + optional inspiration images → job → poll → Studio.
@@ -207,23 +231,23 @@ export function CreateForm() {
   return (
     <div className="flex flex-col gap-4">
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-[0.9rem] font-medium">
-          Vision
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Vision</span>
           <textarea
-            className="min-h-[120px] w-full resize-y rounded-[10px] border border-foreground/14 bg-transparent px-[0.85rem] py-3 font-[inherit] leading-[1.45] text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-foreground/25"
+            className={cn(fieldCls, "min-h-[120px] resize-y py-2")}
             value={visionText}
             onChange={(e) => setVisionText(e.target.value)}
             rows={5}
             required
             disabled={pending || generating || isAwaitingClarify}
-            placeholder="Describe the living design tool you want…"
+            placeholder="Describe a tool…"
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-[0.9rem] font-medium">
-          Model
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Model</span>
           <select
-            className="w-full max-w-[28rem] rounded-[10px] border border-foreground/14 bg-transparent px-3 py-[0.6rem] font-[inherit] text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-foreground/25 disabled:cursor-not-allowed disabled:opacity-55"
+            className={cn(fieldCls, "h-9 max-w-[28rem] cursor-pointer pointer-coarse:h-11")}
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
             disabled={pending || generating || modelOptions.length === 0}
@@ -239,21 +263,17 @@ export function CreateForm() {
               ))
             )}
           </select>
-          <span className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
-            OpenRouter model for plan + codegen + repair. Options come from
-            server config (LLM_MODELS_ALLOWED).
+          <span className={helperCls}>
+            OpenRouter model for plan, codegen and repair. Options come from
+            server config (<span className="t-mono text-[11.5px]">LLM_MODELS_ALLOWED</span>).
           </span>
-          {modelsError ? (
-            <span className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
-              {modelsError}
-            </span>
-          ) : null}
+          {modelsError ? <ErrorLine>{modelsError}</ErrorLine> : null}
         </label>
 
-        <div className="flex flex-col gap-1.5 text-[0.9rem] font-medium">
-          <span>Inspiration images (optional)</span>
+        <div className="flex flex-col gap-1.5">
+          <span className={labelCls}>Inspiration images (optional)</span>
           <input
-            className="max-w-full font-[inherit] text-sm"
+            className={fileCls}
             type="file"
             accept="image/png,image/jpeg,image/webp"
             multiple
@@ -277,13 +297,13 @@ export function CreateForm() {
           />
           {inspirationPreviews.length > 0 ? (
             <ul
-              className="m-0 flex list-none flex-wrap gap-[0.45rem] p-0"
+              className="m-0 flex list-none flex-wrap gap-1.5 p-0"
               aria-label="Inspiration images"
             >
               {inspirationPreviews.map((p, index) => (
                 <li
                   key={p.key}
-                  className="relative size-14 shrink-0 overflow-hidden rounded-[10px] border border-foreground/12"
+                  className="relative size-14 shrink-0 overflow-hidden rounded-[6px] border border-border bg-workspace"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -291,12 +311,15 @@ export function CreateForm() {
                     alt={p.name}
                     className="block size-full object-cover"
                   />
-                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-medium leading-[1.1rem] text-white">
+                  <span
+                    className="t-mono pointer-events-none absolute bottom-0.5 left-0.5 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-black/65 px-1 text-[10px] leading-none text-white"
+                    aria-hidden="true"
+                  >
                     {index + 1}
                   </span>
                   <button
                     type="button"
-                    className="absolute top-0.5 right-0.5 grid size-[1.15rem] cursor-pointer place-items-center rounded-full border-none bg-black/55 p-0 text-[0.85rem] leading-none text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    className="absolute top-0.5 right-0.5 grid size-5 cursor-pointer place-items-center rounded-full bg-black/65 text-white transition-opacity duration-fast ease-standard disabled:cursor-not-allowed disabled:opacity-45"
                     disabled={pending || generating || isAwaitingClarify}
                     aria-label={`Remove ${p.name}`}
                     onClick={() =>
@@ -305,54 +328,68 @@ export function CreateForm() {
                       )
                     }
                   >
-                    ×
+                    <Close size={10} />
                   </button>
                 </li>
               ))}
             </ul>
           ) : null}
-          <span className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
-            Up to {MAX_INSPIRATION} PNG/JPEG/WebP — multi-select or add more.
-            Style is interpreted only — never copied 1:1.
-            {inspirationFiles.length
-              ? ` · ${inspirationFiles.length} selected`
-              : null}
+          <span className={helperCls}>
+            Up to {MAX_INSPIRATION} PNG, JPEG or WebP images. Pick several at
+            once or add more. Style is interpreted, never copied 1:1.
+            {inspirationFiles.length ? (
+              <>
+                {" · "}
+                <span className="t-mono text-[11.5px]">
+                  {inspirationFiles.length}
+                </span>{" "}
+                selected
+              </>
+            ) : null}
           </span>
         </div>
 
-        <label className="flex cursor-pointer items-start gap-[0.55rem] text-[0.9rem] font-medium leading-[1.4]">
+        <label className="flex cursor-pointer items-start gap-2.5">
           <input
             type="checkbox"
-            className="mt-[0.2rem] size-4 shrink-0"
+            className="mt-px size-4 shrink-0 cursor-pointer accent-fg disabled:cursor-not-allowed"
             checked={planMode}
             disabled={pending || generating || isAwaitingClarify || Boolean(jobId)}
             onChange={(e) => setPlanMode(e.target.checked)}
           />
-          <span>
-            Plan with me
-            <span className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
-              {" "}
-              — short clarify questions first; “All options” becomes Studio enum
-              controls
+          <span className="flex flex-col gap-1">
+            <span className={labelCls}>Plan with me</span>
+            <span className={helperCls}>
+              Short clarifying questions first. “All options” becomes a
+              Studio enum control.
             </span>
           </span>
         </label>
 
         {quota ? (
-          <p className="text-[0.8rem] opacity-70">
-            Creates today: {quota.createsUsed}/{quota.createsLimit}
-            {quota.resetsAt ? ` · resets ${quota.resetsAt}` : null}
+          <p className={helperCls}>
+            Creates today:{" "}
+            <span className="t-mono text-[11.5px] text-fg">
+              {quota.createsUsed}/{quota.createsLimit}
+            </span>
+            {quota.resetsAt ? (
+              <>
+                {" · resets "}
+                <span className="t-mono text-[11.5px]">{quota.resetsAt}</span>
+              </>
+            ) : null}
           </p>
         ) : (
-          <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
-            One create uses your daily generation quota (default 10/day).
+          <p className={helperCls}>
+            One create uses your daily generation quota (default{" "}
+            <span className="t-mono text-[11.5px]">10</span> a day).
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-[0.65rem]">
+        <div className="flex flex-col gap-3 xs:flex-row xs:items-center">
           <button
             type="submit"
-            className="h-12 cursor-pointer rounded-full border-none bg-primary px-6 font-[inherit] text-[15px] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn btn-primary"
             disabled={
               pending ||
               generating ||
@@ -371,22 +408,14 @@ export function CreateForm() {
                     : "Generate tool"}
           </button>
           {jobId ? (
-            <button
-              type="button"
-              className={cn(
-                "h-12 cursor-pointer rounded-full border border-border bg-transparent px-6 font-[inherit] text-[15px] font-medium text-inherit transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#F8F8F8] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-secondary",
-              )}
-              onClick={reset}
-            >
+            <button type="button" className="btn btn-outline" onClick={reset}>
               New vision
             </button>
           ) : null}
         </div>
       </form>
 
-      {submitError ? (
-        <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">{submitError}</p>
-      ) : null}
+      {submitError ? <ErrorLine>{submitError}</ErrorLine> : null}
 
       {jobId && !isAwaitingClarify ? (
         <JobProgress status={status} jobId={jobId} />
@@ -401,39 +430,41 @@ export function CreateForm() {
       ) : null}
 
       {jobQuery.isError ? (
-        <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
+        <ErrorLine>
           {jobQuery.error instanceof Error
             ? jobQuery.error.message
             : "Failed to poll job status"}
-        </p>
+        </ErrorLine>
       ) : null}
 
       {isSuccess && resultQuery.isLoading ? (
-        <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
+        <p className="t-label m-0 flex items-center gap-2 text-muted">
+          <span
+            className="live-dot size-1.5 rounded-full bg-accent-text"
+            aria-hidden="true"
+          />
           Opening Studio…
         </p>
       ) : null}
 
       {isSuccess && resultQuery.isError ? (
-        <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
+        <ErrorLine>
           Job succeeded but result could not be loaded.{" "}
           {resultQuery.error instanceof Error
             ? resultQuery.error.message
             : null}
-        </p>
+        </ErrorLine>
       ) : null}
 
       {isFailed ? (
-        <div>
-          <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
-            {status?.errorMessage || "Generation failed"}
-          </p>
+        <div className="flex flex-col gap-1.5">
+          <ErrorLine>{status?.errorMessage || "Generation failed"}</ErrorLine>
           {salvageToolId ? (
-            <p className="m-0 text-[0.85rem] leading-[1.45] opacity-65">
+            <p className={helperCls}>
               A salvage draft was saved.{" "}
               <Link
                 href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                className="font-medium text-inherit underline"
+                className="link-draw font-medium text-accent-text"
               >
                 Open draft in Studio
               </Link>

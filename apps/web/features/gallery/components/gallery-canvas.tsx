@@ -8,7 +8,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { LayoutGroup, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 
 import type { GalleryCard as GalleryCardType } from "@/lib/api/gallery";
 import { cn } from "@/lib/utils";
@@ -41,8 +41,9 @@ type Cam = {
 };
 
 /**
- * Infinite 2D gallery canvas — Codrops-style chunk streaming + inertia pan.
- * Click a card to open it with a shared-element Motion storyboard.
+ * Infinite 2D gallery canvas — chunk streaming + inertia pan on the
+ * dot-grid workspace (the grid pans with the world, like a design tool).
+ * Click a tile to open its detail dialog.
  */
 export function GalleryCanvas({
   items,
@@ -99,6 +100,9 @@ export function GalleryCanvas({
     if (!el) return;
     const { x, y } = camRef.current;
     el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    // .workspace-grid dots sit at 8px offsets on a 16px pitch.
+    const vp = viewportRef.current;
+    if (vp) vp.style.backgroundPosition = `${x + 8}px ${y + 8}px`;
   }, []);
 
   const syncChunks = useCallback(() => {
@@ -121,8 +125,12 @@ export function GalleryCanvas({
       if (!alive) return;
       const c = camRef.current;
       if (draggingRef.current) {
-        c.vx = c.vx * (1 - CANVAS_PHYSICS.velocityLerp) + c.tx * CANVAS_PHYSICS.velocityLerp;
-        c.vy = c.vy * (1 - CANVAS_PHYSICS.velocityLerp) + c.ty * CANVAS_PHYSICS.velocityLerp;
+        c.vx =
+          c.vx * (1 - CANVAS_PHYSICS.velocityLerp) +
+          c.tx * CANVAS_PHYSICS.velocityLerp;
+        c.vy =
+          c.vy * (1 - CANVAS_PHYSICS.velocityLerp) +
+          c.ty * CANVAS_PHYSICS.velocityLerp;
       } else {
         c.vx *= CANVAS_PHYSICS.velocityDecay;
         c.vy *= CANVAS_PHYSICS.velocityDecay;
@@ -283,62 +291,51 @@ export function GalleryCanvas({
   const handleClose = useCallback(() => setSelected(null), []);
 
   const selectedCard = selected
-    ? itemById.get(selected.publicId) ?? null
+    ? (itemById.get(selected.publicId) ?? null)
     : null;
 
   return (
-    <LayoutGroup id="gallery-canvas">
-      <div className={cn("relative min-h-0 flex-1", className)}>
+    <div className={cn("relative min-h-0 flex-1", className)}>
+      <div
+        ref={viewportRef}
+        tabIndex={0}
+        role="application"
+        aria-label="Infinite gallery canvas. Drag to pan, click a card for tool details."
+        className={cn(
+          "workspace-grid absolute inset-0 touch-none overflow-hidden rounded-none",
+          "focus-visible:outline-offset-[-2px]",
+          isDragging ? "cursor-grabbing" : "cursor-grab",
+          selected && "cursor-default",
+        )}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
         <div
-          ref={viewportRef}
-          tabIndex={0}
-          role="application"
-          aria-label="Infinite gallery canvas. Drag to pan, click a card for tool details."
-          className={cn(
-            "absolute inset-0 touch-none overflow-hidden outline-none",
-            "bg-workspace",
-            isDragging ? "cursor-grabbing" : "cursor-grab",
-            selected && "cursor-default",
-          )}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
+          ref={worldRef}
+          className="absolute left-0 top-0 will-change-transform"
+          style={{ width: 1, height: 1 }}
         >
-          {/* Soft vignette — depth without decorative grid */}
-          <div
-            className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(120%_90%_at_50%_40%,transparent_40%,color-mix(in_oklch,var(--background)_55%,transparent)_100%)]"
-            aria-hidden
-          />
-
-          <div
-            ref={worldRef}
-            className="absolute left-0 top-0 will-change-transform"
-            style={{ width: 1, height: 1 }}
-          >
-            {slots.map((slot, i) => (
-              <GalleryCanvasCard
-                key={slot.instanceId}
-                slot={slot}
-                card={slot.card}
-                selected={selected?.instanceId === slot.instanceId}
-                dimmed={
-                  selected != null && selected.instanceId !== slot.instanceId
-                }
-                onSelect={handleSelect}
-                index={i}
-                ready={ready}
-              />
-            ))}
-          </div>
+          {slots.map((slot, i) => (
+            <GalleryCanvasCard
+              key={slot.instanceId}
+              slot={slot}
+              card={slot.card}
+              inert={selected != null}
+              onSelect={handleSelect}
+              index={i}
+              ready={ready}
+            />
+          ))}
         </div>
-
-        <GalleryFocus
-          card={selectedCard}
-          instanceId={selected?.instanceId ?? null}
-          onClose={handleClose}
-        />
       </div>
-    </LayoutGroup>
+
+      <GalleryFocus
+        card={selectedCard}
+        instanceId={selected?.instanceId ?? null}
+        onClose={handleClose}
+      />
+    </div>
   );
 }

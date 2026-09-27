@@ -2,34 +2,20 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 
+import { ArrowRight } from "@/components/icons";
+import { ThemeToggle } from "@/components/prefs";
 import { listGallery } from "@/lib/api/gallery";
-import { cn } from "@/lib/utils";
 
 import { GalleryCanvas } from "./gallery-canvas";
 import { GalleryShell } from "./gallery-shell";
 
 const PAGE_SIZE = 24;
 
-const btn = cn(
-  "inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-fg no-underline",
-  "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:enabled:bg-band hover:enabled:text-fg",
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-  "motion-reduce:transition-none",
-);
-
-const btnSolid = cn(
-  "border-transparent bg-ink text-ink-fg",
-  "hover:enabled:border-transparent hover:enabled:bg-ink-hover hover:enabled:text-ink-fg",
-);
-
 /**
- * Anonymous gallery browse — infinite pannable canvas of published tools.
- * Media-first; click a card to open with Motion storyboard focus.
+ * The app's front door: an infinite, pannable workspace of published tools.
+ * Copy and header anatomy follow the landing's gallery section.
  */
 export function GalleryList() {
   const q = useInfiniteQuery({
@@ -64,112 +50,8 @@ export function GalleryList() {
   }, [q]);
 
   return (
-    <GalleryShell className="h-dvh max-h-dvh overflow-hidden">
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        {/* Floating chrome over the canvas */}
-        <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 px-4 pt-4 md:px-6 md:pt-5">
-          <div className="pointer-events-auto max-w-[min(100%,28rem)] rounded-2xl bg-background/80 px-4 py-3 shadow-panel backdrop-blur-sm">
-            <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <p className="m-0 text-[13px] font-medium tracking-[-0.01em] text-muted">
-                Gallery
-              </p>
-              {countLabel ? (
-                <span className="rounded-[10px] bg-band px-2 py-0.5 text-[11px] font-medium text-muted">
-                  {countLabel}
-                </span>
-              ) : null}
-            </div>
-            <h1 className="m-0 text-[clamp(1.15rem,2.4vw,1.45rem)] font-medium leading-tight tracking-[-0.03em] text-balance text-fg">
-              Explore interactive design tools
-            </h1>
-            <p className="mt-1 mb-0 text-[12px] leading-snug text-muted">
-              Drag to pan · click a card for details
-            </p>
-          </div>
-
-          <div className="pointer-events-auto flex shrink-0 items-center gap-2">
-            {q.hasNextPage && items.length > 0 ? (
-              <button
-                type="button"
-                className={cn(btn, "h-9 px-3 text-[13px]")}
-                disabled={q.isFetchingNextPage}
-                onClick={() => void q.fetchNextPage()}
-              >
-                {q.isFetchingNextPage ? "Loading…" : "Load more"}
-              </button>
-            ) : null}
-            <Link
-              href="/create"
-              className={cn(btn, btnSolid, "h-9 px-3 text-[13px]")}
-            >
-              Create
-            </Link>
-          </div>
-        </header>
-
-        {loadingFirst ? (
-          <div className="flex flex-1 items-center justify-center bg-workspace">
-            <div className="flex flex-col items-center gap-3" aria-busy>
-              <div className="size-10 animate-pulse rounded-2xl bg-ink/8 shadow-panel" />
-              <p className="m-0 text-sm text-muted">Loading gallery…</p>
-            </div>
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="flex flex-1 items-center justify-center bg-background px-4">
-            <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
-              <div
-                className="mb-1 size-[4.5rem] rounded-2xl bg-[radial-gradient(70%_80%_at_50%_40%,rgb(188,203,255)_0%,transparent_70%)] opacity-80"
-                aria-hidden
-              />
-              <h2 className="m-0 text-xl font-medium tracking-[-0.02em] text-balance text-fg">
-                Could not load gallery
-              </h2>
-              <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted">
-                {q.error instanceof Error
-                  ? q.error.message
-                  : "Something went wrong while fetching public tools."}
-              </p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-                <button
-                  type="button"
-                  className={cn(btn, btnSolid)}
-                  onClick={() => void q.refetch()}
-                >
-                  Try again
-                </button>
-                <Link href="/" className={btn}>
-                  Home
-                </Link>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {empty ? (
-          <div className="relative flex flex-1 items-center justify-center bg-background px-4">
-            <div
-              className="pointer-events-none absolute -inset-x-16 top-1/4 -z-10 h-48 rounded-[50%] bg-[radial-gradient(90%_80%_at_50%_100%,rgb(230,236,255)_0%,rgb(188,203,255)_50%,transparent_75%)] opacity-60 dark:opacity-20"
-              aria-hidden
-            />
-            <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
-              <h2 className="m-0 text-xl font-medium tracking-[-0.02em] text-balance text-fg">
-                Nothing published yet
-              </h2>
-              <p className="m-0 max-w-[26rem] text-[0.95rem] leading-relaxed text-muted">
-                Create a tool, capture a thumbnail, and publish to seed the
-                gallery.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-                <Link href="/create" className={cn(btn, btnSolid)}>
-                  Create a tool
-                </Link>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
+    <GalleryShell className="h-dvh max-h-dvh overflow-hidden" bordered>
+      <main className="relative flex min-h-0 flex-1 flex-col">
         {items.length > 0 ? (
           <GalleryCanvas
             items={items}
@@ -177,8 +59,135 @@ export function GalleryList() {
             onNeedMore={onNeedMore}
             className="min-h-0 flex-1"
           />
-        ) : null}
-      </div>
+        ) : (
+          <div className="workspace-grid flex flex-1 items-center justify-center px-4">
+            {loadingFirst ? (
+              <p
+                className="t-label flex items-center gap-2 text-muted"
+                role="status"
+              >
+                <span
+                  className="live-dot size-1.5 rounded-full bg-accent-text"
+                  aria-hidden
+                />
+                Loading gallery
+              </p>
+            ) : null}
+
+            {error ? (
+              <StateCard
+                eyebrow="Gallery"
+                title="The gallery didn’t load."
+                body={
+                  q.error instanceof Error
+                    ? q.error.message
+                    : "Something went wrong while fetching published tools."
+                }
+              >
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => void q.refetch()}
+                >
+                  Try again
+                </button>
+              </StateCard>
+            ) : null}
+
+            {empty ? (
+              <StateCard
+                eyebrow="Gallery"
+                title="Nothing published yet."
+                body="Make a tool, then publish it from Studio. It shows up here for anyone to use and remix."
+              >
+                <Link href="/create" className="btn btn-primary btn-sm">
+                  Start creating
+                  <ArrowRight size={14} className="btn-arrow" />
+                </Link>
+              </StateCard>
+            ) : null}
+          </div>
+        )}
+
+        {/* Floating chrome over the workspace, on the nav's `wrap` grid so
+            the card lines up with the wordmark and "Load more" with the CTA. */}
+        <div className="wrap pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 pt-4 md:pt-6">
+          <section
+            aria-labelledby="gallery-title"
+            className="pointer-events-auto w-[min(100%,25rem)] rounded-[12px] border border-border bg-surface p-4 md:p-5"
+          >
+            <p className="t-label flex items-center gap-2 text-muted">
+              <span>Gallery</span>
+              {countLabel ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>{countLabel}</span>
+                </>
+              ) : null}
+            </p>
+            <h1
+              id="gallery-title"
+              className="mt-2.5 text-[1.375rem] leading-tight font-medium tracking-[-0.03em] text-balance"
+            >
+              What people are making.
+            </h1>
+            <ol className="t-label mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted">
+              <li>Find something close</li>
+              <li aria-hidden="true">→</li>
+              <li>Remix</li>
+              <li aria-hidden="true">→</li>
+              <li className="text-fg">Make it yours</li>
+            </ol>
+          </section>
+
+          {q.hasNextPage && items.length > 0 ? (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm pointer-events-auto"
+              disabled={q.isFetchingNextPage}
+              onClick={() => void q.fetchNextPage()}
+            >
+              {q.isFetchingNextPage ? "Loading…" : "Load more"}
+            </button>
+          ) : null}
+        </div>
+
+        <div className="wrap pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 pb-4 md:pb-6">
+          <p className="t-label hidden text-muted sm:block">
+            {items.length > 0
+              ? "Drag, scroll or use arrow keys to look around"
+              : ""}
+          </p>
+          <ThemeToggle className="pointer-events-auto" />
+        </div>
+      </main>
     </GalleryShell>
+  );
+}
+
+function StateCard({
+  eyebrow,
+  title,
+  body,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex w-full max-w-md flex-col items-center rounded-[12px] border border-border bg-surface px-6 py-10 text-center md:px-10">
+      <p className="t-label text-muted">{eyebrow}</p>
+      <h2 className="t-h3 mt-3 text-balance">{title}</h2>
+      <p className="mt-2 max-w-[34ch] text-[15px] leading-[1.55] text-pretty text-muted">
+        {body}
+      </p>
+      {children ? (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+          {children}
+        </div>
+      ) : null}
+    </div>
   );
 }

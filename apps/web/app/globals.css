@@ -6,46 +6,116 @@
 
 /*
  * Aiditr design language — a quiet design tool with one loud colour.
- * Chrome is monochrome; #0000FF marks primary action and "live" only.
- * Selection is ink (--fg fill), never blue. See md/design-language.md.
  *
- * Canonical tokens are the short names (--bg, --fg, --muted, --band,
- * --surface, --workspace, --border, --accent, --ink …). The shadcn names
- * (--background, --primary, --card …) are aliases so primitives keep working.
+ * Source of truth: aiditr-landing/app/globals.css (the marketing site).
+ * Everything above "App additions" mirrors that file so the product and the
+ * landing read as one thing. Rules and recipes: md/design-language.md.
+ * Run `pnpm --filter web design:audit` to catch drift.
  */
+
+/* ------------------------------------------------------------------ */
+/* Tokens                                                              */
+/* ------------------------------------------------------------------ */
+
 :root {
   --bg: #ffffff;
   --fg: #1c1d1f;
   --muted: #5c5c5c;
   --band: #fafafa;
+  --border: #e4e7ec;
+  --border-strong: #cfd4dc;
   --surface: #ffffff;
   --workspace: #f4f5f7;
   --workspace-dot: #dfe2e7;
-  --border: #e4e7ec;
-  --border-strong: #cfd4dc;
+
   --accent: #0000ff;
   --accent-hover: #0000d1;
   --accent-fg: #ffffff;
   --accent-text: #0000ff;
+
   --ink: #202124;
   --ink-hover: #36373b;
   --ink-fg: #ffffff;
-  --focus: #0000ff;
-  /* Rare, desaturated — prefer ink + icon over colour for errors. */
-  --danger: #b4412e;
 
-  --shadow-panel-value:
-    0 1px 2px rgb(16 24 40 / 0.04), 0 12px 32px -12px rgb(16 24 40 / 0.1);
-  --shadow-frame-value:
-    0 1px 2px rgb(0 0 0 / 0.08), 0 14px 32px -14px rgb(0 0 0 / 0.35);
-  --shadow-knob-value: 0 1px 2px rgb(0 0 0 / 0.12);
+  --focus: #0000ff;
+  --shadow-panel: 0 1px 2px rgb(16 24 40 / 0.04), 0 12px 32px -12px rgb(16 24 40 / 0.1);
 
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --dur-1: 120ms;
   --dur-2: 180ms;
   --dur-3: 240ms;
 
-  /* shadcn aliases */
+  --radius-card: 10px;
+  --radius-panel: 12px;
+  --nav-h: 64px;
+
+  /* App additions: rare, desaturated — prefer ink + an icon over colour. */
+  --danger: #b4412e;
+  --shadow-frame: 0 1px 2px rgb(0 0 0 / 0.08), 0 14px 32px -14px rgb(0 0 0 / 0.35);
+  --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.06);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c0c0d;
+  --fg: #ededee;
+  --muted: #a1a1a7;
+  --band: #121214;
+  --border: #25262a;
+  --border-strong: #37383e;
+  --surface: #141416;
+  --workspace: #0f0f11;
+  --workspace-dot: #222328;
+
+  --accent: #0000ff;
+  --accent-hover: #2b2bff;
+  --accent-fg: #ffffff;
+  --accent-text: #9a9aff;
+
+  --ink: #ededee;
+  --ink-hover: #d6d6d9;
+  --ink-fg: #0c0c0d;
+
+  --focus: #9a9aff;
+  --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+
+  --danger: #e08472;
+  --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.4);
+
+  color-scheme: dark;
+}
+
+/* No-JS visitors still get their system theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #0c0c0d;
+    --fg: #ededee;
+    --muted: #a1a1a7;
+    --band: #121214;
+    --border: #25262a;
+    --border-strong: #37383e;
+    --surface: #141416;
+    --workspace: #0f0f11;
+    --workspace-dot: #222328;
+    --accent-hover: #2b2bff;
+    --accent-text: #9a9aff;
+    --ink: #ededee;
+    --ink-hover: #d6d6d9;
+    --ink-fg: #0c0c0d;
+    --focus: #9a9aff;
+    --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+    --danger: #e08472;
+    --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.4);
+    color-scheme: dark;
+  }
+}
+
+/*
+ * shadcn / Base UI primitives read these names. They are aliases only —
+ * write the short tokens (bg-surface, text-muted, bg-accent…) in new code.
+ */
+:root {
   --background: var(--bg);
   --foreground: var(--fg);
   --card: var(--surface);
@@ -64,73 +134,15 @@
   --radius: 0.625rem;
 }
 
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0c0c0d;
-  --fg: #ededee;
-  --muted: #a1a1a7;
-  --band: #121214;
-  --surface: #141416;
-  --workspace: #0f0f11;
-  --workspace-dot: #222328;
-  --border: #25262a;
-  --border-strong: #37383e;
-  --accent-hover: #2b2bff;
-  --accent-text: #9a9aff;
-  --ink: #ededee;
-  --ink-hover: #d6d6d9;
-  --ink-fg: #0c0c0d;
-  --focus: #9a9aff;
-  --danger: #e08472;
-  --shadow-panel-value:
-    0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -12px rgb(0 0 0 / 0.5);
-  --shadow-knob-value: 0 1px 2px rgb(0 0 0 / 0.4);
-}
-
-/* No-JS fallback: follow the OS until the boot script sets data-theme. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    color-scheme: dark;
-    --bg: #0c0c0d;
-    --fg: #ededee;
-    --muted: #a1a1a7;
-    --band: #121214;
-    --surface: #141416;
-    --workspace: #0f0f11;
-    --workspace-dot: #222328;
-    --border: #25262a;
-    --border-strong: #37383e;
-    --accent-hover: #2b2bff;
-    --accent-text: #9a9aff;
-    --ink: #ededee;
-    --ink-hover: #d6d6d9;
-    --ink-fg: #0c0c0d;
-    --focus: #9a9aff;
-    --danger: #e08472;
-    --shadow-panel-value:
-      0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -12px rgb(0 0 0 / 0.5);
-    --shadow-knob-value: 0 1px 2px rgb(0 0 0 / 0.4);
-  }
-}
-
 @theme inline {
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-heading: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-
-  /* 400 and 500 only. */
-  --font-weight-semibold: 500;
-  --font-weight-bold: 500;
-
   --color-bg: var(--bg);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
   --color-band: var(--band);
-  --color-surface: var(--surface);
-  --color-workspace: var(--workspace);
-  --color-workspace-dot: var(--workspace-dot);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-surface: var(--surface);
+  --color-workspace: var(--workspace);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-fg: var(--accent-fg);
@@ -138,6 +150,13 @@
   --color-ink: var(--ink);
   --color-ink-hover: var(--ink-hover);
   --color-ink-fg: var(--ink-fg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --breakpoint-xs: 30rem;
+
+  /* App additions */
+  --color-workspace-dot: var(--workspace-dot);
   --color-focus: var(--focus);
   --color-danger: var(--danger);
 
@@ -157,42 +176,117 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --shadow-panel: var(--shadow-panel-value);
-  --shadow-frame: var(--shadow-frame-value);
-  --shadow-knob: var(--shadow-knob-value);
+  --shadow-panel: var(--shadow-panel);
+  --shadow-frame: var(--shadow-frame);
+  --shadow-knob: var(--shadow-knob);
 
-  /* 999 pills · 12 panel · 10 card · 8 input · 6 thumb · 4 swatch */
+  /* 999 pills · 12 panel · 10 card · 8 input · 6 thumb · 4–5 swatch/tag */
   --radius-xs: 4px;
   --radius-sm: 5px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 10px;
   --radius-2xl: 12px;
-  --radius-3xl: 12px;
-  --radius-4xl: 12px;
   --radius-panel: 12px;
   --radius-card: 10px;
-  --radius-control: 8px;
 
-  --ease-ui: var(--ease);
-  --ease-base: var(--ease);
-  --ease-snap: var(--ease);
-  --ease-in-out: var(--ease);
+  /* One easing curve; durations are the --dur-1/2/3 steps. */
+  --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-duration-press: 120ms;
   --transition-duration-fast: 180ms;
   --transition-duration-ui: 240ms;
 
-  --animate-panel-in: panel-in 240ms var(--ease) both;
-  --animate-toast-in: toast-in 240ms var(--ease) both;
-  --animate-live-blink: live-blink 1.6s var(--ease) infinite;
+  --animate-panel-in: panel-in 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  --animate-toast-in: toast-in 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  --animate-live-dot: live-dot 1.6s ease-in-out infinite;
   --animate-caret: caret 1s steps(1) infinite;
-  --animate-control-section-in: control-section-in 180ms var(--ease) both;
-  --animate-phase-pulse: phasePulse 1.4s var(--ease) infinite;
+  --animate-control-section-in: control-section-in 180ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  --animate-phase-pulse: phase-pulse 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Type scale */
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  /* Layered (unlike the landing) so focus-visible: utilities can adjust it. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--nav-h) + 16px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01" on;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* Lucide icons match the house set: 1.5px strokes. */
+svg.lucide {
+  stroke-width: 1.5;
+}
+
+/* ------------------------------------------------------------------ */
+/* Layout + type utilities                                             */
+/* ------------------------------------------------------------------ */
+
+@utility wrap {
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding-inline: 20px;
+  @media (width >= 48rem) {
+    padding-inline: 32px;
+  }
+  @media (width >= 80rem) {
+    padding-inline: 48px;
+  }
+}
+
+@utility section-y {
+  padding-block: clamp(88px, 6rem + 4vw, 168px);
+}
+
+@utility t-display {
+  /* Stacked hero: scale with the full width. */
+  font-size: clamp(2.375rem, 1rem + 5vw, 3.75rem);
+  line-height: 1;
+  letter-spacing: -0.042em;
+  font-weight: 500;
+  /* Two-column hero: sized so each line fits its column. */
+  @media (width >= 64rem) {
+    font-size: clamp(3rem, 1rem + 3.2vw, 4rem);
+  }
+}
+
 @utility t-h2 {
-  font-size: clamp(34px, 1.4rem + 2.6vw, 60px);
+  font-size: clamp(2.125rem, 1.35rem + 2.6vw, 3.75rem);
   line-height: 1.02;
   letter-spacing: -0.038em;
   font-weight: 500;
@@ -200,15 +294,14 @@
 }
 
 @utility t-h3 {
-  font-size: 19px;
+  font-size: 1.1875rem;
   line-height: 1.3;
   letter-spacing: -0.018em;
   font-weight: 500;
-  text-wrap: balance;
 }
 
 @utility t-lead {
-  font-size: clamp(17px, 0.95rem + 0.3vw, 20px);
+  font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
   line-height: 1.5;
   letter-spacing: -0.008em;
   color: var(--muted);
@@ -217,111 +310,222 @@
 
 @utility t-label {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+@utility t-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-weight: 400;
 }
 
-/* 16px dot grid behind canvases. */
-@utility workspace-grid {
-  background-color: var(--workspace);
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    var(--workspace-dot) 1px,
-    transparent 0
-  );
-  background-size: 16px 16px;
-}
+/* ------------------------------------------------------------------ */
+/* Buttons                                                             */
+/* ------------------------------------------------------------------ */
 
-/* Expand a small target by 8px without changing layout. */
-@utility hit {
+@utility btn {
   position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    inset: -8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding-inline: 22px;
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-2) var(--ease),
+    border-color var(--dur-2) var(--ease),
+    color var(--dur-2) var(--ease),
+    opacity var(--dur-2) var(--ease),
+    transform var(--dur-1) var(--ease);
+  &:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+  &:disabled,
+  &[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  & .btn-arrow {
+    transition: transform var(--dur-3) var(--ease);
+  }
+  &:hover .btn-arrow {
+    transform: translateX(3px);
+  }
+}
+
+@utility btn-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+}
+
+@utility btn-outline {
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  background: var(--bg);
+  &:hover:not(:disabled) {
+    border-color: var(--fg);
+  }
+}
+
+@utility btn-ink {
+  background: var(--ink);
+  color: var(--ink-fg);
+  &:hover:not(:disabled) {
+    background: var(--ink-hover);
+  }
+}
+
+/* App addition: nav-style quiet button (muted text, band on hover). */
+@utility btn-ghost {
+  color: var(--muted);
+  background: transparent;
+  &:hover:not(:disabled) {
+    background: var(--band);
+    color: var(--fg);
+  }
+}
+
+@utility btn-sm {
+  height: 36px;
+  padding-inline: 14px;
+  font-size: 0.8125rem;
+  gap: 8px;
+}
+
+/* Underline that draws in from the left. */
+@utility link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size var(--dur-3) var(--ease);
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+.enter {
+  animation: rise-in var(--dur-3) var(--ease) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@keyframes rise-only {
+  from {
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+.enter-text {
+  animation: rise-only var(--dur-3) var(--ease) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-text) 45%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent-text) 0%, transparent);
+  }
+}
+
+@keyframes live-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
   }
 }
 
 @keyframes panel-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 8px, 0);
   }
 }
 
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 6px, 0) scale(0.98);
   }
 }
 
-@keyframes live-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
+.live-dot {
+  animation: live-dot 1.6s ease-in-out infinite;
 }
 
-@keyframes caret {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
+.caret {
+  animation: caret 1s steps(1) infinite;
 }
 
-@keyframes profile-grid-in {
-  from {
-    opacity: 0.72;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* App additions */
 
-/* Studio control accordion open animation */
+/* Studio control group opening. */
 @keyframes control-section-in {
   from {
     opacity: 0;
-    transform: translateY(3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 3px, 0);
   }
 }
 
-/* Chat message entrance — opacity + slight rise (not scale from 0) */
+/* Chat message entrance: fade + small rise. */
 @keyframes ai-msg-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 6px, 0);
   }
 }
 
-@keyframes phasePulse {
+/* Busy step marker. */
+@keyframes phase-pulse {
   0%,
   100% {
     opacity: 0.9;
@@ -333,45 +537,245 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  html {
-    height: 100%;
-    @apply font-sans;
-  }
-  html,
-  body {
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  body {
-    min-height: 100%;
-    font-feature-settings: "ss01";
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    @apply bg-bg text-fg;
-  }
-  ::selection {
-    background: var(--accent);
-    color: var(--accent-fg);
-  }
-  :focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 3px;
-  }
-  /*
-   * Default links inherit body ink. Must live in @layer base so Tailwind
-   * color utilities (text-background, text-primary-foreground) win on
-   * solid primary CTAs — unlayered `a { color: inherit }` overrode them
-   * and produced black-on-black buttons.
-   */
-  a {
-    color: inherit;
-    text-decoration: none;
+/* ------------------------------------------------------------------ */
+/* Studio controls                                                     */
+/* ------------------------------------------------------------------ */
+
+.range {
+  --pct: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+@media (pointer: coarse) {
+  .range {
+    height: 40px;
   }
 }
+
+.range:focus-visible {
+  outline: none;
+}
+
+.range:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--fg) 0 var(--pct),
+    var(--border-strong) var(--pct) 100%
+  );
+}
+
+.range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fg);
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--fg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.14);
+  transition:
+    transform var(--dur-1) var(--ease),
+    box-shadow var(--dur-2) var(--ease);
+}
+
+.range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--fg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.14);
+  transition: transform var(--dur-1) var(--ease);
+}
+
+.range:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.22);
+}
+
+.range:hover::-moz-range-thumb {
+  transform: scale(1.12);
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px var(--surface),
+    0 0 0 5px var(--focus);
+}
+
+.range:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 3px var(--surface),
+    0 0 0 5px var(--focus);
+}
+
+.range[data-hint]::-webkit-slider-thumb {
+  animation: pulse-ring 1.8s var(--ease) infinite;
+  border-color: var(--accent-text);
+}
+
+.range[data-hint]::-moz-range-thumb {
+  animation: pulse-ring 1.8s var(--ease) infinite;
+  border-color: var(--accent-text);
+}
+
+/* Design-tool workspace: faint dot grid behind the canvas frame. */
+.workspace-grid {
+  background-color: var(--workspace);
+  background-image: radial-gradient(var(--workspace-dot) 1px, transparent 1.2px);
+  background-size: 16px 16px;
+  background-position: 8px 8px;
+}
+
+/* Canvas frame that resizes smoothly between aspect presets using
+   container query units, so no JS measuring is needed. */
+.frame-host {
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+
+.frame {
+  --ar: 0.8;
+  position: relative;
+  width: min(100cqw, 100cqh * var(--ar));
+  height: min(100cqh, 100cqw / var(--ar));
+  transition:
+    width 360ms var(--ease),
+    height 360ms var(--ease);
+}
+
+/* Registration marks at canvas corners. */
+.frame-marks::before,
+.frame-marks::after,
+.frame-marks > .mark-b::before,
+.frame-marks > .mark-b::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: var(--muted);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.frame-marks::before {
+  top: -6px;
+  left: -6px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.frame-marks::after {
+  top: -6px;
+  right: -6px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.frame-marks > .mark-b::before {
+  bottom: -6px;
+  left: -6px;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+.frame-marks > .mark-b::after {
+  bottom: -6px;
+  right: -6px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+/* Wordmark: the two knobs slide like sliders on hover. */
+.mark circle {
+  transition: transform var(--dur-3) var(--ease);
+}
+
+.wm-link:hover .mark-knob-a,
+.wm-link:focus-visible .mark-knob-a {
+  transform: translateX(-5px);
+}
+
+.wm-link:hover .mark-knob-b,
+.wm-link:focus-visible .mark-knob-b {
+  transform: translateX(5px);
+}
+
+/* Hit-area expansion for small controls on touch screens. Layered (unlike
+   the landing) so an `absolute` utility on the same element still wins. */
+@layer components {
+  .hit {
+    position: relative;
+  }
+
+  @media (pointer: coarse) {
+    .hit::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+    }
+  }
+}
+
+/* Horizontal scrollers without visible scrollbars. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth accordion height. */
+.accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-3) var(--ease);
+}
+
+.accordion[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.accordion > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion: keep the page usable and still.                     */
+/* ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
   *,

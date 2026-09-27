@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 
 import type { TargetId, ToolParams } from "@repo/contracts";
 
+import { Alert, Remix } from "@/components/icons";
+import { displayTitle } from "@/features/gallery/lib/display-title";
 import {
-  fitStageBox,
   parseAspectFromSource,
   sizeFromAspect,
 } from "@/features/studio/lib/stage-size";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { RuntimeHost } from "@/runtime";
 
 import { usePublicToolRuntime } from "../hooks/use-public-tool-runtime";
+import { PublicToolBar } from "./public-tool-state";
 
 export type PublicToolShellProps = {
   publicId: string;
@@ -28,6 +30,8 @@ export type PublicToolShellProps = {
 
 /**
  * M7e — interactive public tool (no auth, no Control, no source download).
+ * A view-only mirror of the Studio panel (design-language §3.17): top bar,
+ * dot-grid workspace with the framed canvas, 248px side column.
  */
 export function PublicToolShell({
   publicId,
@@ -44,113 +48,148 @@ export function PublicToolShell({
     defaultParams,
   });
 
-  const frameStyle = useMemo(() => {
+  const stage = useMemo(() => {
     const aspect = parseAspectFromSource(sourceCode) ?? "1:1";
     const size = sizeFromAspect(aspect);
-    // Contain into a generous public stage box
-    const fitted = fitStageBox(size.width, size.height, 720, 640);
-    return {
-      width: fitted.displayW,
-      height: fitted.displayH,
-      aspectRatio: "unset" as const,
-      maxWidth: "100%",
-      maxHeight: "min(70vh, 720px)",
-    };
+    return { aspect, width: size.width, height: size.height };
   }, [sourceCode]);
 
   const statusReady = runtime.status === "ready" || runtime.mounted;
   const statusError = runtime.status === "error";
+  const working = !statusError && (runtime.mounted || runtime.busy || !statusReady);
 
-  const label = title?.trim() || "Shared tool";
+  // Same cleaned, sentence-case name the gallery shows.
+  const label = title?.trim() ? displayTitle(title) : "Shared tool";
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-foreground/10 px-5 py-3.5">
-        <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <Link href="/" className="font-medium tracking-tight text-inherit hover:opacity-80">
-            Aiditr
-          </Link>
-          <span className="rounded-full bg-foreground/8 px-2.5 py-0.5 text-xs font-medium">
-            Public
-          </span>
-          <span
-            className="max-w-[min(40vw,280px)] truncate text-[0.95rem] font-medium tracking-tight"
-            title={label}
+    <div className="flex min-h-dvh flex-col bg-bg text-fg">
+      <PublicToolBar>
+        <span aria-hidden="true" className="h-5 w-px shrink-0 bg-border" />
+        <span
+          className="min-w-0 truncate text-[13.5px] font-medium tracking-[-0.01em]"
+          title={label}
+        >
+          {label}
+        </span>
+        <span
+          className={cn(
+            "t-label hidden h-5 shrink-0 items-center gap-1.5 rounded-full border border-border px-2 text-[10px] xs:inline-flex",
+            statusError ? "text-fg" : "text-muted",
+          )}
+        >
+          {statusError ? (
+            <Alert size={11} />
+          ) : (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "size-1.5 rounded-full bg-accent-text",
+                working && "live-dot",
+              )}
+            />
+          )}
+          {runtime.mounted
+            ? "live"
+            : runtime.busy
+              ? "loading"
+              : runtime.status === "ready"
+                ? "ready"
+                : runtime.status}
+        </span>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <Link
+            href="/gallery"
+            className="hidden h-9 items-center rounded-full px-3 text-[13px] text-muted transition-colors duration-[180ms] ease-standard hover:bg-band hover:text-fg md:inline-flex"
           >
-            {label}
-          </span>
-          <span
-            className={cn(
-              "rounded-full px-2.5 py-0.5 text-xs font-medium",
-              statusReady && "bg-[#15803d]/14 text-[#15803d]",
-              statusError && "bg-[#b91c1c]/14 text-[#b91c1c]",
-              !statusReady && !statusError && "bg-[#a16207]/14 text-[#a16207]",
-            )}
-          >
-            {runtime.mounted
-              ? "live"
-              : runtime.busy
-                ? "loading"
-                : runtime.status === "ready"
-                  ? "ready"
-                  : runtime.status}
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link href="/gallery" className="text-[0.8rem] text-inherit underline opacity-65">
             Gallery
           </Link>
           <Link
             href={`/remix/${encodeURIComponent(publicId)}`}
-            className="text-[0.8rem] text-inherit underline opacity-65"
+            className="btn btn-outline btn-sm"
           >
-            Remix in Studio
+            <Remix size={14} />
+            <span>
+              Remix<span className="hidden md:inline"> in Studio</span>
+            </span>
           </Link>
-          <Link href="/create" className="text-[0.8rem] text-inherit underline opacity-65">
-            Create your own
+          <Link href="/create" className="btn btn-primary btn-sm">
+            <span>
+              Create<span className="hidden sm:inline"> your own</span>
+            </span>
           </Link>
         </div>
-      </header>
+      </PublicToolBar>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pt-4 pb-6">
-        {description?.trim() ? (
-          <p className="m-0 max-w-xl text-sm leading-snug opacity-65">
-            {description.trim()}
-          </p>
-        ) : (
-          <p className="m-0 text-[0.8rem] opacity-55">
-            Interactive preview · view only (no Studio controls on this page)
-          </p>
-        )}
-
-        {runtime.error ? (
-          <div
-            className="rounded-[10px] border border-[#b91c1c]/35 bg-[#b91c1c]/10 px-4 py-3 text-sm leading-snug text-[#b91c1c]"
-            role="alert"
-          >
-            {runtime.error}
+      <div className="grid md:min-h-0 md:flex-1 md:grid-cols-[minmax(0,1fr)_248px]">
+        <div className="workspace-grid relative h-[420px] sm:h-[520px] md:h-auto md:min-h-[480px]">
+          <div className="t-label absolute top-3.5 left-4 flex items-center gap-1.5 text-muted">
+            <span>{stage.aspect}</span>
+            <span aria-hidden="true">·</span>
+            <span>
+              {stage.width} × {stage.height}
+            </span>
           </div>
-        ) : null}
 
-        <div className="flex min-h-[min(70vh,720px)] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/[0.03]">
-          <div
-            className="max-h-[min(70vh,720px)] max-w-full overflow-hidden rounded-xl bg-[#0a0a0a] shadow-[0_12px_40px_color-mix(in_srgb,#000_18%,transparent)] [&_iframe]:block [&_iframe]:h-full [&_iframe]:w-full [&_iframe]:border-0"
-            style={frameStyle}
-          >
-            <RuntimeHost
-              ref={runtime.hostRef}
-              onReady={(msg) => {
-                void runtime.onReady(msg);
-              }}
-              onStatusChange={runtime.onStatusChange}
-              onBridgeError={runtime.onBridgeError}
-            />
+          <div className="frame-host absolute inset-x-5 top-10 bottom-14 sm:inset-x-8">
+            <div
+              className="frame frame-marks bg-surface shadow-frame"
+              style={{ "--ar": stage.width / stage.height } as CSSProperties}
+            >
+              <RuntimeHost
+                ref={runtime.hostRef}
+                onReady={(msg) => {
+                  void runtime.onReady(msg);
+                }}
+                onStatusChange={runtime.onStatusChange}
+                onBridgeError={runtime.onBridgeError}
+              />
+              <span className="mark-b" aria-hidden="true" />
+            </div>
           </div>
+
+          {runtime.error ? (
+            <div className="absolute inset-x-4 bottom-3 flex justify-center">
+              <p
+                role="alert"
+                className="flex max-h-28 max-w-[40rem] items-start gap-2 overflow-y-auto rounded-[10px] border border-border bg-surface px-3 py-2 text-[12.5px] leading-snug text-fg"
+              >
+                <Alert size={14} className="mt-px shrink-0" />
+                <span className="min-w-0 break-words">{runtime.error}</span>
+              </p>
+            </div>
+          ) : null}
         </div>
 
-        <p className="m-0 text-[0.8rem] opacity-55">
-          publicId <code>{publicId}</code>
-        </p>
+        <aside className="border-t border-border bg-surface md:border-t-0 md:border-l">
+          <div className="flex flex-col gap-6 p-4">
+            <div className="flex flex-col gap-2">
+              <h2 className="t-label text-muted">About</h2>
+              {description?.trim() ? (
+                <p className="text-[13.5px] leading-[1.45] text-fg">
+                  {description.trim()}
+                </p>
+              ) : (
+                <p className="text-[13.5px] leading-[1.45] text-muted">
+                  Interactive preview · view only. There are no Studio controls on
+                  this page.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <h2 className="t-label text-muted">Details</h2>
+              <dl className="mt-2 border-t border-border">
+                <div className="flex items-baseline justify-between gap-3 border-b border-border py-2.5 last:border-0">
+                  <dt className="shrink-0 text-[12.5px] text-muted">Public ID</dt>
+                  <dd className="t-mono min-w-0 truncate text-[11.5px] text-fg" title={publicId}>
+                    {publicId}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

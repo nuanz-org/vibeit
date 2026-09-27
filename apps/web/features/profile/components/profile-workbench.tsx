@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
+import { ArrowRight } from "@/components/icons";
+import { ThemeToggle } from "@/components/prefs";
 import { ProfileSignOut } from "@/features/auth/components/profile-sign-out";
 import { useMyTools } from "@/features/profile/hooks/use-my-tools";
 import type { OwnerToolKind } from "@/lib/api/tools";
@@ -16,22 +18,6 @@ const KINDS: { id: OwnerToolKind; label: string }[] = [
   { id: "created", label: "Created" },
   { id: "remixed", label: "Remixed" },
 ];
-
-const btn = cn(
-  "inline-flex h-11 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-card px-4",
-  "text-sm font-medium text-fg no-underline",
-  "transition-[border-color,background-color,color,opacity] duration-ui ease-ui",
-  "hover:bg-band hover:text-fg",
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-card disabled:hover:text-fg",
-  "motion-reduce:transition-none",
-);
-
-const btnSolid = cn(
-  "border-transparent bg-ink text-ink-fg",
-  "hover:border-transparent hover:bg-ink-hover hover:text-ink-fg",
-  "disabled:hover:bg-ink disabled:hover:text-ink-fg",
-);
 
 function parseKind(raw: string | null): OwnerToolKind {
   if (raw === "created" || raw === "remixed") return raw;
@@ -86,115 +72,120 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
   const initials = initialsFromUser(name, email);
 
   return (
-    <main className="mx-auto w-full max-w-[1120px] px-5 py-10 md:px-6 md:py-12">
-      <header className="flex items-center gap-4">
-        <div
-          className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-ink/8 text-[1rem] font-medium tracking-[-0.02em] text-fg outline outline-1 outline-black/10 dark:outline-white/10"
-          aria-hidden
-        >
-          <span className="translate-y-[0.5px]">{initials}</span>
-        </div>
-        <div className="min-w-0">
-          <h1 className="m-0 text-balance text-[1.35rem] font-medium tracking-[-0.025em] text-fg">
-            {name || "Your account"}
+    <main className="wrap pt-10 pb-20 md:pt-14">
+      <header className="grid gap-6 lg:grid-cols-12 lg:items-end">
+        <div className="lg:col-span-7">
+          <p className="t-label text-muted">Profile</p>
+          <h1 id="your-tools-heading" className="t-h2 mt-5">
+            Your tools
           </h1>
-          <p className="m-0 mt-1 truncate text-[0.9rem] text-muted">
-            {email}
-          </p>
+        </div>
+        <div className="flex min-w-0 items-center gap-3 lg:col-span-5 lg:justify-end lg:pb-1">
+          <span
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-band text-[12.5px] font-medium tracking-[-0.01em] text-fg select-none"
+            aria-hidden="true"
+          >
+            {initials}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-medium tracking-[-0.01em] text-fg">
+              {name || "Your account"}
+            </p>
+            <p className="t-mono mt-0.5 truncate text-[12px] text-muted">{email}</p>
+          </div>
+          <ProfileSignOut className="ml-auto shrink-0 lg:ml-3" />
         </div>
       </header>
 
-      <section className="mt-10" aria-labelledby="your-tools-heading">
-        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-          <div className="min-w-0">
-            <h2
-              id="your-tools-heading"
-              className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg"
-            >
-              Your tools
-            </h2>
-            <div
-              role="radiogroup"
-              aria-label="Filter tools"
-              className="mt-3 flex flex-wrap items-center gap-1"
-            >
-              {KINDS.map((item) => {
-                const selected = kind === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setKind(item.id)}
-                    className={cn(
-                      "inline-flex min-h-11 cursor-pointer items-center rounded-[10px] px-3 text-[0.9rem] tracking-[-0.01em]",
-                      "transition-[color,background-color] duration-ui ease-ui",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                      "motion-reduce:transition-none",
-                      selected
-                        ? "bg-band font-medium text-fg"
-                        : "font-medium text-fg hover:bg-band hover:text-fg",
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
+      <section className="mt-12 md:mt-14" aria-labelledby="your-tools-heading">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div
+            role="radiogroup"
+            aria-label="Filter tools"
+            className="relative grid w-full grid-cols-3 rounded-full border border-border bg-workspace p-[3px] sm:w-[18rem]"
+          >
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-[3px] left-[3px] rounded-full border border-border bg-surface shadow-knob transition-transform duration-[240ms] ease-standard"
+              style={{
+                width: `calc((100% - 6px) / ${KINDS.length})`,
+                transform: `translateX(${Math.max(0, KINDS.findIndex((k) => k.id === kind)) * 100}%)`,
+              }}
+            />
+            {KINDS.map((item) => {
+              const selected = kind === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setKind(item.id)}
+                  className={cn(
+                    "relative z-10 flex h-8 cursor-pointer items-center justify-center rounded-full text-[12.5px] transition-colors duration-[180ms] ease-standard pointer-coarse:h-11",
+                    selected ? "font-medium text-fg" : "text-muted hover:text-fg",
+                  )}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
-          {countLabel ? (
-            <p className="m-0 text-[13px] text-muted">{countLabel}</p>
+
+          {loadingFirst ? (
+            <p className="t-label flex items-center gap-2 text-muted">
+              <span
+                className="live-dot size-1.5 rounded-full bg-accent-text"
+                aria-hidden="true"
+              />
+              Loading your tools
+            </p>
+          ) : countLabel ? (
+            <p className="t-mono text-[12px] text-muted">{countLabel}</p>
           ) : null}
         </div>
 
         {loadingFirst ? (
           <div
-            className="mt-6 grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-8 grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3"
             aria-busy
             aria-label="Loading your tools"
           >
             {Array.from({ length: 6 }, (_, i) => (
               <div key={i} className="min-w-0">
-                <div className="aspect-[4/3] animate-pulse rounded-2xl bg-ink/8" />
-                <div className="mt-3 h-3.5 w-2/3 animate-pulse rounded bg-ink/8" />
-                <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-ink/6" />
+                <div className="aspect-[4/3] rounded-[10px] border border-border bg-band" />
+                <div className="mt-3 h-3.5 w-2/3 rounded-full bg-band" />
+                <div className="mt-2 h-3 w-1/3 rounded-full bg-band" />
               </div>
             ))}
           </div>
         ) : null}
 
         {error ? (
-          <div className="mt-10 max-w-md">
-            <p className="m-0 text-[0.95rem] leading-relaxed text-fg">
-              Couldn’t load your tools.
-            </p>
-            <p className="m-0 mt-1 text-[0.9rem] leading-relaxed text-muted">
-              {q.error instanceof Error
+          <StateBox
+            eyebrow="Error"
+            title="Couldn’t load your tools."
+            body={
+              q.error instanceof Error
                 ? q.error.message
-                : "Something went wrong while fetching your library."}
-            </p>
+                : "Something went wrong while fetching your library."
+            }
+          >
             <button
               type="button"
-              className={cn(btn, btnSolid, "mt-5")}
+              className="btn btn-outline"
               onClick={() => void q.refetch()}
             >
               Retry
             </button>
-          </div>
+          </StateBox>
         ) : null}
 
         {empty ? <EmptyState kind={kind} /> : null}
 
         {!loadingFirst && !error && items.length > 0 ? (
           <>
-            <ul
-              className={cn(
-                "mt-6 m-0 grid list-none grid-cols-1 gap-x-5 gap-y-8 p-0",
-                "sm:grid-cols-2 lg:grid-cols-3",
-                "motion-safe:animate-[profile-grid-in_220ms_var(--ease)]",
-              )}
-            >
+            <ul className="mt-8 grid animate-panel-in grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((card) => (
                 <li key={card.id} className="min-w-0">
                   <ProfileToolCard card={card} />
@@ -202,10 +193,10 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
               ))}
             </ul>
             {q.hasNextPage ? (
-              <div className="mt-8">
+              <div className="mt-12 flex justify-center">
                 <button
                   type="button"
-                  className={btn}
+                  className="btn btn-outline"
                   disabled={q.isFetchingNextPage}
                   onClick={() => void q.fetchNextPage()}
                 >
@@ -217,63 +208,91 @@ export function ProfileWorkbench({ name, email }: ProfileWorkbenchProps) {
         ) : null}
       </section>
 
-      <div className="mt-16 border-t border-border pt-6">
-        <ProfileSignOut className="w-full sm:w-auto" />
-      </div>
+      <section className="mt-20" aria-labelledby="preferences-heading">
+        <h2 id="preferences-heading" className="t-label text-muted">
+          Preferences
+        </h2>
+        <ul className="mt-4 border-t border-border">
+          <li className="flex flex-col gap-3 border-b border-border py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <p className="text-[15.5px] tracking-[-0.01em] text-fg">Theme</p>
+              <p className="mt-0.5 text-[13.5px] text-muted">
+                Light, dark, or match your system.
+              </p>
+            </div>
+            <ThemeToggle className="self-start sm:self-auto" />
+          </li>
+        </ul>
+      </section>
     </main>
+  );
+}
+
+/** Derived empty state (design-language §3.21): dashed box, label, one line, action. */
+function StateBox({
+  eyebrow,
+  title,
+  body,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mt-8 rounded-[12px] border border-dashed border-border-strong px-6 py-10 md:px-10 md:py-14">
+      <p className="t-label text-muted">{eyebrow}</p>
+      <h2 className="t-h3 mt-3">{title}</h2>
+      <p className="mt-2 max-w-[34rem] text-[15px] leading-[1.55] text-muted">{body}</p>
+      <div className="mt-6 flex flex-wrap items-center gap-3">{children}</div>
+    </div>
   );
 }
 
 function EmptyState({ kind }: { kind: OwnerToolKind }) {
   if (kind === "remixed") {
     return (
-      <div className="mt-10 max-w-md">
-        <p className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg">
-          You haven’t remixed anything.
-        </p>
-        <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted">
-          Open a published tool in the gallery and make your own copy.
-        </p>
-        <Link href="/gallery" className={cn(btn, btnSolid, "mt-5")}>
+      <StateBox
+        eyebrow="Remixed"
+        title="You haven’t remixed anything."
+        body="Open a published tool in the gallery and make your own copy."
+      >
+        <Link href="/gallery" className="btn btn-outline">
           Browse the gallery
         </Link>
-      </div>
+      </StateBox>
     );
   }
 
   if (kind === "created") {
     return (
-      <div className="mt-10 max-w-md">
-        <p className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg">
-          No originals yet.
-        </p>
-        <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted">
-          Start from a vision and Aiditr will generate a tool you can keep
-          editing.
-        </p>
-        <Link href="/create" className={cn(btn, btnSolid, "mt-5")}>
+      <StateBox
+        eyebrow="Created"
+        title="No originals yet."
+        body="Start from a vision and Aiditr will generate a tool you can keep editing."
+      >
+        <Link href="/create" className="btn btn-primary">
           Create a tool
+          <ArrowRight className="btn-arrow" />
         </Link>
-      </div>
+      </StateBox>
     );
   }
 
   return (
-    <div className="mt-10 max-w-md">
-      <p className="m-0 text-[1.05rem] font-medium tracking-[-0.02em] text-fg">
-        Nothing here yet.
-      </p>
-      <p className="m-0 mt-1.5 text-[0.95rem] leading-relaxed text-muted">
-        Create a tool from a vision, or remix one from the gallery.
-      </p>
-      <div className="mt-5 flex flex-wrap items-center gap-2.5">
-        <Link href="/create" className={cn(btn, btnSolid)}>
-          Create a tool
-        </Link>
-        <Link href="/gallery" className={btn}>
-          Remix from the gallery
-        </Link>
-      </div>
-    </div>
+    <StateBox
+      eyebrow="All tools"
+      title="Nothing here yet."
+      body="Create a tool from a vision, or remix one from the gallery."
+    >
+      <Link href="/create" className="btn btn-primary">
+        Create a tool
+        <ArrowRight className="btn-arrow" />
+      </Link>
+      <Link href="/gallery" className="btn btn-outline">
+        Remix from the gallery
+      </Link>
+    </StateBox>
   );
 }

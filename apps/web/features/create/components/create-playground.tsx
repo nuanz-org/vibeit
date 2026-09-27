@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { Alert, ArrowUp, Close, Plus } from "@/components/icons";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import {
   AiMessage,
@@ -39,6 +39,7 @@ import {
   fetchLlmModels,
   type LlmModelOption,
 } from "@/lib/api/llm";
+import { cn } from "@/lib/utils";
 
 const MAX_INSPIRATION = 4;
 
@@ -51,7 +52,7 @@ const VISION_STARTERS = [
   {
     label: "Social frame",
     vision:
-      "A social media frame with animated border and title type — customizable colors and photo slot.",
+      "A social media frame with animated border and title type — customisable colours and photo slot.",
   },
   {
     label: "Type poster",
@@ -61,16 +62,41 @@ const VISION_STARTERS = [
   {
     label: "3D object",
     vision:
-      "A simple 3D object on a soft gradient stage — orbiting light, tweakable material and color.",
+      "A simple 3D object on a soft gradient stage — orbiting light, tweakable material and colour.",
   },
 ] as const;
 
-const SEND_SPRING = {
-  type: "spring" as const,
-  stiffness: 520,
-  damping: 28,
-  mass: 0.6,
-};
+/*
+ * Create-only chrome on top of the shared playground styles (landing
+ * HowItWorks §3.6 / §3.12–3.14): outline quick-reply pills, a 12px composer
+ * card that inks its edge on focus, and a pill "Plan" toggle whose checked
+ * state is ink. The composer's send is the one accent on screen.
+ */
+
+/** Starter prompts: outline pills that fill the composer. */
+const starterPill = cn(
+  "hit inline-flex h-8 cursor-pointer items-center rounded-full border border-border bg-surface px-3 pointer-coarse:h-11",
+  "text-[12.5px] text-fg transition-colors duration-fast ease-standard hover:border-fg",
+);
+
+/** Composer card: 12px, hairline; the edge turns ink while typing. */
+const composerCard = cn(
+  "flex flex-col rounded-[12px] border border-border bg-surface",
+  "transition-colors duration-fast ease-standard focus-within:border-fg",
+);
+
+/** "Plan" checkbox as a pill toggle: strong hairline off, ink on. */
+const planToggle = cn(
+  "hit inline-flex h-8 cursor-pointer items-center rounded-full border px-3 pointer-coarse:h-11",
+  "text-[12.5px] font-medium transition-colors duration-fast ease-standard",
+  "border-border-strong bg-bg text-fg hover:border-fg",
+  "has-[:checked]:border-fg has-[:checked]:bg-fg has-[:checked]:text-bg",
+  "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45",
+  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-(--focus) has-[:focus-visible]:outline-solid",
+);
+
+/** Salvage link under a failed build. */
+const salvageLink = "link-draw text-[12.5px] font-medium text-accent-text";
 
 export type CreatePlaygroundProps = {
   userName?: string | null;
@@ -86,7 +112,6 @@ export function CreatePlayground({
 }: CreatePlaygroundProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const reduce = useReducedMotion();
   const [visionText, setVisionText] = useState("");
   const [inspirationFiles, setInspirationFiles] = useState<File[]>([]);
   const [inspirationPreviews, setInspirationPreviews] = useState<
@@ -291,23 +316,29 @@ export function CreatePlayground({
           ? "failed"
           : "idle";
 
+  const salvageFooter = salvageToolId ? (
+    <Link
+      href={`/studio/${encodeURIComponent(salvageToolId)}`}
+      className={salvageLink}
+    >
+      Open salvage draft in Studio
+    </Link>
+  ) : undefined;
+
   const chat = (
     <div className={pg.chatBody}>
       <div className={pg.chatCard}>
         <div className={pg.panelHeader}>
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className="inline-block size-3.5 shrink-0 rounded-[2.5px] bg-primary"
-              aria-hidden
-            />
-            <h2 className={pg.panelTitle}>Chat</h2>
-          </div>
-          <div className="flex shrink-0 items-center gap-0.5">
+          <h2 className={pg.panelTitle}>Chat</h2>
+          <div className="flex shrink-0 items-center gap-1">
             {jobId ? (
               <button
                 type="button"
-                className={pg.btnGhost}
-                style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
+                className={cn(
+                  pg.btn,
+                  pg.btnGhost,
+                  "hit h-8 px-3 text-[12.5px]",
+                )}
                 onClick={reset}
               >
                 New vision
@@ -332,15 +363,15 @@ export function CreatePlayground({
                 </p>
                 {showStarters ? (
                   <>
-                    <p className="mt-[0.15rem] mb-0 w-full text-[0.72rem] text-muted">
+                    <p className="t-label m-0 mt-3 text-muted">
                       Or try one of these
                     </p>
-                    <ul className="mt-[0.35rem] mb-0 flex list-none flex-wrap gap-[0.4rem] p-0">
+                    <ul className="m-0 mt-1 flex list-none flex-wrap gap-1.5 p-0">
                       {VISION_STARTERS.map((s) => (
                         <li key={s.label}>
                           <button
                             type="button"
-                            className="cursor-pointer appearance-none rounded-[10px] bg-transparent px-[0.75rem] py-[0.45rem] text-xs font-medium font-[inherit] text-fg ring-1 ring-black/10 shadow-sm shadow-black/[0.06] transition-[background-color,box-shadow,color,transform] duration-ui ease-ui hover:-translate-y-px hover:bg-band hover:text-fg hover:ring-black/15 active:scale-[0.98] dark:ring-white/10 dark:shadow-black/30 dark:hover:ring-white/15 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className={starterPill}
                             onClick={() => setVisionText(s.vision)}
                           >
                             {s.label}
@@ -372,16 +403,7 @@ export function CreatePlayground({
                       role="assistant"
                       variant="destructive"
                       header="Generation failed"
-                      footer={
-                        salvageToolId ? (
-                          <Link
-                            href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                            className="text-accent-text underline-offset-3 hover:underline"
-                          >
-                            Open salvage draft in Studio
-                          </Link>
-                        ) : undefined
-                      }
+                      footer={salvageFooter}
                     >
                       {m.content}
                     </AiMessage>
@@ -391,12 +413,7 @@ export function CreatePlayground({
               if (m.kind === "clarify") {
                 return (
                   <ChatThreadItem key={m.id} id={`msg-${m.id}`}>
-                    <AiMessage
-                      role="assistant"
-                      header="Aiditr"
-                      variant="ghost"
-                      showAvatar
-                    >
+                    <AiMessage role="assistant" header="Aiditr" variant="ghost">
                       {m.content}
                     </AiMessage>
                   </ChatThreadItem>
@@ -404,7 +421,7 @@ export function CreatePlayground({
               }
               return (
                 <ChatThreadItem key={m.id} id={`msg-${m.id}`}>
-                  <AiMessage role="assistant" header="Aiditr" showAvatar>
+                  <AiMessage role="assistant" header="Aiditr">
                     {m.content}
                   </AiMessage>
                 </ChatThreadItem>
@@ -413,12 +430,7 @@ export function CreatePlayground({
 
             {jobId && !isAwaitingClarify && !isSuccess && !isFailed ? (
               <ChatThreadItem id="job-progress" scrollAnchor>
-                <AiMessage
-                  role="assistant"
-                  header="Aiditr"
-                  variant="ghost"
-                  showAvatar
-                >
+                <AiMessage role="assistant" header="Aiditr" variant="ghost">
                   <JobProgress status={status} jobId={jobId} />
                 </AiMessage>
               </ChatThreadItem>
@@ -430,7 +442,6 @@ export function CreatePlayground({
                   role="assistant"
                   header="A few questions"
                   variant="ghost"
-                  showAvatar
                 >
                   <ClarifyPanel
                     clarify={status.clarify}
@@ -482,16 +493,7 @@ export function CreatePlayground({
                   role="assistant"
                   variant="destructive"
                   header="Generation failed"
-                  footer={
-                    salvageToolId ? (
-                      <Link
-                        href={`/studio/${encodeURIComponent(salvageToolId)}`}
-                        className="text-accent-text underline-offset-3 hover:underline"
-                      >
-                        Open salvage draft in Studio
-                      </Link>
-                    ) : undefined
-                  }
+                  footer={salvageFooter}
                 >
                   {status?.errorMessage || "Generation failed"}
                 </AiMessage>
@@ -504,170 +506,169 @@ export function CreatePlayground({
           className={pg.chatComposer}
           onSubmit={(e) => void onSubmit(e)}
         >
-          <textarea
-            className={pg.composerInput}
-            value={visionText}
-            onChange={(e) => setVisionText(e.target.value)}
-            rows={3}
-            required
-            disabled={pending || generating || isAwaitingClarify}
-            placeholder="Describe your vision…"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (canSend) void onSubmit();
-              }
-            }}
-          />
-          {inspirationPreviews.length > 0 ? (
-            <ul
-              className="m-0 flex list-none flex-wrap gap-[0.45rem] p-0"
-              aria-label="Inspiration images"
-            >
-              {inspirationPreviews.map((p, index) => (
-                <li
-                  key={p.key}
-                  className="relative size-14 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.url}
-                    alt={p.name}
-                    className="block size-full object-cover"
-                  />
-                  <span className="absolute bottom-1 left-1 h-[1.1rem] min-w-[1.1rem] rounded-full bg-black/55 px-[0.2rem] text-center text-[0.62rem] font-medium leading-[1.1rem] text-white">
-                    {index + 1}
-                  </span>
-                  <button
-                    type="button"
-                    className="absolute top-0.5 right-0.5 grid size-[1.15rem] cursor-pointer place-items-center rounded-full border-none bg-black/55 p-0 text-[0.85rem] leading-none text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    disabled={pending || generating || isAwaitingClarify}
-                    aria-label={`Remove ${p.name}`}
-                    onClick={() =>
-                      setInspirationFiles((prev) =>
-                        prev.filter((_, i) => i !== index),
-                      )
-                    }
+          <div className={composerCard}>
+            <textarea
+              className={cn(pg.composerInput, "px-3 pt-2.5 pb-1")}
+              value={visionText}
+              onChange={(e) => setVisionText(e.target.value)}
+              rows={3}
+              required
+              disabled={pending || generating || isAwaitingClarify}
+              placeholder="Describe a tool…"
+              aria-label="Describe a tool"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (canSend) void onSubmit();
+                }
+              }}
+            />
+            {inspirationPreviews.length > 0 ? (
+              <ul
+                className="m-0 flex list-none flex-wrap gap-1.5 px-3 pt-1 pb-1.5"
+                aria-label="Inspiration images"
+              >
+                {inspirationPreviews.map((p, index) => (
+                  <li
+                    key={p.key}
+                    className="relative size-12 shrink-0 overflow-hidden rounded-[6px] border border-border bg-workspace"
                   >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <div className={pg.composerFooter}>
-            <div className={pg.composerMeta}>
-              <label className={pg.attachBtn} title="Add inspiration images">
-                <PlusIcon />
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  multiple
-                  disabled={
-                    pending ||
-                    generating ||
-                    isAwaitingClarify ||
-                    inspirationFiles.length >= MAX_INSPIRATION
-                  }
-                  onChange={(e) => {
-                    const list = e.target.files
-                      ? Array.from(e.target.files)
-                      : [];
-                    e.target.value = "";
-                    if (!list.length) return;
-                    setInspirationFiles((prev) => {
-                      const room = MAX_INSPIRATION - prev.length;
-                      if (room <= 0) return prev;
-                      return [...prev, ...list.slice(0, room)];
-                    });
-                  }}
-                />
-              </label>
-              {inspirationFiles.length > 0 ? (
-                <span className={pg.muted}>
-                  {inspirationFiles.length}/{MAX_INSPIRATION}
-                </span>
-              ) : null}
-              <select
-                className={pg.selectCompact}
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={
-                  pending || generating || modelOptions.length === 0
-                }
-                title="Model"
-              >
-                {modelOptions.length === 0 ? (
-                  <option value="">Models…</option>
-                ) : (
-                  modelOptions.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))
-                )}
-              </select>
-              <label
-                className={pg.muted}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={planMode}
-                  disabled={
-                    pending ||
-                    generating ||
-                    isAwaitingClarify ||
-                    Boolean(jobId)
-                  }
-                  onChange={(e) => setPlanMode(e.target.checked)}
-                />
-                Plan
-              </label>
-            </div>
-            <div className={pg.composerActions}>
-              {quota ? (
-                <span className={pg.muted}>
-                  {quota.createsUsed}/{quota.createsLimit}
-                </span>
-              ) : null}
-              <motion.button
-                type="submit"
-                className={pg.btnSend}
-                disabled={!canSend}
-                aria-label={
-                  pending
-                    ? "Starting"
-                    : generating
-                      ? "Generating"
-                      : overQuota
-                        ? "Quota reached"
-                        : "Generate tool"
-                }
-                whileTap={reduce || !canSend ? undefined : { scale: 0.92 }}
-                animate={
-                  reduce
-                    ? undefined
-                    : {
-                        scale: canSend ? 1 : 0.96,
-                        backgroundColor: canSend
-                          ? "var(--ink)"
-                          : undefined,
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.url}
+                      alt={p.name}
+                      className="block size-full object-cover"
+                    />
+                    <span
+                      className="t-mono pointer-events-none absolute bottom-0.5 left-0.5 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-black/65 px-1 text-[10px] leading-none text-white"
+                      aria-hidden="true"
+                    >
+                      {index + 1}
+                    </span>
+                    <button
+                      type="button"
+                      className="absolute top-0.5 right-0.5 grid size-5 cursor-pointer place-items-center rounded-full bg-black/65 text-white transition-opacity duration-fast ease-standard disabled:cursor-not-allowed disabled:opacity-45"
+                      disabled={pending || generating || isAwaitingClarify}
+                      aria-label={`Remove ${p.name}`}
+                      onClick={() =>
+                        setInspirationFiles((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        )
                       }
-                }
-                transition={SEND_SPRING}
-              >
-                <SendIcon />
-              </motion.button>
+                    >
+                      <Close size={10} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <div className={cn(pg.composerFooter, "px-2 pb-2")}>
+              <div className={pg.composerMeta}>
+                <label className={pg.attachBtn} title="Add inspiration images">
+                  <Plus size={14} />
+                  <span className="sr-only">Add inspiration images</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    disabled={
+                      pending ||
+                      generating ||
+                      isAwaitingClarify ||
+                      inspirationFiles.length >= MAX_INSPIRATION
+                    }
+                    onChange={(e) => {
+                      const list = e.target.files
+                        ? Array.from(e.target.files)
+                        : [];
+                      e.target.value = "";
+                      if (!list.length) return;
+                      setInspirationFiles((prev) => {
+                        const room = MAX_INSPIRATION - prev.length;
+                        if (room <= 0) return prev;
+                        return [...prev, ...list.slice(0, room)];
+                      });
+                    }}
+                  />
+                </label>
+                {inspirationFiles.length > 0 ? (
+                  <span
+                    className="t-mono text-[11px] text-muted"
+                    title="Inspiration images"
+                  >
+                    {inspirationFiles.length}/{MAX_INSPIRATION}
+                  </span>
+                ) : null}
+                <select
+                  className={pg.selectCompact}
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  disabled={
+                    pending || generating || modelOptions.length === 0
+                  }
+                  title="Model"
+                  aria-label="Model"
+                >
+                  {modelOptions.length === 0 ? (
+                    <option value="">Models…</option>
+                  ) : (
+                    modelOptions.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <label
+                  className={planToggle}
+                  title="Plan with me: short questions first"
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={planMode}
+                    disabled={
+                      pending ||
+                      generating ||
+                      isAwaitingClarify ||
+                      Boolean(jobId)
+                    }
+                    onChange={(e) => setPlanMode(e.target.checked)}
+                  />
+                  Plan
+                </label>
+              </div>
+              <div className={pg.composerActions}>
+                {quota ? (
+                  <span
+                    className="t-mono text-[11px] text-muted"
+                    title="Creates today"
+                  >
+                    {quota.createsUsed}/{quota.createsLimit}
+                  </span>
+                ) : null}
+                <button
+                  type="submit"
+                  className={pg.btnSend}
+                  disabled={!canSend}
+                  aria-label={
+                    pending
+                      ? "Starting"
+                      : generating
+                        ? "Generating"
+                        : overQuota
+                          ? "Quota reached"
+                          : "Generate tool"
+                  }
+                >
+                  <ArrowUp size={16} />
+                </button>
+              </div>
             </div>
           </div>
           {modelsError ? (
-            <p className="m-0 text-sm leading-[1.4] text-[#b91c1c]">
+            <p className="m-0 flex items-start gap-1.5 px-1 text-[12.5px] leading-[1.45] text-fg">
+              <Alert size={14} className="mt-px shrink-0 text-danger" />
               {modelsError}
             </p>
           ) : null}
@@ -687,39 +688,15 @@ export function CreatePlayground({
       title="New tool"
       headerMeta={
         generating ? (
-          <span className={`${pg.chip} ${pg.chipWarn}`}>generating</span>
+          <span className={pg.chip}>
+            <span className={pg.liveDot} aria-hidden="true" />
+            Building
+          </span>
         ) : null
       }
       headerActions={<UserMenu variant="avatar" />}
       chat={chat}
       stage={stage}
     />
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M8 3.25V12.75M3.25 8H12.75"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M8 12.5V3.5M8 3.5L4 7.5M8 3.5L12 7.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

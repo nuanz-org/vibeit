@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export type ChatStatusMarkerProps = {
   children: ReactNode;
-  /** Show spinner for in-progress work. */
+  /** Show the blinking live dot for in-progress work. */
   pending?: boolean;
   /** Accessible live region for assistive tech. */
   live?: boolean;
@@ -18,6 +18,7 @@ export type ChatStatusMarkerProps = {
 
 /**
  * System/status line for job phase, refine progress, or soft errors.
+ * Landing live caption: muted 13px text after a 6px accent-text live dot.
  */
 export function ChatStatusMarker({
   children,
@@ -33,8 +34,8 @@ export function ChatStatusMarker({
       className={cn(className)}
     >
       {pending ? (
-        <MarkerIcon>
-          <Spinner />
+        <MarkerIcon className="size-3">
+          <Spinner role={undefined} aria-label={undefined} />
         </MarkerIcon>
       ) : null}
       <MarkerContent>{children}</MarkerContent>

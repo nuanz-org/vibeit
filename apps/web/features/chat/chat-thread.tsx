@@ -35,7 +35,7 @@ export function ChatThread({
       <MessageScroller className={cn("min-h-0 flex-1", className)}>
         <MessageScrollerViewport>
           <MessageScrollerContent
-            className={cn("gap-5 px-0.5 py-1.5", contentClassName)}
+            className={cn("gap-4 px-0.5 py-2", contentClassName)}
           >
             {children}
           </MessageScrollerContent>

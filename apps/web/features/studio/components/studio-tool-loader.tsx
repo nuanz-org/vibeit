@@ -2,6 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import type { ReactNode } from "react";
+
+import { ArrowLeft } from "@/components/icons";
 
 import { getTool } from "@/lib/api/tools";
 
@@ -28,25 +31,30 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
 
   if (q.isLoading) {
     return (
-      <main className="mx-auto max-w-[480px] p-8">
-        <p className="opacity-70">Loading tool…</p>
+      <main className="workspace-grid grid min-h-dvh place-items-center p-6">
+        <p
+          className="t-label flex items-center gap-2 text-muted"
+          role="status"
+        >
+          <span
+            aria-hidden="true"
+            className="live-dot size-1.5 rounded-full bg-accent-text"
+          />
+          Loading tool…
+        </p>
       </main>
     );
   }
 
   if (q.isError || !q.data) {
     return (
-      <main className="mx-auto max-w-[480px] p-8">
-        <h1 className="mb-2 text-xl">Tool not found</h1>
-        <p className="mb-4 leading-relaxed opacity-70">
+      <StudioNotice title="Tool not found">
+        <p className="mt-2 text-[15px] leading-[1.55] text-muted">
           {q.error instanceof Error
             ? q.error.message
             : "Could not load this tool."}
         </p>
-        <Link href="/create" className="underline">
-          Back to Create
-        </Link>
-      </main>
+      </StudioNotice>
     );
   }
 
@@ -58,19 +66,15 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
   // a generated tool and null sourceCode (that would fall back to default fixture).
   if (!versionCode?.trim()) {
     return (
-      <main className="mx-auto max-w-[520px] p-8">
-        <h1 className="mb-2 text-xl">No runnable source</h1>
-        <p className="mb-4 leading-relaxed opacity-70">
-          This tool has no version code yet, so the live preview cannot start.
+      <StudioNotice title="No runnable source">
+        <p className="mt-2 text-[15px] leading-[1.55] text-muted">
+          This tool has no version code yet, so the live preview can’t start.
           Create a new tool from vision, or open a completed generation.
         </p>
-        <p className="mb-4 text-[0.9rem] opacity-60">
+        <p className="mt-4 truncate text-[13.5px] font-medium tracking-[-0.01em] text-fg">
           {tool.title || tool.id}
         </p>
-        <Link href="/create" className="underline">
-          Back to Create
-        </Link>
-      </main>
+      </StudioNotice>
     );
   }
 
@@ -116,5 +120,28 @@ export function StudioToolLoader({ toolId }: { toolId: string }) {
       planAspect={planAspect}
       initialChatHistory={tool.chatHistory ?? null}
     />
+  );
+}
+
+/** Full-screen Studio notice: workspace backdrop, one card, one way out. */
+function StudioNotice({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <main className="workspace-grid grid min-h-dvh place-items-center p-6">
+      <div className="w-full max-w-[480px] rounded-[12px] border border-border bg-surface p-6 md:p-8">
+        <p className="t-label text-muted">Studio</p>
+        <h1 className="t-h3 mt-3 text-fg">{title}</h1>
+        {children}
+        <Link href="/create" className="btn btn-primary btn-sm mt-6">
+          <ArrowLeft size={14} />
+          Back to Create
+        </Link>
+      </div>
+    </main>
   );
 }

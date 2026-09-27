@@ -10,7 +10,21 @@ import {
   type PublishGateFailure,
   type ToolResponse,
 } from "@/lib/api/tools";
+import { ArrowUpRight, Check } from "@/components/icons";
 import { cn } from "@/lib/utils";
+
+import {
+  ErrorNote,
+  StatusDot,
+  StatusToast,
+  groupLabelCls,
+  innerCardCls,
+  inputCls,
+  labelCls,
+  rowCls,
+  statusPillCls,
+  valueCls,
+} from "../lib/studio-ui";
 
 export type PublishPanelProps = {
   toolId: string | null | undefined;
@@ -42,22 +56,6 @@ function parseTags(raw: string): string[] {
     .map((t) => t.trim())
     .filter(Boolean);
 }
-
-const btn =
-  "inline-flex cursor-pointer items-center justify-center rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit no-underline box-border disabled:cursor-not-allowed disabled:opacity-45";
-const btnPrimary = "border-transparent bg-foreground text-background";
-const section = "flex flex-col gap-[0.55rem]";
-const sectionTitle =
-  "text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55";
-const muted = "text-sm opacity-55";
-const shareField = "flex flex-col gap-[0.35rem]";
-const fieldLabel = "block font-medium";
-const textInput =
-  "w-full rounded-lg border border-border bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
-const embedTextarea =
-  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-mono text-[0.75rem] leading-snug text-inherit";
-const badge =
-  "rounded-full bg-foreground/8 px-[0.55rem] py-[0.2rem] text-xs font-medium";
 
 /**
  * M8f — Studio gallery publish panel (metadata + gates + thumb + unpublish).
@@ -151,7 +149,7 @@ export function PublishPanel({
       const result = await onCaptureThumbnail();
       setThumbId(result.assetId);
       setThumbUrl(result.url);
-      setSuccessMsg("Thumbnail saved — ready for gallery publish.");
+      setSuccessMsg("Thumbnail saved. Ready to publish to the gallery.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Thumbnail capture failed");
     } finally {
@@ -212,7 +210,7 @@ export function PublishPanel({
       const tool = await unpublishTool(toolId);
       setLocalStatus(tool.status);
       setLocalGalleryReady(Boolean(tool.galleryReady));
-      setSuccessMsg("Unpublished — public link and gallery listing hidden.");
+      setSuccessMsg("Unpublished. Public link and gallery listing hidden.");
       onToolUpdated?.(tool);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unpublish failed");
@@ -223,53 +221,65 @@ export function PublishPanel({
 
   if (fixtureMode || !toolId || !publicId) {
     return (
-      <section className={section} aria-label="Publish">
-        <h2 className={sectionTitle}>Publish</h2>
-        <p className={muted}>Gallery publish is for generated tools.</p>
+      <section className="flex flex-col gap-2" aria-label="Publish">
+        <h3 className={groupLabelCls}>Publish</h3>
+        <p className="text-[12.5px] leading-snug text-muted">
+          Gallery publish is for generated tools.
+        </p>
       </section>
     );
   }
 
   const galleryHref = `/gallery/${encodeURIComponent(publicId)}`;
   const publicHref = `/t/${encodeURIComponent(publicId)}`;
+  const doneCount = checklist.filter((item) => item.ok).length;
 
   return (
-    <section className={section} aria-label="Publish to gallery">
-      <h2 className={sectionTitle}>Publish</h2>
-
-      <div className="mb-3 flex flex-wrap gap-2">
-        {inGallery ? (
-          <span className={cn(badge, "bg-[#15803d]/14 text-[#15803d]")}>
-            In gallery
-          </span>
-        ) : isPublished ? (
-          <span className={badge}>Public link · not in gallery</span>
-        ) : (
-          <span className={badge}>Draft · private</span>
-        )}
+    <section className="flex flex-col gap-4" aria-label="Publish to gallery">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className={groupLabelCls}>Publish</h3>
+        <span className={statusPillCls}>
+          <StatusDot live={isPublished} />
+          {inGallery
+            ? "In gallery"
+            : isPublished
+              ? "Public link · not in gallery"
+              : "Draft · private"}
+        </span>
       </div>
 
-      <div className={shareField}>
-        <label className={fieldLabel} htmlFor="publish-title">
-          Title
-        </label>
+      <div>
+        <div className={rowCls}>
+          <label className={labelCls} htmlFor="publish-title">
+            Title
+          </label>
+          <span className={valueCls} aria-hidden="true">
+            {title.length}/120
+          </span>
+        </div>
         <input
           id="publish-title"
-          className={textInput}
+          className={cn(inputCls, "h-9 pointer-coarse:h-11")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Name shown in the gallery"
           maxLength={120}
+          autoComplete="off"
         />
       </div>
 
-      <div className={shareField}>
-        <label className={fieldLabel} htmlFor="publish-desc">
-          Description
-        </label>
+      <div>
+        <div className={rowCls}>
+          <label className={labelCls} htmlFor="publish-desc">
+            Description
+          </label>
+          <span className={valueCls} aria-hidden="true">
+            {description.length}/500
+          </span>
+        </div>
         <textarea
           id="publish-desc"
-          className={embedTextarea}
+          className={cn(inputCls, "resize-none py-2")}
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -278,56 +288,81 @@ export function PublishPanel({
         />
       </div>
 
-      <div className={shareField}>
-        <label className={fieldLabel} htmlFor="publish-tags">
-          Tags
-        </label>
+      <div>
+        <div className={rowCls}>
+          <label className={labelCls} htmlFor="publish-tags">
+            Tags
+          </label>
+        </div>
         <input
           id="publish-tags"
-          className={textInput}
+          className={cn(inputCls, "h-9 pointer-coarse:h-11")}
           value={tagsRaw}
           onChange={(e) => setTagsRaw(e.target.value)}
           placeholder="motion, brand, canvas (comma-separated)"
+          autoComplete="off"
         />
       </div>
 
-      <div className={shareField}>
-        <span className={fieldLabel}>Thumbnail</span>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={btn}
-            disabled={!mounted || busy || capturing || !onCaptureThumbnail}
-            onClick={() => void handleCapture()}
-            title="Capture live frame and upload as gallery thumbnail"
-          >
-            {capturing ? "Capturing…" : "Capture thumbnail"}
-          </button>
+      <div>
+        <div className={rowCls}>
+          <span className={labelCls}>Thumbnail</span>
         </div>
-        {thumbUrl ? (
-          <div className="mt-[0.65rem] flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className="flex items-center gap-3">
+          {thumbUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={thumbUrl}
               alt="Gallery thumbnail"
-              className="h-[72px] w-[72px] rounded-lg border border-foreground/12 bg-foreground/[0.04] object-cover"
+              className="size-18 shrink-0 rounded-[6px] border border-border bg-workspace object-cover"
               crossOrigin="anonymous"
             />
-            <p className={muted}>Ready for gallery</p>
+          ) : null}
+          <div className="flex min-w-0 flex-col items-start gap-2">
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              disabled={!mounted || busy || capturing || !onCaptureThumbnail}
+              onClick={() => void handleCapture()}
+              title="Capture live frame and upload as gallery thumbnail"
+            >
+              {capturing ? "Capturing…" : "Capture thumbnail"}
+            </button>
+            <p className="text-[11.5px] leading-snug text-muted">
+              {thumbUrl
+                ? "Ready for gallery"
+                : "Capture a frame from the live preview before publishing."}
+            </p>
           </div>
-        ) : (
-          <p className={muted}>
-            Capture a frame from the live preview before publishing.
-          </p>
-        )}
+        </div>
       </div>
 
-      <div className={shareField}>
-        <span className={fieldLabel}>Checklist</span>
-        <ul className="mt-[0.35rem] mb-0 flex list-none flex-col gap-1 p-0">
+      <div className={innerCardCls}>
+        <div className="mb-2 flex items-center justify-between">
+          <span className={groupLabelCls}>Checklist</span>
+          <span className="t-mono text-[11px] text-muted">
+            {doneCount}/{checklist.length}
+          </span>
+        </div>
+        <ul className="flex flex-col gap-1.5">
           {checklist.map((item) => (
-            <li key={item.label} className={muted}>
-              {item.ok ? "✓" : "○"} {item.label}
+            <li
+              key={item.label}
+              className="flex items-center gap-2 text-[12.5px]"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "grid size-4 shrink-0 place-items-center rounded-full transition-colors duration-[180ms] ease-standard",
+                  item.ok ? "bg-fg text-bg" : "border border-border-strong",
+                )}
+              >
+                {item.ok ? <Check size={10} /> : null}
+              </span>
+              <span className={item.ok ? "text-fg" : "text-muted"}>
+                {item.label}
+                <span className="sr-only">{item.ok ? " (done)" : " (to do)"}</span>
+              </span>
             </li>
           ))}
         </ul>
@@ -336,7 +371,7 @@ export function PublishPanel({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={cn(btn, btnPrimary)}
+          className="btn btn-primary btn-sm"
           disabled={!canPublish || publishing || unpublishing}
           onClick={() => void handlePublishGallery()}
           title="Run gates and list this tool in the public gallery"
@@ -350,7 +385,7 @@ export function PublishPanel({
         {(isPublished || inGallery) && (
           <button
             type="button"
-            className={btn}
+            className="btn btn-outline btn-sm"
             disabled={publishing || unpublishing}
             onClick={() => void handleUnpublish()}
             title="Full takedown: hide public link and remove from gallery"
@@ -359,31 +394,33 @@ export function PublishPanel({
           </button>
         )}
         {inGallery ? (
-          <Link href={galleryHref} className={btn} target="_blank">
+          <Link href={galleryHref} className="btn btn-ghost btn-sm" target="_blank">
             View in gallery
+            <ArrowUpRight size={14} />
           </Link>
         ) : null}
         {isPublished ? (
-          <Link href={publicHref} className={btn} target="_blank">
+          <Link href={publicHref} className="btn btn-ghost btn-sm" target="_blank">
             Open public page
+            <ArrowUpRight size={14} />
           </Link>
         ) : null}
       </div>
 
       {gateFailures.length > 0 ? (
-        <ul className="mt-[0.65rem] mb-0 flex list-none flex-col gap-[0.35rem] p-0">
+        <ul className="flex flex-col gap-1.5">
           {gateFailures.map((g) => (
-            <li key={g.code} className="text-[0.8rem] leading-snug text-[#b91c1c]">
-              <strong>{g.code}</strong>: {g.message}
+            <li key={g.code}>
+              <ErrorNote>
+                <span className="t-mono">{g.code}</span>: {g.message}
+              </ErrorNote>
             </li>
           ))}
         </ul>
       ) : null}
-      {error && gateFailures.length === 0 ? (
-        <p className="text-[0.8rem] leading-snug text-[#b91c1c]">{error}</p>
-      ) : null}
+      {error && gateFailures.length === 0 ? <ErrorNote>{error}</ErrorNote> : null}
       {successMsg ? (
-        <p className="text-[0.8rem] leading-snug text-[#15803d]">{successMsg}</p>
+        <StatusToast key={successMsg}>{successMsg}</StatusToast>
       ) : null}
     </section>
   );

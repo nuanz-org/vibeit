@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties } from "react";
 
+import { Globe, ImageIcon } from "@/components/icons";
 import { normalizePublicAssetUrl } from "@/features/gallery/lib/asset-url";
-import { displayTitle, hashHue } from "@/features/gallery/lib/display-title";
+import { displayTitle } from "@/features/gallery/lib/display-title";
 import type { OwnerToolCard as OwnerToolCardType } from "@/lib/api/tools";
 import { cn } from "@/lib/utils";
 
@@ -18,11 +18,14 @@ function statusLabel(card: OwnerToolCardType): string {
   return "Draft";
 }
 
+/**
+ * Gallery tile anatomy (design-language §3.18): a hairline frame, caption
+ * below. No lift or zoom on hover — the frame border turns ink instead.
+ */
 export function ProfileToolCard({ card }: ProfileToolCardProps) {
   const fullTitle = (card.title ?? "").trim() || "Untitled tool";
   const title = displayTitle(card.title);
   const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
-  const hue = hashHue(card.publicId || card.id || title);
   const studioHref = `/studio/${encodeURIComponent(card.id)}`;
   const publicHref = `/t/${encodeURIComponent(card.publicId)}`;
   const openable = card.hasRunnableVersion;
@@ -33,94 +36,78 @@ export function ProfileToolCard({ card }: ProfileToolCardProps) {
     statusLabel(card),
   ].filter(Boolean);
 
+  const frame = (
+    <div
+      className={cn(
+        "relative aspect-[4/3] overflow-hidden rounded-[10px] border border-border bg-surface transition-colors duration-[180ms] ease-standard",
+        openable && "group-hover:border-fg",
+      )}
+    >
+      {thumbSrc ? (
+        // eslint-disable-next-line @next/next/no-img-element -- public asset URL
+        <img
+          src={thumbSrc}
+          alt=""
+          className="absolute inset-0 block size-full object-contain"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div
+          className="workspace-grid absolute inset-0 grid place-items-center text-muted"
+          aria-hidden="true"
+        >
+          <ImageIcon size={16} />
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <article className="min-w-0">
-      <div
-        className={cn(
-          "group relative block overflow-hidden rounded-2xl bg-band shadow-panel",
-          "aspect-[4/3]",
-          "transition-[box-shadow,transform] duration-ui ease-ui",
-          openable &&
-            "hover:-translate-y-0.5 hover:shadow-panel",
-          "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-        )}
-      >
-        {thumbSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element -- public asset URL
-          <img
-            src={thumbSrc}
-            alt=""
-            className={cn(
-              "block size-full object-cover",
-              openable &&
-                "transition-transform duration-ui ease-ui group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100",
-            )}
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <div
-            className={cn(
-              "relative flex size-full items-center justify-center",
-              "bg-[radial-gradient(120%_90%_at_20%_15%,oklch(0.78_0.04_var(--ph-hue)/0.55),transparent_55%),radial-gradient(100%_80%_at_85%_90%,oklch(0.72_0.035_calc(var(--ph-hue)+50)/0.4),transparent_50%),oklch(0.82_0.02_var(--ph-hue))]",
-              "[@media(prefers-color-scheme:dark)]:bg-[radial-gradient(120%_90%_at_20%_15%,oklch(0.32_0.05_var(--ph-hue)/0.7),transparent_55%),radial-gradient(100%_80%_at_85%_90%,oklch(0.28_0.04_calc(var(--ph-hue)+50)/0.55),transparent_50%),oklch(0.2_0.025_var(--ph-hue))]",
-              "after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--foreground)_6%,transparent)] after:content-['']",
-            )}
-            style={
-              {
-                ["--ph-hue" as string]: String(hue),
-              } as CSSProperties
-            }
-            aria-hidden
-          >
-            <span className="size-7 rounded-[10px] border-[1.5px] border-foreground/14 opacity-35" />
-          </div>
-        )}
-        {openable ? (
-          <Link
-            href={studioHref}
-            className="absolute inset-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            aria-label={`Open ${fullTitle} in Studio`}
-          />
-        ) : null}
-      </div>
+      {openable ? (
+        <Link
+          href={studioHref}
+          className="group block rounded-[10px] focus-visible:outline-offset-4"
+          aria-label={`Open ${fullTitle} in Studio`}
+        >
+          {frame}
+        </Link>
+      ) : (
+        frame
+      )}
 
-      <div className="px-0.5 pt-3 pb-1">
-        {openable ? (
-          <Link
-            href={studioHref}
-            className="line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-fg no-underline hover:opacity-80 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            title={fullTitle}
-          >
-            {title}
-          </Link>
-        ) : (
-          <p
-            className="m-0 line-clamp-2 text-sm font-medium leading-snug tracking-[-0.015em] text-fg"
-            title={fullTitle}
-          >
-            {title}
-          </p>
-        )}
-        <div className="mt-0.5 flex items-baseline justify-between gap-3">
-          <p className="m-0 min-w-0 truncate text-xs leading-snug tracking-[-0.01em] text-muted">
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {openable ? (
+            <Link
+              href={studioHref}
+              className="link-draw inline-block max-w-full truncate align-top text-[15px] font-medium tracking-[-0.01em] text-fg"
+              title={fullTitle}
+            >
+              {title}
+            </Link>
+          ) : (
+            <p
+              className="truncate text-[15px] font-medium tracking-[-0.01em] text-fg"
+              title={fullTitle}
+            >
+              {title}
+            </p>
+          )}
+          <p className="t-mono mt-0.5 truncate text-[12px] text-muted">
             {metaParts.join(" · ")}
           </p>
-          {published ? (
-            <Link
-              href={publicHref}
-              className={cn(
-                "relative shrink-0 text-xs font-medium tracking-[-0.01em] text-fg no-underline",
-                "transition-colors duration-fast ease-ui hover:text-fg",
-                "before:absolute before:-inset-y-3 before:-inset-x-2 before:content-['']",
-                "focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                "motion-reduce:transition-none",
-              )}
-            >
-              Open public
-            </Link>
-          ) : null}
         </div>
+        {published ? (
+          <Link
+            href={publicHref}
+            className="hit inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border px-3 text-[12.5px] font-medium text-fg transition-colors duration-[180ms] ease-standard hover:border-fg"
+          >
+            <Globe size={13} />
+            Open public
+          </Link>
+        ) : null}
       </div>
     </article>
   );
