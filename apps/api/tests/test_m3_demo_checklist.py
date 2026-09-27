@@ -6,6 +6,12 @@ Manual Create → Studio browser path: md/m3-demo-checklist.md
 
 from __future__ import annotations
 
+import os
+
+# Canned LLM plans/code here predate the style registry (their code does not
+# wire style controls), so run these pipeline checks with the lock off.
+os.environ["AIDITR_STYLE_LOCK"] = "0"
+
 import json
 import os
 import subprocess

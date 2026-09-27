@@ -195,3 +195,25 @@ def load_golden_source(entry: GoldenEntry) -> str:
     if not entry.path.is_file():
         raise FileNotFoundError(f"golden missing: {entry.path}")
     return entry.path.read_text(encoding="utf-8")
+
+
+# Style-neutral API reference used instead of look-bearing goldens when a
+# style is locked (not part of GOLDEN_MANIFEST, so tag retrieval never picks it).
+SETUP_SHELL_ID = "setup-shell"
+SETUP_SHELL_PATH = _DIR / "setup-shell.ts"
+SETUP_SHELL_DESCRIPTION = (
+    "API / structure reference only — no visual style. Shows params, stepped time, "
+    "seeded random, offscreen layers, text wrapping and image fallback. "
+    "Do NOT copy its colours, layout or look; the STYLE LOCK defines the look."
+)
+
+
+def load_setup_shell() -> str:
+    return SETUP_SHELL_PATH.read_text(encoding="utf-8")
+
+
+def golden_by_id(golden_id: str) -> GoldenEntry | None:
+    for g in GOLDEN_MANIFEST:
+        if g.id == golden_id:
+            return g
+    return None

@@ -27,6 +27,9 @@ Patch discipline:
 - Prefer adding a param + wiring it in draw over rewriting the whole scene.
 - Hard full regen only when the request is structural (new layers, subtitle, layout).
 - Keep aspect and target consistent with the base module.
+- STYLE LOCK: when the user message has a STYLE LOCK block, the patched tool must stay in that \
+look (palette rule, MUST / NEVER, technique). Change the look only if the user explicitly asks \
+for a different style.
 
 {PERF_CRAFT_CANVAS2D}
 {PERF_CRAFT_REFINE}
@@ -41,6 +44,7 @@ def code_patch_user_prompt(
     code: str,
     plan: dict[str, Any] | None = None,
     default_params: dict[str, Any] | None = None,
+    style_lock: str | None = None,
 ) -> str:
     plan_block = ""
     if isinstance(plan, dict):
@@ -51,9 +55,10 @@ def code_patch_user_prompt(
             f"\nCurrent defaultParams (preserve unless chat changes them):\n"
             f"{json.dumps(default_params, indent=2)}\n"
         )
+    lock_block = f"\n{style_lock.strip()}\n" if style_lock else ""
     return (
         f"User chat (apply as minimal patch):\n{(chat_message or '').strip()}\n"
-        f"{plan_block}{defaults_block}\n"
+        f"{plan_block}{lock_block}{defaults_block}\n"
         f"Current source:\n{code}\n\n"
         "Return the complete patched module. Minimal diff in spirit; full file in form."
     )

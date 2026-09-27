@@ -433,6 +433,21 @@ def normalize_asap_plan(data: dict[str, Any]) -> dict[str, Any]:
     if tags:
         plan["tags"] = [t.lower().replace(" ", "-") for t in tags]
 
+    # Style registry picks — validated and applied by the plan node.
+    for key in ("styleId", "typeTreatmentId", "styleRationale"):
+        val = data.get(key)
+        if isinstance(val, str) and val.strip():
+            plan[key] = val.strip()[:400]
+    style_colors = data.get("styleColors")
+    if isinstance(style_colors, dict):
+        colors = {
+            str(k): hx
+            for k, v in style_colors.items()
+            if (hx := _normalize_hex(v)) is not None
+        }
+        if colors:
+            plan["styleColors"] = colors
+
     return plan
 
 

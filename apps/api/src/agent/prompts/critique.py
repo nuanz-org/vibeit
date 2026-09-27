@@ -26,6 +26,11 @@ metalness/roughness/emissive)
 
 overall = mean of axes (you may adjust slightly if one axis dominates).
 
+STYLE LOCK (when the user message contains one): also return "styleAdherence" (1–5) — how \
+faithfully the code implements the locked look (recipe, palette rule, MUST / NEVER). Any NEVER \
+violation or missing MUST → styleAdherence ≤ 2, palette ≤ 2, and the FIRST fix restores the style. \
+Do not reward effects the lock forbids, however pretty.
+
 fixes: ordered, concrete code-level changes (max 6). Empty if overall ≥ 3.5.
 Prefer fixes that restore multi-axis playability when enums exist \
 (e.g. "Branch finalShape: hexagonRing vs isometricBlock vs stackedPyramid with different paths").
@@ -43,6 +48,7 @@ Reply with ONLY a JSON object (no markdown fences):
     "typography": 2,
     "params": 4
   },
+  "styleAdherence": 4,
   "summary": "one or two sentences",
   "fixes": [
     "Add a secondary layer (baseline / caption) under the hero type",
@@ -60,6 +66,7 @@ def critique_user_prompt(
     code: str,
     smoke_variance: float | None = None,
     screenshot_path: str | None = None,
+    style_lock: str | None = None,
 ) -> str:
     plan_json = (
         json.dumps(plan, indent=2)[:6000]
@@ -103,9 +110,12 @@ def critique_user_prompt(
                 + "\n"
             )
 
+    lock_block = f"\n{style_lock.strip()}\n" if style_lock else ""
+
     return (
         f"Vision:\n{(vision_text or '').strip()}\n\n"
         f"DesignBrief / plan JSON:\n{plan_json}\n"
+        f"{lock_block}"
         f"{enum_block}\n"
         f"Smoke / capture notes:\n{smoke_block}\n\n"
         f"Tool TypeScript source:\n{src}\n\n"

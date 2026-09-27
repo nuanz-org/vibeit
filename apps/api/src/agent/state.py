@@ -95,6 +95,10 @@ class CreateGraphState(TypedDict, total=False):
     # AM1 — golden exemplars injected into codegen (ids only)
     golden_ids: NotRequired[list[str]]
 
+    # Style registry — locked look (also stored on plan.styleId)
+    style_id: NotRequired[str | None]
+    style_shortlist: NotRequired[list[str]]
+
     # AM7 — Control refine (patch mode)
     job_kind: NotRequired[JobKind | str]
     chat_message: NotRequired[str]

@@ -19,6 +19,7 @@ from agent.critique_parse import (
 )
 from agent.prompts.critique import CRITIQUE_SYSTEM_PROMPT, critique_user_prompt
 from agent.state import CreateGraphState
+from agent.style_registry import style_for_plan, style_lock_block
 from core.config import get_settings
 
 
@@ -85,6 +86,7 @@ async def critique_node(
         }
 
     plan = state.get("plan") if isinstance(state.get("plan"), dict) else None
+    look, typ = style_for_plan(plan)
     messages = [
         ChatMessage(role="system", content=CRITIQUE_SYSTEM_PROMPT),
         ChatMessage(
@@ -95,6 +97,7 @@ async def critique_node(
                 code=code,
                 smoke_variance=state.get("smoke_variance"),
                 screenshot_path=state.get("smoke_screenshot_path"),
+                style_lock=style_lock_block(look, typ, compact=True) if look else None,
             ),
         ),
     ]

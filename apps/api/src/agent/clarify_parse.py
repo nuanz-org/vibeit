@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from agent.plan_parse import extract_json_object
+from agent.style_registry.prompt_block import STYLE_QUESTION_ID
 
 _ID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]{0,47}$")
 _MAX_QUESTIONS = 4
@@ -215,6 +216,8 @@ def normalize_clarify_answers(
         if isinstance(q, dict) and q.get("id")
     }
 
+    style_id: str | None = None
+
     for qid, question in q_by_id.items():
         raw = answers.get(qid)
         if raw is None:
@@ -222,6 +225,25 @@ def normalize_clarify_answers(
         prompt = str(question.get("prompt") or qid)
         opt_map = _option_map(question)
         all_opts = list(opt_map.values())
+
+        # Style registry question: the answer locks one look (never an enum axis).
+        if qid == STYLE_QUESTION_ID:
+            picks = raw if isinstance(raw, list) else [raw]
+            chosen = next(
+                (str(v).strip() for v in picks if str(v).strip() in opt_map),
+                None,
+            )
+            if chosen:
+                style_id = chosen
+                label = opt_map[chosen]["label"]
+                locked.append(f"Visual style: {label} ({chosen})")
+                lines.append(f"Q: {prompt}\nA: {label} ({chosen})")
+            elif not _is_all_options(raw):
+                text = ", ".join(str(v) for v in picks if str(v).strip())
+                if text:
+                    locked.append(f"Visual style wish: {text}")
+                    lines.append(f"Q: {prompt}\nA: {text}")
+            continue
 
         if _is_all_options(raw):
             if not all_opts:
@@ -307,12 +329,15 @@ def normalize_clarify_answers(
         summary_parts.append(f"{len(locked)} locked note(s)")
     summary = "; ".join(summary_parts) if summary_parts else "Answers recorded"
 
-    return {
+    result: dict[str, Any] = {
         "transcript": "\n\n".join(lines).strip() or "No clarify answers.",
         "forcedEnums": forced,
         "lockedNotes": locked,
         "summary": summary,
     }
+    if style_id:
+        result["styleId"] = style_id
+    return result
 
 
 def clarify_has_result(clarify: Any) -> bool:
