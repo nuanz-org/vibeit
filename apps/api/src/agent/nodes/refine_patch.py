@@ -19,8 +19,15 @@ from agent.prompts.refine_code import CODE_PATCH_SYSTEM_PROMPT, code_patch_user_
 from agent.prompts.refine_param import PARAM_PATCH_SYSTEM_PROMPT, param_patch_user_prompt
 from agent.refine_route import route_rationale, route_refine_chat
 from agent.state import CreateGraphState
+from agent.style_registry import style_for_plan, style_lock_block
 from core.config import get_settings
 
+
+
+
+def _style_lock_for(plan: dict[str, Any] | None) -> str | None:
+    look, typ = style_for_plan(plan)
+    return style_lock_block(look, typ, compact=True) if look else None
 
 def refine_route_node(state: CreateGraphState) -> dict[str, Any]:
     """Heuristic patch-mode routing (no LLM)."""
@@ -175,6 +182,7 @@ async def refine_code_patch_node(
                 code=base_code,
                 plan=plan,
                 default_params=defaults,
+                style_lock=_style_lock_for(plan),
             ),
         ),
     ]

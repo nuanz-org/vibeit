@@ -1,0 +1,2669 @@
+{
+  "version": "1",
+  "lockPolicy": {
+    "locked": [
+      "Rendering technique and the recipe steps",
+      "Palette structure: number of colours, their roles and how they mix",
+      "Texture treatment",
+      "Typeface class",
+      "Motion character and frame-rate feel",
+      "Every MUST and NEVER rule"
+    ],
+    "adaptable": [
+      "Layout and positioning of elements",
+      "Scale, spacing, cropping and number of elements",
+      "Copy and content (headline, details, subject depiction)",
+      "Exact colour values within the palette rule",
+      "Light direction and intensity where the style has lighting",
+      "Timing values within the motion rule"
+    ]
+  },
+  "fontStacks": {
+    "grotesk": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "geometric": "Futura, 'Century Gothic', 'Avenir Next', 'Trebuchet MS', sans-serif",
+    "condensed": "Impact, 'Arial Narrow', 'Helvetica Neue', sans-serif",
+    "serifDisplay": "Didot, 'Bodoni 72', 'Bodoni MT', Georgia, serif",
+    "serifText": "Georgia, 'Iowan Old Style', Palatino, 'Times New Roman', serif",
+    "slab": "Rockwell, 'Roboto Slab', 'Courier New', serif",
+    "rounded": "'Arial Rounded MT Bold', 'Nunito', 'Varela Round', system-ui, sans-serif",
+    "mono": "'SF Mono', Menlo, Consolas, 'Courier New', monospace",
+    "hand": "'Marker Felt', 'Bradley Hand', 'Chalkboard SE', 'Comic Sans MS', cursive",
+    "chalk": "Chalkduster, 'Chalkboard SE', 'Marker Felt', cursive",
+    "decoDisplay": "Copperplate, Didot, 'Bodoni 72', Georgia, serif",
+    "system": "system-ui, -apple-system, 'Segoe UI', sans-serif"
+  },
+  "lintRules": {
+    "noGradient": {
+      "pattern": "\\bcreate(?:Linear|Radial|Conic)Gradient\\s*\\(",
+      "message": "{name} forbids gradients. Use flat fills and shade with the style's own texture technique."
+    },
+    "noLinearGradient": {
+      "pattern": "\\bcreateLinearGradient\\s*\\(",
+      "message": "{name} forbids linear gradients. Build tone with the style's texture technique instead."
+    },
+    "noBlur": {
+      "pattern": "\\bshadowBlur\\s*=(?!\\s*0(?:\\.0+)?\\s*(?:;|,|\\)|$))|\\bfilter\\s*=\\s*[`'\"][^`'\"]*blur\\(",
+      "message": "{name} forbids blur and soft glow (shadowBlur / ctx.filter blur). Keep edges crisp; use hard offsets if a shadow is needed."
+    },
+    "noAdditiveGlow": {
+      "pattern": "globalCompositeOperation\\s*=\\s*[`'\"](?:lighter|screen)[`'\"]",
+      "message": "{name} forbids additive glow ('lighter' / 'screen'). Inks and paints darken when they overlap."
+    },
+    "requireMultiply": {
+      "pattern": "globalCompositeOperation\\s*=\\s*[`'\"]multiply[`'\"]",
+      "message": "{name} requires overprint mixing: set ctx.globalCompositeOperation = 'multiply' when drawing the second colour layer, then reset to 'source-over'."
+    },
+    "requireCrispScaling": {
+      "pattern": "imageSmoothingEnabled\\s*=\\s*false",
+      "message": "{name} requires crisp pixels: render into a small offscreen buffer and draw it scaled up with ctx.imageSmoothingEnabled = false."
+    },
+    "requireMonospace": {
+      "pattern": "monospace",
+      "message": "{name} requires a monospace font stack for all text (use the mono font stack)."
+    },
+    "requireLinearGradient": {
+      "pattern": "\\bcreateLinearGradient\\s*\\(",
+      "message": "{name} requires multi-stop linear gradients (chrome reflections / sunset sky). Build them with ctx.createLinearGradient."
+    },
+    "requireRadialGradient": {
+      "pattern": "\\bcreateRadialGradient\\s*\\(",
+      "message": "{name} requires radial-gradient shading (soft highlights and contact shadows). Build them with ctx.createRadialGradient."
+    },
+    "requirePixelRead": {
+      "pattern": "\\bgetImageData\\s*\\(",
+      "message": "{name} requires per-pixel colour mapping: draw the source to an offscreen canvas, read it with getImageData, remap each pixel and cache the result."
+    }
+  },
+  "entries": [
+    {
+      "id": "look.risograph",
+      "slot": "look",
+      "family": "print",
+      "name": "Risograph",
+      "tier": "core",
+      "status": "active",
+      "summary": "Two flat inks on paper that overprint into a third colour, with grain and misregistration.",
+      "keywords": ["risograph", "riso", "risoprint", "riso print"],
+      "suits": {
+        "moods": ["warm", "cozy", "handmade", "indie", "playful", "retro", "friendly", "artisanal", "analog", "quirky"],
+        "subjects": ["bakery", "bread", "sourdough", "cafe", "coffee", "food", "zine", "bookshop", "book", "music", "gig", "event", "workshop", "market", "plant", "shop"],
+        "formats": ["poster", "social-post", "announcement", "flyer", "cover"]
+      },
+      "avoidFor": ["luxury", "corporate", "finance", "dashboard", "3d", "futuristic"],
+      "image": "optional",
+      "conflicts": ["look.y2k-chrome", "look.neon-sign", "look.grainy-gradient", "look.vaporwave", "look.acid-graphics"],
+      "spec": {
+        "essence": "A two-colour risograph print: flat ink shapes on paper, the two inks overprinting into a third colour, with grain and slight misregistration.",
+        "palette": {
+          "rule": "Exactly two ink colours plus the paper colour. Every mark is ink1 or ink2. Where inks overlap the third colour must come from 'multiply' overprint; never pick a separate mixed colour. No gradients, no transparency ramps, no glow.",
+          "defaults": {"paper": "#f2ebe5", "ink1": "#1e222a", "ink2": "#d85c3a"},
+          "adaptable": "Choose the two inks from real riso inks to suit the subject: fluorescent pink #ff48b0, red #ff665e, orange #ff6c2f, yellow #ffe800, green #00a95c, teal #00838a, blue #0078bf, medium blue #3255a4, purple #765ba7, burgundy #914e72, brown #925f52, soft black #1e222a. Paper may be white, cream or kraft."
+        },
+        "typography": {
+          "rule": "Chunky, confident type printed in one ink: heavy headline in uppercase or title case, secondary text small in either ink. No outlines, no glowing or gradient text.",
+          "fonts": ["slab", "serifText", "grotesk"]
+        },
+        "composition": {
+          "rule": "Flat graphic poster: big simple shapes, a strong silhouette of the subject, a clear headline block and generous paper margins. Subjects are flat shapes or a dithered photo, never shaded 3D.",
+          "adaptable": "Arrangement, scale, cropping, number of shapes and where the text sits."
+        },
+        "texture": "Paper grain: 1,000–2,500 tiny specks in the ink colours at 5–25% alpha over the whole sheet. Ink coverage slightly uneven: small random voids inside large fills.",
+        "lighting": "None. Shade only with halftone or dither density in ink colours.",
+        "motion": {
+          "rule": "Analog boil: the frame updates in steps at about 8–12 fps. On each step the ink2 layer shifts 1–3px (misregistration jitter) and the grain regenerates. One element may drift slowly. Never tween the whole scene smoothly at 60 fps.",
+          "fps": 10
+        },
+        "recipe": [
+          "Create two offscreen canvases with document.createElement('canvas') (never append them to the DOM), sized to width x height: ink1 plate and ink2 plate.",
+          "Draw each plate's shapes and text in solid black on a transparent background.",
+          "For a photo, draw it to a small offscreen canvas, read getImageData and apply an 8x8 Bayer threshold: dark tones go to the ink1 plate, mid tones to the ink2 plate.",
+          "Tint each plate: set globalCompositeOperation = 'source-in' on the plate and fill it with the ink colour.",
+          "Main canvas: fill paperColor, draw the ink1 plate, set globalCompositeOperation = 'multiply', draw the ink2 plate offset by the current misregistration (dx, dy), then reset to 'source-over'.",
+          "Draw the paper grain specks last.",
+          "Regenerate jitter and grain only when Math.floor(time * boilFps) changes; reuse a seeded random for the same step."
+        ],
+        "must": [
+          "globalCompositeOperation = 'multiply' for the second ink layer",
+          "exactly two ink colours plus paper",
+          "visible misregistration offset between the plates",
+          "paper grain overlay"
+        ],
+        "never": [
+          "gradients of any kind",
+          "glow, blur or shadowBlur",
+          "a third ink colour",
+          "a dark screen-like background",
+          "smooth 60 fps tweening of the whole frame"
+        ]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#f2ebe5", "group": "Palette", "role": "bg"},
+        {"name": "ink1Color", "kind": "color", "label": "Ink 1", "default": "#1e222a", "group": "Palette", "role": "ink"},
+        {"name": "ink2Color", "kind": "color", "label": "Ink 2", "default": "#d85c3a", "group": "Palette", "role": "accent"},
+        {"name": "misregistration", "kind": "number", "label": "Misregistration", "default": 2, "min": 0, "max": 8, "step": 0.5, "group": "Style", "uiHint": "slider"},
+        {"name": "grainAmount", "kind": "number", "label": "Grain", "default": 0.45, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "boilFps", "kind": "number", "label": "Boil speed (fps)", "default": 10, "min": 1, "max": 24, "step": 1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur", "noAdditiveGlow"], "require": ["requireMultiply"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.letterpress",
+      "slot": "look",
+      "family": "print",
+      "name": "Letterpress",
+      "tier": "core",
+      "status": "active",
+      "summary": "Deep-pressed wood type and ink on thick cream cotton paper.",
+      "keywords": ["letterpress", "wood type", "woodtype"],
+      "suits": {
+        "moods": ["craft", "heritage", "artisanal", "warm", "honest", "classic", "handmade", "rustic", "timeless", "traditional"],
+        "subjects": ["bakery", "bread", "wedding", "invitation", "brewery", "beer", "coffee", "barber", "stationery", "bookshop", "restaurant", "menu", "quote", "whisky"],
+        "formats": ["poster", "invitation", "card", "quote", "announcement"]
+      },
+      "avoidFor": ["tech", "futuristic", "neon", "gaming", "dashboard"],
+      "image": "none",
+      "conflicts": ["look.y2k-chrome", "look.vaporwave", "look.neon-sign", "look.crt-vhs-glitch", "look.acid-graphics"],
+      "spec": {
+        "essence": "A traditional letterpress broadside: stacked wood-type lines pressed into thick cream cotton paper with slightly uneven ink.",
+        "palette": {
+          "rule": "Cream or cotton-white paper plus one or two flat ink colours. Ink looks slightly translucent and uneven. No gradients, no glow.",
+          "defaults": {"paper": "#f4eee1", "ink": "#1f2b3a", "accent": "#b33a2b"},
+          "adaptable": "Pick ink hues to suit the subject (navy, oxblood, forest green, black-brown, mustard). Paper can range from cream to warm white."
+        },
+        "typography": {
+          "rule": "Wood-type display: heavy slab or bold serif, uppercase, tight but never overlapping. Ornaments (rules, stars, simple fleurons, borders) are built from simple geometric strokes. At most two typefaces.",
+          "fonts": ["slab", "serifDisplay", "serifText"]
+        },
+        "composition": {
+          "rule": "A centred, symmetric typographic poster: lines of different sizes stacked like a traditional broadside, separated by rules and ornaments, with a wide margin.",
+          "adaptable": "Line breaks, relative sizes, which ornaments appear and alignment of secondary text."
+        },
+        "texture": "Impression: every ink shape gets a 1px darker offset bottom-right (about 15% alpha) and a 1px lighter paper highlight top-left (deboss). Ink density noise: punch 5–15% tiny random voids into ink areas with 'destination-out' on an offscreen ink layer. Faint short cotton fibres across the paper.",
+        "lighting": "Only the deboss micro-highlight. No scene lighting.",
+        "motion": {
+          "rule": "Slow and physical: lines press in one after another (scale 1.03 to 1 while ink opacity goes 0 to 1 over about 0.3s), then the sheet rests. An optional subtle ink shimmer steps at about 6 fps.",
+          "fps": null
+        },
+        "recipe": [
+          "Fill paperColor, then draw faint fibres (short 1px strokes at 4–8% alpha).",
+          "Lay out the text lines as a centred stack; fit each line to the column width with measureText.",
+          "Render all ink elements onto an offscreen ink layer in their ink colours.",
+          "Punch the ink voids on that layer with 'destination-out' specks (seeded, so they don't flicker).",
+          "Draw the deboss: the ink layer offset (+1,+1) tinted dark at low alpha, and (-1,-1) tinted lighter than the paper; then draw the ink layer itself.",
+          "Animate the press-in per line from time, then hold."
+        ],
+        "must": ["deboss offset on the type", "uneven ink texture", "cream paper", "stacked typographic layout"],
+        "never": ["gradients", "glow or shadowBlur", "photos", "thin modern hairline sans as the headline", "a dark background"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#f4eee1", "group": "Palette", "role": "bg"},
+        {"name": "inkColor", "kind": "color", "label": "Ink", "default": "#1f2b3a", "group": "Palette", "role": "ink"},
+        {"name": "accentInk", "kind": "color", "label": "Accent ink", "default": "#b33a2b", "group": "Palette", "role": "accent"},
+        {"name": "impressionDepth", "kind": "number", "label": "Impression depth", "default": 1.5, "min": 0, "max": 3, "step": 0.1, "group": "Style", "uiHint": "slider"},
+        {"name": "inkTexture", "kind": "number", "label": "Ink texture", "default": 0.4, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.screen-print",
+      "slot": "look",
+      "family": "print",
+      "name": "Screen print poster",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Bold 3–4 colour screen-printed gig poster with halftone shading.",
+      "keywords": ["screen print", "screenprint", "silkscreen", "gig poster"],
+      "suits": {
+        "moods": ["bold", "loud", "rock", "indie", "energetic", "retro", "gritty"],
+        "subjects": ["concert", "gig", "band", "festival", "event", "beer", "brewery", "skate", "bike", "music"],
+        "formats": ["poster", "flyer", "event"]
+      },
+      "avoidFor": ["minimal", "corporate", "luxury", "calm"],
+      "image": "optional",
+      "conflicts": ["look.grainy-gradient", "look.y2k-chrome", "look.watercolor"],
+      "spec": {
+        "essence": "A hand-pulled screen print: 3–4 flat spot-colour layers, halftone dot shading and small registration errors between layers.",
+        "palette": {
+          "rule": "Three or four flat spot colours on a paper colour, each on its own layer. Shading only with halftone dots of a spot colour. Layers slightly overlap or leave 1–2px gaps (trapping errors).",
+          "defaults": {"paper": "#efe6d2", "color1": "#e84a27", "color2": "#1d3557", "color3": "#f2b705"},
+          "adaptable": "Pick spot colours to suit the subject; keep them saturated and opaque."
+        },
+        "typography": {
+          "rule": "Heavy condensed display, very large, hand-set feel; may be stacked or bent along a gentle curve.",
+          "fonts": ["condensed", "slab"]
+        },
+        "composition": {
+          "rule": "One big central illustration made of flat shapes with a halftone-shaded area, a headline banner at the top or bottom, and event details small in a band.",
+          "adaptable": "Illustration subject, banner position and number of shapes."
+        },
+        "texture": "Halftone: a grid of circles (spacing 6–10px) whose radius follows a tone value. Layers offset 1–2px from each other. Light paper speckle.",
+        "lighting": "Implied only through halftone density from one light direction.",
+        "motion": {
+          "rule": "Stepped at about 12 fps: halftone dot radius breathes, layers shift ±1px, the headline slides into place once; then loop.",
+          "fps": 12
+        },
+        "recipe": [
+          "Keep each spot colour on its own layer (offscreen canvas or its own draw pass).",
+          "Halftone function: for each grid cell compute a tone from position (or image luminance) and draw an arc with radius = tone x cell / 2.",
+          "Offset each layer by its registration error before drawing it onto the paper.",
+          "Step all animation on Math.floor(time * fps)."
+        ],
+        "must": ["halftone shading", "three or four flat spot colours", "visible layer offset"],
+        "never": ["gradients", "glow", "photoreal rendering"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#efe6d2", "group": "Palette", "role": "bg"},
+        {"name": "spotColor1", "kind": "color", "label": "Spot 1", "default": "#e84a27", "group": "Palette", "role": "accent"},
+        {"name": "spotColor2", "kind": "color", "label": "Spot 2", "default": "#1d3557", "group": "Palette", "role": "ink"},
+        {"name": "spotColor3", "kind": "color", "label": "Spot 3", "default": "#f2b705", "group": "Palette"},
+        {"name": "halftoneSize", "kind": "number", "label": "Halftone size", "default": 8, "min": 4, "max": 16, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "layerOffset", "kind": "number", "label": "Layer offset", "default": 1.5, "min": 0, "max": 4, "step": 0.5, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.halftone-pop",
+      "slot": "look",
+      "family": "print",
+      "name": "Halftone pop / comic",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Pop-art comic look: dot fills, thick black outlines, primary colours and burst shapes.",
+      "keywords": ["pop art", "ben-day", "benday", "comic book", "comic style"],
+      "suits": {
+        "moods": ["fun", "loud", "playful", "bold", "retro", "cheeky", "energetic"],
+        "subjects": ["sale", "promo", "announcement", "superhero", "food", "product", "launch"],
+        "formats": ["social-post", "poster", "ad", "sticker"]
+      },
+      "avoidFor": ["calm", "luxury", "minimal", "serious"],
+      "image": "optional",
+      "conflicts": ["look.watercolor", "look.cyanotype"],
+      "spec": {
+        "essence": "A pop-art comic panel: printed dot patterns, thick black outlines, primary colours and explosive burst shapes.",
+        "palette": {
+          "rule": "Primary red, yellow and blue plus black outlines and white or cream paper. Flat fills or dot fills only.",
+          "defaults": {"paper": "#fff8e7", "red": "#e63946", "yellow": "#ffd60a", "blue": "#1d6fd8", "ink": "#111111"},
+          "adaptable": "Hues may shift slightly (magenta and cyan variants), but keep three primaries plus black and white."
+        },
+        "typography": {
+          "rule": "Bold comic lettering: heavy condensed or rounded sans in uppercase with a thick black outline (strokeText, lineWidth 6–10) and an optional hard offset block shadow.",
+          "fonts": ["condensed", "rounded"]
+        },
+        "composition": {
+          "rule": "A starburst behind the headline, one or more comic panel borders, diagonal energy and a speech bubble for secondary text.",
+          "adaptable": "Panel layout, burst position and size, bubble placement."
+        },
+        "texture": "Dot fills: a regular grid of same-size dots (spacing 8–12px, radius 2–4px) clipped inside shapes. Thick 4–8px black outlines around every shape.",
+        "lighting": "None; flat.",
+        "motion": {
+          "rule": "Snappy: the burst scales in with a spring overshoot, dots pan slowly, the headline shakes 2px on the beat. Hits must feel punchy.",
+          "fps": null
+        },
+        "recipe": [
+          "Burst: a polygon of 12–18 points alternating between two radii.",
+          "Dot fill: clip to the shape path, then draw the dot grid.",
+          "Outline every shape with a thick black stroke after filling.",
+          "Text: strokeText with a thick black outline first, then fillText on top."
+        ],
+        "must": ["black outlines", "dot fills", "a starburst or panel", "primary colours"],
+        "never": ["gradients", "soft shadows or glow", "pastel palettes"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#fff8e7", "group": "Palette", "role": "bg"},
+        {"name": "popColor", "kind": "color", "label": "Pop colour", "default": "#ffd60a", "group": "Palette", "role": "accent"},
+        {"name": "dotSize", "kind": "number", "label": "Dot size", "default": 3.5, "min": 2, "max": 8, "step": 0.5, "group": "Style", "uiHint": "slider"},
+        {"name": "outlineWidth", "kind": "number", "label": "Outline width", "default": 6, "min": 2, "max": 12, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "burstPoints", "kind": "number", "label": "Burst points", "default": 14, "min": 8, "max": 24, "step": 1, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.linocut",
+      "slot": "look",
+      "family": "print",
+      "name": "Linocut / woodcut",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Hand-carved relief print: black jagged shapes, carved white strokes and one accent ink.",
+      "keywords": ["linocut", "lino print", "woodcut", "block print", "relief print"],
+      "suits": {
+        "moods": ["rustic", "folk", "handmade", "earthy", "bold", "honest", "natural"],
+        "subjects": ["nature", "bakery", "brewery", "folk", "farm", "animals", "botanical", "book", "cover", "wine"],
+        "formats": ["poster", "card", "label", "cover"]
+      },
+      "avoidFor": ["tech", "futuristic", "dashboard"],
+      "image": "none",
+      "conflicts": ["look.y2k-chrome", "look.neon-sign", "look.grainy-gradient", "look.vaporwave"],
+      "spec": {
+        "essence": "A relief print carved by hand: bold black shapes with jagged edges, white gouge strokes that describe form, one accent ink.",
+        "palette": {
+          "rule": "Black (or one dark ink) on off-white paper plus at most one accent ink. Flat, no gradients.",
+          "defaults": {"paper": "#f1ead8", "ink": "#161412", "accent": "#c8452c"},
+          "adaptable": "The accent ink and the paper tint may change to suit the subject."
+        },
+        "typography": {
+          "rule": "Chunky, slightly irregular letters: bold slab or serif with roughened edges, each letter rotated ±1–2° as if hand-set.",
+          "fonts": ["slab", "serifDisplay"]
+        },
+        "composition": {
+          "rule": "A central carved illustration from bold shapes, a background of parallel carved gouge lines, a border frame and the title in a carved banner.",
+          "adaptable": "Illustration subject, frame shape, banner position."
+        },
+        "texture": "Rough edges: polygon paths whose vertices are displaced by seeded noise (1–3px). Carving: white parallel curved strokes (lineWidth 1.5–3, tapered) cut into black areas following the form. Small ink voids.",
+        "lighting": "Form shown only by the density of carved white lines.",
+        "motion": {
+          "rule": "Stepped boil at about 8 fps: vertices re-jitter per step from a seed, carved lines reveal slowly. Subtle.",
+          "fps": 8
+        },
+        "recipe": [
+          "Use a seeded random that depends on the current step, so shapes boil without flickering every frame.",
+          "roughPath(points): offset each vertex by seeded noise before drawing.",
+          "Draw ink areas on an offscreen layer, then carve white lines with 'destination-out' strokes (or draw them in paper colour).",
+          "Draw the accent ink as a separate flat layer."
+        ],
+        "must": ["jagged carved edges", "carved gouge lines", "one or two inks"],
+        "never": ["gradients", "smooth perfect vector shapes", "glow"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#f1ead8", "group": "Palette", "role": "bg"},
+        {"name": "inkColor", "kind": "color", "label": "Ink", "default": "#161412", "group": "Palette", "role": "ink"},
+        {"name": "accentInk", "kind": "color", "label": "Accent ink", "default": "#c8452c", "group": "Palette", "role": "accent"},
+        {"name": "roughness", "kind": "number", "label": "Edge roughness", "default": 1.8, "min": 0, "max": 4, "step": 0.1, "group": "Style", "uiHint": "slider"},
+        {"name": "carveDensity", "kind": "number", "label": "Carve density", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.cyanotype",
+      "slot": "look",
+      "family": "print",
+      "name": "Cyanotype",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Sun-print blue: white botanical silhouettes on Prussian blue with soft exposure edges.",
+      "keywords": ["cyanotype", "sun print", "sunprint"],
+      "suits": {
+        "moods": ["calm", "botanical", "nostalgic", "poetic", "natural", "dreamy", "quiet"],
+        "subjects": ["botanical", "plant", "flower", "nature", "wedding", "perfume", "spa", "herbal", "tea", "stationery"],
+        "formats": ["poster", "card", "cover", "social-post"]
+      },
+      "avoidFor": ["loud", "sale", "gaming"],
+      "image": "optional",
+      "conflicts": ["look.neon-sign", "look.y2k-chrome", "look.halftone-pop", "look.memphis"],
+      "spec": {
+        "essence": "A cyanotype sun print: objects laid on light-sensitive paper leave white silhouettes on a deep Prussian-blue ground.",
+        "palette": {
+          "rule": "Monochrome Prussian blue family only: deep ground plus white or pale-blue exposed shapes. No other hues.",
+          "defaults": {"ground": "#123f8c", "light": "#eaf2fb"},
+          "adaptable": "Depth of the blue and how pale the exposed shapes are."
+        },
+        "typography": {
+          "rule": "Quiet serif or typewriter mono, small, white, with lots of space; the title may be handwritten.",
+          "fonts": ["serifText", "mono", "hand"]
+        },
+        "composition": {
+          "rule": "Botanical or object silhouettes laid flat and overlapping at various angles, as if placed on the paper; an uneven brushed chemistry edge around the sheet; a small label in one corner.",
+          "adaptable": "Which silhouettes appear, their angles and density."
+        },
+        "texture": "Soft exposure: each silhouette is drawn white in 2–3 passes at low alpha, slightly enlarged (fake bleed, not shadowBlur). Brush-stroke chemistry edge around the sheet. Paper fibre noise.",
+        "lighting": "No light; only exposure softness.",
+        "motion": {
+          "rule": "Very slow: silhouettes sway ±2° like leaves, and the exposure develops on load (alpha rises). Smooth 30 fps is fine.",
+          "fps": null
+        },
+        "recipe": [
+          "Fill the blue ground; draw the brushed border as noisy rectangles at the edges.",
+          "Silhouettes: leaf and flower paths from bezier curves.",
+          "Draw each silhouette in 3 passes at alpha 0.15 / 0.3 / 1 with scale 1.04 / 1.02 / 1."
+        ],
+        "must": ["monochrome blue and white", "flat silhouettes", "soft exposure edges"],
+        "never": ["other hues", "hard vector drop shadows", "neon glow"]
+      },
+      "controls": [
+        {"name": "blueTone", "kind": "color", "label": "Blue", "default": "#123f8c", "group": "Palette", "role": "bg"},
+        {"name": "exposure", "kind": "number", "label": "Exposure", "default": 0.7, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "swayAmount", "kind": "number", "label": "Sway", "default": 0.4, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.xerox-zine",
+      "slot": "look",
+      "family": "print",
+      "name": "Xerox zine",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Photocopied DIY zine: harsh black and white, toner specks and taped cut-outs.",
+      "keywords": ["zine", "xerox", "photocopy", "photocopied", "punk flyer", "diy flyer"],
+      "suits": {
+        "moods": ["raw", "punk", "rebellious", "diy", "underground", "gritty", "edgy"],
+        "subjects": ["gig", "band", "protest", "skate", "streetwear", "club", "art show", "music"],
+        "formats": ["flyer", "poster", "social-post"]
+      },
+      "avoidFor": ["luxury", "calm", "corporate", "wedding"],
+      "image": "optional",
+      "conflicts": ["look.y2k-chrome", "look.grainy-gradient", "look.watercolor", "look.editorial"],
+      "spec": {
+        "essence": "A photocopied DIY zine page: everything thresholded to harsh black and white, pasted up crooked with tape and toner noise.",
+        "palette": {
+          "rule": "Black toner on white or light-grey paper. Optionally one fluorescent spot colour used sparingly. No gradients, no greys other than the paper.",
+          "defaults": {"paper": "#f2f0eb", "toner": "#111111", "spot": "#ff2e88"},
+          "adaptable": "The spot colour (e.g. #39ff14 green, #ffe600 yellow) and paper grey."
+        },
+        "typography": {
+          "rule": "Cut-out ransom lettering (words or letters in separate boxes with different fonts and rotations) mixed with typewriter mono; a big bold condensed headline.",
+          "fonts": ["condensed", "mono", "serifText", "grotesk"]
+        },
+        "composition": {
+          "rule": "Chaotic paste-up: blocks rotated ±3–8° and overlapping, tape strips at corners, handwritten arrows, torn edges.",
+          "adaptable": "Number of blocks, their order and rotation."
+        },
+        "texture": "Toner: threshold everything to black/white. Hundreds of 1px black specks, dark smudges near the edges, faint horizontal streaks.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Stepped at about 6–10 fps like a photocopier flipbook: blocks jitter 1px, toner specks reshuffle, one element slams in.",
+          "fps": 8
+        },
+        "recipe": [
+          "Draw blocks with ctx.rotate by their angle; fill boxes in paper or toner.",
+          "Render any photo to an offscreen canvas and threshold it to black/white with getImageData.",
+          "Seeded toner specks per step; tape strips as translucent light-grey rectangles with jagged ends."
+        ],
+        "must": ["black/white threshold look", "rotated pasted blocks", "toner specks"],
+        "never": ["gradients", "soft shadows", "smooth tweening", "full-colour photos"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#f2f0eb", "group": "Palette", "role": "bg"},
+        {"name": "spotColor", "kind": "color", "label": "Spot colour", "default": "#ff2e88", "group": "Palette", "role": "accent"},
+        {"name": "tonerNoise", "kind": "number", "label": "Toner noise", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "chaos", "kind": "number", "label": "Paste-up chaos", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "stepFps", "kind": "number", "label": "Flipbook speed (fps)", "default": 8, "min": 1, "max": 24, "step": 1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.stencil-spray",
+      "slot": "look",
+      "family": "print",
+      "name": "Stencil / spray paint",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Street stencil art: flat cut shapes, overspray speckle and drips on a wall.",
+      "keywords": ["stencil", "spray paint", "graffiti", "street art"],
+      "suits": {
+        "moods": ["urban", "rebellious", "raw", "bold", "street", "edgy"],
+        "subjects": ["streetwear", "music", "sneaker", "protest", "skate", "urban", "hip hop"],
+        "formats": ["poster", "social-post", "mural"]
+      },
+      "avoidFor": ["luxury", "wedding", "spa", "calm"],
+      "image": "optional",
+      "conflicts": ["look.y2k-chrome", "look.cyanotype", "look.art-deco"],
+      "spec": {
+        "essence": "A stencil sprayed on a wall: flat cut shapes with bridge gaps, soft overspray speckle and paint drips.",
+        "palette": {
+          "rule": "One to three flat spray colours on a wall or concrete colour. Overspray and drips use the same colours.",
+          "defaults": {"wall": "#b9b3a9", "paint": "#111111", "accent": "#e63946"},
+          "adaptable": "Wall tone and spray colours."
+        },
+        "typography": {
+          "rule": "Stencil lettering: bold condensed sans with small bridge gaps cut through strokes (thin wall-coloured bars across letters).",
+          "fonts": ["condensed", "geometric"]
+        },
+        "composition": {
+          "rule": "One bold stencil image centred or offset on the wall, tag-like text, drips running down from lower edges.",
+          "adaptable": "Image subject and placement."
+        },
+        "texture": "Overspray: around each shape edge scatter many tiny dots whose density falls off with distance (0–12px). Drips: thin vertical rounded lines ending in a small bulb. Wall: noise plus faint brick or concrete blocks.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Paint appears in passes, shape by shape, with speckle building up; drips slowly extend; then hold.",
+          "fps": null
+        },
+        "recipe": [
+          "Wall first (blocks + noise), then each stencil shape as a flat fill.",
+          "Overspray: for points sampled along each shape's edge, scatter seeded dots outward with falling density.",
+          "Stencil bridges: after drawing letters, draw thin wall-coloured bars across them."
+        ],
+        "must": ["stencil bridges in letters", "overspray speckle", "drips", "wall background"],
+        "never": ["gradients (build soft edges from speckle)", "glow"]
+      },
+      "controls": [
+        {"name": "wallColor", "kind": "color", "label": "Wall", "default": "#b9b3a9", "group": "Palette", "role": "bg"},
+        {"name": "paintColor", "kind": "color", "label": "Paint", "default": "#111111", "group": "Palette", "role": "ink"},
+        {"name": "accentPaint", "kind": "color", "label": "Accent paint", "default": "#e63946", "group": "Palette", "role": "accent"},
+        {"name": "overspray", "kind": "number", "label": "Overspray", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "dripLength", "kind": "number", "label": "Drip length", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.swiss",
+      "slot": "look",
+      "family": "movement",
+      "name": "Swiss / International",
+      "tier": "core",
+      "status": "active",
+      "summary": "Strict grid, big grotesk type, asymmetric layout and a single red accent.",
+      "keywords": ["swiss style", "swiss design", "international typographic", "international style"],
+      "suits": {
+        "moods": ["clean", "modern", "rational", "confident", "minimal", "professional", "architectural", "bold"],
+        "subjects": ["architecture", "design", "studio", "conference", "museum", "exhibition", "tech", "startup", "agency", "lecture", "jazz", "announcement"],
+        "formats": ["poster", "social-post", "announcement", "event", "cover"]
+      },
+      "avoidFor": ["cozy", "childish", "grunge", "kids"],
+      "image": "optional",
+      "conflicts": ["look.art-nouveau", "look.psychedelic", "look.xerox-zine", "look.memphis", "look.acid-graphics", "look.vaporwave"],
+      "spec": {
+        "essence": "International Typographic Style: a strict visible or implied grid, huge flush-left grotesk type, asymmetric balance and one accent colour.",
+        "palette": {
+          "rule": "White or light-grey background, black type and exactly one accent colour used for one shape or one word. Flat only.",
+          "defaults": {"bg": "#f4f4f1", "ink": "#111111", "accent": "#e3000f"},
+          "adaptable": "The accent hue may change to fit a brand (orange, blue). An inverted variant (accent background, white type) is allowed."
+        },
+        "typography": {
+          "rule": "Grotesk only. Flush-left, ragged-right. Huge headline (at least 12% of the canvas width) with tight tracking; small text on a strict baseline grid in sentence case. No centred text, no decorative fonts.",
+          "fonts": ["grotesk"]
+        },
+        "composition": {
+          "rule": "An explicit 6- or 12-column grid with margins of at least 6% of the width. Every element snaps to columns. Asymmetric placement, one geometric counterweight (circle, bar or square), lots of white space, optional thin rules.",
+          "adaptable": "Column count, which columns each element spans, the counterweight shape."
+        },
+        "texture": "None: crisp, no noise.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Precise and mechanical: elements slide along grid lines with ease-in-out (0.6–1.2s), type blocks reveal with mask wipes, rotation only in 90° steps; loop with holds.",
+          "fps": null
+        },
+        "recipe": [
+          "Compute the grid: columns, gutter, margins; derive x positions from column indices.",
+          "Place every element by column index and baseline row, never by free pixel values.",
+          "Text: textAlign 'left', wrap with measureText within its column span.",
+          "Animate positions between grid positions with easeInOutCubic and hold at each."
+        ],
+        "must": ["grid alignment", "flush-left grotesk", "one accent colour", "generous white space"],
+        "never": ["gradients", "shadows or glow", "textures", "centred layout", "more than one accent colour"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#f4f4f1", "group": "Palette", "role": "bg"},
+        {"name": "inkColor", "kind": "color", "label": "Ink", "default": "#111111", "group": "Palette", "role": "ink"},
+        {"name": "accentColor", "kind": "color", "label": "Accent", "default": "#e3000f", "group": "Palette", "role": "accent"},
+        {"name": "gridColumns", "kind": "number", "label": "Grid columns", "default": 6, "min": 4, "max": 12, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "showGrid", "kind": "boolean", "label": "Show grid", "default": false, "group": "Style", "uiHint": "switch"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.bauhaus",
+      "slot": "look",
+      "family": "movement",
+      "name": "Bauhaus",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Circles, squares and triangles in red, yellow, blue and black on cream.",
+      "keywords": ["bauhaus"],
+      "suits": {
+        "moods": ["modern", "playful", "geometric", "bold", "intellectual", "retro"],
+        "subjects": ["design", "architecture", "art school", "exhibition", "music", "furniture", "workshop", "museum"],
+        "formats": ["poster", "social-post", "cover"]
+      },
+      "avoidFor": ["rustic", "ornate", "luxury"],
+      "image": "none",
+      "conflicts": ["look.art-nouveau", "look.watercolor", "look.psychedelic"],
+      "spec": {
+        "essence": "Bauhaus geometry: primary shapes and primary colours arranged in a balanced asymmetric composition with geometric type.",
+        "palette": {
+          "rule": "Cream background plus red, yellow, blue and black. Flat fills only. No other hues.",
+          "defaults": {"bg": "#f1e9da", "red": "#d62828", "yellow": "#f6bd16", "blue": "#1d4e89", "ink": "#1b1b1b"},
+          "adaptable": "Exact tints of the four colours; one colour may dominate."
+        },
+        "typography": {
+          "rule": "Geometric sans, all lowercase or all uppercase, set horizontally, vertically or rotated in 90° steps; bold weight for the title.",
+          "fonts": ["geometric"]
+        },
+        "composition": {
+          "rule": "Circles, squares, triangles and thick black bars overlapping on a diagonal or grid; the text block aligned to a shape edge; asymmetric balance.",
+          "adaptable": "Which shapes, their size and overlap."
+        },
+        "texture": "None.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Shapes rotate in 90° steps, slide and scale with ease-in-out; circles roll; a choreographed loop.",
+          "fps": null
+        },
+        "recipe": [
+          "Define shapes as data (type, colour, x, y, size) and animate each with its own phase offset.",
+          "Draw black bars as thick rectangles; draw text rotated with ctx.rotate(Math.PI / 2) when vertical."
+        ],
+        "must": ["primary shapes", "the fixed five-colour palette", "geometric sans"],
+        "never": ["gradients", "shadows", "organic or floral curves", "photos"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#f1e9da", "group": "Palette", "role": "bg"},
+        {"name": "shapeCount", "kind": "number", "label": "Shapes", "default": 5, "min": 3, "max": 12, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "rotationSpeed", "kind": "number", "label": "Rotation speed", "default": 0.4, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.constructivist",
+      "slot": "look",
+      "family": "movement",
+      "name": "Constructivist",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Red and black diagonals, heavy condensed type and dynamic wedges.",
+      "keywords": ["constructivist", "constructivism", "propaganda poster"],
+      "suits": {
+        "moods": ["bold", "urgent", "revolutionary", "energetic", "powerful", "loud"],
+        "subjects": ["protest", "launch", "sport", "rally", "announcement", "industrial", "manifesto", "campaign"],
+        "formats": ["poster", "social-post", "ad"]
+      },
+      "avoidFor": ["calm", "cozy", "cute", "wedding"],
+      "image": "optional",
+      "conflicts": ["look.art-nouveau", "look.cyanotype", "look.watercolor"],
+      "spec": {
+        "essence": "Constructivist poster: aggressive diagonals, red and black wedges and huge condensed capitals.",
+        "palette": {
+          "rule": "Red, black and cream, with an optional single grey. Flat.",
+          "defaults": {"bg": "#efe4cf", "red": "#d7261e", "ink": "#151515"},
+          "adaptable": "Exact red and cream tints."
+        },
+        "typography": {
+          "rule": "Heavy condensed sans in uppercase, set along 30–45° diagonals, stacked words with huge scale contrast.",
+          "fonts": ["condensed", "grotesk"]
+        },
+        "composition": {
+          "rule": "Dynamic diagonals: a big red wedge or triangle cutting across, circles and bars, text running along the diagonals; any photo is a high-contrast black cut-out.",
+          "adaptable": "Diagonal angle, which elements appear."
+        },
+        "texture": "Optional faint paper ageing noise; otherwise flat print.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Aggressive: wedges slam in along the diagonal, text slides along its own angle, fast ease-out, then hold.",
+          "fps": null
+        },
+        "recipe": [
+          "Rotate the whole layout frame by the diagonal angle for text lines (ctx.rotate).",
+          "Wedges as polygons; animate with easeOutExpo from off-canvas along their axis."
+        ],
+        "must": ["30–45° diagonals", "red/black/cream palette", "condensed capitals"],
+        "never": ["gradients", "soft shadows", "pastels", "a centred static layout"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#efe4cf", "group": "Palette", "role": "bg"},
+        {"name": "redColor", "kind": "color", "label": "Red", "default": "#d7261e", "group": "Palette", "role": "accent"},
+        {"name": "diagonalAngle", "kind": "number", "label": "Diagonal angle", "default": 35, "min": 15, "max": 60, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "slamSpeed", "kind": "number", "label": "Slam speed", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.memphis",
+      "slot": "look",
+      "family": "movement",
+      "name": "Memphis",
+      "tier": "core",
+      "status": "active",
+      "summary": "80s Memphis: clashing pastels and brights, squiggles, confetti and bold outlines.",
+      "keywords": ["memphis", "memphis design", "80s pattern"],
+      "suits": {
+        "moods": ["playful", "fun", "cheerful", "quirky", "youthful", "bold", "party", "happy"],
+        "subjects": ["party", "kids", "birthday", "cafe", "dessert", "ice cream", "fashion", "sale", "event", "podcast", "cake"],
+        "formats": ["social-post", "poster", "announcement", "sticker"]
+      },
+      "avoidFor": ["luxury", "serious", "corporate", "finance", "funeral"],
+      "image": "none",
+      "conflicts": ["look.swiss", "look.editorial", "look.cyanotype", "look.letterpress"],
+      "spec": {
+        "essence": "Memphis design: scattered geometric confetti, squiggles and patterns in clashing pastels and brights, all outlined in black.",
+        "palette": {
+          "rule": "Five or six flat colours mixing pastels and brights, black outlines, a cream or pastel background. No gradients.",
+          "defaults": {"bg": "#fff6e6", "pink": "#ff6fb5", "yellow": "#ffd23f", "mint": "#3bceac", "violet": "#5b5bd6", "orange": "#ff6b35", "ink": "#111111"},
+          "adaptable": "Swap individual colours, keep the pastel-plus-bright clash."
+        },
+        "typography": {
+          "rule": "Chunky rounded or geometric sans, bold, optionally outlined in black, with a playful tilt of ±5°.",
+          "fonts": ["rounded", "geometric"]
+        },
+        "composition": {
+          "rule": "Scattered confetti (triangles, squiggles, circles, zigzags, dot grids, terrazzo) around a central bold message on a shape block. Black outlines of 2–4px. Hard offset shadows allowed (solid, no blur).",
+          "adaptable": "Density and arrangement of confetti, message block shape."
+        },
+        "texture": "Pattern fills (dots, stripes, zigzag) inside some shapes.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Bouncy: elements bob and rotate with spring easing, squiggles wiggle (sine), confetti drifts.",
+          "fps": null
+        },
+        "recipe": [
+          "Generate confetti items once (seeded): type, colour, position, rotation, phase.",
+          "Squiggle: a polyline following a sine wave, lineCap round, thick stroke.",
+          "Hard shadow: draw the shape offset (+6,+6) in black before drawing it."
+        ],
+        "must": ["confetti shapes", "squiggles", "black outlines", "pastel plus bright palette"],
+        "never": ["gradients", "blur", "realism", "muted palettes"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#fff6e6", "group": "Palette", "role": "bg"},
+        {"name": "confettiCount", "kind": "number", "label": "Confetti", "default": 40, "min": 10, "max": 80, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "wiggle", "kind": "number", "label": "Wiggle", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"},
+        {"name": "bounce", "kind": "number", "label": "Bounce", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.art-deco",
+      "slot": "look",
+      "family": "movement",
+      "name": "Art Deco",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Sunbursts, stepped geometry, thin gold lines and symmetric frames.",
+      "keywords": ["art deco", "gatsby", "1920s"],
+      "suits": {
+        "moods": ["luxurious", "luxury", "elegant", "glamorous", "celebratory", "vintage", "premium", "classy"],
+        "subjects": ["gala", "wedding", "cocktail", "hotel", "jewelry", "new year", "theatre", "jazz", "perfume", "invitation"],
+        "formats": ["invitation", "poster", "card", "announcement"]
+      },
+      "avoidFor": ["kids", "grunge", "casual"],
+      "image": "none",
+      "conflicts": ["look.xerox-zine", "look.memphis", "look.pixel-art", "look.acid-graphics", "look.stencil-spray"],
+      "spec": {
+        "essence": "Art Deco glamour: perfect symmetry, sunburst rays, stepped ziggurat frames and thin metallic gold lines.",
+        "palette": {
+          "rule": "A deep ground (navy, emerald or black) with gold lines and cream text. Gold may use a 2–3 stop linear gradient only on thin lines and type to imply metal.",
+          "defaults": {"bg": "#0f1b2d", "gold": "#c9a552", "goldLight": "#e8cf8a", "cream": "#f3e9d2"},
+          "adaptable": "Ground colour (navy, emerald, black, burgundy) and gold warmth."
+        },
+        "typography": {
+          "rule": "High-contrast display serif or engraved caps with wide letterspacing (15–25%), centred and symmetric.",
+          "fonts": ["decoDisplay", "serifDisplay"]
+        },
+        "composition": {
+          "rule": "Perfect bilateral symmetry: sunburst rays from the centre or a top arc, a stepped frame, fan motifs, thin double borders and a centred title panel.",
+          "adaptable": "Ray count, frame shape and motif placement (always mirrored)."
+        },
+        "texture": "Very fine; optional subtle linen noise.",
+        "lighting": "Metallic sheen: a highlight sweep travels across the gold lines.",
+        "motion": {
+          "rule": "Stately: rays extend or rotate slowly, a gold shimmer sweeps every 3–4s, frame lines draw on. Smooth ease-in-out.",
+          "fps": null
+        },
+        "recipe": [
+          "Draw everything mirrored around the vertical centre line.",
+          "Rays: lines from a centre point at equal angles, lineWidth 1–2.",
+          "Shimmer: move the stops of the gold linear gradient over time."
+        ],
+        "must": ["bilateral symmetry", "sunburst or fan motif", "thin gold lines", "widely spaced capitals"],
+        "never": ["grunge textures", "playful tilts", "heavy glow", "asymmetry"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Ground", "default": "#0f1b2d", "group": "Palette", "role": "bg"},
+        {"name": "goldColor", "kind": "color", "label": "Gold", "default": "#c9a552", "group": "Palette", "role": "accent"},
+        {"name": "rayCount", "kind": "number", "label": "Rays", "default": 24, "min": 8, "max": 48, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "shimmer", "kind": "number", "label": "Shimmer", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.art-nouveau",
+      "slot": "look",
+      "family": "movement",
+      "name": "Art Nouveau",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Flowing whiplash curves, floral frames and muted botanical colours.",
+      "keywords": ["art nouveau"],
+      "suits": {
+        "moods": ["elegant", "romantic", "natural", "ornate", "vintage", "feminine", "poetic"],
+        "subjects": ["perfume", "tea", "botanical", "wedding", "wine", "spa", "beauty", "theatre", "florist", "flower"],
+        "formats": ["poster", "label", "card", "invitation"]
+      },
+      "avoidFor": ["tech", "sale", "gaming"],
+      "image": "optional",
+      "conflicts": ["look.swiss", "look.bauhaus", "look.constructivist", "look.pixel-art", "look.neo-brutalism"],
+      "spec": {
+        "essence": "Art Nouveau poster: an ornamental frame of flowing whiplash curves and stylised flowers around an arched central panel.",
+        "palette": {
+          "rule": "Muted botanical colours as flat fills with dark olive-brown outlines. No neon, no harsh saturation.",
+          "defaults": {"bg": "#f0e6cf", "sage": "#9fae8a", "ochre": "#c89b3c", "rose": "#c98b8b", "outline": "#3b3428"},
+          "adaptable": "Swap hues within the muted botanical family."
+        },
+        "typography": {
+          "rule": "Decorative display serif, flowing; the title sits inside an arched panel.",
+          "fonts": ["serifDisplay", "serifText"]
+        },
+        "composition": {
+          "rule": "A frame of whiplash curves, vines, leaves and stylised flowers around a central arched panel, roughly symmetric, with a circular halo behind the subject.",
+          "adaptable": "Flower types, frame density, panel shape."
+        },
+        "texture": "Subtle aged paper.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Gentle growth: vines draw along bezier paths, petals sway, the halo rotates slowly. Smooth.",
+          "fps": null
+        },
+        "recipe": [
+          "Vines as bezier curves with an S-shaped whiplash; draw partially using stroke progress.",
+          "Every filled shape gets a dark outline (lineWidth 1.5–2.5)."
+        ],
+        "must": ["organic whiplash curves", "a floral frame", "dark outlines", "muted palette"],
+        "never": ["neon", "a hard geometric grid", "glow", "harsh saturation"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#f0e6cf", "group": "Palette", "role": "bg"},
+        {"name": "frameColor", "kind": "color", "label": "Frame", "default": "#9fae8a", "group": "Palette", "role": "accent"},
+        {"name": "vineDensity", "kind": "number", "label": "Vine density", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "growSpeed", "kind": "number", "label": "Grow speed", "default": 0.4, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.mid-century",
+      "slot": "look",
+      "family": "movement",
+      "name": "Mid-century modern",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Atomic starbursts and boomerangs in mustard, teal and orange on cream.",
+      "keywords": ["mid-century", "midcentury", "mid century", "atomic age", "1950s"],
+      "suits": {
+        "moods": ["retro", "optimistic", "warm", "friendly", "playful", "stylish", "vintage"],
+        "subjects": ["cafe", "cocktail", "travel", "furniture", "record", "bakery", "diner", "real estate", "jazz", "coffee"],
+        "formats": ["poster", "social-post", "label", "ad"]
+      },
+      "avoidFor": ["futuristic", "grunge"],
+      "image": "none",
+      "conflicts": ["look.y2k-chrome", "look.acid-graphics", "look.vaporwave", "look.crt-vhs-glitch"],
+      "spec": {
+        "essence": "Mid-century modern print: atomic starbursts, boomerang shapes and dotted lines in a warm retro palette with slightly offset outlines.",
+        "palette": {
+          "rule": "Cream ground with mustard, teal, burnt orange and brown (optional soft red). Flat fills with outlines offset 1–2px from the fills.",
+          "defaults": {"bg": "#f3e7cf", "mustard": "#e0a526", "teal": "#2a7f7a", "orange": "#d9622b", "brown": "#5a3d2b"},
+          "adaptable": "Tints within the warm retro family."
+        },
+        "typography": {
+          "rule": "A casual script or rounded geometric sans for the title, small-caps grotesk for details.",
+          "fonts": ["geometric", "rounded", "hand"]
+        },
+        "composition": {
+          "rule": "A loose, airy arrangement of starbursts, boomerang and kidney shapes, dotted lines and a framed illustration.",
+          "adaptable": "Shape choice, density and placement."
+        },
+        "texture": "Slight print grain; outlines offset 1–2px from fills.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Easy swing: shapes sway like mobiles (pendulum sine), starbursts twinkle with a scale pulse. Smooth 30 fps.",
+          "fps": null
+        },
+        "recipe": [
+          "Draw each shape's fill, then its outline shifted by (outlineOffset, outlineOffset).",
+          "Pendulum: rotate around a pivot above the shape by sin(t) x amplitude."
+        ],
+        "must": ["atomic or boomerang shapes", "the warm retro palette", "offset outlines"],
+        "never": ["neon", "gradients", "glossy 3D"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#f3e7cf", "group": "Palette", "role": "bg"},
+        {"name": "accentColor", "kind": "color", "label": "Accent", "default": "#d9622b", "group": "Palette", "role": "accent"},
+        {"name": "outlineOffset", "kind": "number", "label": "Outline offset", "default": 1.5, "min": 0, "max": 4, "step": 0.5, "group": "Style", "uiHint": "slider"},
+        {"name": "swing", "kind": "number", "label": "Swing", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.psychedelic",
+      "slot": "look",
+      "family": "movement",
+      "name": "Psychedelic 60s",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Warped melting lettering, clashing saturated colours and concentric ripples.",
+      "keywords": ["psychedelic", "trippy", "60s poster", "1960s", "hippie"],
+      "suits": {
+        "moods": ["trippy", "groovy", "wild", "festival", "dreamy", "loud"],
+        "subjects": ["festival", "music", "concert", "record", "vintage shop"],
+        "formats": ["poster", "flyer", "cover"]
+      },
+      "avoidFor": ["corporate", "minimal", "finance"],
+      "image": "none",
+      "conflicts": ["look.swiss", "look.editorial", "look.bauhaus"],
+      "spec": {
+        "essence": "A 60s concert poster: lettering that warps to fill its shape, clashing complementary colours and concentric ripple bands.",
+        "palette": {
+          "rule": "Clashing complementary pairs at full saturation (orange/blue, magenta/green, purple/yellow): four or five flat colours in concentric bands.",
+          "defaults": {"bg": "#ff7a00", "blue": "#2d3cff", "magenta": "#ff2ec4", "green": "#3ddc84", "yellow": "#ffe14d"},
+          "adaptable": "Which complementary pairs are used."
+        },
+        "typography": {
+          "rule": "Lettering fills a shape and warps with it: draw text character by character with a sine displacement of x/y and per-letter scale so words bulge and melt.",
+          "fonts": ["rounded", "serifDisplay"]
+        },
+        "composition": {
+          "rule": "Concentric ripple bands radiating from the centre, a warped title filling most of the frame, organic blobs.",
+          "adaptable": "Ripple centre, band count, title shape."
+        },
+        "texture": "None; flat.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Continuous ripple: bands flow outward, the lettering waves as a phase travels along the text, band hues cycle slowly; seamless loop.",
+          "fps": null
+        },
+        "recipe": [
+          "Per-character drawing: for letter i, translate by sin(i * k + t) offsets and scale by 1 + 0.2 * sin(...).",
+          "Concentric bands: stroke circles of increasing radius with alternating colours, radius offset by time."
+        ],
+        "must": ["warped lettering", "concentric bands", "complementary colour clash"],
+        "never": ["a static grid layout", "muted colours", "only straight hard edges"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Base colour", "default": "#ff7a00", "group": "Palette", "role": "bg"},
+        {"name": "warp", "kind": "number", "label": "Warp", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "bandCount", "kind": "number", "label": "Bands", "default": 12, "min": 4, "max": 24, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "rippleSpeed", "kind": "number", "label": "Ripple speed", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.editorial",
+      "slot": "look",
+      "family": "movement",
+      "name": "Editorial magazine",
+      "tier": "core",
+      "status": "active",
+      "summary": "Elegant serif headline, column grid, hairline rules and off-white paper.",
+      "keywords": ["editorial", "magazine", "magazine cover", "newspaper style"],
+      "suits": {
+        "moods": ["elegant", "sophisticated", "calm", "intelligent", "premium", "literary", "refined", "minimal"],
+        "subjects": ["bakery", "restaurant", "fashion", "book", "interview", "article", "real estate", "architecture", "beauty", "podcast", "quote", "hotel", "announcement"],
+        "formats": ["social-post", "cover", "poster", "quote", "announcement", "carousel"]
+      },
+      "avoidFor": ["kids", "gaming", "rave", "party"],
+      "image": "optional",
+      "conflicts": ["look.memphis", "look.psychedelic", "look.acid-graphics", "look.xerox-zine", "look.pixel-art"],
+      "spec": {
+        "essence": "A magazine page: a high-contrast serif headline, a column grid with generous margins, hairline rules and quiet off-white paper.",
+        "palette": {
+          "rule": "Off-white paper, near-black ink and one muted accent. Flat. A photo block, if present, is the only full-colour element.",
+          "defaults": {"paper": "#f5f1ea", "ink": "#1c1a17", "accent": "#b5563a"},
+          "adaptable": "Accent hue (terracotta, olive #6b6b3a, navy #243b53) and paper warmth."
+        },
+        "typography": {
+          "rule": "High-contrast display serif headline (italic allowed for emphasis) with small grotesk or serif body text; a letterspaced small-caps kicker; strong size contrast (headline 8–14 times the body size).",
+          "fonts": ["serifDisplay", "serifText", "grotesk"]
+        },
+        "composition": {
+          "rule": "A column grid with generous margins: kicker line, headline, deck, 1px hairline rules, an issue or date line, an optional image block with caption; asymmetric editorial balance.",
+          "adaptable": "Column count, headline length and position, image block size."
+        },
+        "texture": "None, or extremely subtle paper noise.",
+        "lighting": "Only inside the photo, if any.",
+        "motion": {
+          "rule": "Refined: text reveals line by line with a slow ease-out (about 0.8s per line), an image does a slow zoom (1.0 to 1.05 over 8s), rules draw on.",
+          "fps": null
+        },
+        "recipe": [
+          "Grid with margins of at least 7% of the width; headline set with measureText-based wrapping.",
+          "Rules as 1px lines at 60–80% ink alpha.",
+          "Reveal lines with a clip rectangle that grows with eased progress."
+        ],
+        "must": ["a serif display headline", "hairline rules", "grid margins", "paper tone"],
+        "never": ["glow", "neon", "background gradients", "heavy drop shadows", "a dark mode layout"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#f5f1ea", "group": "Palette", "role": "bg"},
+        {"name": "inkColor", "kind": "color", "label": "Ink", "default": "#1c1a17", "group": "Palette", "role": "ink"},
+        {"name": "accentColor", "kind": "color", "label": "Accent", "default": "#b5563a", "group": "Palette", "role": "accent"},
+        {"name": "headlineScale", "kind": "number", "label": "Headline scale", "default": 1, "min": 0.6, "max": 1.4, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "showRules", "kind": "boolean", "label": "Hairline rules", "default": true, "group": "Style", "uiHint": "switch"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.neo-brutalism",
+      "slot": "look",
+      "family": "movement",
+      "name": "Neo-brutalism",
+      "tier": "core",
+      "status": "active",
+      "summary": "Thick black borders, hard offset shadows and flat bright blocks.",
+      "keywords": ["neo-brutalism", "neobrutalism", "neubrutalism", "brutalist", "brutalism"],
+      "suits": {
+        "moods": ["bold", "playful", "direct", "modern", "loud", "confident", "quirky", "fun"],
+        "subjects": ["startup", "app", "saas", "launch", "product", "podcast", "course", "sale", "newsletter", "feature"],
+        "formats": ["social-post", "ad", "announcement", "ui", "carousel"]
+      },
+      "avoidFor": ["luxury", "calm", "vintage", "wedding"],
+      "image": "optional",
+      "conflicts": ["look.art-deco", "look.watercolor", "look.grainy-gradient", "look.art-nouveau"],
+      "spec": {
+        "essence": "Neo-brutalist interface graphics: flat saturated blocks, thick black borders and hard solid offset shadows.",
+        "palette": {
+          "rule": "Flat saturated blocks on an off-white background, with pure black borders and shadows.",
+          "defaults": {"bg": "#fffdf5", "yellow": "#ffde59", "lime": "#a3e635", "coral": "#ff6b6b", "sky": "#7dd3fc", "lavender": "#c4b5fd", "ink": "#000000"},
+          "adaptable": "Which saturated colours are used; one may dominate."
+        },
+        "typography": {
+          "rule": "Chunky grotesk or mono, bold, black; labels as pill tags.",
+          "fonts": ["grotesk", "mono"]
+        },
+        "composition": {
+          "rule": "UI-like cards and blocks with 3–4px black borders and a 6–10px hard offset black shadow (a solid rectangle, no blur); sticker badges and arrows, some slightly rotated.",
+          "adaptable": "Card arrangement, sizes, which stickers appear."
+        },
+        "texture": "None.",
+        "lighting": "None; shadows are solid offsets.",
+        "motion": {
+          "rule": "Snappy spring: cards pop in with overshoot, the shadow offset shrinks when a card is pressed, stickers wobble.",
+          "fps": null
+        },
+        "recipe": [
+          "For each card: fillRect the black shadow at (+offset, +offset), then the card fill, then strokeRect the border.",
+          "Spring easing for pop-in: 1 - exp(-6t) * cos(12t)."
+        ],
+        "must": ["thick black borders", "hard solid offset shadows", "flat saturated fills"],
+        "never": ["blur or soft shadows", "gradients", "thin lines", "dark mode"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#fffdf5", "group": "Palette", "role": "bg"},
+        {"name": "accentColor", "kind": "color", "label": "Accent", "default": "#ffde59", "group": "Palette", "role": "accent"},
+        {"name": "borderWidth", "kind": "number", "label": "Border width", "default": 4, "min": 2, "max": 8, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "shadowOffset", "kind": "number", "label": "Shadow offset", "default": 8, "min": 0, "max": 16, "step": 1, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.pixel-art",
+      "slot": "look",
+      "family": "digital",
+      "name": "Pixel art",
+      "tier": "core",
+      "status": "active",
+      "summary": "Crisp pixel art: a low-res buffer scaled up, a limited palette and stepped animation.",
+      "keywords": ["pixel art", "pixel-art", "8-bit", "8 bit", "16-bit", "16 bit", "pixelated", "retro game"],
+      "suits": {
+        "moods": ["nostalgic", "playful", "gaming", "fun", "retro", "cute", "geeky"],
+        "subjects": ["game", "gaming", "arcade", "esports", "level", "app", "kids", "achievement", "score", "bakery", "shop"],
+        "formats": ["social-post", "sticker", "poster", "banner"]
+      },
+      "avoidFor": ["luxury", "editorial", "wedding"],
+      "image": "optional",
+      "conflicts": ["look.watercolor", "look.grainy-gradient", "look.editorial", "look.art-deco", "look.art-nouveau"],
+      "spec": {
+        "essence": "Pixel art: the whole scene is drawn into a tiny buffer and scaled up with hard pixel edges, a limited palette and frame-stepped animation.",
+        "palette": {
+          "rule": "A limited palette of 8–16 flat colours. No anti-aliasing, no gradients, no partial alpha on the final pixels.",
+          "defaults": {"bg": "#1d2b53", "c1": "#7e2553", "c2": "#008751", "c3": "#ab5236", "c4": "#5f574f", "c5": "#c2c3c7", "c6": "#fff1e8", "c7": "#ff004d", "c8": "#ffa300", "c9": "#ffec27", "c10": "#00e436", "c11": "#29adff"},
+          "adaptable": "Choose a 8–16 colour subset to suit the subject (warm bakery tones, cool night scene, etc.)."
+        },
+        "typography": {
+          "rule": "Pixel lettering drawn inside the low-res buffer (a 5x7 bitmap glyph grid, or a small mono font drawn in the buffer and then upscaled) so it stays crisp and blocky.",
+          "fonts": ["mono"]
+        },
+        "composition": {
+          "rule": "A scene built in a buffer 64–160px wide; sprites with a 1px dark outline; tile-based ground or background; an optional game-style HUD (score, hearts).",
+          "adaptable": "Scene content, sprite design, buffer resolution within range."
+        },
+        "texture": "Checkerboard dithering for shading is allowed. No noise.",
+        "lighting": "Shade with 2–3 palette steps per material, light from the top-left.",
+        "motion": {
+          "rule": "Stepped at about 8–12 fps; sprites alternate between 2–4 frames; positions always snap to whole buffer pixels.",
+          "fps": 10
+        },
+        "recipe": [
+          "Create an offscreen buffer canvas: bw = bufferWidth, bh = Math.round(bw * height / width).",
+          "Draw everything into the buffer with fillRect at integer coordinates (Math.floor every position).",
+          "On the main canvas: ctx.imageSmoothingEnabled = false; ctx.drawImage(buffer, 0, 0, width, height).",
+          "Advance animation frames with Math.floor(time * frameRate)."
+        ],
+        "must": ["a low-res buffer upscaled with imageSmoothingEnabled = false", "integer pixel positions", "a limited palette"],
+        "never": ["gradients", "blur", "smooth rotation or scaling of sprites", "anti-aliased vector shapes on the main canvas"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#1d2b53", "group": "Palette", "role": "bg"},
+        {"name": "accentColor", "kind": "color", "label": "Accent", "default": "#ffa300", "group": "Palette", "role": "accent"},
+        {"name": "bufferWidth", "kind": "number", "label": "Pixel resolution", "default": 96, "min": 48, "max": 256, "step": 8, "group": "Style", "uiHint": "slider"},
+        {"name": "frameRate", "kind": "number", "label": "Frame rate", "default": 10, "min": 1, "max": 24, "step": 1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": ["requireCrispScaling"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.dither-1bit",
+      "slot": "look",
+      "family": "digital",
+      "name": "1-bit dither",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Two colours only, with Bayer or error-diffusion dither patterns.",
+      "keywords": ["1-bit", "1 bit", "dither", "dithered", "dithering", "bitmap style"],
+      "suits": {
+        "moods": ["nostalgic", "lo-fi", "techy", "mysterious", "minimal", "retro"],
+        "subjects": ["tech", "music", "podcast", "zine", "photography", "indie game", "album"],
+        "formats": ["poster", "social-post", "cover"]
+      },
+      "avoidFor": ["luxury", "kids", "colorful"],
+      "image": "optional",
+      "conflicts": ["look.grainy-gradient", "look.watercolor", "look.memphis"],
+      "spec": {
+        "essence": "1-bit graphics: a continuous tone image reduced to exactly two colours with a visible dither pattern.",
+        "palette": {
+          "rule": "Exactly two colours. Every final pixel is one of the two.",
+          "defaults": {"dark": "#0f380f", "light": "#9bbc0f"},
+          "adaptable": "Pick the pair: green handheld (#0f380f / #9bbc0f), black and paper (#111111 / #f0ede4), ink blue and white."
+        },
+        "typography": {
+          "rule": "Bitmap-looking mono text rendered into the dithered buffer.",
+          "fonts": ["mono"]
+        },
+        "composition": {
+          "rule": "A bold subject rendered as tone then dithered; plenty of patterned areas; simple frames.",
+          "adaptable": "Subject, light direction, framing."
+        },
+        "texture": "Ordered Bayer 4x4 or 8x8 (or Floyd–Steinberg) dither patterns are the texture.",
+        "lighting": "Tone may be computed with real lighting (continuous values) before dithering to two colours.",
+        "motion": {
+          "rule": "The tone field animates (moving light, rotating object) and is re-dithered each frame at reduced resolution; 12–24 fps.",
+          "fps": 15
+        },
+        "recipe": [
+          "Compute tone per pixel in a low-res buffer (for example width / ditherScale) procedurally or from image luminance.",
+          "Threshold each pixel with a Bayer matrix and write one of the two colours into an ImageData.",
+          "putImageData to the buffer, then draw it upscaled with ctx.imageSmoothingEnabled = false."
+        ],
+        "must": ["exactly two colours after dithering", "a visible dither pattern", "crisp upscaling"],
+        "never": ["anti-aliased intermediate colours in the output", "visible gradients in the final image", "blur", "a third colour"]
+      },
+      "controls": [
+        {"name": "darkColor", "kind": "color", "label": "Dark", "default": "#0f380f", "group": "Palette", "role": "ink"},
+        {"name": "lightColor", "kind": "color", "label": "Light", "default": "#9bbc0f", "group": "Palette", "role": "bg"},
+        {"name": "ditherScale", "kind": "number", "label": "Dither scale", "default": 3, "min": 1, "max": 6, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "contrast", "kind": "number", "label": "Contrast", "default": 1, "min": 0.2, "max": 2, "step": 0.05, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur"], "require": ["requireCrispScaling"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.ascii-terminal",
+      "slot": "look",
+      "family": "digital",
+      "name": "ASCII terminal",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Monospace character grid, brightness mapped to characters, one phosphor colour.",
+      "keywords": ["ascii", "ascii art", "terminal", "command line", "hacker style"],
+      "suits": {
+        "moods": ["techy", "hacker", "mysterious", "nerdy", "retro", "cyber"],
+        "subjects": ["developer", "api", "launch", "cybersecurity", "ai", "crypto", "hackathon", "code", "devtools"],
+        "formats": ["social-post", "banner", "poster", "announcement"]
+      },
+      "avoidFor": ["cozy", "wedding", "kids", "bakery"],
+      "image": "optional",
+      "conflicts": ["look.watercolor", "look.letterpress", "look.art-nouveau"],
+      "spec": {
+        "essence": "A terminal screen: everything is drawn with monospace characters on a grid, shading comes from a character brightness ramp, in one phosphor colour.",
+        "palette": {
+          "rule": "A near-black background and one phosphor colour, plus a dim version of it (about 35%) for secondary text. No other hues.",
+          "defaults": {"bg": "#0b0f0c", "phosphor": "#33ff66"},
+          "adaptable": "Phosphor colour: green #33ff66, amber #ffb000 or white #e8e8e8."
+        },
+        "typography": {
+          "rule": "Monospace only. Every glyph aligned to the character grid (cell width = measureText('M').width, fixed line height).",
+          "fonts": ["mono"]
+        },
+        "composition": {
+          "rule": "A full character grid; the subject rendered as ASCII shading with the ramp ' .:-=+*#%@' by brightness; a prompt line or status bar; a blinking cursor.",
+          "adaptable": "Subject, grid density, where the prompt and status bar sit."
+        },
+        "texture": "Scanlines every 2–3px at 8–15% dark. Optional phosphor bloom: one extra low-alpha pass of bright characters (never per-character blur).",
+        "lighting": "A brightness field computed per cell, then mapped to characters.",
+        "motion": {
+          "rule": "Typing and scrolling: lines type out at 20–40 characters per second, the cursor blinks at 1 Hz, the brightness field animates; steps at 15–30 fps.",
+          "fps": 20
+        },
+        "recipe": [
+          "ctx.font = `${cellSize}px ${monoStack}`; cols = Math.floor(width / cellW); rows = Math.floor(height / lineH).",
+          "For each cell compute brightness b in 0..1 and pick ramp[Math.floor(b * (ramp.length - 1))].",
+          "fillText each non-space character in the phosphor colour (alpha from brightness).",
+          "Scanlines: fillRect thin dark rows over the whole canvas."
+        ],
+        "must": ["a monospace grid", "character-ramp shading", "a single phosphor colour"],
+        "never": ["proportional fonts", "a colourful palette", "gradients", "drawing images directly (convert them to ASCII)"]
+      },
+      "controls": [
+        {"name": "phosphorColor", "kind": "color", "label": "Phosphor", "default": "#33ff66", "group": "Palette", "role": "ink"},
+        {"name": "cellSize", "kind": "number", "label": "Cell size", "default": 12, "min": 6, "max": 24, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "scanlines", "kind": "number", "label": "Scanlines", "default": 0.4, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "typeSpeed", "kind": "number", "label": "Typing speed", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient"], "require": ["requireMonospace"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.crt-vhs-glitch",
+      "slot": "look",
+      "family": "digital",
+      "name": "CRT / VHS glitch",
+      "tier": "extended",
+      "status": "active",
+      "summary": "RGB split, scanlines, tracking tears and noise bands.",
+      "keywords": ["glitch", "vhs", "crt", "datamosh", "analog tv"],
+      "suits": {
+        "moods": ["edgy", "retro", "nostalgic", "gritty", "cyber", "dark"],
+        "subjects": ["music", "gaming", "film", "horror", "techno", "streetwear", "podcast"],
+        "formats": ["social-post", "intro", "poster", "banner"]
+      },
+      "avoidFor": ["wedding", "calm", "luxury", "bakery"],
+      "image": "optional",
+      "conflicts": ["look.letterpress", "look.cyanotype", "look.editorial", "look.art-nouveau"],
+      "spec": {
+        "essence": "An old CRT or VHS playback: RGB channel fringes, scanlines, noise and occasional tracking tears.",
+        "palette": {
+          "rule": "The base scene in a limited palette; the glitch layer uses pure channel offsets (red and cyan fringes). A dark background is part of this style.",
+          "defaults": {"bg": "#0c0c10", "ink": "#f2f2f2", "accent": "#ff2a6d"},
+          "adaptable": "Base scene colours and accent."
+        },
+        "typography": {
+          "rule": "Bold grotesk or mono with RGB fringe; on-screen display text in mono (PLAY, CH 03, timecode).",
+          "fonts": ["grotesk", "mono"]
+        },
+        "composition": {
+          "rule": "A centred subject or title with on-screen display text in the corners and horizontal tear bands.",
+          "adaptable": "Subject, OSD text, band positions."
+        },
+        "texture": "Scanlines, sparse noise snow, dark rounded tube corners (vignette).",
+        "lighting": "Screen glow only (soft bright centre).",
+        "motion": {
+          "rule": "Mostly steady with bursts: every 1–3s a 150–400ms glitch burst (slice offsets, channel split up to 12px, a tracking roll); otherwise subtle line jitter.",
+          "fps": null
+        },
+        "recipe": [
+          "Render the clean scene to an offscreen canvas.",
+          "Draw it twice more tinted red and cyan, offset by channelSplit, using 'screen' or 'lighter' composite.",
+          "Tears: drawImage horizontal strips of the offscreen with an x offset during bursts.",
+          "Scanlines and noise on top."
+        ],
+        "must": ["RGB channel offset", "scanlines", "occasional tear bands", "OSD text"],
+        "never": ["a clean static vector-only look", "pastel cute palettes"]
+      },
+      "controls": [
+        {"name": "glitchAmount", "kind": "number", "label": "Glitch amount", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "channelSplit", "kind": "number", "label": "Channel split", "default": 4, "min": 0, "max": 16, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "scanlines", "kind": "number", "label": "Scanlines", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "burstInterval", "kind": "number", "label": "Burst interval (s)", "default": 2, "min": 0.5, "max": 6, "step": 0.1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.blueprint",
+      "slot": "look",
+      "family": "digital",
+      "name": "Blueprint",
+      "tier": "core",
+      "status": "active",
+      "summary": "White hairlines on blue, dimension lines, a grid and mono labels.",
+      "keywords": ["blueprint", "technical drawing", "schematic", "engineering drawing"],
+      "suits": {
+        "moods": ["technical", "precise", "smart", "industrial", "nerdy", "trustworthy"],
+        "subjects": ["product", "architecture", "engineering", "hardware", "launch", "how it works", "recipe", "startup", "feature", "bread"],
+        "formats": ["social-post", "poster", "explainer", "announcement"]
+      },
+      "avoidFor": ["party", "cute", "kids"],
+      "image": "none",
+      "conflicts": ["look.watercolor", "look.memphis", "look.psychedelic"],
+      "spec": {
+        "essence": "A technical blueprint: white hairline drawings on blueprint blue with a grid, dimension lines, callouts and a title block.",
+        "palette": {
+          "rule": "Blueprint blue background, white lines at 60–100% alpha, and optionally one accent (yellow) for callouts.",
+          "defaults": {"bg": "#1c4e9a", "line": "#f2f6ff", "accent": "#ffd24a"},
+          "adaptable": "Blue depth (#0f3a7a to #1c4e9a) and whether the accent is used."
+        },
+        "typography": {
+          "rule": "Monospace or technical sans, uppercase, small and letterspaced; the title sits in a bordered title block at the bottom right.",
+          "fonts": ["mono", "grotesk"]
+        },
+        "composition": {
+          "rule": "A major/minor grid; the subject as a line drawing (orthographic views or exploded parts); dimension lines with arrowheads and measurement labels; leader-line callouts; a title block.",
+          "adaptable": "Subject, views shown, number of callouts."
+        },
+        "texture": "Faint paper noise; lines 1–1.5px; construction lines dashed.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Draw-on: strokes animate from 0 to full length, then callouts appear and dimension numbers tick; loop with a hold.",
+          "fps": null
+        },
+        "recipe": [
+          "Grid: minor lines every gridSize px at 10% alpha, major every 5 at 25%.",
+          "Draw-on: setLineDash([len, len]) with lineDashOffset = len * (1 - progress), or draw partial paths.",
+          "Dimension line: line with two arrowheads plus a label centred above it."
+        ],
+        "must": ["a grid", "dimension lines with arrows", "white hairlines on blue", "a title block"],
+        "never": ["filled shaded objects", "gradients", "glow", "photos"]
+      },
+      "controls": [
+        {"name": "blueColor", "kind": "color", "label": "Blue", "default": "#1c4e9a", "group": "Palette", "role": "bg"},
+        {"name": "lineColor", "kind": "color", "label": "Lines", "default": "#f2f6ff", "group": "Palette", "role": "ink"},
+        {"name": "gridSize", "kind": "number", "label": "Grid size", "default": 24, "min": 10, "max": 60, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "drawSpeed", "kind": "number", "label": "Draw speed", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.isometric",
+      "slot": "look",
+      "family": "digital",
+      "name": "Isometric",
+      "tier": "extended",
+      "status": "active",
+      "summary": "30° isometric projection, three-tone faces and a soft pastel palette.",
+      "keywords": ["isometric", "isometric illustration"],
+      "suits": {
+        "moods": ["friendly", "techy", "clean", "playful", "organised"],
+        "subjects": ["saas", "app", "city", "office", "workflow", "logistics", "game", "delivery", "shop", "bakery"],
+        "formats": ["social-post", "explainer", "hero", "poster"]
+      },
+      "avoidFor": ["vintage", "grunge"],
+      "image": "none",
+      "conflicts": ["look.watercolor", "look.xerox-zine"],
+      "spec": {
+        "essence": "An isometric illustration: objects on a 30° isometric grid, every surface in three fixed tones, on a soft pastel backdrop.",
+        "palette": {
+          "rule": "A soft pastel background; each material has exactly three tones (top lightest, left mid, right darkest); three to five materials.",
+          "defaults": {"bg": "#eef2ff", "primaryTop": "#8fb3ff", "primaryLeft": "#5d86e6", "primaryRight": "#3f64c2"},
+          "adaptable": "Material hues and background tint."
+        },
+        "typography": {
+          "rule": "Clean geometric sans set flat (not isometric) in a corner or side panel.",
+          "fonts": ["geometric", "system"]
+        },
+        "composition": {
+          "rule": "An isometric grid (x axis at 30°, y axis at 150°); blocks, buildings or objects on a platform; small props or characters; lots of empty background.",
+          "adaptable": "Objects, platform shape, props."
+        },
+        "texture": "None.",
+        "lighting": "Fixed light: top face light, left face mid, right face dark; a soft contact shadow as a flat darker rhombus.",
+        "motion": {
+          "rule": "Objects rise from the platform with ease-out, props float and bob, a path or conveyor moves; smooth 60 fps.",
+          "fps": null
+        },
+        "recipe": [
+          "iso(x, y, z) = { sx: (x - y) * cos(30°), sy: (x + y) * sin(30°) - z }.",
+          "Draw each box as three polygons (top, left, right) with its three tones.",
+          "Sort drawables back to front (by x + y) before drawing."
+        ],
+        "must": ["30° isometric projection", "three-tone faces", "back-to-front ordering"],
+        "never": ["perspective vanishing points", "gradients", "outlines thicker than 1px"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#eef2ff", "group": "Palette", "role": "bg"},
+        {"name": "primaryColor", "kind": "color", "label": "Primary material", "default": "#8fb3ff", "group": "Palette", "role": "accent"},
+        {"name": "blockCount", "kind": "number", "label": "Blocks", "default": 8, "min": 3, "max": 20, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "floatAmount", "kind": "number", "label": "Float", "default": 0.4, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.y2k-chrome",
+      "slot": "look",
+      "family": "digital",
+      "name": "Y2K chrome",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Liquid metallic type, bubble shapes, sparkles and iridescent highlights.",
+      "keywords": ["y2k", "liquid chrome", "chrome type", "metallic type", "2000s"],
+      "suits": {
+        "moods": ["futuristic", "flashy", "playful", "fashion", "pop", "shiny"],
+        "subjects": ["fashion", "music", "beauty", "party", "streetwear", "nightlife"],
+        "formats": ["social-post", "poster", "cover"]
+      },
+      "avoidFor": ["rustic", "cozy", "heritage", "bakery"],
+      "image": "optional",
+      "conflicts": ["look.risograph", "look.letterpress", "look.linocut", "look.editorial", "look.swiss"],
+      "spec": {
+        "essence": "Y2K chrome: liquid metallic lettering with a horizon reflection band, bubble shapes, sparkles and iridescent accents.",
+        "palette": {
+          "rule": "Chrome built from multi-stop linear gradients with a dark horizon band; a pale lilac, silver or baby-blue background; iridescent accents.",
+          "defaults": {"bg": "#e9e4f5", "chromeLight": "#ffffff", "chromeMid": "#9aa3b5", "chromeDark": "#2b2f3a", "pink": "#ff9bd2", "cyan": "#8ef3ff"},
+          "adaptable": "Background tint and accent hues."
+        },
+        "typography": {
+          "rule": "Bubbly rounded bold type rendered as chrome: gradient fill, thin dark outline and a white specular highlight stroke.",
+          "fonts": ["rounded", "geometric"]
+        },
+        "composition": {
+          "rule": "A central chrome word or shape with orbiting four-point sparkles, blob and bubble shapes and star bursts.",
+          "adaptable": "Shapes, sparkle count, layout."
+        },
+        "texture": "Specular highlights: white streaks on the top-left of shapes.",
+        "lighting": "Reflective environment: chrome gradient goes bright top, dark middle band, bright bottom.",
+        "motion": {
+          "rule": "The chrome reflection band slides (animate gradient stop offsets), sparkles twinkle (scale 0 to 1 to 0), shapes float; smooth.",
+          "fps": null
+        },
+        "recipe": [
+          "Chrome fill: createLinearGradient top to bottom with stops [white, light grey, dark band, light, mid grey]; shift the stops by time.",
+          "Sparkle: a four-point star path scaled by a twinkle curve."
+        ],
+        "must": ["multi-stop chrome gradient with a horizon band", "specular highlights", "sparkles"],
+        "never": ["flat matte fills for the hero", "grunge", "paper textures"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#e9e4f5", "group": "Palette", "role": "bg"},
+        {"name": "tintColor", "kind": "color", "label": "Iridescent tint", "default": "#ff9bd2", "group": "Palette", "role": "accent"},
+        {"name": "sparkleCount", "kind": "number", "label": "Sparkles", "default": 12, "min": 0, "max": 40, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "chromeShift", "kind": "number", "label": "Reflection shift", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": ["requireLinearGradient"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.vaporwave",
+      "slot": "look",
+      "family": "digital",
+      "name": "Vaporwave",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Pink-cyan sunset, a perspective grid floor, a striped sun and VHS haze.",
+      "keywords": ["vaporwave", "synthwave", "outrun", "retrowave", "80s sunset"],
+      "suits": {
+        "moods": ["nostalgic", "dreamy", "retro", "chill", "surreal"],
+        "subjects": ["music", "playlist", "night drive", "gaming", "lofi", "fashion", "club"],
+        "formats": ["social-post", "cover", "banner", "poster"]
+      },
+      "avoidFor": ["corporate", "rustic", "bakery"],
+      "image": "none",
+      "conflicts": ["look.risograph", "look.letterpress", "look.editorial", "look.swiss", "look.linocut"],
+      "spec": {
+        "essence": "A synthwave sunset: a gradient sky, a big striped sun sinking behind the horizon and a glowing perspective grid floor.",
+        "palette": {
+          "rule": "A sky gradient from deep purple to magenta to orange; cyan grid lines; a sun striped from yellow to pink.",
+          "defaults": {"skyTop": "#2b0f54", "skyMid": "#ff2a6d", "skyLow": "#ffb86c", "grid": "#05d9e8"},
+          "adaptable": "Sky stops and grid colour within the neon sunset family."
+        },
+        "typography": {
+          "rule": "Bold italic geometric sans with an outline, or wide-spaced capitals; may use chrome.",
+          "fonts": ["geometric", "grotesk"]
+        },
+        "composition": {
+          "rule": "Horizon at 55–65% of the height; a perspective grid floor converging to a vanishing point; a big striped sun behind the horizon; the title above.",
+          "adaptable": "Horizon height, sun size, title position."
+        },
+        "texture": "VHS haze: scanlines at about 10%, slight chroma offset on the title.",
+        "lighting": "Backlit by the sun; the grid glows (one extra wide low-alpha stroke pass).",
+        "motion": {
+          "rule": "The grid scrolls toward the viewer (looping by the line spacing), sun stripes slide, the title shimmers slowly; seamless loop.",
+          "fps": null
+        },
+        "recipe": [
+          "Sky: createLinearGradient over the top part.",
+          "Sun: a circle clipped, cut by horizontal gaps that move down over time.",
+          "Grid: horizontal lines spaced by a perspective function (z = offset + i; y = horizon + k / z) and vertical lines to the vanishing point."
+        ],
+        "must": ["a perspective grid floor", "a striped sun", "a sunset gradient sky"],
+        "never": ["flat paper backgrounds", "earthy palettes"]
+      },
+      "controls": [
+        {"name": "gridColor", "kind": "color", "label": "Grid", "default": "#05d9e8", "group": "Palette", "role": "accent"},
+        {"name": "horizon", "kind": "number", "label": "Horizon", "default": 0.6, "min": 0.4, "max": 0.8, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "sunSize", "kind": "number", "label": "Sun size", "default": 0.38, "min": 0.2, "max": 0.6, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "gridSpeed", "kind": "number", "label": "Grid speed", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": ["requireLinearGradient"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.acid-graphics",
+      "slot": "look",
+      "family": "digital",
+      "name": "Acid graphics",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Melting chrome type, toxic green and magenta, warped grids and rave-flyer density.",
+      "keywords": ["acid graphics", "acid design", "rave flyer"],
+      "suits": {
+        "moods": ["rave", "edgy", "experimental", "loud", "techno", "wild"],
+        "subjects": ["techno", "club", "rave", "festival", "streetwear", "music"],
+        "formats": ["poster", "flyer", "social-post"]
+      },
+      "avoidFor": ["wedding", "cozy", "corporate", "bakery"],
+      "image": "none",
+      "conflicts": ["look.risograph", "look.letterpress", "look.editorial", "look.cyanotype", "look.art-nouveau"],
+      "spec": {
+        "essence": "Acid graphics: stretched and melting chrome lettering over warped grid meshes with toxic green and magenta accents and dense technical microtype.",
+        "palette": {
+          "rule": "Black or off-white ground; toxic green and magenta accents; chrome grey gradients; at most four hues.",
+          "defaults": {"bg": "#0a0a0a", "green": "#b6ff00", "magenta": "#ff00c8", "chrome": "#c9ccd6"},
+          "adaptable": "Ground (black or off-white) and accent pair."
+        },
+        "typography": {
+          "rule": "Stretched, warped, melting type: per-letter vertical stretch and sine warp, chrome gradient fill; tiny technical mono labels.",
+          "fonts": ["grotesk", "condensed", "mono"]
+        },
+        "composition": {
+          "rule": "Dense layers: a warped grid mesh, blob shapes, technical microtype, barcodes and arrows; symmetry optional.",
+          "adaptable": "Layer count, element choice."
+        },
+        "texture": "Fine noise and thin 1px lines everywhere.",
+        "lighting": "Chrome reflections only.",
+        "motion": {
+          "rule": "Constant warp: the grid mesh ripples, type melts and stretches on a loop, small elements flicker at about 12 fps.",
+          "fps": null
+        },
+        "recipe": [
+          "Grid mesh: a lattice of points displaced by sin/cos of position and time, stroked as polylines.",
+          "Melting type: draw each letter with ctx.scale(1, 1 + stretch) and a y offset from a travelling wave."
+        ],
+        "must": ["a warped grid", "stretched or melting type", "toxic accent colours"],
+        "never": ["pastel cozy palettes", "rustic textures"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Ground", "default": "#0a0a0a", "group": "Palette", "role": "bg"},
+        {"name": "accentColor", "kind": "color", "label": "Accent", "default": "#b6ff00", "group": "Palette", "role": "accent"},
+        {"name": "warp", "kind": "number", "label": "Warp", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "flicker", "kind": "number", "label": "Flicker", "default": 0.3, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.neon-sign",
+      "slot": "look",
+      "family": "digital",
+      "name": "Neon sign",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Glowing tube lettering on a dark wall, with flicker.",
+      "keywords": ["neon sign", "neon lights", "neon tube", "neon tubes"],
+      "suits": {
+        "moods": ["nightlife", "moody", "retro", "vibrant", "electric"],
+        "subjects": ["bar", "club", "nightlife", "diner", "arcade", "cocktail", "music", "barber"],
+        "formats": ["social-post", "sign", "poster"]
+      },
+      "avoidFor": ["daytime", "wedding", "bakery", "cozy"],
+      "image": "none",
+      "conflicts": ["look.risograph", "look.letterpress", "look.cyanotype", "look.editorial", "look.swiss"],
+      "spec": {
+        "essence": "A real neon sign mounted on a wall: bent glass tube lettering glowing in one to three colours, with a soft wash on the wall and occasional flicker.",
+        "palette": {
+          "rule": "A dark wall (brick or concrete) and one to three neon tube colours.",
+          "defaults": {"wall": "#1b1416", "tube1": "#ff3ea5", "tube2": "#22e4ff", "tube3": "#ffd9a8"},
+          "adaptable": "Tube colours and wall tone."
+        },
+        "typography": {
+          "rule": "Monoline script or rounded sans shaped like bent tubes: single stroke paths with round caps and joins.",
+          "fonts": ["hand", "rounded"]
+        },
+        "composition": {
+          "rule": "A sign on a wall: tube lettering, an optional backing board, mounting clips and cables.",
+          "adaptable": "Sign text, layout, backing shape."
+        },
+        "texture": "Wall texture: bricks as rectangles with mortar lines, plus noise.",
+        "lighting": "Glow via strokeSoftGlow (one path, several widths at low alpha) and a soft coloured wash on the wall behind (one radial gradient per tube colour).",
+        "motion": {
+          "rule": "Idle hum: subtle brightness breathing, an occasional flicker of one letter (off for 60–120ms), a power-on sequence at the start.",
+          "fps": null
+        },
+        "recipe": [
+          "Draw the wall once to an offscreen canvas and reuse it.",
+          "Tubes: build one Path2D per tube and call strokeSoftGlow, then a thin bright core stroke.",
+          "Flicker: a seeded schedule of short off windows per letter."
+        ],
+        "must": ["tube strokes with glow", "a dark wall", "flicker"],
+        "never": ["a flat print look", "per-segment shadowBlur"]
+      },
+      "controls": [
+        {"name": "wallColor", "kind": "color", "label": "Wall", "default": "#1b1416", "group": "Palette", "role": "bg"},
+        {"name": "tubeColor", "kind": "color", "label": "Tube colour", "default": "#ff3ea5", "group": "Palette", "role": "accent"},
+        {"name": "glowIntensity", "kind": "number", "label": "Glow", "default": 0.8, "min": 0, "max": 1.5, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "flicker", "kind": "number", "label": "Flicker", "default": 0.3, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": ["neon-trail"],
+      "preview": null
+    },
+    {
+      "id": "look.paper-cut",
+      "slot": "look",
+      "family": "craft",
+      "name": "Paper cut",
+      "tier": "core",
+      "status": "active",
+      "summary": "Layered paper cut-outs with soft shadows and gentle parallax.",
+      "keywords": ["paper cut", "papercut", "paper craft", "cut paper", "layered paper"],
+      "suits": {
+        "moods": ["cozy", "warm", "handmade", "gentle", "whimsical", "calm", "friendly", "festive"],
+        "subjects": ["bakery", "kids", "nature", "travel", "landscape", "season", "holiday", "festival", "cafe", "story", "diwali", "christmas"],
+        "formats": ["social-post", "card", "poster", "story"]
+      },
+      "avoidFor": ["dashboard", "grunge", "tech"],
+      "image": "none",
+      "conflicts": ["look.pixel-art", "look.ascii-terminal", "look.crt-vhs-glitch", "look.neon-sign"],
+      "spec": {
+        "essence": "A layered paper diorama: flat coloured paper silhouettes stacked in depth, each casting a soft shadow on the layer behind, gently drifting in parallax.",
+        "palette": {
+          "rule": "Four to six harmonious flat paper colours, ordered from light to dark through the depth (or the reverse), on a warm off-white base.",
+          "defaults": {"base": "#f6efe4", "layer1": "#f2c6a0", "layer2": "#e59a6b", "layer3": "#c96d4b", "layer4": "#7a4b3a"},
+          "adaptable": "The whole paper family may change to suit the subject (greens for nature, blues for sea, festive reds)."
+        },
+        "typography": {
+          "rule": "Rounded or friendly serif, cut from paper: a flat fill with the same soft shadow as the layers.",
+          "fonts": ["rounded", "serifText"]
+        },
+        "composition": {
+          "rule": "Five to eight depth layers of silhouettes (hills, waves, clouds, objects) with organic wavy edges; the subject at mid depth; text on the front layer.",
+          "adaptable": "Layer shapes, subject, depth order."
+        },
+        "texture": "Subtle paper fibre noise on each layer; slightly irregular cut edges.",
+        "lighting": "Light from the top-left: each layer casts a soft drop shadow (shadowBlur 8–20, offset 3–8px, 15–30% alpha) onto the one behind. Set the shadow once per layer, never inside per-vertex loops.",
+        "motion": {
+          "rule": "Parallax sway: each layer drifts by depth x sin(t) horizontally and vertically; gentle 4–8s loop.",
+          "fps": null
+        },
+        "recipe": [
+          "Build each layer path once (Path2D) from a wavy edge function; rebuild only on resize.",
+          "For each layer back to front: set shadow once, fill the path with its paper colour, clear the shadow.",
+          "Offset each layer by its parallax amount before filling."
+        ],
+        "must": ["stacked layers with drop shadows", "flat paper colours", "parallax motion"],
+        "never": ["outlines", "gradients on layers", "photoreal rendering"]
+      },
+      "controls": [
+        {"name": "baseColor", "kind": "color", "label": "Base paper", "default": "#f6efe4", "group": "Palette", "role": "bg"},
+        {"name": "layerColor", "kind": "color", "label": "Main paper", "default": "#e59a6b", "group": "Palette", "role": "accent"},
+        {"name": "layerCount", "kind": "number", "label": "Layers", "default": 6, "min": 3, "max": 10, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "shadowStrength", "kind": "number", "label": "Shadow", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "parallax", "kind": "number", "label": "Parallax", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.flat-vector",
+      "slot": "look",
+      "family": "craft",
+      "name": "Flat vector",
+      "tier": "core",
+      "status": "active",
+      "summary": "Clean geometric shapes, no outlines and a friendly five-colour palette.",
+      "keywords": ["flat illustration", "flat design", "vector illustration", "flat vector"],
+      "suits": {
+        "moods": ["friendly", "clean", "modern", "approachable", "optimistic", "simple"],
+        "subjects": ["app", "saas", "education", "health", "bakery", "food", "delivery", "finance", "onboarding", "explainer", "product"],
+        "formats": ["social-post", "explainer", "ad", "announcement"]
+      },
+      "avoidFor": ["grunge", "vintage"],
+      "image": "none",
+      "conflicts": ["look.xerox-zine", "look.crt-vhs-glitch", "look.dither-1bit"],
+      "spec": {
+        "essence": "Flat vector illustration: simple geometric construction, flat colour, no outlines, friendly and clear.",
+        "palette": {
+          "rule": "Five flat colours: a background tint, two main colours, one accent and one dark for details. No gradients, no textures.",
+          "defaults": {"bg": "#fdf3e7", "main1": "#f4a259", "main2": "#5b8e7d", "accent": "#bc4b51", "dark": "#2e2a24"},
+          "adaptable": "All five colours may change to suit the subject; keep five and keep them flat."
+        },
+        "typography": {
+          "rule": "Geometric or rounded sans, bold headline, friendly.",
+          "fonts": ["geometric", "rounded", "system"]
+        },
+        "composition": {
+          "rule": "A simple scene or object built from circles, rounded rectangles and bezier blobs; simplified characters; generous negative space; optional long flat shadows (one polygon, 10–20% darker).",
+          "adaptable": "Scene, objects, arrangement."
+        },
+        "texture": "None.",
+        "lighting": "Flat; optionally one darker tone per shape for form, with a hard edge.",
+        "motion": {
+          "rule": "Smooth and friendly: elements pop in with easeOutBack, idle bob, small loops; 60 fps.",
+          "fps": null
+        },
+        "recipe": [
+          "Compose each object from primitive shapes (arc, roundRect, bezier) in flat fills.",
+          "Long shadow: a polygon from the shape's silhouette extended at 45°, filled with a darker tone of the ground."
+        ],
+        "must": ["flat fills", "no outlines", "geometric construction"],
+        "never": ["gradients", "textures", "blurred shadows", "outlines"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#fdf3e7", "group": "Palette", "role": "bg"},
+        {"name": "primaryColor", "kind": "color", "label": "Primary", "default": "#f4a259", "group": "Palette", "role": "accent"},
+        {"name": "detailColor", "kind": "color", "label": "Details", "default": "#2e2a24", "group": "Palette", "role": "ink"},
+        {"name": "bounce", "kind": "number", "label": "Bounce", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.sketchy-ink",
+      "slot": "look",
+      "family": "craft",
+      "name": "Sketchy ink",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Hand-drawn ink: wobbly boiling lines, cross-hatching, pen on paper.",
+      "keywords": ["sketch", "sketchy", "hand-drawn", "hand drawn", "doodle", "ink drawing", "pen drawing"],
+      "suits": {
+        "moods": ["casual", "friendly", "personal", "handmade", "creative", "quirky"],
+        "subjects": ["notes", "education", "journal", "menu", "recipe", "explainer", "podcast", "kids", "cafe"],
+        "formats": ["social-post", "explainer", "card"]
+      },
+      "avoidFor": ["luxury", "sleek"],
+      "image": "none",
+      "conflicts": ["look.pixel-art", "look.y2k-chrome", "look.neon-sign", "look.vaporwave"],
+      "spec": {
+        "essence": "A pen-and-ink doodle on paper: wobbly lines that boil slightly, cross-hatched shading and handwritten notes.",
+        "palette": {
+          "rule": "Paper plus ink, optionally one marker colour applied loosely (highlighter or blue pen).",
+          "defaults": {"paper": "#faf7f0", "ink": "#1f1f24", "marker": "#ffe066"},
+          "adaptable": "Marker colour and paper warmth."
+        },
+        "typography": {
+          "rule": "A handwritten font for everything; the headline underlined with a scribble.",
+          "fonts": ["hand"]
+        },
+        "composition": {
+          "rule": "A loose doodle illustration with arrows, circles around keywords and notes; objects outlined and shaded by hatching.",
+          "adaptable": "Illustration, note placement."
+        },
+        "texture": "Line boil: every stroke is a polyline whose points get seeded offsets (0.8–1.5px) that change each step; some lines double-stroked; hatching at 45°.",
+        "lighting": "Shading by hatching density only.",
+        "motion": {
+          "rule": "Boil at 8–12 fps (points re-jitter), elements draw on with stroke progress, a marker highlight swipes across.",
+          "fps": 10
+        },
+        "recipe": [
+          "wobblyLine(points, seed): subdivide into 6–10px segments and offset each point by seeded noise for the current step.",
+          "Hatching: parallel lines clipped to the shape, spacing by tone.",
+          "Step with Math.floor(time * boilFps)."
+        ],
+        "must": ["wobbly boiling lines", "hatching", "handwritten text"],
+        "never": ["perfect geometric vector strokes", "gradients", "glow"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#faf7f0", "group": "Palette", "role": "bg"},
+        {"name": "inkColor", "kind": "color", "label": "Ink", "default": "#1f1f24", "group": "Palette", "role": "ink"},
+        {"name": "markerColor", "kind": "color", "label": "Marker", "default": "#ffe066", "group": "Palette", "role": "accent"},
+        {"name": "wobble", "kind": "number", "label": "Wobble", "default": 1.2, "min": 0, "max": 3, "step": 0.1, "group": "Style", "uiHint": "slider"},
+        {"name": "boilFps", "kind": "number", "label": "Boil speed (fps)", "default": 10, "min": 1, "max": 24, "step": 1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.watercolor",
+      "slot": "look",
+      "family": "craft",
+      "name": "Watercolour",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Soft blooms, pigment bleeds and paper grain.",
+      "keywords": ["watercolor", "watercolour", "aquarelle"],
+      "suits": {
+        "moods": ["soft", "dreamy", "romantic", "gentle", "calm", "natural", "artistic"],
+        "subjects": ["wedding", "florist", "botanical", "travel", "tea", "spa", "baby", "poetry", "flower"],
+        "formats": ["card", "invitation", "social-post", "poster"]
+      },
+      "avoidFor": ["tech", "sale", "gaming"],
+      "image": "none",
+      "conflicts": ["look.pixel-art", "look.ascii-terminal", "look.crt-vhs-glitch", "look.neo-brutalism", "look.swiss", "look.xerox-zine"],
+      "spec": {
+        "essence": "A watercolour painting: translucent pigment washes that bloom and pool at their edges on white cold-press paper.",
+        "palette": {
+          "rule": "Three to five soft pigment colours at 15–40% alpha that mix where they overlap, on white cold-press paper.",
+          "defaults": {"paper": "#fbfaf6", "rose": "#e8a0a0", "sage": "#9cc5a1", "ochre": "#f2c57c", "blue": "#7aa6c2"},
+          "adaptable": "Pigment hues to suit the subject."
+        },
+        "typography": {
+          "rule": "Elegant serif or hand script, thin, dark grey-blue, small relative to the painting.",
+          "fonts": ["serifText", "hand"]
+        },
+        "composition": {
+          "rule": "Loose washes and blooms around or behind the subject, white paper left unpainted, soft edges; text sits in a clean paper area.",
+          "adaptable": "Wash placement, subject, text area."
+        },
+        "texture": "Each wash is 20–40 layered irregular blobs (noisy polygons) at low alpha with a darker edge ring (pigment pooling); paper grain speckle; occasional splatter dots.",
+        "lighting": "Implied by pigment density.",
+        "motion": {
+          "rule": "Slow bleed: washes grow and spread over 3–6s then settle; subtle petal drift; 30 fps.",
+          "fps": null
+        },
+        "recipe": [
+          "One offscreen wash layer per colour; cache the finished wash and only animate its growth radius.",
+          "Blob: polygon of 24–40 points with radius noise; fill at alpha 0.04–0.1, stroke the edge at low alpha for pooling.",
+          "Composite the washes with 'multiply' so overlaps darken like pigment."
+        ],
+        "must": ["layered translucent blobs", "edge pooling", "unpainted white paper areas"],
+        "never": ["hard vector fills", "outlines", "neon", "gradients as the painting method"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#fbfaf6", "group": "Palette", "role": "bg"},
+        {"name": "pigmentColor", "kind": "color", "label": "Main pigment", "default": "#e8a0a0", "group": "Palette", "role": "accent"},
+        {"name": "pigmentStrength", "kind": "number", "label": "Pigment strength", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "bleed", "kind": "number", "label": "Bleed", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.chalk-crayon",
+      "slot": "look",
+      "family": "craft",
+      "name": "Chalk / crayon",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Textured dab strokes on a chalkboard or kraft paper.",
+      "keywords": ["chalk", "chalkboard", "crayon", "chalk drawing"],
+      "suits": {
+        "moods": ["casual", "friendly", "rustic", "playful", "homey"],
+        "subjects": ["menu", "bakery", "school", "kids", "specials", "coffee", "restaurant", "cafe"],
+        "formats": ["menu", "social-post", "sign"]
+      },
+      "avoidFor": ["luxury", "tech"],
+      "image": "none",
+      "conflicts": ["look.y2k-chrome", "look.neon-sign", "look.pixel-art", "look.swiss"],
+      "spec": {
+        "essence": "A chalkboard (or crayon on kraft paper): lettering and doodles made of dusty, broken textured strokes.",
+        "palette": {
+          "rule": "A chalkboard green-black or kraft ground; chalk white plus two or three chalk pastels.",
+          "defaults": {"board": "#2b3a33", "chalk": "#f2f0e6", "pink": "#f7c6c7", "yellow": "#ffe8a3", "mint": "#b7e4c7"},
+          "adaptable": "Board (green-black, black, kraft #c9a878) and pastel choice."
+        },
+        "typography": {
+          "rule": "Hand chalk lettering with flourishes, banners and underlines.",
+          "fonts": ["chalk", "hand"]
+        },
+        "composition": {
+          "rule": "A board layout: title banner, framed sections, doodles (wheat, cups, stars) and arrows.",
+          "adaptable": "Sections and doodles."
+        },
+        "texture": "Strokes made of many short dabs (2–4px, alpha 0.3–0.7) with gaps; chalk dust smudges (large low-alpha blobs) on the board.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Draw-on writing (dabs appear along each path over time); doodles wiggle slightly at 8 fps.",
+          "fps": 8
+        },
+        "recipe": [
+          "chalkStroke(path): sample points every 1.5px, draw a small rotated rect or dot per point with seeded alpha, skip some for gaps.",
+          "Text: draw text to an offscreen canvas, then sample its pixels and redraw as dabs (cache the dab list)."
+        ],
+        "must": ["dab-textured strokes", "a board ground", "hand lettering"],
+        "never": ["crisp vector lines", "gradients", "glow"]
+      },
+      "controls": [
+        {"name": "boardColor", "kind": "color", "label": "Board", "default": "#2b3a33", "group": "Palette", "role": "bg"},
+        {"name": "chalkColor", "kind": "color", "label": "Chalk", "default": "#f2f0e6", "group": "Palette", "role": "ink"},
+        {"name": "chalkTexture", "kind": "number", "label": "Chalk texture", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "drawSpeed", "kind": "number", "label": "Draw speed", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.soft-clay",
+      "slot": "look",
+      "family": "craft",
+      "name": "Soft clay",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Rounded blobby shapes, soft highlights and squash-and-stretch.",
+      "keywords": ["clay", "claymation", "plasticine", "soft 3d", "clay 3d"],
+      "suits": {
+        "moods": ["cute", "playful", "friendly", "soft", "fun", "toy"],
+        "subjects": ["kids", "bakery", "dessert", "mascot", "toy", "game", "cafe", "cake"],
+        "formats": ["social-post", "sticker", "ad"]
+      },
+      "avoidFor": ["serious", "luxury", "technical"],
+      "image": "none",
+      "conflicts": ["look.pixel-art", "look.ascii-terminal", "look.blueprint", "look.xerox-zine"],
+      "spec": {
+        "essence": "Soft clay 3D: chunky rounded objects with soft highlights and contact shadows that bounce with squash and stretch.",
+        "palette": {
+          "rule": "Saturated but soft candy colours on a soft pastel backdrop; highlights are lighter versions of the same hue.",
+          "defaults": {"bg": "#fde8ec", "pink": "#ff8fab", "yellow": "#ffd166", "green": "#06d6a0", "blue": "#118ab2"},
+          "adaptable": "Candy colours and backdrop."
+        },
+        "typography": {
+          "rule": "Chunky rounded bold type that looks puffy (the same highlight and shadow as the clay).",
+          "fonts": ["rounded"]
+        },
+        "composition": {
+          "rule": "A few big rounded objects sitting on a floor with contact shadows; a simple backdrop sweep.",
+          "adaptable": "Objects, arrangement."
+        },
+        "texture": "Mostly smooth; optional faint fingerprint noise.",
+        "lighting": "Soft key light top-left: each blob gets a radial gradient with the light spot offset toward the light, and a soft contact shadow ellipse beneath (radial gradient).",
+        "motion": {
+          "rule": "Squash and stretch: objects bounce with inverse scaleX/scaleY on impact and wobble with spring easing.",
+          "fps": null
+        },
+        "recipe": [
+          "Blob fill: createRadialGradient(cx - r*0.35, cy - r*0.35, r*0.1, cx, cy, r) from a light tint to the base hue to a darker rim.",
+          "Contact shadow: a flattened ellipse under the object with a radial gradient fading to transparent.",
+          "Bounce: y from |sin(t)|, squash = 1 + k * impact."
+        ],
+        "must": ["rounded blobby shapes", "radial highlight shading", "contact shadows", "squash and stretch"],
+        "never": ["hard edges", "thin lines", "flat print textures"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Backdrop", "default": "#fde8ec", "group": "Palette", "role": "bg"},
+        {"name": "mainColor", "kind": "color", "label": "Clay colour", "default": "#ff8fab", "group": "Palette", "role": "accent"},
+        {"name": "squash", "kind": "number", "label": "Squash", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "bounce", "kind": "number", "label": "Bounce", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": ["requireRadialGradient"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.collage",
+      "slot": "look",
+      "family": "craft",
+      "name": "Collage",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Torn paper, cut-out shapes, tape and layered textures.",
+      "keywords": ["collage", "cut-out collage", "mixed media"],
+      "suits": {
+        "moods": ["artsy", "eclectic", "creative", "playful", "nostalgic"],
+        "subjects": ["fashion", "music", "travel", "art show", "magazine", "moodboard"],
+        "formats": ["poster", "social-post", "cover"]
+      },
+      "avoidFor": ["minimal", "tech", "dashboard"],
+      "image": "optional",
+      "conflicts": ["look.swiss", "look.pixel-art", "look.blueprint"],
+      "spec": {
+        "essence": "A mixed-media collage: torn and cut paper scraps, photo pieces, tape strips and pinned text pieces layered with small shadows.",
+        "palette": {
+          "rule": "Paper scraps in four to six colours (kraft, newsprint, colour papers) plus any photo pieces; flat fills with texture.",
+          "defaults": {"bg": "#e9e2d6", "kraft": "#c9a878", "newsprint": "#efeae0", "red": "#d9483b", "blue": "#3a5a98"},
+          "adaptable": "Scrap colours."
+        },
+        "typography": {
+          "rule": "Mixed: cut-out letters in boxes, serif and grotesk together, some handwritten notes.",
+          "fonts": ["serifDisplay", "grotesk", "hand", "mono"]
+        },
+        "composition": {
+          "rule": "Overlapping scraps rotated ±2–10°, torn edges, masking-tape strips, a hero cut-out and pinned text pieces.",
+          "adaptable": "Scrap count, arrangement."
+        },
+        "texture": "Torn edges: jagged polylines with a white paper fringe; paper grain; translucent tape with jagged ends; small drop shadows (offset 2–4px, blur 4–8, alpha 0.2), set once per scrap.",
+        "lighting": "Only the small scrap shadows.",
+        "motion": {
+          "rule": "Stepped at 8–12 fps: scraps are placed one after another (drop in with a small rotation settle), subtle jitter, then hold.",
+          "fps": 10
+        },
+        "recipe": [
+          "tornRect(w, h, seed): a rectangle whose edges are jagged polylines.",
+          "Draw the white fringe slightly larger, then the scrap on top.",
+          "Tape: a semi-transparent pale rectangle rotated across a corner."
+        ],
+        "must": ["torn edges", "rotated overlapping scraps", "tape strips"],
+        "never": ["a perfect grid", "gradient backgrounds", "glow"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#e9e2d6", "group": "Palette", "role": "bg"},
+        {"name": "scrapCount", "kind": "number", "label": "Scraps", "default": 9, "min": 3, "max": 20, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "rotationChaos", "kind": "number", "label": "Rotation chaos", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "stepFps", "kind": "number", "label": "Step speed (fps)", "default": 10, "min": 1, "max": 24, "step": 1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.monoline-draw",
+      "slot": "look",
+      "family": "craft",
+      "name": "Monoline draw-on",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Monoline line art that draws itself: one stroke weight, one or two colours.",
+      "keywords": ["line art", "monoline", "continuous line", "one line drawing", "single line drawing"],
+      "suits": {
+        "moods": ["minimal", "elegant", "calm", "modern", "clean", "thoughtful"],
+        "subjects": ["logo", "portrait", "architecture", "skincare", "wellness", "coffee", "bakery", "brand"],
+        "formats": ["logo", "social-post", "card", "poster"]
+      },
+      "avoidFor": ["sale", "rave", "loud"],
+      "image": "none",
+      "conflicts": ["look.xerox-zine", "look.acid-graphics", "look.crt-vhs-glitch", "look.psychedelic"],
+      "spec": {
+        "essence": "Monoline line art: one continuous stroke weight drawing the subject, animated as if being drawn by hand.",
+        "palette": {
+          "rule": "A background plus one line colour (and optionally one accent dot). Flat.",
+          "defaults": {"bg": "#f6f1e7", "line": "#2a2622", "accent": "#d0643c"},
+          "adaptable": "Background (cream or deep ink #152238) and line colour."
+        },
+        "typography": {
+          "rule": "Thin or regular grotesk or serif, generously letterspaced, small.",
+          "fonts": ["grotesk", "serifText"]
+        },
+        "composition": {
+          "rule": "One continuous illustration (a single path or a few) centred with lots of space; a small caption.",
+          "adaptable": "Subject and caption placement."
+        },
+        "texture": "None.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Draw-on: stroke progress 0 to 1 over 2–4s with ease-in-out (setLineDash([len, len]) + lineDashOffset), hold, then erase or redraw; seamless loop.",
+          "fps": null
+        },
+        "recipe": [
+          "Build the illustration as one Path2D (or a few) from bezier curves.",
+          "Estimate each path length once; animate lineDashOffset = len * (1 - progress).",
+          "lineCap and lineJoin 'round'; the same lineWidth everywhere."
+        ],
+        "must": ["a single stroke weight", "round caps and joins", "draw-on animation"],
+        "never": ["fills", "gradients", "shadows", "multiple stroke weights"]
+      },
+      "controls": [
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#f6f1e7", "group": "Palette", "role": "bg"},
+        {"name": "lineColor", "kind": "color", "label": "Line", "default": "#2a2622", "group": "Palette", "role": "ink"},
+        {"name": "lineWidth", "kind": "number", "label": "Line width", "default": 2.5, "min": 1, "max": 8, "step": 0.5, "group": "Style", "uiHint": "slider"},
+        {"name": "drawDuration", "kind": "number", "label": "Draw duration (s)", "default": 3, "min": 1, "max": 8, "step": 0.1, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.grainy-gradient",
+      "slot": "look",
+      "family": "craft",
+      "name": "Grainy gradient",
+      "tier": "core",
+      "status": "active",
+      "summary": "Large soft colour blobs drifting slowly, with film grain on top.",
+      "keywords": ["grainy gradient", "gradient mesh", "mesh gradient", "aurora gradient", "noise gradient"],
+      "suits": {
+        "moods": ["calm", "modern", "dreamy", "premium", "soft", "tech", "serene"],
+        "subjects": ["saas", "ai", "app", "launch", "wellness", "music", "podcast", "meditation", "skincare", "fintech", "announcement"],
+        "formats": ["social-post", "background", "cover", "wallpaper", "announcement"]
+      },
+      "avoidFor": ["vintage", "rustic", "kids", "bakery"],
+      "image": "none",
+      "conflicts": ["look.risograph", "look.letterpress", "look.linocut", "look.pixel-art", "look.xerox-zine", "look.neo-brutalism"],
+      "spec": {
+        "essence": "A modern grainy gradient: a few very large soft colour blobs drifting slowly behind clean type, finished with film grain.",
+        "palette": {
+          "rule": "Three to five harmonious colours (analogous or split-complementary) at similar lightness on a light base. No black.",
+          "defaults": {"base": "#f7f5ff", "c1": "#ff9a8b", "c2": "#ff6a88", "c3": "#b6a4ff", "c4": "#7ee8fa"},
+          "adaptable": "The colour family (warm sunrise, cool ocean, brand colours); a deep variant is allowed if the brief asks for night."
+        },
+        "typography": {
+          "rule": "Clean grotesk or geometric sans, medium weight, dark or white with enough contrast.",
+          "fonts": ["grotesk", "geometric", "system"]
+        },
+        "composition": {
+          "rule": "Four to six large soft blobs (radius 30–70% of the width) overlapping behind centred or bottom-left text; nothing else, or one small UI chip.",
+          "adaptable": "Text placement, blob count."
+        },
+        "texture": "Film grain: a pre-generated noise tile (for example 128x128) drawn across the canvas at low alpha each frame.",
+        "lighting": "The blobs are the light.",
+        "motion": {
+          "rule": "Blobs drift on slow Lissajous paths (10–20s loop), hue shifts ±10°, grain static or slowly shimmering.",
+          "fps": null
+        },
+        "recipe": [
+          "Render blobs into a low-res offscreen canvas (width / 8) with radial gradients, then draw it scaled up with smoothing on (natural softness, no blur filter).",
+          "Grain: generate the noise tile once, draw it with createPattern or tiled drawImage at 6–15% alpha.",
+          "Text last."
+        ],
+        "must": ["large soft blobs", "a grain overlay", "low-res rendering for performance"],
+        "never": ["hard shapes", "outlines", "shadowBlur or filter blur", "busy detail"]
+      },
+      "controls": [
+        {"name": "baseColor", "kind": "color", "label": "Base", "default": "#f7f5ff", "group": "Palette", "role": "bg"},
+        {"name": "blobColor1", "kind": "color", "label": "Colour 1", "default": "#ff9a8b", "group": "Palette", "role": "accent"},
+        {"name": "blobColor2", "kind": "color", "label": "Colour 2", "default": "#b6a4ff", "group": "Palette"},
+        {"name": "blobColor3", "kind": "color", "label": "Colour 3", "default": "#7ee8fa", "group": "Palette"},
+        {"name": "grain", "kind": "number", "label": "Grain", "default": 0.35, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "driftSpeed", "kind": "number", "label": "Drift speed", "default": 0.3, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.duotone",
+      "slot": "look",
+      "family": "photo",
+      "name": "Duotone photo",
+      "tier": "extended",
+      "status": "active",
+      "summary": "A photo mapped to two brand colours, with bold type on top.",
+      "keywords": ["duotone", "duo tone", "two-tone photo"],
+      "suits": {
+        "moods": ["bold", "modern", "energetic", "sporty"],
+        "subjects": ["event", "music", "sport", "conference", "fashion", "campaign", "speaker"],
+        "formats": ["poster", "social-post", "cover"]
+      },
+      "avoidFor": ["rustic"],
+      "image": "required",
+      "conflicts": ["look.pixel-art", "look.ascii-terminal", "look.watercolor"],
+      "spec": {
+        "essence": "A duotone poster: the photo's luminance remapped to exactly two colours, overlaid with oversized type.",
+        "palette": {
+          "rule": "Exactly two colours for the image: a dark shadow colour and a bright highlight colour; every photo pixel is a mix of the two by luminance. Text in the highlight colour or white.",
+          "defaults": {"shadow": "#1b1464", "highlight": "#ff5e62"},
+          "adaptable": "The two colours (brand pairs)."
+        },
+        "typography": {
+          "rule": "Big bold grotesk or condensed, uppercase, overlapping the photo.",
+          "fonts": ["condensed", "grotesk"]
+        },
+        "composition": {
+          "rule": "A full-bleed duotone photo, an oversized headline and a small info line; an optional solid colour block.",
+          "adaptable": "Crop, headline position."
+        },
+        "texture": "Optional light grain.",
+        "lighting": "From the photo.",
+        "motion": {
+          "rule": "A slow zoom or pan on the photo, the headline slides in; colours may cross-fade between two presets.",
+          "fps": null
+        },
+        "recipe": [
+          "When the image or colours change: draw the image (cover-fit) to an offscreen canvas, read getImageData, map each pixel's luminance l to mix(shadow, highlight, l), putImageData, cache it.",
+          "Each frame: draw the cached duotone with the zoom transform, then the type.",
+          "No photo uploaded: render a procedural stand-in (large shapes with tone) and run it through the same duotone mapping."
+        ],
+        "must": ["luminance to two-colour mapping", "a full-bleed image or stand-in"],
+        "never": ["the photo's original colours", "more than two colours in the image area"]
+      },
+      "controls": [
+        {"name": "photo", "kind": "assetRef", "label": "Photo", "default": "photo", "assetSlotId": "photo", "group": "Content"},
+        {"name": "shadowColor", "kind": "color", "label": "Shadow colour", "default": "#1b1464", "group": "Palette", "role": "ink"},
+        {"name": "highlightColor", "kind": "color", "label": "Highlight colour", "default": "#ff5e62", "group": "Palette", "role": "accent"},
+        {"name": "contrast", "kind": "number", "label": "Contrast", "default": 1.2, "min": 0.5, "max": 2, "step": 0.05, "group": "Style", "uiHint": "slider"},
+        {"name": "zoom", "kind": "number", "label": "Zoom", "default": 1.08, "min": 1, "max": 1.3, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noBlur"], "require": ["requirePixelRead"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.analog-film",
+      "slot": "look",
+      "family": "photo",
+      "name": "Analog film",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Warm colour grade, film grain, light leaks and a date stamp.",
+      "keywords": ["film photo", "analog film", "35mm", "film grain", "disposable camera"],
+      "suits": {
+        "moods": ["nostalgic", "warm", "authentic", "candid", "summer", "cozy"],
+        "subjects": ["travel", "cafe", "bakery", "lifestyle", "friends", "wedding", "fashion", "restaurant"],
+        "formats": ["social-post", "story", "photo"]
+      },
+      "avoidFor": ["tech", "corporate", "dashboard"],
+      "image": "required",
+      "conflicts": ["look.pixel-art", "look.blueprint", "look.swiss", "look.ascii-terminal"],
+      "spec": {
+        "essence": "A 35mm film snapshot: warm faded grade, visible grain, a light leak from one edge and an orange date stamp.",
+        "palette": {
+          "rule": "The photo graded warm: lifted blacks (minimum about 18/255), warm highlights, slight fade; light leaks in orange and red; date stamp orange.",
+          "defaults": {"leak1": "#ff7a1a", "leak2": "#ff3b30", "stamp": "#ff8c1a"},
+          "adaptable": "Grade warmth and leak colour."
+        },
+        "typography": {
+          "rule": "Minimal: an orange seven-segment or mono date stamp at the bottom right; an optional small handwritten caption.",
+          "fonts": ["mono", "hand"]
+        },
+        "composition": {
+          "rule": "The photo fills the frame (or sits in a thin film border with sprocket holes), with the date stamp and a light leak from one edge.",
+          "adaptable": "Border on or off, leak edge."
+        },
+        "texture": "Animated film grain (noise tile), dust specks, slight vignette.",
+        "lighting": "Light leaks: one or two large soft blobs of warm colour from one edge with 'screen' composite.",
+        "motion": {
+          "rule": "Grain changes every frame at a stepped 24 fps, the light leak slowly breathes and drifts, slight gate weave (±0.5px).",
+          "fps": 24
+        },
+        "recipe": [
+          "Grade once with getImageData when the image changes; cache it.",
+          "Grain: swap between 3–4 pre-generated noise tiles per step.",
+          "Leak: radial gradient in leak colours with 'screen' composite.",
+          "No photo uploaded: paint a simple sunlit procedural scene (sky, sun, silhouettes) and grade it the same way."
+        ],
+        "must": ["film grain", "a warm grade", "a light leak", "a date stamp"],
+        "never": ["a crisp digital look", "neon", "flat vector illustration as the main image"]
+      },
+      "controls": [
+        {"name": "photo", "kind": "assetRef", "label": "Photo", "default": "photo", "assetSlotId": "photo", "group": "Content"},
+        {"name": "warmth", "kind": "number", "label": "Warmth", "default": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "grain", "kind": "number", "label": "Grain", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"},
+        {"name": "lightLeak", "kind": "number", "label": "Light leak", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.polaroid-scrapbook",
+      "slot": "look",
+      "family": "photo",
+      "name": "Polaroid scrapbook",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Tilted instant photos with white frames, tape and handwritten captions.",
+      "keywords": ["polaroid", "instant photo", "scrapbook", "photo wall"],
+      "suits": {
+        "moods": ["nostalgic", "personal", "warm", "fun", "memories"],
+        "subjects": ["birthday", "friends", "travel", "wedding", "anniversary", "customers", "team", "recap"],
+        "formats": ["social-post", "card", "carousel", "recap"]
+      },
+      "avoidFor": ["corporate", "dashboard"],
+      "image": "required",
+      "conflicts": ["look.swiss", "look.blueprint", "look.ascii-terminal"],
+      "spec": {
+        "essence": "A scrapbook page: instant photos in thick white frames, tilted and taped on a cork or kraft background with handwritten captions.",
+        "palette": {
+          "rule": "A cork, kraft or cream background; white instant frames; dark-blue handwriting; translucent cream tape.",
+          "defaults": {"bg": "#c49a6c", "frame": "#fbfbf8", "ink": "#23315c", "tape": "#f3ead7"},
+          "adaptable": "Background material and ink colour."
+        },
+        "typography": {
+          "rule": "Handwritten captions on the frames' bottom strips; the title handwritten or stamped.",
+          "fonts": ["hand"]
+        },
+        "composition": {
+          "rule": "Two to five instant photos (square or 4:5 image area with a thick bottom border) scattered with ±4–12° rotation and overlapping; tape strips; doodles.",
+          "adaptable": "Number of photos, rotation, caption text."
+        },
+        "texture": "Paper or cork noise.",
+        "lighting": "A soft shadow under each frame (blur 10, offset 4px, alpha 0.25), set once per frame.",
+        "motion": {
+          "rule": "Photos drop in one by one with a small rotation settle, then sway gently.",
+          "fps": null
+        },
+        "recipe": [
+          "For each frame: rotate, draw the shadow, the white frame, the photo (drawImageCover into the image area), the caption.",
+          "No photo uploaded: fill image areas with simple flat illustrated scenes."
+        ],
+        "must": ["white instant frames", "rotation", "handwritten captions"],
+        "never": ["a perfect grid", "neon", "gradient backgrounds"]
+      },
+      "controls": [
+        {"name": "photo", "kind": "assetRef", "label": "Photo", "default": "photo", "assetSlotId": "photo", "group": "Content"},
+        {"name": "bgColor", "kind": "color", "label": "Background", "default": "#c49a6c", "group": "Palette", "role": "bg"},
+        {"name": "photoCount", "kind": "number", "label": "Photos", "default": 3, "min": 1, "max": 6, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "scatter", "kind": "number", "label": "Scatter", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.contact-sheet",
+      "slot": "look",
+      "family": "photo",
+      "name": "Contact sheet",
+      "tier": "extended",
+      "status": "active",
+      "summary": "A grid of film frames with numbers and a red marker circle.",
+      "keywords": ["contact sheet", "film strip", "filmstrip"],
+      "suits": {
+        "moods": ["editorial", "artsy", "authentic", "documentary"],
+        "subjects": ["photography", "fashion", "portfolio", "film", "recap", "behind the scenes"],
+        "formats": ["social-post", "poster", "carousel"]
+      },
+      "avoidFor": ["kids", "party"],
+      "image": "required",
+      "conflicts": ["look.memphis", "look.y2k-chrome", "look.vaporwave"],
+      "spec": {
+        "essence": "A photographer's contact sheet: film strips of small frames with edge numbers, one frame circled in red grease pencil.",
+        "palette": {
+          "rule": "Black film strips on light grey paper; photos in black and white or muted colour; red grease-pencil marks; orange-yellow frame numbers.",
+          "defaults": {"paper": "#e9e7e2", "film": "#111111", "marker": "#e02b20", "numbers": "#e8b43a"},
+          "adaptable": "Colour or black-and-white photos; marker colour."
+        },
+        "typography": {
+          "rule": "Tiny mono frame numbers and edge codes on the strips; handwritten red notes.",
+          "fonts": ["mono", "hand"]
+        },
+        "composition": {
+          "rule": "Three to five horizontal film strips of four to six frames each, with sprocket holes; one frame circled with a loose red ellipse, plus arrows and X marks.",
+          "adaptable": "Strip count, which frame is chosen."
+        },
+        "texture": "Slight grain.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "A loupe (circle) glides over the frames showing them magnified; the red circle draws on.",
+          "fps": null
+        },
+        "recipe": [
+          "Frames: drawImageCover of the photo (different crops per frame) into each cell.",
+          "Loupe: clip to a circle and redraw the area scaled 2x.",
+          "No photo uploaded: fill frames with tonal flat shapes."
+        ],
+        "must": ["film strips", "sprocket holes", "frame numbers", "a red marker circle"],
+        "never": ["glow", "gradients"]
+      },
+      "controls": [
+        {"name": "photo", "kind": "assetRef", "label": "Photo", "default": "photo", "assetSlotId": "photo", "group": "Content"},
+        {"name": "markerColor", "kind": "color", "label": "Marker", "default": "#e02b20", "group": "Palette", "role": "accent"},
+        {"name": "frameCount", "kind": "number", "label": "Frames", "default": 18, "min": 8, "max": 30, "step": 1, "group": "Style", "uiHint": "slider"},
+        {"name": "loupeSize", "kind": "number", "label": "Loupe size", "default": 0.2, "min": 0, "max": 0.5, "step": 0.01, "group": "Style", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.editorial-chart",
+      "slot": "look",
+      "family": "data",
+      "name": "Editorial chart",
+      "tier": "core",
+      "status": "active",
+      "summary": "Off-white paper, one accent for the key series, direct labels and a big headline number.",
+      "keywords": ["chart", "graph", "data viz", "data visualization", "infographic"],
+      "suits": {
+        "moods": ["informative", "credible", "calm", "serious", "smart"],
+        "subjects": ["growth", "revenue", "statistics", "stats", "survey", "report", "timeline", "election", "economy", "metrics", "kpi", "milestones", "data", "percent"],
+        "formats": ["social-post", "report", "carousel", "explainer"]
+      },
+      "avoidFor": ["party", "kids"],
+      "image": "none",
+      "conflicts": ["look.psychedelic", "look.acid-graphics", "look.memphis", "look.y2k-chrome"],
+      "spec": {
+        "essence": "A newspaper-quality chart: the headline states the insight, one accent colour marks the key series, everything else is grey, labels sit directly on the data.",
+        "palette": {
+          "rule": "Paper, ink, light gridlines and ONE accent for the highlighted series; all other series in greys.",
+          "defaults": {"paper": "#f7f4ee", "ink": "#1d1d1f", "grid": "#d9d4ca", "accent": "#d1495b"},
+          "adaptable": "Accent hue (for example #2f6690 blue) and paper tone."
+        },
+        "typography": {
+          "rule": "A serif headline stating the insight; grotesk for labels and axes; a big numeral for the key number.",
+          "fonts": ["serifDisplay", "grotesk"]
+        },
+        "composition": {
+          "rule": "Headline (the insight), subhead, chart area with hairline horizontal gridlines only, direct labels at line ends, a source line at the bottom, a big callout number.",
+          "adaptable": "Chart type (line, bar, slope), which series is highlighted, layout of the callout."
+        },
+        "texture": "None.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Data draws on: lines extend left to right, bars grow from the baseline with ease-out, the callout number counts up; optional year scrubber; hold at the end.",
+          "fps": null
+        },
+        "recipe": [
+          "Put the data in a const array (or params); compute min/max and scale functions.",
+          "Bars start at zero; axis labels formatted with toLocaleString.",
+          "progress = clamp(time / drawDuration, 0, 1); draw each line only up to its progress."
+        ],
+        "must": ["an insight headline", "direct labels", "one accent colour", "hairline gridlines", "truthful scales (bars start at zero)"],
+        "never": ["3D charts", "glow", "gradients", "legends when direct labels fit", "pie charts with more than 5 slices", "decorative particles"]
+      },
+      "controls": [
+        {"name": "paperColor", "kind": "color", "label": "Paper", "default": "#f7f4ee", "group": "Palette", "role": "bg"},
+        {"name": "accentColor", "kind": "color", "label": "Highlight", "default": "#d1495b", "group": "Palette", "role": "accent"},
+        {"name": "drawDuration", "kind": "number", "label": "Draw duration (s)", "default": 3, "min": 1, "max": 8, "step": 0.1, "group": "Motion", "uiHint": "slider"},
+        {"name": "showGrid", "kind": "boolean", "label": "Gridlines", "default": true, "group": "Style", "uiHint": "switch"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur", "noAdditiveGlow"], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "look.data-terminal",
+      "slot": "look",
+      "family": "data",
+      "name": "Data terminal",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Dark panels, ticking mono numbers, sparklines and a year scrubber.",
+      "keywords": ["dashboard", "kpi dashboard", "stock ticker", "trading terminal", "financial terminal"],
+      "suits": {
+        "moods": ["serious", "techy", "powerful", "professional", "data-driven"],
+        "subjects": ["finance", "crypto", "metrics", "kpi", "growth", "economy", "analytics", "sports stats", "revenue"],
+        "formats": ["dashboard", "social-post", "explainer"]
+      },
+      "avoidFor": ["cozy", "wedding", "bakery"],
+      "image": "none",
+      "conflicts": ["look.watercolor", "look.letterpress", "look.memphis", "look.paper-cut"],
+      "spec": {
+        "essence": "A financial-terminal dashboard: a grid of dark panels with ticking tabular numbers, deltas, sparklines and a timeline scrubber.",
+        "palette": {
+          "rule": "Near-black background, dark panels with 1px borders, light text, green for positive, red for negative and one amber highlight.",
+          "defaults": {"bg": "#0d1117", "panel": "#161b22", "border": "#30363d", "text": "#e6edf3", "up": "#3fb950", "down": "#f85149", "highlight": "#d29922"},
+          "adaptable": "Highlight colour and panel contrast."
+        },
+        "typography": {
+          "rule": "Monospace tabular numerals; small uppercase grotesk labels.",
+          "fonts": ["mono", "grotesk"]
+        },
+        "composition": {
+          "rule": "A 2x2 or 3x2 panel grid: a hero metric with a big number and delta, sparklines, small bar charts, and a timeline scrubber along the bottom with a year marker.",
+          "adaptable": "Which metrics, panel arrangement."
+        },
+        "texture": "None; crisp.",
+        "lighting": "None.",
+        "motion": {
+          "rule": "Numbers tick with easing toward their targets, sparklines draw, the scrubber playhead moves through the years and all panels update; loop.",
+          "fps": null
+        },
+        "recipe": [
+          "Data as keyframes per year; interpolate values for the current playhead time.",
+          "Format numbers with fixed decimals and a monospace font so digits don't jump.",
+          "Sparkline: polyline over the last N points, last point marked."
+        ],
+        "must": ["a panel grid", "mono tabular numbers", "sparklines", "green/red deltas"],
+        "never": ["decorative glow", "particles", "gradients", "3D"]
+      },
+      "controls": [
+        {"name": "highlightColor", "kind": "color", "label": "Highlight", "default": "#d29922", "group": "Palette", "role": "accent"},
+        {"name": "playSpeed", "kind": "number", "label": "Play speed", "default": 1, "min": 0, "max": 2, "step": 0.05, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": ["noGradient", "noBlur"], "require": ["requireMonospace"]},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "type.kinetic",
+      "slot": "type",
+      "family": "type",
+      "name": "Kinetic type",
+      "tier": "core",
+      "status": "active",
+      "summary": "Words hit on a beat with staggered, snappy easing.",
+      "keywords": ["kinetic typography", "kinetic type", "text animation", "animated text", "motion typography"],
+      "suits": {
+        "moods": ["energetic", "bold", "punchy", "modern"],
+        "subjects": ["announcement", "promo", "quote", "launch", "lyric", "event", "sale"],
+        "formats": ["social-post", "story", "announcement", "intro"]
+      },
+      "avoidFor": [],
+      "image": "none",
+      "conflicts": [],
+      "spec": {
+        "essence": "The headline performs: words enter on a beat with fast, staggered easing.",
+        "rule": "Split the headline into words. Each word enters on a beat (beatInterval 0.25–0.6s) with a fast ease-out (translate 20–60px, scale 1.2 to 1, opacity 0 to 1), holds, then exits with a quick ease-in; 60–120ms stagger between words. The emphasis word gets a different treatment (bigger, or the look's accent colour). Always use the look's fonts and colours.",
+        "must": ["word-level stagger", "beat timing"],
+        "never": ["letters flying randomly in 3D", "slow fades only"]
+      },
+      "controls": [
+        {"name": "beatInterval", "kind": "number", "label": "Beat (s)", "default": 0.4, "min": 0.15, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"},
+        {"name": "wordStagger", "kind": "number", "label": "Word stagger (s)", "default": 0.08, "min": 0, "max": 0.3, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": ["kinetic-type"],
+      "preview": null
+    },
+    {
+      "id": "type.oversized-crop",
+      "slot": "type",
+      "family": "type",
+      "name": "Oversized crop",
+      "tier": "extended",
+      "status": "active",
+      "summary": "A headline so big it runs off the edges, slowly panning.",
+      "keywords": ["oversized type", "giant type", "cropped type", "huge letters"],
+      "suits": {
+        "moods": ["bold", "confident", "fashion", "editorial", "modern"],
+        "subjects": ["fashion", "launch", "brand", "event", "announcement"],
+        "formats": ["poster", "social-post", "cover"]
+      },
+      "avoidFor": [],
+      "image": "none",
+      "conflicts": [],
+      "spec": {
+        "essence": "Type as image: the headline is cropped by the frame and slides slowly across it.",
+        "rule": "Headline font size 35–70% of the canvas height; letters cropped by the canvas edges; the text pans slowly across (8–16s loop, seamless by repeating the word); secondary info small in a corner in the look's body font.",
+        "must": ["letters cropped by the edges", "a slow seamless pan"],
+        "never": ["the whole headline fitting comfortably inside the frame"]
+      },
+      "controls": [
+        {"name": "cropScale", "kind": "number", "label": "Type scale", "default": 0.55, "min": 0.3, "max": 1, "step": 0.01, "group": "Type", "uiHint": "slider"},
+        {"name": "panSpeed", "kind": "number", "label": "Pan speed", "default": 0.3, "min": 0, "max": 1, "step": 0.01, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "type.weight-wave",
+      "slot": "type",
+      "family": "type",
+      "name": "Weight wave",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Per-letter scale and stroke width ripple along the word.",
+      "keywords": ["weight wave", "variable font wave", "wave text"],
+      "suits": {
+        "moods": ["playful", "fluid", "modern", "musical"],
+        "subjects": ["music", "brand", "launch", "podcast", "logo"],
+        "formats": ["social-post", "logo", "intro"]
+      },
+      "avoidFor": [],
+      "image": "none",
+      "conflicts": [],
+      "spec": {
+        "essence": "A wave travels through the word, making each letter swell and thin in turn.",
+        "rule": "Draw the text letter by letter using measureText advances; a sine wave travelling along the word sets each letter's scaleY (0.8–1.3) and apparent weight (an extra strokeText in the same colour with lineWidth 0–4); loop every 2–4s.",
+        "must": ["per-letter drawing", "a travelling wave"],
+        "never": ["the whole word scaling uniformly"]
+      },
+      "controls": [
+        {"name": "waveAmp", "kind": "number", "label": "Wave amount", "default": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Type", "uiHint": "slider"},
+        {"name": "waveSpeed", "kind": "number", "label": "Wave speed", "default": 1, "min": 0, "max": 2, "step": 0.05, "group": "Motion", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "type.slice",
+      "slot": "type",
+      "family": "type",
+      "name": "Slice type",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Letters cut into horizontal strips that slide apart and snap back.",
+      "keywords": ["slice type", "sliced text", "split text"],
+      "suits": {
+        "moods": ["edgy", "dynamic", "modern", "tech"],
+        "subjects": ["launch", "music", "sport", "tech", "event"],
+        "formats": ["social-post", "intro", "poster"]
+      },
+      "avoidFor": [],
+      "image": "none",
+      "conflicts": [],
+      "spec": {
+        "essence": "The headline is sliced into strips that shear apart and lock back together.",
+        "rule": "Render the headline to an offscreen canvas; draw it as N horizontal strips (4–12) with alternating x offsets driven by an eased pulse (apart over 0.4s, hold, snap back over 0.3s); strip edges stay crisp.",
+        "must": ["horizontal strips from an offscreen render", "alternating offsets"],
+        "never": ["blurred strips"]
+      },
+      "controls": [
+        {"name": "sliceCount", "kind": "number", "label": "Slices", "default": 6, "min": 2, "max": 16, "step": 1, "group": "Type", "uiHint": "slider"},
+        {"name": "sliceOffset", "kind": "number", "label": "Slice offset", "default": 40, "min": 0, "max": 120, "step": 1, "group": "Type", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    },
+    {
+      "id": "type.echo-outline",
+      "slot": "type",
+      "family": "type",
+      "name": "Echo outline",
+      "tier": "extended",
+      "status": "active",
+      "summary": "Outlined copies stacked behind a solid headline, fanning out.",
+      "keywords": ["echo text", "outline echo", "stacked outline", "repeated outline"],
+      "suits": {
+        "moods": ["retro", "bold", "groovy", "energetic"],
+        "subjects": ["music", "event", "sale", "launch", "festival"],
+        "formats": ["poster", "social-post", "intro"]
+      },
+      "avoidFor": [],
+      "image": "none",
+      "conflicts": [],
+      "spec": {
+        "essence": "A solid headline with a trail of outlined echoes behind it that fan out and back.",
+        "rule": "Solid headline on top; 4–10 outlined copies (strokeText, lineWidth 1.5–3, no fill) behind it, each offset along one direction by i x spacing and fading in alpha; the stack fans out and back on a loop.",
+        "must": ["outlined copies behind a solid headline", "a fanning loop"],
+        "never": ["filled echoes", "blurred echoes"]
+      },
+      "controls": [
+        {"name": "echoCount", "kind": "number", "label": "Echoes", "default": 6, "min": 2, "max": 12, "step": 1, "group": "Type", "uiHint": "slider"},
+        {"name": "echoSpacing", "kind": "number", "label": "Echo spacing", "default": 10, "min": 2, "max": 30, "step": 1, "group": "Type", "uiHint": "slider"}
+      ],
+      "lint": {"forbid": [], "require": []},
+      "goldens": [],
+      "preview": null
+    }
+  ]
+}

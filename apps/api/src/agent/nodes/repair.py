@@ -10,6 +10,7 @@ from adapters.llm.router import resolve_model_for_role
 from agent.codegen_parse import CodegenParseError, extract_typescript_module
 from agent.prompts.create_repair import repair_system_prompt, repair_user_prompt
 from agent.state import CreateGraphState
+from agent.style_registry import style_for_plan, style_lock_block
 from core.config import get_settings
 
 
@@ -48,6 +49,7 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
     plan_target = "canvas2d"
     if isinstance(plan, dict) and isinstance(plan.get("target"), str):
         plan_target = plan["target"]
+    look, typ = style_for_plan(plan)
     messages = [
         ChatMessage(role="system", content=repair_system_prompt(plan_target)),
         ChatMessage(
@@ -58,6 +60,7 @@ async def repair_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, A
                 errors=errors,
                 plan_json=plan_json,
                 plan=plan,
+                style_lock=style_lock_block(look, typ, compact=True) if look else None,
             ),
         ),
     ]

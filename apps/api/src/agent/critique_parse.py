@@ -103,12 +103,16 @@ def normalize_critique(data: dict[str, Any]) -> dict[str, Any]:
         summary = str(summary)
     summary = summary.strip()[:800]
 
-    return {
+    out: dict[str, Any] = {
         "overall": overall,
         "scores": scores,
         "summary": summary,
         "fixes": fixes,
     }
+    # Optional (style registry): kept outside the mean so legacy thresholds hold.
+    if data.get("styleAdherence") is not None:
+        out["styleAdherence"] = _clamp_score(data.get("styleAdherence"))
+    return out
 
 
 def parse_critique(text: str) -> dict[str, Any]:

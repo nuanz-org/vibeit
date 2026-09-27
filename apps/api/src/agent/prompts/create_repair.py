@@ -28,6 +28,8 @@ Error prefixes you may see:
 - host_smoke: — runtime throw, console error, blank canvas, captureFrame failure
 - critique: — design-quality fix from the Critic (composition, motion, palette, type, params)
 - perf: — expensive draw patterns (shadowBlur/filter inside segment loops)
+- style: — the code breaks the STYLE LOCK (forbidden technique or missing required one); \
+fix it the way the lock describes, never by dropping the style
 
 Craft preservation (AM1 + A4):
 - Fix only what the errors list requires.
@@ -42,6 +44,8 @@ do not delete enum switches to "simplify".
 - For param_coverage: reference each missing name as a string key in schema/defaults \
 AND read it in draw so the control changes something visible.
 - For critique: apply the ordered fix list; raise craft without breaking gates.
+- **STYLE LOCK:** when the user message has a STYLE LOCK block, the repaired module must still \
+follow it exactly (palette rule, MUST / NEVER, technique). Never "fix" an error by switching look.
 
 {PERF_CRAFT_CANVAS2D}
 {PERF_CRAFT_REPAIR}
@@ -64,7 +68,7 @@ Hard rules (must keep):
 - TypeScript must esbuild-clean; runtime must not throw; captureFrame must not be blank
 - Every plan param name must appear in getParamSchema / getDefaultParams / setup|draw
 
-Error prefixes: static / smoke / compile / param_coverage / host_smoke / critique (same meaning).
+Error prefixes: static / smoke / compile / param_coverage / host_smoke / critique / style (same meaning).
 
 Craft preservation (AM1 + A4 + B4):
 - Fix only listed errors; keep multi-axis enum branches (shape / assembly / material).
@@ -111,6 +115,7 @@ def repair_user_prompt(
     errors: list[str],
     plan_json: str | None = None,
     plan: dict[str, Any] | None = None,
+    style_lock: str | None = None,
 ) -> str:
     err = "\n".join(f"- {e}" for e in errors) or "- unknown validation/smoke failure"
     plan_block = f"\nPlan JSON:\n{plan_json}\n" if plan_json else ""
@@ -165,10 +170,13 @@ def repair_user_prompt(
                 "Param names that must remain referenced: " + ", ".join(names) + "\n"
             )
 
+    lock_block = f"\n{style_lock.strip()}\n" if style_lock else ""
+
     return (
         f"Vision:\n{vision_text.strip()}\n"
         f"Plan target: {target}\n"
         f"{plan_block}"
+        f"{lock_block}"
         f"{inventory_hint}"
         f"{enum_hint}\n"
         f"Errors to fix:\n{err}\n\n"

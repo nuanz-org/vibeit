@@ -9,7 +9,33 @@ from adapters.llm.router import resolve_model_for_role
 from agent.clarify_parse import ClarifyParseError, parse_clarify_response
 from agent.prompts.create_clarify import CLARIFY_SYSTEM_PROMPT, clarify_user_prompt
 from agent.state import CreateGraphState
+from agent.style_registry import (
+    STYLE_QUESTION_ID,
+    choose_styles,
+    style_lock_enabled,
+    style_question,
+)
 from core.config import get_settings
+
+_MAX_QUESTIONS = 4
+
+
+def with_style_question(vision: str, questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Put the curated style question first (unless the vision already names a style).
+
+    Its option values are style ids; the answer locks the look instead of becoming an enum.
+    """
+    rest = [q for q in questions if q.get("id") != STYLE_QUESTION_ID]
+    if not style_lock_enabled():
+        return rest[:_MAX_QUESTIONS]
+    choice = choose_styles(vision)
+    if choice.locked_id:
+        return rest[:_MAX_QUESTIONS]
+    q = style_question(choice.shortlist)
+    if q is None:
+        return rest[:_MAX_QUESTIONS]
+    return [q, *rest][:_MAX_QUESTIONS]
 
 
 async def clarify_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, Any]:
@@ -57,7 +83,7 @@ async def clarify_node(state: CreateGraphState, *, llm: LLMClient) -> dict[str, 
             last_raw = completion.text
             parsed = parse_clarify_response(completion.text)
             tokens += completion.usage.total_tokens
-            questions = parsed.get("questions") or []
+            questions = with_style_question(vision, list(parsed.get("questions") or []))
             return {
                 "phase": "clarify",
                 "clarify_payload": {

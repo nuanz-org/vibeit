@@ -40,6 +40,8 @@ interaction mode.
 - Each question: 2–5 options with distinct labels; values must be stable identifiers.
 - When the vision already locks every major axis, return questions: [] and skipReason.
 - Do not ask for target (canvas2d vs three) unless the vision is ambiguous about 2D/3D.
+- Do NOT ask about the overall visual style, aesthetic or art direction — a style question with \
+curated options is added automatically. Ask about content and control axes instead.
 - Output valid JSON only.
 """
 

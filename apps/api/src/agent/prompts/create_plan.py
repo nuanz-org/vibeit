@@ -1,11 +1,32 @@
-"""Plan-node system prompt (M3d + AM1 Art Director / DesignBrief v2 + A4 multi-axis + B4 three + control catalog)."""
+"""Plan-node system prompt (M3d + AM1 Art Director / DesignBrief v2 + A4 multi-axis + B4 three + control catalog + style registry)."""
 
 from __future__ import annotations
 
 from agent.control_catalog.prompt_block import control_catalog_prompt_block
+from agent.style_registry import style_lock_enabled
 from agent.target_policy import enabled_targets_prompt_block
 
-PLAN_SYSTEM_PROMPT = """\
+_STYLE_SCHEMA = """,
+
+  "styleId": string,              // REQUIRED — one look id from the VISUAL STYLE block
+  "styleRationale"?: string,      // one line: why this look fits
+  "styleColors"?: { [styleControlName: string]: "#rrggbb" },  // adapt style colours to the subject
+  "typeTreatmentId"?: string | null  // optional type.* id from the VISUAL STYLE block"""
+
+_STYLE_RULES = """Visual style (critical — the user message has a VISUAL STYLE block):
+- Every tool is built in exactly one registry look. Set styleId to the locked id, or pick the \
+best fit from the shortlist. Never invent a style id and never blend two looks.
+- The chosen look decides technique, palette structure, texture, typeface class and motion \
+character. Your craft goes into what the look leaves open: layout, scale, subject depiction, copy, \
+exact colours within the palette rule, timing.
+- Style controls are merged into params automatically; do not add duplicates for the same colour \
+role (no extra bg / ink / accent colours when the look already has paper / ink colours).
+- paletteRoles, typography and motionSpec must obey the look's rules. A dark background is only \
+right when the look says so.
+
+"""
+
+_PLAN_SYSTEM_TEMPLATE = """\
 You are the Plan stage (Art Director) of Aiditr Create. Given a user vision, you \
 produce a DesignBrief / ToolPlan JSON that a human art director would accept — \
 composition, palette roles, motion, type, and a **playable control surface** — \
@@ -95,7 +116,7 @@ Schema (required + DesignBrief v2 + A4 + controlInventory):
       { "id": string, "label": string, "paramNames": string[] }
     ]
   },
-  "tags"?: string[]
+  "tags"?: string[]{STYLE_SCHEMA}
 }
 
 Control inventory (critical — complete user controls):
@@ -109,8 +130,8 @@ SELECT a catalog tool or invent a custom param — do not leave required axes mi
 7. Density: simple stills **3–10** params; interactive designer toys **8–40** when the vision is dense. \
 Not always max; completeness beats fixed counts.
 
-Art direction:
-- Compose in layers: background → mid atmosphere → focal element → type/chrome.
+{STYLE_RULES}Art direction:
+- Compose in layers: background → mid atmosphere → focal element → type.
 - Name a clear focal point; avoid equal-weight clutter.
 - Palette: 3–4 roles max. High contrast ink-on-bg; accent for kinetic energy only.
 - Motion: specify easing + tempo + loop. Prefer smooth sine / ease-out over linear.
@@ -164,10 +185,25 @@ Hard rules:
 """
 
 
+def _plan_system_base() -> str:
+    styled = style_lock_enabled()
+    return _PLAN_SYSTEM_TEMPLATE.replace(
+        "{STYLE_SCHEMA}", _STYLE_SCHEMA if styled else ""
+    ).replace("{STYLE_RULES}", _STYLE_RULES if styled else "")
+
+
+# Back-compat constant (style lock on)
+PLAN_SYSTEM_PROMPT = (
+    _PLAN_SYSTEM_TEMPLATE.replace("{STYLE_SCHEMA}", _STYLE_SCHEMA).replace(
+        "{STYLE_RULES}", _STYLE_RULES
+    )
+)
+
+
 def plan_system_prompt() -> str:
-    """System prompt + control catalog + live enabled-target policy (B4)."""
+    """System prompt + control catalog + live enabled-target policy (B4) + style rules."""
     return (
-        PLAN_SYSTEM_PROMPT
+        _plan_system_base()
         + "\n"
         + control_catalog_prompt_block()
         + "\n"
@@ -181,16 +217,18 @@ def plan_user_prompt(
     *,
     style_notes: dict | None = None,
     clarify_result: dict | None = None,
+    style_block: str | None = None,
 ) -> str:
     import json
 
-    style_block = ""
+    inspiration_block = ""
     if isinstance(style_notes, dict) and style_notes:
-        style_block = (
+        inspiration_block = (
             "\nStyle notes from inspiration images (INTERPRET only — never copy "
             "logos/marks/unique art; use palette roles, mood, composition patterns):\n"
             f"{json.dumps(style_notes, indent=2)[:4000]}\n"
-            "Seed paletteRoles / motionSpec / composition from these notes when they fit the vision.\n"
+            "Seed paletteRoles / motionSpec / composition from these notes when they fit the vision "
+            "and stay inside the chosen look's rules (use them to choose the look and its colours).\n"
         )
 
     clarify_block = ""
@@ -225,13 +263,16 @@ def plan_user_prompt(
         "---\n"
     )
 
+    registry_block = f"\n{style_block.strip()}\n" if style_block else ""
+
     return (
         f"Vision:\n{vision_text.strip()}\n"
-        f"{style_block}"
+        f"{registry_block}"
+        f"{inspiration_block}"
         f"{clarify_block}"
         f"{target_block}\n"
-        "Return the DesignBrief / ToolPlan JSON now — prefer controlInventory "
+        "Return the DesignBrief / ToolPlan JSON now — set styleId, prefer controlInventory "
         "(select catalog tools + custom extras + skip with reason). "
-        "Art-direct a complete playable control surface for this vision; "
+        "Art-direct a complete playable control surface for this vision inside the chosen look; "
         "pick the correct target; do not write code."
     )

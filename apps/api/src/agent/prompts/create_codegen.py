@@ -71,10 +71,14 @@ export const createTool = () =>
 - canvas2d: createCanvas2dTool; draw(c) with c.ctx
 
 Craft guidance (AM1):
-- Layer the scene: background → atmosphere → focal element → type/chrome.
+- **A STYLE LOCK block in the user message overrides everything below and any exemplar look.** \
+Implement its recipe, obey its MUST / NEVER lists and palette rule exactly; put your craft into \
+what it marks as adaptable (layout, scale, subject, copy, colours within the rule, timing).
+- Layer the scene: background → atmosphere → focal element → type.
 - Use plan.paletteRoles when present (bg / ink / accent / highlight); fall back to palette[].
 - Motion: prefer smooth sine / ease-out over linear; honor motionSpec when present.
-- If exemplars are provided, learn composition from them — do NOT copy titles/literals blindly.
+- If exemplars are provided, learn structure from them — do NOT copy titles/literals blindly.
+- Fonts: only system font stacks work (web fonts are blocked in the sandbox).
 
 {PERF_CRAFT_CANVAS2D}
 
@@ -197,7 +201,11 @@ def codegen_system_prompt(target: str | None = None) -> str:
     return CODEGEN_SYSTEM_PROMPT_CANVAS2D
 
 
-def _format_exemplars(exemplars: list[dict[str, Any]] | None) -> str:
+def _format_exemplars(
+    exemplars: list[dict[str, Any]] | None,
+    *,
+    structure_only: bool = False,
+) -> str:
     if not exemplars:
         return ""
     blocks: list[str] = []
@@ -214,11 +222,13 @@ def _format_exemplars(exemplars: list[dict[str, Any]] | None) -> str:
         )
     if not blocks:
         return ""
-    return (
-        "\n\nGolden exemplars (hand-authored craft references — match quality, adapt to the plan):\n\n"
-        + "\n\n".join(blocks)
-        + "\n"
+    header = (
+        "Reference code (API and structure only — the STYLE LOCK defines the look; "
+        "do not copy its colours, layout or effects):"
+        if structure_only
+        else "Golden exemplars (hand-authored craft references — match quality, adapt to the plan):"
     )
+    return "\n\n" + header + "\n\n" + "\n\n".join(blocks) + "\n"
 
 
 def _enum_axes_from_plan(plan: dict[str, Any]) -> list[dict[str, Any]]:
@@ -260,9 +270,10 @@ def codegen_user_prompt(
     exemplars: list[dict[str, Any]] | None = None,
     style_notes: dict[str, Any] | None = None,
     clarify_result: dict[str, Any] | None = None,
+    style_lock: str | None = None,
 ) -> str:
     plan_json = json.dumps(plan, indent=2)
-    exemplar_block = _format_exemplars(exemplars)
+    exemplar_block = _format_exemplars(exemplars, structure_only=bool(style_lock))
     inventory_block = inventory_summary_for_codegen(plan)
     style_block = ""
     if isinstance(style_notes, dict) and style_notes:
@@ -344,6 +355,12 @@ def codegen_user_prompt(
         "Write the full TypeScript module now — craft a layered, param-driven tool "
         "with every enum branch playable and every param wired."
     )
+    if style_lock:
+        close = (
+            "Write the full TypeScript module now — implement the STYLE LOCK recipe exactly, "
+            "wire every param (style controls included) so each visibly changes the look, "
+            "and make every enum branch playable. The look must be unmistakably the locked style."
+        )
     if target == "three":
         close = (
             "Write the full TypeScript three module now — setup lights/meshes, "
@@ -352,10 +369,12 @@ def codegen_user_prompt(
         )
 
     inv_section = f"\n{inventory_block}\n" if inventory_block else ""
+    lock_section = f"\n{style_lock.strip()}\n" if style_lock else ""
 
     return (
         f"Vision:\n{vision_text.strip()}\n\n"
         f"Plan JSON (DesignBrief):\n{plan_json}\n"
+        f"{lock_section}"
         f"{target_line}"
         f"{inv_section}"
         f"{style_block}"
