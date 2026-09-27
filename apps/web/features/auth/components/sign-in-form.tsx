@@ -6,23 +6,19 @@ import { FormEvent, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
 
-const card =
-  "w-full max-w-[400px] rounded-[12px] border border-border bg-card p-8";
-const title = "mb-1.5 text-2xl font-medium tracking-[-0.03em]";
-const subtitle = "mb-6 text-[0.95rem] leading-snug text-ink/70";
-const form = "flex flex-col gap-4";
-const field = "flex flex-col gap-1.5";
-const label = "text-[0.85rem] font-medium";
-const input =
-  "w-full appearance-none rounded-[10px] border border-border bg-background px-3 py-2.5 text-[0.95rem] text-foreground transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-primary/50 focus:shadow-[0_0_0_3px_rgb(0_0_255/0.12)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
-const submit =
-  "mt-1 h-12 cursor-pointer rounded-full border-none bg-primary px-4 text-[0.95rem] font-medium text-primary-foreground transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-base-blue-hover disabled:cursor-not-allowed disabled:opacity-55";
-const error =
-  "rounded-[10px] border border-[#FC401F]/25 bg-[#FC401F]/10 px-3 py-2.5 text-sm leading-snug text-[#FC401F]";
-const footer = "mt-5 text-center text-sm text-muted-foreground";
-const link = "font-medium text-primary underline underline-offset-2 hover:opacity-80";
-const mutedLink =
-  "text-[0.8rem] text-muted-foreground underline underline-offset-2 hover:text-foreground";
+import {
+  AuthCard,
+  Field,
+  FormError,
+  footerCls,
+  footerLinkCls,
+  formCls,
+  inputCls,
+  quietLinkCls,
+  submitCls,
+} from "./auth-ui";
+
+const VERIFY_EMAIL = "Verify your email address before signing in.";
 
 export function SignInForm() {
   const router = useRouter();
@@ -48,10 +44,10 @@ export function SignInForm() {
 
     if (signInError) {
       if (signInError.status === 403) {
-        setErrorMsg("Please verify your email address before signing in.");
+        setErrorMsg(VERIFY_EMAIL);
         return;
       }
-      setErrorMsg(signInError.message || "Could not sign in. Check your credentials.");
+      setErrorMsg(signInError.message || "Couldn’t sign in. Check your credentials.");
       return;
     }
 
@@ -59,74 +55,68 @@ export function SignInForm() {
     router.refresh();
   }
 
+  // Credential errors point at both fields; "verify your email" doesn't.
+  const invalid = errorMsg != null && errorMsg !== VERIFY_EMAIL ? true : undefined;
+  const describedBy = errorMsg ? "sign-in-error" : undefined;
+
   return (
-    <div className={card}>
-      <div className="mb-5 flex items-center gap-2.5">
-        <span
-          className="inline-block size-6 shrink-0 rounded-[2px] bg-primary"
-          aria-hidden
-        />
-        <p className="m-0 text-[15px] font-medium tracking-[-0.02em]">Aiditr</p>
-      </div>
-      <h1 className={title}>Sign in</h1>
-      <p className={subtitle}>
-        Use your email and password to continue to Create.
-      </p>
+    <>
+      <AuthCard
+        title="Sign in"
+        lead="Use your email and password to continue to Create."
+      >
+        <form className={formCls} onSubmit={onSubmit}>
+          <Field id="email" label="Email">
+            <input
+              id="email"
+              className={inputCls}
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+              disabled={loading}
+              aria-invalid={invalid}
+              aria-describedby={describedBy}
+            />
+          </Field>
 
-      <form className={form} onSubmit={onSubmit}>
-        {errorMsg ? (
-          <div className={error} role="alert">
-            {errorMsg}
-          </div>
-        ) : null}
-
-        <div className={field}>
-          <label className={label} htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className={input}
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
-            disabled={loading}
-          />
-        </div>
-
-        <div className={field}>
-          <div className="flex items-center justify-between gap-2">
-            <label className={label} htmlFor="password">
-              Password
-            </label>
-            <Link className={mutedLink} href="/forgot-password">
-              Forgot password?
-            </Link>
-          </div>
-          <input
+          <Field
             id="password"
-            className={input}
-            type="password"
-            autoComplete="current-password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
-            disabled={loading}
-          />
-        </div>
+            label="Password"
+            aside={
+              <Link className={quietLinkCls} href="/forgot-password">
+                Forgot password?
+              </Link>
+            }
+          >
+            <input
+              id="password"
+              className={inputCls}
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              disabled={loading}
+              aria-invalid={invalid}
+              aria-describedby={describedBy}
+            />
+          </Field>
 
-        <button className={submit} type="submit" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          {errorMsg ? <FormError id="sign-in-error">{errorMsg}</FormError> : null}
 
-      <p className={footer}>
+          <button className={submitCls} type="submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+      </AuthCard>
+
+      <p className={footerCls}>
         No account?{" "}
         <Link
-          className={link}
+          className={footerLinkCls}
           href={
             next && next !== "/create"
               ? `/signup?next=${encodeURIComponent(next)}`
@@ -136,6 +126,6 @@ export function SignInForm() {
           Create one
         </Link>
       </p>
-    </div>
+    </>
   );
 }

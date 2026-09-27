@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import { ArrowUp } from "@/components/icons";
 import {
   AiMessage,
   ChatStatusMarker,
@@ -15,6 +16,9 @@ import {
 import { CreateJobApiError } from "@/lib/api/jobs";
 import { pollRefineJob, startRefineJob } from "@/lib/api/refine";
 import { getTool, type ToolResponse } from "@/lib/api/tools";
+import { cn } from "@/lib/utils";
+
+import { ErrorNote, inputCls } from "../lib/studio-ui";
 
 export type RefineChatMessage = {
   id?: string;
@@ -72,7 +76,7 @@ export function RefineChatPanel({
   const [phase, setPhase] = useState<Phase>("idle");
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
+  const [, setJobId] = useState<string | null>(null);
   const [history, setHistory] = useState<RefineChatMessage[]>(() =>
     Array.isArray(initialHistory) ? initialHistory : [],
   );
@@ -211,29 +215,22 @@ export function RefineChatPanel({
   if (!consoleLayout) {
     if (!toolId) {
       return (
-        <section className="flex flex-col gap-[0.55rem]">
-          <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
-            Refine
-          </h2>
-          <p className="text-sm opacity-55">Available on generated tools.</p>
+        <section className="flex flex-col gap-2">
+          <h2 className={pg.panelTitle}>Refine</h2>
+          <p className={pg.muted}>Available on generated tools.</p>
         </section>
       );
     }
 
     return (
-      <section
-        className="flex flex-col gap-[0.55rem]"
-        aria-label="Chat refine"
-      >
-        <h2 className="text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55">
-          Refine
-        </h2>
+      <section className="flex flex-col gap-3" aria-label="Chat refine">
+        <h2 className={pg.panelTitle}>Refine</h2>
         <textarea
-          className="mt-2 min-h-[4.5rem] w-full resize-y rounded-[10px] border border-foreground/14 bg-foreground/[0.04] px-3 py-[0.65rem] font-inherit text-[0.85rem] leading-snug text-inherit focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:cursor-not-allowed disabled:opacity-55"
+          className={cn(inputCls, "resize-none py-2")}
           rows={3}
           value={message}
           disabled={!enabled || busy}
-          placeholder="Describe a change…"
+          placeholder="Ask for a change…"
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -242,10 +239,10 @@ export function RefineChatPanel({
             }
           }}
         />
-        <div className="mt-[0.55rem] flex flex-wrap items-center gap-[0.65rem]">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
+            className="btn btn-primary btn-sm"
             disabled={!enabled || busy || !message.trim()}
             onClick={() => void submit()}
           >
@@ -254,7 +251,7 @@ export function RefineChatPanel({
           {canRollback && onRollback ? (
             <button
               type="button"
-              className="cursor-pointer border-none bg-transparent font-inherit text-[0.8rem] text-inherit underline opacity-65 disabled:cursor-not-allowed disabled:opacity-35"
+              className="btn btn-ghost btn-sm"
               disabled={busy}
               onClick={onRollback}
             >
@@ -263,11 +260,17 @@ export function RefineChatPanel({
           ) : null}
         </div>
         {statusLine ? (
-          <p className="mt-2 text-sm opacity-55">{statusLine}</p>
+          <p className="t-label flex items-center gap-2 text-muted">
+            {busy ? (
+              <span
+                aria-hidden="true"
+                className="live-dot size-1.5 rounded-full bg-accent-text"
+              />
+            ) : null}
+            {statusLine}
+          </p>
         ) : null}
-        {error ? (
-          <p className="text-[0.8rem] leading-snug text-[#b91c1c]">{error}</p>
-        ) : null}
+        {error ? <ErrorNote>{error}</ErrorNote> : null}
       </section>
     );
   }
@@ -276,20 +279,13 @@ export function RefineChatPanel({
   return (
     <div className={pg.chatBody}>
       <div className={pg.chatCard}>
-        <div className={pg.panelHeader} style={{ paddingBottom: "0.35rem" }}>
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className="inline-block size-3.5 shrink-0 rounded-[2.5px] bg-primary"
-              aria-hidden
-            />
-            <h2 className={pg.panelTitle}>Chat</h2>
-          </div>
+        <div className={pg.panelHeader}>
+          <h2 className={pg.panelTitle}>Chat</h2>
           <div className="flex shrink-0 items-center gap-0.5">
             {canRollback && onRollback ? (
               <button
                 type="button"
-                className={pg.btnGhost}
-                style={{ fontSize: "0.75rem", minHeight: "1.75rem" }}
+                className="btn btn-ghost btn-sm"
                 disabled={busy}
                 onClick={onRollback}
               >
@@ -319,9 +315,9 @@ export function RefineChatPanel({
                       {toolLabel?.trim() || "Your tool is ready"}
                     </p>
                     <p className={pg.greetingSub}>
-                      Ask for more range on a control (e.g. gallery arc past 600),
-                      set values, or structural changes. We expand controller
-                      limits first — then you fine-tune in Controls.
+                      Ask for more range on a control (e.g. gallery arc past
+                      600), set values, or structural changes. We expand
+                      controller limits first, then you fine-tune in Controls.
                     </p>
                   </div>
                 </ChatThreadItem>
@@ -346,7 +342,7 @@ export function RefineChatPanel({
                 {busy ? (
                   <ChatThreadItem id="refine-busy" scrollAnchor>
                     <ChatStatusMarker pending>
-                      Working on it — preview keeps the last good version
+                      Working on it. The preview keeps the last good version
                       {statusLine ? ` · ${statusLine}` : null}
                     </ChatStatusMarker>
                   </ChatThreadItem>
@@ -362,7 +358,7 @@ export function RefineChatPanel({
             rows={3}
             value={message}
             disabled={!enabled || busy}
-            placeholder="Describe a change…"
+            placeholder="Ask for a change…"
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -382,26 +378,12 @@ export function RefineChatPanel({
                 aria-label={busy ? "Refining" : "Send refine"}
                 title="Send"
               >
-                <SendIcon />
+                <ArrowUp size={16} />
               </button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M8 12.5V3.5M8 3.5L4 7.5M8 3.5L12 7.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

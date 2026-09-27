@@ -1,28 +1,25 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
-import type { CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
-import { getGalleryItem, type GalleryCard as GalleryCardType } from "@/lib/api/gallery";
-import { cn } from "@/lib/utils";
+import { ArrowRight, Close, Remix } from "@/components/icons";
+import {
+  getGalleryItem,
+  type GalleryCard as GalleryCardType,
+} from "@/lib/api/gallery";
 
 import { normalizePublicAssetUrl } from "../lib/asset-url";
-import { displayTitle, hashHue } from "../lib/display-title";
-import { FOCUS, OPEN_TIMING } from "../lib/gallery-motion";
+import { displayTitle, formatPublished } from "../lib/display-title";
+import { ToolThumb } from "./tool-thumb";
 
 /* ─────────────────────────────────────────────────────────
- * ANIMATION STORYBOARD — Tool detail (click card)
+ * Tool detail (click a tile). Opens detail only — never runs the tool.
  *
- * Click opens DETAIL only — never auto-runs the tool.
- * User chooses: Use tool · or · Keep browsing.
- *
- *    0ms   layoutId media morph into detail frame
- *   40ms   backdrop
- *  160ms   title / meta / description
- *  260ms   actions (Use tool · Keep browsing)
+ *    0ms   backdrop fades in; panel `panel-in` (fade + 8px rise, 240ms)
+ *   40ms   copy block rises in
+ *   80ms   actions (Use tool · Remix)
  * ───────────────────────────────────────────────────────── */
 
 export type GalleryFocusProps = {
@@ -33,26 +30,7 @@ export type GalleryFocusProps = {
 };
 
 export function GalleryFocus({ card, instanceId, onClose }: GalleryFocusProps) {
-  const reduce = useReducedMotion();
   const open = Boolean(card && instanceId);
-  const [stage, setStage] = useState(0);
-
-  useEffect(() => {
-    if (!open) {
-      setStage(0);
-      return;
-    }
-    setStage(0);
-    if (reduce) {
-      setStage(3);
-      return;
-    }
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(setTimeout(() => setStage(1), OPEN_TIMING.backdrop));
-    timers.push(setTimeout(() => setStage(2), OPEN_TIMING.meta));
-    timers.push(setTimeout(() => setStage(3), OPEN_TIMING.actions));
-    return () => timers.forEach(clearTimeout);
-  }, [open, card?.publicId, instanceId, reduce]);
 
   useEffect(() => {
     if (!open) return;
@@ -75,51 +53,30 @@ export function GalleryFocus({ card, instanceId, onClose }: GalleryFocusProps) {
     };
   }, [open]);
 
-  return (
-    <AnimatePresence>
-      {open && card && instanceId ? (
-        <FocusPanel
-          key={instanceId}
-          seed={card}
-          instanceId={instanceId}
-          stage={stage}
-          reduce={Boolean(reduce)}
-          onClose={onClose}
-        />
-      ) : null}
-    </AnimatePresence>
-  );
+  if (!open || !card || !instanceId) return null;
+  return <FocusPanel key={instanceId} seed={card} onClose={onClose} />;
 }
 
-function formatPublished(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(d);
-  } catch {
-    return null;
-  }
-}
+const rise = (ms: number) => ({ "--enter-delay": `${ms}ms` }) as CSSProperties;
 
 function FocusPanel({
   seed,
-  instanceId,
-  stage,
-  reduce,
   onClose,
 }: {
   seed: GalleryCardType;
-  instanceId: string;
-  stage: number;
-  reduce: boolean;
   onClose: () => void;
 }) {
   const titleId = useId();
+  const primary = useRef<HTMLAnchorElement>(null);
+  const [ratio, setRatio] = useState(1);
+
+  // Move focus into the dialog, and back to the tile that opened it.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    primary.current?.focus({ preventScroll: true });
+    return () => opener?.focus?.({ preventScroll: true });
+  }, []);
+
   const detailQ = useQuery({
     queryKey: ["public-gallery-item", seed.publicId],
     queryFn: () => getGalleryItem(seed.publicId),
@@ -130,236 +87,133 @@ function FocusPanel({
   const card = detailQ.data ?? seed;
   const shortTitle = displayTitle(card.title);
   const fullTitle = (card.title ?? "").trim() || "Untitled tool";
-  const showFull =
-    fullTitle.length > shortTitle.length + 4 &&
-    !fullTitle.startsWith(shortTitle.replace(/…$/, ""));
   const desc = card.description?.trim() || null;
+  // The description usually carries the full vision; don't repeat it.
+  const showFull =
+    !desc &&
+    fullTitle.length > shortTitle.length + 4 &&
+    !fullTitle
+      .toLowerCase()
+      .startsWith(shortTitle.replace(/…$/, "").toLowerCase());
   const tags = card.tags ?? [];
   const published = formatPublished(card.publishedAt);
   const runHref = `/t/${encodeURIComponent(card.publicId)}`;
   const remixHref = `/remix/${encodeURIComponent(card.publicId)}`;
   const thumbSrc = normalizePublicAssetUrl(card.thumbnailUrl);
-  const hue = hashHue(card.publicId || shortTitle);
-  const layoutId = `gallery-media-${instanceId}`;
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center px-4 py-8 md:px-8"
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-8 md:px-8"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
     >
-      <motion.button
+      <button
         type="button"
-        aria-label="Keep browsing"
-        className="absolute inset-0 cursor-default border-0 bg-background/72 backdrop-blur-[2px]"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: stage >= 1 || reduce ? 1 : 0 }}
-        exit={{ opacity: 0 }}
-        transition={reduce ? { duration: 0 } : FOCUS.backdrop}
+        tabIndex={-1}
+        aria-label="Close"
+        className="absolute inset-0 cursor-default border-0 bg-bg/80 animate-in fade-in duration-fast"
         onClick={onClose}
       />
 
-      <motion.div
-        className={cn(
-          "relative z-[1] grid w-full max-w-[920px] overflow-hidden rounded-2xl bg-card shadow-elev",
-          "md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]",
-        )}
-        initial={reduce ? false : { opacity: 0, scale: FOCUS.initialScale }}
-        animate={{ opacity: 1, scale: FOCUS.finalScale }}
-        exit={
-          reduce
-            ? { opacity: 0 }
-            : {
-                opacity: 0,
-                scale: FOCUS.initialScale,
-                transition: { duration: 0.2 },
-              }
-        }
-        transition={reduce ? { duration: 0 } : FOCUS.spring}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <motion.div
-          layoutId={reduce ? undefined : layoutId}
-          className="relative aspect-[4/3] w-full overflow-hidden bg-muted md:aspect-auto md:min-h-[380px] md:h-full"
-        >
-          {thumbSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={thumbSrc}
-              alt=""
-              className="block size-full object-cover"
-              decoding="async"
-              draggable={false}
-            />
-          ) : (
-            <div
-              className={cn(
-                "relative flex size-full min-h-[220px] items-center justify-center",
-                "bg-[radial-gradient(120%_90%_at_20%_15%,oklch(0.78_0.04_var(--ph-hue)/0.55),transparent_55%),radial-gradient(100%_80%_at_85%_90%,oklch(0.72_0.035_calc(var(--ph-hue)+50)/0.4),transparent_50%),oklch(0.82_0.02_var(--ph-hue))]",
-                "[@media(prefers-color-scheme:dark)]:bg-[radial-gradient(120%_90%_at_20%_15%,oklch(0.32_0.05_var(--ph-hue)/0.7),transparent_55%),radial-gradient(100%_80%_at_85%_90%,oklch(0.28_0.04_calc(var(--ph-hue)+50)/0.55),transparent_50%),oklch(0.2_0.025_var(--ph-hue))]",
-              )}
-              style={
-                {
-                  ["--ph-hue" as string]: String(hue),
-                } as CSSProperties
-              }
-              aria-hidden
-            >
-              <span className="size-8 rounded-[10px] border-[1.5px] border-foreground/14 opacity-35" />
-            </div>
-          )}
-        </motion.div>
-
-        <div className="flex flex-col justify-center gap-4 p-5 md:gap-5 md:p-8">
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: FOCUS.metaOffsetY }}
-            animate={{
-              opacity: stage >= 2 || reduce ? 1 : 0,
-              y: stage >= 2 || reduce ? 0 : FOCUS.metaOffsetY,
+      <div className="relative z-[1] grid max-h-full w-full max-w-[920px] animate-panel-in overflow-auto rounded-[12px] border border-border bg-surface shadow-panel md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:overflow-hidden">
+        {/* Media: the captured frame on the workspace, like the Studio stage */}
+        <div className="workspace-grid relative grid min-h-[240px] place-items-center border-b border-border p-8 md:min-h-[400px] md:border-r md:border-b-0 md:p-10">
+          <div
+            className="frame-marks relative shadow-frame"
+            style={{
+              aspectRatio: ratio,
+              width: `min(100%, 420px, calc(min(56vh, 460px) * ${ratio}))`,
             }}
-            transition={
-              reduce ? { duration: 0 } : { ...FOCUS.metaSpring, delay: 0 }
-            }
           >
-            <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="m-0 text-[12px] font-medium tracking-[-0.01em] text-ink-caption">
-                Tool detail
-              </p>
+            <div className="absolute inset-0 overflow-hidden bg-surface">
+              <ToolThumb src={thumbSrc} eager onRatio={setRatio} />
+            </div>
+            <span className="mark-b" aria-hidden />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5 p-6 md:p-8">
+          <div className="enter" style={rise(40)}>
+            <p className="t-label flex flex-wrap items-center gap-x-2 gap-y-1 text-muted">
+              <span>Tool</span>
               {published ? (
-                <span className="text-[12px] text-ink-caption">
-                  · Published {published}
-                </span>
+                <>
+                  <span aria-hidden>·</span>
+                  <span>Published {published}</span>
+                </>
               ) : null}
               {detailQ.isFetching && !detailQ.data ? (
-                <span className="text-[11px] text-muted-ink">Updating…</span>
+                <span
+                  className="live-dot size-1.5 rounded-full bg-accent-text"
+                  aria-hidden
+                />
               ) : null}
-            </div>
+            </p>
             <h2
               id={titleId}
-              className="m-0 text-[clamp(1.25rem,2.2vw,1.65rem)] font-semibold leading-tight tracking-[-0.03em] text-balance text-ink"
+              className="mt-3 text-[1.75rem] leading-[1.1] font-medium tracking-[-0.03em] text-balance text-fg"
               title={fullTitle}
             >
               {shortTitle}
             </h2>
             {showFull ? (
-              <p className="mt-1.5 mb-0 line-clamp-3 text-[13px] leading-snug text-ink-caption">
+              <p className="mt-2 line-clamp-3 text-[13.5px] leading-snug text-muted">
                 {fullTitle}
               </p>
             ) : null}
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: FOCUS.metaOffsetY }}
-            animate={{
-              opacity: stage >= 2 || reduce ? 1 : 0,
-              y: stage >= 2 || reduce ? 0 : FOCUS.metaOffsetY,
-            }}
-            transition={
-              reduce
-                ? { duration: 0 }
-                : { ...FOCUS.metaSpring, delay: FOCUS.metaStagger }
-            }
-          >
-            {desc ? (
-              <p className="m-0 max-w-[38ch] text-[0.95rem] leading-relaxed text-pretty text-muted-ink">
-                {desc}
-              </p>
-            ) : (
-              <p className="m-0 max-w-[38ch] text-[0.95rem] leading-relaxed text-muted-ink">
-                Interactive design tool from the public gallery. Open it to play
-                with live controls — no sign-in, no source download.
-              </p>
-            )}
-          </motion.div>
+          <div className="enter" style={rise(60)}>
+            <p className="max-w-[40ch] text-[15px] leading-[1.55] text-pretty text-muted">
+              {desc && desc !== fullTitle
+                ? desc
+                : "A live design tool from the gallery. Open it to play with its controls, or remix it into your own."}
+            </p>
+            {tags.length > 0 ? (
+              <ul className="mt-4 flex flex-wrap gap-1.5">
+                {tags.map((t) => (
+                  <li
+                    key={t}
+                    className="t-mono rounded-[5px] border border-border px-1.5 py-0.5 text-[10.5px] text-muted"
+                  >
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
 
-          {tags.length > 0 ? (
-            <motion.div
-              className="flex flex-wrap gap-1.5"
-              initial={reduce ? false : { opacity: 0, y: FOCUS.metaOffsetY }}
-              animate={{
-                opacity: stage >= 2 || reduce ? 1 : 0,
-                y: stage >= 2 || reduce ? 0 : FOCUS.metaOffsetY,
-              }}
-              transition={
-                reduce
-                  ? { duration: 0 }
-                  : { ...FOCUS.metaSpring, delay: FOCUS.metaStagger * 2 }
-              }
-            >
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-[10px] bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-ink"
-                >
-                  {t}
-                </span>
-              ))}
-            </motion.div>
-          ) : null}
-
-          <motion.p
-            className="m-0 text-sm leading-snug text-ink-caption"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: stage >= 2 || reduce ? 1 : 0 }}
-            transition={
-              reduce ? { duration: 0 } : { duration: 0.2, delay: 0.1 }
-            }
-          >
-            Preview only. Using the tool opens a live, view-only session.
-          </motion.p>
-
-          <motion.div
-            className="mt-1 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center"
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            animate={{
-              opacity: stage >= 3 || reduce ? 1 : 0,
-              y: stage >= 3 || reduce ? 0 : 10,
-            }}
-            transition={
-              reduce ? { duration: 0 } : { ...FOCUS.metaSpring, delay: 0 }
-            }
-          >
-            <Link
-              href={runHref}
-              className={cn(
-                "inline-flex h-11 items-center justify-center rounded-[10px] px-5",
-                "bg-primary text-sm font-medium text-primary-foreground no-underline",
-                "transition-[background-color,opacity] duration-ui ease-ui",
-                "hover:bg-base-blue-hover",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-              )}
-            >
-              Use tool
-            </Link>
-            <Link
-              href={remixHref}
-              className={cn(
-                "inline-flex h-11 items-center justify-center rounded-[10px] border border-border bg-card px-5",
-                "text-sm font-medium text-ink-secondary no-underline",
-                "transition-[border-color,background-color,color] duration-ui ease-ui",
-                "hover:bg-surface hover:text-ink",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-              )}
-            >
-              Remix in Studio
-            </Link>
-            <button
-              type="button"
-              onClick={onClose}
-              className={cn(
-                "inline-flex h-11 items-center justify-center rounded-[10px] border border-border bg-card px-5",
-                "text-sm font-medium text-ink-secondary",
-                "transition-[border-color,background-color,color] duration-ui ease-ui",
-                "hover:bg-surface hover:text-ink",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-              )}
-            >
-              Keep browsing
-            </button>
-          </motion.div>
+          <div className="enter mt-auto" style={rise(80)}>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Link ref={primary} href={runHref} className="btn btn-primary">
+                Use tool
+                <ArrowRight size={16} className="btn-arrow" />
+              </Link>
+              <Link href={remixHref} className="btn btn-outline">
+                <Remix size={15} />
+                Remix
+              </Link>
+            </div>
+            <p className="mt-4 flex items-center gap-2 text-[13px] text-muted">
+              <span
+                className="size-1 rounded-full bg-accent-text"
+                aria-hidden
+              />
+              Opens a live, view-only session. Remix copies it into your Studio.
+            </p>
+          </div>
         </div>
-      </motion.div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="hit absolute top-3 right-3 grid size-8 cursor-pointer place-items-center rounded-full border border-border bg-surface text-fg transition-colors duration-fast ease-standard hover:border-fg"
+        >
+          <Close size={14} />
+        </button>
+      </div>
     </div>
   );
 }

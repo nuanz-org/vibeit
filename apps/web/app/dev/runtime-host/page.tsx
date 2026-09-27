@@ -5,8 +5,9 @@
  * Not a product surface — remove or gate before public launch (M9).
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type CSSProperties } from "react";
 
+import { Alert } from "@/components/icons";
 import {
   RuntimeBridgeError,
   RuntimeHost,
@@ -161,86 +162,70 @@ export default function DevRuntimeHostPage() {
     }
   }
 
+  const inputCls =
+    "block h-9 w-full rounded-[8px] border border-border bg-bg px-3 text-[13.5px] leading-[1.35] text-fg transition-colors duration-[180ms] ease-standard hover:border-border-strong focus:border-fg focus:outline-none focus-visible:outline-none";
+  const labelCls = "flex flex-col gap-1.5 text-[12.5px] font-medium text-fg";
+
   return (
-    <main
-      style={{
-        maxWidth: 960,
-        margin: "0 auto",
-        padding: "2rem 1.25rem 4rem",
-        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-      }}
-    >
-      <h1 style={{ fontSize: "1.35rem", marginBottom: "0.25rem" }}>
-        Dev · Runtime host (M2a4)
-      </h1>
-      <p style={{ color: "#666", marginTop: 0, marginBottom: "1.25rem" }}>
+    <main className="mx-auto w-full max-w-[960px] px-5 pt-8 pb-16 text-fg">
+      <h1 className="t-h3">Dev · Runtime host (M2a4)</h1>
+      <p className="mt-1 mb-5 text-[14px] text-muted">
         Social-frame reference tool: params, motion, logo slot, PNG capture.
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.75rem",
-          alignItems: "center",
-          marginBottom: "1rem",
-        }}
-      >
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <StatusPill status={status} />
-        <button type="button" onClick={() => void runMount()}>
-          mount
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => void runMount()}>
+          Mount
         </button>
-        <button type="button" onClick={() => void runUpdate()}>
-          update params
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => void runUpdate()}>
+          Update params
         </button>
-        <button type="button" onClick={() => void runSetLogo()}>
-          set logo
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => void runSetLogo()}>
+          Set logo
         </button>
-        <button type="button" onClick={() => void runCapture()}>
-          capture PNG
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => void runCapture()}>
+          Capture PNG
         </button>
-        <button type="button" onClick={() => void runDispose()}>
-          dispose
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => void runDispose()}>
+          Dispose
         </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: "0.75rem",
-          marginBottom: "1rem",
-          fontSize: 13,
-        }}
-      >
-        <label>
+      <div className="mb-4 grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+        <label className={labelCls}>
           Title
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4 }}
+            className={inputCls}
           />
         </label>
-        <label>
+        <label className={labelCls}>
           Accent
           <input
             type="color"
             value={accent}
             onChange={(e) => setAccent(e.target.value)}
-            style={{ display: "block", marginTop: 4 }}
+            className="h-9 w-full cursor-pointer rounded-[8px] border border-border bg-bg p-1"
           />
         </label>
-        <label>
+        <label className={labelCls}>
           Background
           <input
             type="color"
             value={bg}
             onChange={(e) => setBg(e.target.value)}
-            style={{ display: "block", marginTop: 4 }}
+            className="h-9 w-full cursor-pointer rounded-[8px] border border-border bg-bg p-1"
           />
         </label>
-        <label>
-          Speed ({speed.toFixed(2)})
+        <label className={labelCls}>
+          <span>
+            Speed{" "}
+            <span className="t-mono text-[11.5px] font-normal text-muted">
+              {speed.toFixed(2)}
+            </span>
+          </span>
           <input
             type="range"
             min={0}
@@ -248,44 +233,37 @@ export default function DevRuntimeHostPage() {
             step={0.05}
             value={speed}
             onChange={(e) => setSpeed(Number(e.target.value))}
-            style={{ display: "block", width: "100%", marginTop: 4 }}
+            className="range"
+            style={{ "--pct": `${(speed / 3) * 100}%` } as CSSProperties}
           />
         </label>
-        <label>
+        <label className={labelCls}>
           Motion
           <select
             value={motionPreset}
             onChange={(e) =>
               setMotionPreset(e.target.value as "pulse" | "drift" | "none")
             }
-            style={{ display: "block", width: "100%", marginTop: 4 }}
+            className={inputCls}
           >
             <option value="pulse">Pulse</option>
             <option value="drift">Drift</option>
             <option value="none">Still</option>
           </select>
         </label>
-        <label style={{ display: "flex", alignItems: "end", gap: 8 }}>
+        <label className="flex items-end gap-2 text-[12.5px] font-medium text-fg">
           <input
             type="checkbox"
             checked={showGrid}
             onChange={(e) => setShowGrid(e.target.checked)}
+            className="size-4 accent-fg"
           />
           Show grid
         </label>
       </div>
 
       {ready ? (
-        <pre
-          style={{
-            background: "#111",
-            color: "#d4d4d8",
-            padding: "0.75rem 1rem",
-            borderRadius: 8,
-            fontSize: 12,
-            overflow: "auto",
-          }}
-        >
+        <pre className="t-mono overflow-auto rounded-[8px] border border-border bg-band px-4 py-3 text-[12px] text-fg">
           {JSON.stringify(
             {
               ready,
@@ -304,30 +282,16 @@ export default function DevRuntimeHostPage() {
       ) : null}
 
       {lastError ? (
-        <p style={{ color: "#b91c1c", fontSize: 14 }}>Error: {lastError}</p>
+        <p role="alert" className="mt-4 flex items-start gap-2 text-[13.5px] text-fg">
+          <Alert size={14} className="mt-0.5 shrink-0" />
+          <span>Error: {lastError}</span>
+        </p>
       ) : null}
 
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: previewUrl ? "1fr 180px" : "1fr",
-          gap: "1rem",
-          marginTop: "1rem",
-          alignItems: "start",
-        }}
+        className={`mt-4 grid items-start gap-4 ${previewUrl ? "grid-cols-[1fr_180px]" : "grid-cols-1"}`}
       >
-        <div
-          style={{
-            height: 480,
-            maxWidth: 320,
-            margin: "0 auto",
-            width: "100%",
-            borderRadius: 12,
-            overflow: "hidden",
-            border: "1px solid #e4e4e7",
-            background: "#0a0a0c",
-          }}
-        >
+        <div className="mx-auto h-[480px] w-full max-w-[320px] overflow-hidden rounded-[12px] border border-border bg-workspace">
           <RuntimeHost
             ref={hostRef}
             onReady={onReady}
@@ -349,30 +313,15 @@ export default function DevRuntimeHostPage() {
           <img
             src={previewUrl}
             alt="Captured frame"
-            style={{
-              width: "100%",
-              height: "auto",
-              borderRadius: 12,
-              border: "1px solid #e4e4e7",
-              background: "#fff",
-            }}
+            className="h-auto w-full rounded-[12px] border border-border bg-surface"
           />
         ) : null}
       </div>
 
-      <h2 style={{ fontSize: "1rem", marginTop: "1.5rem" }}>Log</h2>
-      <ul
-        style={{
-          listStyle: "none",
-          padding: 0,
-          margin: 0,
-          fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
-          fontSize: 12,
-          color: "#3f3f46",
-        }}
-      >
+      <h2 className="t-label mt-6 text-muted">Log</h2>
+      <ul className="t-mono mt-2 text-[12px] text-muted">
         {log.map((line, i) => (
-          <li key={`${i}-${line}`} style={{ padding: "0.2rem 0" }}>
+          <li key={`${i}-${line}`} className="py-0.5">
             {line}
           </li>
         ))}
@@ -382,26 +331,26 @@ export default function DevRuntimeHostPage() {
 }
 
 function StatusPill({ status }: { status: RuntimeHostStatus }) {
-  const color =
-    status === "ready"
-      ? "#15803d"
-      : status === "error"
-        ? "#b91c1c"
-        : status === "loading"
-          ? "#a16207"
-          : "#52525b";
   return (
     <span
-      style={{
-        display: "inline-block",
-        padding: "0.2rem 0.6rem",
-        borderRadius: 999,
-        background: `${color}18`,
-        color,
-        fontSize: 13,
-        fontWeight: 600,
-      }}
+      className={`t-label inline-flex h-6 items-center gap-1.5 rounded-full border border-border px-2.5 text-[10px] ${
+        status === "error" ? "text-fg" : "text-muted"
+      }`}
     >
+      {status === "error" ? (
+        <Alert size={11} />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={`size-1.5 rounded-full ${
+            status === "ready"
+              ? "bg-accent-text"
+              : status === "loading"
+                ? "live-dot bg-accent-text"
+                : "border border-border-strong"
+          }`}
+        />
+      )}
       {status}
     </span>
   );

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
 
+import { ChevronDown, Close, Download } from "@/components/icons";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import {
   PlaygroundShell,
@@ -26,8 +27,10 @@ import {
   parseAspectFromSource,
   saveStageSize,
   sizeFromAspect,
+  stageShape,
   type StageSize,
 } from "../lib/stage-size";
+import { ErrorNote, ResetIcon } from "../lib/studio-ui";
 import {
   asParams,
   parseVersionAssetSlots,
@@ -96,7 +99,9 @@ export type StudioShellProps = {
 type DrawerKind = "export" | "publish" | null;
 
 /**
- * Studio shell — Brickspace-class Chat | Preview | Controls.
+ * Studio shell — Chat | Preview | Controls, dressed as the landing's Studio
+ * panel (design-language §3.17): dot-grid workspace, mono dimension label,
+ * framed canvas with registration marks, 248px controls column.
  */
 export function StudioShell({
   fixture,
@@ -403,15 +408,24 @@ export function StudioShell({
     <>
       <button
         type="button"
-        className={`${pg.btn} ${pg.btnAccent}`}
+        className="btn btn-ink btn-sm"
         disabled={!runtime.mounted || runtime.busy}
         onClick={() => setDrawer("export")}
       >
-        Export
+        <Download size={14} />
+        <span>Export</span>
       </button>
       <UserMenu variant="avatar" />
     </>
   );
+
+  const headerMeta =
+    runtime.status === "ready" ? (
+      <span className={pg.chip}>
+        <span className={pg.liveDot} aria-hidden="true" />
+        Live
+      </span>
+    ) : null;
 
   const chat = (
     <RefineChatPanel
@@ -432,21 +446,28 @@ export function StudioShell({
   const stage = (
     <div className={pg.stageInner} data-stage-layout="pinned-bar">
       {/*
-        Canvas slot fills remaining height and centers the frame.
+        Canvas slot fills remaining height and centres the frame.
         Size bar is pinned to the bottom of the stage so aspect changes
         do not jump W/H controls up and down with the preview.
       */}
+      <div className={pg.stageLabel}>
+        <span>{stageShape(stageSize)}</span>
+        <span aria-hidden="true">·</span>
+        <span>
+          {stageSize.width} × {stageSize.height}
+        </span>
+      </div>
       <div
-        className="relative flex min-h-0 min-w-0 w-full flex-1 flex-col items-center justify-center gap-[0.65rem]"
+        className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center gap-3 pt-6"
         ref={stageAreaRef}
       >
         {runtime.error && !runtime.mounted ? (
-          <div className="absolute top-3 left-1/2 z-[5] max-w-[min(90%,28rem)] -translate-x-1/2 rounded-[10px] border border-[#b91c1c]/28 bg-[color-mix(in_srgb,#b91c1c_12%,var(--background))] px-[0.85rem] py-[0.55rem] text-[0.8rem] leading-snug text-[#b91c1c]">
-            {runtime.error}
+          <div className="absolute top-3 left-1/2 z-[5] w-max max-w-[min(90%,28rem)] -translate-x-1/2 rounded-[10px] border border-border bg-surface px-3 py-2">
+            <ErrorNote>{runtime.error}</ErrorNote>
           </div>
         ) : null}
         <div
-          className={pg.frame}
+          className={`${pg.frame} frame-marks`}
           style={{
             width: frameDisplay.displayW,
             height: frameDisplay.displayH,
@@ -455,23 +476,26 @@ export function StudioShell({
             maxHeight: "100%",
           }}
         >
-          <RuntimeHost
-            ref={runtime.hostRef}
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-              display: "block",
-            }}
-            onReady={(msg) => {
-              void runtime.onReady(msg);
-            }}
-            onStatusChange={runtime.onStatusChange}
-            onBridgeError={runtime.onBridgeError}
-          />
+          <div className={pg.frameClip}>
+            <RuntimeHost
+              ref={runtime.hostRef}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                display: "block",
+              }}
+              onReady={(msg) => {
+                void runtime.onReady(msg);
+              }}
+              onStatusChange={runtime.onStatusChange}
+              onBridgeError={runtime.onBridgeError}
+            />
+          </div>
+          <span className="mark-b" aria-hidden="true" />
         </div>
       </div>
-      <div className="z-[2] flex w-full shrink-0 items-center justify-center px-0 pt-[0.15rem] pb-1">
+      <div className="z-[2] flex w-full shrink-0 items-center justify-center">
         <StageSizeBar value={stageSize} onChange={onStageSizeChange} />
       </div>
     </div>
@@ -480,29 +504,29 @@ export function StudioShell({
   const controls = (
     <>
       <div className={pg.panelHeader}>
-        <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-1">
           <h2 className={pg.panelTitle}>Controls</h2>
-          <p className="m-0 text-[0.7rem] leading-snug text-ink-caption">
+          <p className="m-0 truncate text-[12px] leading-none text-muted">
             Tune your vision
           </p>
         </div>
         <button
           type="button"
-          className={`${pg.btn} ${pg.btnGhost} min-h-9! px-2.5! text-[0.78rem]!`}
+          className="btn btn-ghost btn-sm -mr-2"
           disabled={!runtime.mounted || runtime.busy}
           onClick={() => runtime.resetParams()}
           title="Restore default parameters"
         >
-          <span className="text-[0.95rem] leading-none opacity-85" aria-hidden>
-            ↺
-          </span>
+          <ResetIcon size={14} />
           Reset
         </button>
       </div>
       <div className={pg.panelScroll}>
         <section className="flex flex-col gap-1">
           {runtime.mounted && runtime.paramSchema.length === 0 ? (
-            <p className="text-sm text-muted-ink">No controls for this tool.</p>
+            <p className="text-[12.5px] text-muted">
+              No controls for this tool.
+            </p>
           ) : (
             <ParamControls
               schema={runtime.paramSchema}
@@ -517,13 +541,11 @@ export function StudioShell({
         </section>
 
         <section
-          className="mt-1 flex flex-col gap-2 border-t border-border-subtle pt-4"
+          className="flex flex-col gap-3 border-t border-border pt-4"
           ref={assetsSectionRef}
           id="studio-assets"
         >
-          <h2 className="m-0 text-[0.72rem] font-semibold tracking-[-0.01em] text-ink-caption uppercase">
-            Assets
-          </h2>
+          <h2 className={pg.panelTitle}>Assets</h2>
           {runtime.mounted && runtime.assetSlots.length > 0 ? (
             <EmptySlotsBanner
               slots={runtime.assetSlots}
@@ -540,7 +562,7 @@ export function StudioShell({
             toolId={stageToolKey}
           />
           {runtime.hasRealAsset ? (
-            <p className="text-[0.8rem] leading-snug text-[#15803d]">
+            <p className="t-mono text-[11.5px] leading-snug text-muted">
               {(() => {
                 const bound = Object.entries(runtime.assets).filter(
                   ([, ref]) => {
@@ -580,13 +602,19 @@ export function StudioShell({
           versionId={liveVersionId}
         />
 
-        <details className="rounded-xl border border-foreground/10 px-[0.7rem] py-[0.55rem] [&_summary]:cursor-pointer [&_summary]:list-none [&_summary]:text-[0.78rem] [&_summary]:font-semibold [&_summary]:opacity-65 [&_summary::-webkit-details-marker]:hidden">
-          <summary>Advanced</summary>
-          <div className="mt-[0.65rem] flex flex-col gap-[0.55rem]">
+        <details className="group/adv border-t border-border pt-4">
+          <summary className="hit flex min-h-6 cursor-pointer list-none items-center justify-between gap-3 text-muted transition-colors duration-[180ms] ease-standard hover:text-fg [&::-webkit-details-marker]:hidden">
+            <span className="t-label">Advanced</span>
+            <ChevronDown
+              size={14}
+              className="shrink-0 -rotate-90 transition-transform duration-[240ms] ease-standard group-open/adv:rotate-0"
+            />
+          </summary>
+          <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
+                className="btn btn-outline btn-sm"
                 disabled={
                   !runtime.mounted || runtime.busy || !runtime.hasRealAsset
                 }
@@ -597,7 +625,7 @@ export function StudioShell({
               </button>
               <button
                 type="button"
-                className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
+                className="btn btn-outline btn-sm"
                 disabled={!runtime.mounted || runtime.busy}
                 onClick={() => void runtime.capturePng()}
               >
@@ -605,7 +633,7 @@ export function StudioShell({
               </button>
               <button
                 type="button"
-                className="cursor-pointer rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit disabled:cursor-not-allowed disabled:opacity-45"
+                className="btn btn-outline btn-sm"
                 disabled={runtime.busy || runtime.status === "loading"}
                 onClick={() => void runtime.remount()}
               >
@@ -613,27 +641,21 @@ export function StudioShell({
               </button>
             </div>
             {runtime.capturePreviewUrl ? (
-              <div className="flex items-start gap-4 p-0">
+              <div className="flex items-start gap-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={runtime.capturePreviewUrl}
                   alt="Captured PNG"
-                  className="h-auto w-24 rounded-[10px] border border-foreground/12 bg-white"
+                  className="h-auto w-24 rounded-[6px] border border-border bg-workspace"
                 />
               </div>
             ) : null}
           </div>
         </details>
 
-        {runtime.error ? (
-          <p className="text-[0.8rem] leading-snug text-[#b91c1c]">
-            {runtime.error}
-          </p>
-        ) : null}
+        {runtime.error ? <ErrorNote>{runtime.error}</ErrorNote> : null}
         {persist.error ? (
-          <p className="text-[0.8rem] leading-snug text-[#b91c1c]">
-            Draft save: {persist.error}
-          </p>
+          <ErrorNote>Draft save: {persist.error}</ErrorNote>
         ) : null}
       </div>
     </>
@@ -644,7 +666,8 @@ export function StudioShell({
       <PlaygroundShell
         title={displayTitle}
         onEditTitle={() => setDrawer("publish")}
-        editTitleLabel="Edit name, publish & share"
+        editTitleLabel="Edit name, publish and share"
+        headerMeta={headerMeta}
         headerActions={headerActions}
         chat={chat}
         stage={stage}
@@ -667,14 +690,15 @@ export function StudioShell({
           >
             <div className={pg.drawerHeader}>
               <h2 className={pg.drawerTitle}>
-                {drawer === "export" ? "Export" : "Publish & share"}
+                {drawer === "export" ? "Export" : "Publish and share"}
               </h2>
               <button
                 type="button"
-                className={pg.btn}
+                className="hit -mr-2 grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-muted transition-colors duration-[180ms] ease-standard hover:bg-workspace hover:text-fg"
+                aria-label="Close"
                 onClick={() => setDrawer(null)}
               >
-                Close
+                <Close size={14} />
               </button>
             </div>
             <div className={pg.drawerBody}>
@@ -697,7 +721,9 @@ export function StudioShell({
                     runtime.lastVideoExport?.durationSeconds
                   }
                   lastSequenceAt={runtime.lastSequenceExport?.at}
-                  lastSequenceFrameCount={runtime.lastSequenceExport?.frameCount}
+                  lastSequenceFrameCount={
+                    runtime.lastSequenceExport?.frameCount
+                  }
                   lastSequenceAsFallback={
                     runtime.lastSequenceExport?.usedAsVideoFallback
                   }
@@ -731,47 +757,49 @@ export function StudioShell({
                     embedWidth={embedSizeFromStage(stageSize).width}
                     embedHeight={embedSizeFromStage(stageSize).height}
                   />
-                  <PublishPanel
-                    toolId={persistToolId}
-                    publicId={publicId}
-                    status={displayStatus}
-                    galleryReady={liveGalleryReady}
-                    initialTitle={initialTitle ?? fixture.label}
-                    initialDescription={
-                      initialDescription ?? fixture.description
-                    }
-                    initialTags={initialTags}
-                    thumbnailAssetId={
-                      galleryThumb?.assetId ?? initialThumbnailAssetId
-                    }
-                    thumbnailUrl={galleryThumb?.url ?? initialThumbnailUrl}
-                    mounted={runtime.mounted}
-                    busy={runtime.busy}
-                    exportSmokeProved={Boolean(
-                      runtime.lastCapture?.byteLength || galleryThumb,
-                    )}
-                    onCaptureThumbnail={
-                      persistToolId
-                        ? async () => {
-                            const result =
-                              await runtime.captureAndUploadThumbnail(
-                                persistToolId,
-                              );
-                            setGalleryThumb({
-                              assetId: result.assetId,
-                              url: result.url,
-                              at: new Date().toISOString(),
-                            });
-                            return {
-                              assetId: result.assetId,
-                              url: result.url,
-                            };
-                          }
-                        : undefined
-                    }
-                    onToolUpdated={onToolUpdated}
-                    fixtureMode={isFixtureOnly}
-                  />
+                  <div className="border-t border-border pt-5">
+                    <PublishPanel
+                      toolId={persistToolId}
+                      publicId={publicId}
+                      status={displayStatus}
+                      galleryReady={liveGalleryReady}
+                      initialTitle={initialTitle ?? fixture.label}
+                      initialDescription={
+                        initialDescription ?? fixture.description
+                      }
+                      initialTags={initialTags}
+                      thumbnailAssetId={
+                        galleryThumb?.assetId ?? initialThumbnailAssetId
+                      }
+                      thumbnailUrl={galleryThumb?.url ?? initialThumbnailUrl}
+                      mounted={runtime.mounted}
+                      busy={runtime.busy}
+                      exportSmokeProved={Boolean(
+                        runtime.lastCapture?.byteLength || galleryThumb,
+                      )}
+                      onCaptureThumbnail={
+                        persistToolId
+                          ? async () => {
+                              const result =
+                                await runtime.captureAndUploadThumbnail(
+                                  persistToolId,
+                                );
+                              setGalleryThumb({
+                                assetId: result.assetId,
+                                url: result.url,
+                                at: new Date().toISOString(),
+                              });
+                              return {
+                                assetId: result.assetId,
+                                url: result.url,
+                              };
+                            }
+                          : undefined
+                      }
+                      onToolUpdated={onToolUpdated}
+                      fixtureMode={isFixtureOnly}
+                    />
+                  </div>
                 </>
               )}
             </div>

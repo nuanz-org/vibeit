@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronDown, Code } from "@/components/icons";
+import { cn } from "@/lib/utils";
+
 export type ViewSourcePanelProps = {
   toolId: string;
   target: string;
@@ -38,28 +41,36 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
 // Runtime preview uses the sandboxed iframe host (target: ${target}).`;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3 border-t border-border pt-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          className="cursor-pointer self-start border-none bg-transparent font-inherit text-[0.8rem] font-medium underline opacity-70"
+          className="group hit inline-flex min-h-6 cursor-pointer items-center gap-1.5 text-muted transition-colors duration-[180ms] ease-standard hover:text-fg"
           onClick={onToggle}
           aria-expanded={open}
         >
-          {open ? "Hide source" : "View source"}
+          <Code size={13} />
+          <span className="t-label">{open ? "Hide source" : "View source"}</span>
+          <ChevronDown
+            size={12}
+            className={cn(
+              "transition-transform duration-[240ms] ease-standard",
+              open ? "rotate-0" : "-rotate-90",
+            )}
+          />
         </button>
-        <span className="text-[0.7rem] font-semibold tracking-[0.03em] uppercase opacity-50">
+        <span className="t-mono rounded-[5px] border border-border px-1.5 py-0.5 text-[10.5px] text-muted">
           View only · no download
         </span>
       </div>
       {open ? (
-        <>
-          <p className="m-0 text-[0.75rem] leading-snug opacity-55">
+        <div className="flex animate-control-section-in flex-col gap-2">
+          <p className="text-[11.5px] leading-snug text-muted">
             Source is visible in Studio for the owner only. There is no download
             control and no public source API.
           </p>
           <pre
-            className="m-0 max-h-[280px] overflow-auto rounded-[10px] bg-foreground/[0.06] p-3 text-[0.7rem] leading-snug whitespace-pre-wrap text-inherit select-text"
+            className="t-mono max-h-[280px] overflow-auto rounded-[10px] border border-border bg-workspace p-3 text-[11px] leading-[1.5] whitespace-pre-wrap text-fg select-text"
             data-view-only="true"
             data-download="false"
             // Prevent accidental browser save-as of selected text as primary UX;
@@ -67,7 +78,7 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
           >
             {hasCode ? sourceCode : stub}
           </pre>
-        </>
+        </div>
       ) : null}
     </div>
   );

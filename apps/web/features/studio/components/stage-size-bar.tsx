@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
+
+import { cn } from "@/lib/utils";
 
 import {
   STAGE_PRESETS,
@@ -17,13 +19,12 @@ export type StageSizeBarProps = {
 };
 
 /**
- * Brik-style stage size controls: W · H · preset dropdown.
+ * Canvas size: the landing's ink-thumb size picker (design-language §3.8 B)
+ * plus mono W × H fields. It sits on the workspace, so the tracks are
+ * `bg-surface` like the landing's transport controls.
  */
-export function StageSizeBar({
-  value,
-  onChange,
-  disabled,
-}: StageSizeBarProps) {
+export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
+  const name = useId();
   // Local draft strings so typing "10" doesn't jump to 1080 mid-edit
   const [wDraft, setWDraft] = useState(String(value.width));
   const [hDraft, setHDraft] = useState(String(value.height));
@@ -68,25 +69,80 @@ export function StageSizeBar({
     [onChange, value.height, value.width],
   );
 
+  const n = STAGE_PRESETS.length;
+  const presetIndex = STAGE_PRESETS.findIndex((p) => p.id === value.preset);
+
   return (
     <div
-      className="flex shrink-0 flex-wrap items-center justify-center gap-x-[0.55rem] gap-y-[0.45rem] rounded-full bg-surface-elevated px-[0.55rem] py-[0.4rem] ring-1 ring-black/10 shadow-sm shadow-black/10 dark:ring-white/10 dark:shadow-black/40"
+      className="flex shrink-0 flex-wrap items-center justify-center gap-2"
       role="group"
-      aria-label="Stage size"
+      aria-label="Canvas size"
     >
-      <label className="inline-flex items-center gap-[0.3rem]">
-        <span className="text-[0.68rem] font-[650] tracking-[0.04em] uppercase opacity-55">
-          W
-        </span>
+      <fieldset className="min-w-0" disabled={disabled}>
+        <legend className="sr-only">Canvas size preset</legend>
+        <div
+          className="relative grid rounded-[10px] border border-border bg-surface p-[3px]"
+          style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
+        >
+          {presetIndex >= 0 ? (
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-[3px] left-[3px] rounded-[7px] bg-fg transition-transform duration-[240ms] ease-standard"
+              style={{
+                width: `calc((100% - 6px) / ${n})`,
+                transform: `translateX(${presetIndex * 100}%)`,
+              }}
+            />
+          ) : null}
+          {STAGE_PRESETS.map((p) => {
+            const active = p.id === value.preset;
+            // Ratio glyph: longest side 12px.
+            const iw =
+              p.width >= p.height ? 12 : Math.round(12 * (p.width / p.height));
+            const ih =
+              p.height >= p.width ? 12 : Math.round(12 * (p.height / p.width));
+            return (
+              <label
+                key={p.id}
+                title={`${p.label} · ${p.width} × ${p.height}`}
+                className={cn(
+                  "relative z-10 flex h-9 min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-[7px] px-2.5 pointer-coarse:h-11",
+                  "transition-colors duration-[180ms] ease-standard",
+                  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-(--focus) has-[:focus-visible]:outline-solid",
+                  "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45",
+                  active ? "text-bg" : "text-muted hover:text-fg",
+                )}
+              >
+                <input
+                  type="radio"
+                  name={name}
+                  value={p.id}
+                  checked={active}
+                  onChange={() => onPresetChange(p.id)}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className="inline-block rounded-[2px] border-[1.25px] border-current"
+                  style={{ width: iw, height: ih }}
+                />
+                <span className="text-[12px] font-medium">{p.id}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <div className="inline-flex items-center gap-1 rounded-[10px] border border-border bg-surface p-[3px]">
         <input
           type="number"
-          className="w-[4.25rem] rounded-lg bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums ring-1 ring-black/10 shadow-sm shadow-black/[0.06] focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50 dark:ring-white/10"
+          className={dimInput}
           value={wDraft}
           min={64}
           max={4096}
           step={1}
           disabled={disabled}
-          aria-label="Stage width in pixels"
+          aria-label="Canvas width in pixels"
           onChange={(e) => setWDraft(e.target.value)}
           onBlur={() => commitWidth(wDraft)}
           onKeyDown={(e) => {
@@ -95,22 +151,18 @@ export function StageSizeBar({
             }
           }}
         />
-        <span className="text-[0.68rem] opacity-45">px</span>
-      </label>
-
-      <label className="inline-flex items-center gap-[0.3rem]">
-        <span className="text-[0.68rem] font-[650] tracking-[0.04em] uppercase opacity-55">
-          H
+        <span className="t-mono text-[12px] text-muted" aria-hidden="true">
+          ×
         </span>
         <input
           type="number"
-          className="w-[4.25rem] rounded-lg bg-foreground/[0.04] px-[0.4rem] py-[0.28rem] text-right text-[0.78rem] text-inherit tabular-nums ring-1 ring-black/10 shadow-sm shadow-black/[0.06] focus:outline-2 focus:outline-offset-1 focus:outline-foreground/28 disabled:opacity-50 dark:ring-white/10"
+          className={dimInput}
           value={hDraft}
           min={64}
           max={4096}
           step={1}
           disabled={disabled}
-          aria-label="Stage height in pixels"
+          aria-label="Canvas height in pixels"
           onChange={(e) => setHDraft(e.target.value)}
           onBlur={() => commitHeight(hDraft)}
           onKeyDown={(e) => {
@@ -119,24 +171,20 @@ export function StageSizeBar({
             }
           }}
         />
-        <span className="text-[0.68rem] opacity-45">px</span>
-      </label>
-
-      <select
-        className="min-w-[7.5rem] cursor-pointer rounded-lg bg-foreground/[0.04] px-2 py-[0.32rem] text-[0.78rem] font-medium text-inherit ring-1 ring-black/10 shadow-sm shadow-black/[0.06] disabled:cursor-not-allowed disabled:opacity-50 dark:ring-white/10"
-        value={value.preset}
-        disabled={disabled}
-        aria-label="Stage size preset"
-        title="Stage size controls preview shape"
-        onChange={(e) => onPresetChange(e.target.value)}
-      >
-        <option value="custom">Custom</option>
-        {STAGE_PRESETS.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.label}
-          </option>
-        ))}
-      </select>
+        {value.preset === "custom" ? (
+          <span className="t-label pr-2 pl-1 text-muted">Custom</span>
+        ) : null}
+      </div>
     </div>
   );
 }
+
+/** Borderless mono field inside the size track; the border shows on hover / focus. */
+const dimInput = cn(
+  "h-9 w-[4.5rem] rounded-[7px] border border-transparent bg-transparent px-2 text-right pointer-coarse:h-11",
+  "t-mono text-[12px] text-fg [appearance:textfield]",
+  "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+  "transition-colors duration-[180ms] ease-standard",
+  "hover:border-border-strong focus:border-fg focus:outline-none focus-visible:outline-none",
+  "disabled:cursor-not-allowed disabled:opacity-45",
+);

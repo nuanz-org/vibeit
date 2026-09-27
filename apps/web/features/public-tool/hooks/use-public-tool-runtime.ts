@@ -74,6 +74,7 @@ export function usePublicToolRuntime(options: UsePublicToolRuntimeOptions) {
   }, []);
 
   const onReady = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- keeps RuntimeHost's onReady signature
     async (_message: ReadyMessage) => {
       setError(null);
       setBusy(true);

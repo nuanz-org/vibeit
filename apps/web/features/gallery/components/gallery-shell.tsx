@@ -8,21 +8,19 @@ import { cn } from "@/lib/utils";
 export type GalleryShellProps = {
   children: ReactNode;
   className?: string;
+  /** Full-height screens keep the header hairline on; scrolling pages don't. */
+  bordered?: boolean;
 };
 
-/**
- * Public gallery chrome — shares AppHeader with Landing.
- * Tailwind-only surfaces.
- */
-export function GalleryShell({ children, className }: GalleryShellProps) {
+/** Public gallery chrome: the landing nav over a plain --bg page. */
+export function GalleryShell({
+  children,
+  className,
+  bordered,
+}: GalleryShellProps) {
   return (
-    <div
-      className={cn(
-        "flex min-h-screen flex-col bg-background text-foreground",
-        className,
-      )}
-    >
-      <AppHeader className="shrink-0" />
+    <div className={cn("flex min-h-dvh flex-col bg-bg text-fg", className)}>
+      <AppHeader className="shrink-0" bordered={bordered} />
       {children}
     </div>
   );

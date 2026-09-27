@@ -250,3 +250,17 @@ export function resolveInitialStageSize(options: {
 
   return defaultStageSize(options.fallbackPreset ?? "1:1");
 }
+
+/** Frame shape name: "Square" | "Landscape" | "Portrait". */
+export function stageShape(size: Pick<StageSize, "width" | "height">): string {
+  return size.width === size.height
+    ? "Square"
+    : size.width > size.height
+      ? "Landscape"
+      : "Portrait";
+}
+
+/** Workspace label, e.g. "Portrait · 1080 × 1350". */
+export function stageLabel(size: Pick<StageSize, "width" | "height">): string {
+  return `${stageShape(size)} · ${size.width} × ${size.height}`;
+}

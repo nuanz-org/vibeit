@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 
+import { ArrowUpRight, Check, Code, LinkIcon } from "@/components/icons";
 import { publishTool } from "@/lib/api/tools";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,14 @@ import {
   copyTextToClipboard,
   publicToolPath,
 } from "../lib/share-links";
+import {
+  ErrorNote,
+  StatusDot,
+  copyPillCls,
+  groupLabelCls,
+  labelCls,
+  statusPillCls,
+} from "../lib/studio-ui";
 
 export type SharePanelProps = {
   /** tools.public_id — required for share URLs. */
@@ -33,20 +42,6 @@ export type SharePanelProps = {
 };
 
 type CopyKind = "url" | "embed" | null;
-
-const btn =
-  "inline-flex cursor-pointer items-center justify-center rounded-lg border border-foreground/14 bg-transparent px-[0.85rem] py-2 font-inherit text-sm font-medium text-inherit no-underline box-border disabled:cursor-not-allowed disabled:opacity-45";
-const btnPrimary = "border-transparent bg-foreground text-background";
-const section = "flex flex-col gap-[0.55rem]";
-const sectionTitle =
-  "text-[0.72rem] font-[650] tracking-[0.06em] uppercase opacity-55";
-const muted = "text-sm opacity-55";
-const shareField = "flex flex-col gap-[0.35rem]";
-const fieldLabel = "block font-medium";
-const textInput =
-  "w-full min-w-0 rounded-lg border border-border-subtle bg-transparent px-[0.6rem] py-[0.45rem] font-inherit text-inherit";
-const embedTextarea =
-  "min-h-[5rem] w-full resize-y rounded-lg border border-foreground/14 bg-foreground/[0.04] px-[0.65rem] py-[0.55rem] font-[family-name:var(--font-geist-mono),ui-monospace,monospace] text-[0.75rem] leading-snug text-inherit";
 
 /**
  * M7f — Studio share + embed + thin make-public.
@@ -125,38 +120,46 @@ export function SharePanel({
 
   if (fixtureMode || !publicId || !toolId) {
     return (
-      <section className={section} aria-label="Share">
-        <h2 className={sectionTitle}>Share</h2>
-        <p className={muted}>Share is available on generated tools.</p>
+      <section className="flex flex-col gap-2" aria-label="Share">
+        <h3 className={groupLabelCls}>Share</h3>
+        <p className="text-[12.5px] leading-snug text-muted">
+          Share is available on generated tools.
+        </p>
       </section>
     );
   }
 
   return (
-    <section className={section} aria-label="Share">
-      <h2 className={sectionTitle}>Share</h2>
-      <p className={muted}>
-        {isPublished ? "Public link is live." : "Private until you make it public."}
-      </p>
+    <section className="flex flex-col gap-4" aria-label="Share">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className={groupLabelCls}>Share</h3>
+          <span className={statusPillCls}>
+            <StatusDot live={isPublished} />
+            {isPublished ? "Public" : "Private"}
+          </span>
+        </div>
+        <p className="text-[12.5px] leading-snug text-muted">
+          {isPublished
+            ? "Public link is live."
+            : "Private until you make it public."}
+        </p>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {!isPublished ? (
           <button
             type="button"
-            className={cn(btn, btnPrimary)}
+            className="btn btn-ink btn-sm"
             disabled={publishing}
             onClick={() => void handleMakePublic()}
             title="Set status=published so /t/{publicId} works anonymously"
           >
             {publishing ? "Publishing…" : "Make public link"}
           </button>
-        ) : (
-          <span className="rounded-full bg-[#15803d]/14 px-[0.55rem] py-[0.2rem] text-xs font-semibold text-[#15803d]">
-            Public
-          </span>
-        )}
+        ) : null}
         <a
-          className={btn}
+          className="btn btn-ghost btn-sm"
           href={pathOnly}
           target="_blank"
           rel="noopener noreferrer"
@@ -167,70 +170,109 @@ export function SharePanel({
           }
         >
           Open public page
+          <ArrowUpRight size={14} />
         </a>
       </div>
 
-      <div className={shareField}>
-        <label className={fieldLabel} htmlFor="studio-share-url">
-          Share URL
-        </label>
-        <div className="flex items-stretch gap-2">
-          <input
-            id="studio-share-url"
-            className={cn(textInput, "flex-1")}
-            readOnly
-            value={shareUrl}
-            onFocus={(e) => e.currentTarget.select()}
-          />
-          <button
-            type="button"
-            className={btn}
-            onClick={() => void handleCopyUrl()}
-            disabled={!isPublished}
-            title={
-              isPublished
-                ? "Copy share URL"
-                : "Make public first so the link works for others"
-            }
-          >
-            {copied === "url" ? "Copied" : "Copy"}
-          </button>
-        </div>
-      </div>
+      <ShareRow
+        id="studio-share-url"
+        label="Share URL"
+        icon={<LinkIcon size={13} />}
+        value={shareUrl}
+        copied={copied === "url"}
+        copyDisabled={!isPublished}
+        copyLabel="Copy share URL"
+        copyTitle={
+          isPublished
+            ? "Copy share URL"
+            : "Make public first so the link works for others"
+        }
+        onCopy={() => void handleCopyUrl()}
+      />
 
-      <div className={shareField}>
-        <label className={fieldLabel} htmlFor="studio-embed">
-          Embed snippet
-        </label>
-        <textarea
-          id="studio-embed"
-          className={embedTextarea}
-          readOnly
-          rows={4}
-          value={embedSnippet}
-          onFocus={(e) => e.currentTarget.select()}
-          spellCheck={false}
-        />
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={btn}
-            onClick={() => void handleCopyEmbed()}
-            disabled={!isPublished}
-            title={
-              isPublished
-                ? "Copy iframe embed HTML"
-                : "Make public first so the embed works for others"
-            }
-          >
-            {copied === "embed" ? "Copied" : "Copy embed"}
-          </button>
-        </div>
-      </div>
+      <ShareRow
+        id="studio-embed"
+        label="Embed snippet"
+        icon={<Code size={13} />}
+        value={embedSnippet}
+        copied={copied === "embed"}
+        copyDisabled={!isPublished}
+        copyLabel="Copy embed snippet"
+        copyTitle={
+          isPublished
+            ? "Copy iframe embed HTML"
+            : "Make public first so the embed works for others"
+        }
+        onCopy={() => void handleCopyEmbed()}
+      />
 
-      {error ? (
-        <p className="text-[0.8rem] leading-snug text-[#b91c1c]">{error}</p>
-      ) : null}
+      {error ? <ErrorNote>{error}</ErrorNote> : null}
     </section>
+  );
+}
+
+/**
+ * Read-only value with a copy pill (landing share row, design-language §3.20).
+ * The row border turns ink while the field has focus.
+ */
+function ShareRow({
+  id,
+  label,
+  icon,
+  value,
+  copied,
+  copyDisabled,
+  copyLabel,
+  copyTitle,
+  onCopy,
+}: {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  value: string;
+  copied: boolean;
+  copyDisabled: boolean;
+  copyLabel: string;
+  copyTitle: string;
+  onCopy: () => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className={cn(labelCls, "mb-1.5 block")}>
+        {label}
+      </label>
+      <div
+        className={cn(
+          "flex h-10 items-center gap-2 rounded-[10px] border bg-surface pr-1.5 pl-3 transition-colors duration-[240ms] ease-standard focus-within:border-fg",
+          copied ? "border-fg" : "border-border",
+        )}
+      >
+        <span className="shrink-0 text-muted">{icon}</span>
+        <input
+          id={id}
+          className="t-mono min-w-0 flex-1 truncate bg-transparent text-[11.5px] text-fg focus:outline-none focus-visible:outline-none"
+          readOnly
+          spellCheck={false}
+          value={value}
+          onFocus={(e) => e.currentTarget.select()}
+        />
+        <button
+          type="button"
+          className={copyPillCls(copied)}
+          onClick={onCopy}
+          disabled={copyDisabled}
+          aria-label={copied ? "Copied" : copyLabel}
+          title={copyTitle}
+        >
+          {copied ? (
+            <>
+              <Check size={11} /> Copied
+            </>
+          ) : (
+            "Copy"
+          )}
+        </button>
+      </div>
+    </div>
   );
 }

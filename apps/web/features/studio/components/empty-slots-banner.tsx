@@ -3,6 +3,8 @@
 import type { AssetSlot, AssetSlots } from "@repo/contracts";
 import type { ToolAssets } from "@repo/contracts";
 
+import { ImageIcon } from "@/components/icons";
+
 export type EmptySlotsBannerProps = {
   slots: AssetSlots;
   assets: ToolAssets;
@@ -65,35 +67,40 @@ export function EmptySlotsBanner({
     ? "Add your logo"
     : primary.required
       ? `Add ${label}`
-      : "Personalize with your assets";
+      : "Personalise with your assets";
 
   const detail = isLogoLike
     ? "Placeholder until you upload."
     : emptyCount === 1
       ? `“${label}” is empty.`
-      : `${emptyCount} empty slots — start with “${label}”.`;
+      : `${emptyCount} empty slots. Start with “${label}”.`;
 
   return (
     <div
-      className="flex items-start justify-between gap-3 rounded-xl border border-[#d97706]/35 bg-[#f59e0b]/14 px-[0.85rem] py-3"
+      className="flex flex-col items-start gap-2.5 rounded-[10px] border border-border bg-surface p-3"
       role="status"
       data-empty-slots={emptyCount}
       data-primary-slot={primary.id}
     >
-      <div className="min-w-0 flex-1">
-        <p className="m-0 text-[0.9rem] font-[650] tracking-tight text-[color-mix(in_srgb,#92400e_80%,var(--foreground))]">
+      <div className="min-w-0">
+        <p className="flex items-center gap-2 text-[13.5px] font-medium tracking-[-0.01em] text-fg">
+          <span
+            aria-hidden="true"
+            className="size-1.5 shrink-0 rounded-full bg-accent-text"
+          />
           {headline}
         </p>
-        <p className="mt-1 mb-0 text-[0.78rem] leading-snug opacity-80">
-          {detail}
-        </p>
+        <p className="mt-1 text-[12.5px] leading-snug text-muted">{detail}</p>
       </div>
       <button
         type="button"
-        className="shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-none bg-[#b45309] px-[0.7rem] py-[0.4rem] font-inherit text-[0.78rem] font-semibold text-[#fffbeb] hover:bg-[#92400e]"
+        className="btn btn-ink btn-sm max-w-full"
         onClick={() => onFocusSlot?.(primary.id)}
       >
-        {isLogoLike ? "Add logo" : `Add ${label}`}
+        <ImageIcon size={14} />
+        <span className="min-w-0 truncate">
+          {isLogoLike ? "Add logo" : `Add ${label}`}
+        </span>
       </button>
     </div>
   );

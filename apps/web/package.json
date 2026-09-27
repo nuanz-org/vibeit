@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit",
+    "design:audit": "node scripts/design-audit.mjs",
     "auth:migrate": "npx auth@latest migrate --yes",
     "auth:generate": "npx auth@latest generate"
   },
