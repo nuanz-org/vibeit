@@ -285,11 +285,15 @@ export function RefineChatPanel({
             {canRollback && onRollback ? (
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
+                className={cn(
+                  pg.btn,
+                  pg.btnGhost,
+                  "hit h-8 px-3 text-[12.5px]",
+                )}
                 disabled={busy}
                 onClick={onRollback}
               >
-                Undo refine
+                Undo
               </button>
             ) : null}
             <ChatPanelCollapseButton />
@@ -311,13 +315,16 @@ export function RefineChatPanel({
               <>
                 <ChatThreadItem>
                   <div className={pg.greeting}>
-                    <p className={pg.greetingTitle}>
+                    <p className="t-label m-0 text-muted">Your tool</p>
+                    <p
+                      className="m-0 line-clamp-3 text-[15px] leading-[1.4] font-medium tracking-[-0.01em] text-balance text-fg"
+                      title={toolLabel?.trim() || undefined}
+                    >
                       {toolLabel?.trim() || "Your tool is ready"}
                     </p>
                     <p className={pg.greetingSub}>
-                      Ask for more range on a control (e.g. gallery arc past
-                      600), set values, or structural changes. We expand
-                      controller limits first, then you fine-tune in Controls.
+                      Ask for a change — a new control, more range, a different
+                      look. Fine-tune the rest in Controls.
                     </p>
                   </div>
                 </ChatThreadItem>
@@ -329,9 +336,7 @@ export function RefineChatPanel({
                   >
                     <AiMessage
                       role={m.role === "user" ? "user" : "assistant"}
-                      variant={
-                        m.kind === "error" ? "destructive" : undefined
-                      }
+                      variant={m.kind === "error" ? "destructive" : undefined}
                       header={m.role === "assistant" ? "Aiditr" : undefined}
                     >
                       {m.content}
@@ -353,33 +358,38 @@ export function RefineChatPanel({
         </div>
 
         <div className={pg.chatComposer}>
-          <textarea
-            className={pg.composerInput}
-            rows={3}
-            value={message}
-            disabled={!enabled || busy}
-            placeholder="Ask for a change…"
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void submit();
-              }
-            }}
-          />
-          <div className={pg.composerFooter}>
-            <span className={pg.muted}>Enter to send</span>
-            <div className={pg.composerActions}>
-              <button
-                type="button"
-                className={pg.btnSend}
-                disabled={!enabled || busy || !message.trim()}
-                onClick={() => void submit()}
-                aria-label={busy ? "Refining" : "Send refine"}
-                title="Send"
-              >
-                <ArrowUp size={16} />
-              </button>
+          <div className={pg.composerCard}>
+            <textarea
+              className={pg.composerInput}
+              rows={3}
+              value={message}
+              disabled={!enabled || busy}
+              placeholder="Ask for a change…"
+              aria-label="Ask for a change"
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void submit();
+                }
+              }}
+            />
+            <div className={pg.composerFooter}>
+              <span className="t-mono px-1.5 text-[11px] text-muted">
+                ↵ send · ⇧↵ new line
+              </span>
+              <div className={pg.composerActions}>
+                <button
+                  type="button"
+                  className={pg.btnSend}
+                  disabled={!enabled || busy || !message.trim()}
+                  onClick={() => void submit()}
+                  aria-label={busy ? "Refining" : "Send refine"}
+                  title="Send"
+                >
+                  <ArrowUp size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

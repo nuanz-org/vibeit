@@ -41,7 +41,7 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
 // Runtime preview uses the sandboxed iframe host (target: ${target}).`;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-border pt-4">
+    <div className="-mx-4 flex flex-col gap-3 border-t border-border px-4 pt-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -50,7 +50,9 @@ ${versionId ? `// versionId: ${versionId}\n` : ""}//
           aria-expanded={open}
         >
           <Code size={13} />
-          <span className="t-label">{open ? "Hide source" : "View source"}</span>
+          <span className="t-label">
+            {open ? "Hide source" : "View source"}
+          </span>
           <ChevronDown
             size={12}
             className={cn(

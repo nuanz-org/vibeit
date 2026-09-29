@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Alert, ArrowUp, Close, Plus } from "@/components/icons";
+import {
+  Alert,
+  ArrowUp,
+  ArrowUpRight,
+  ChevronDown,
+  Close,
+  Plus,
+} from "@/components/icons";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import {
   AiMessage,
@@ -14,7 +21,10 @@ import {
   ChatThreadItem,
 } from "@/features/chat";
 import { ClarifyPanel } from "@/features/create/components/clarify-panel";
-import { CreateStage, type CreateStageMode } from "@/features/create/components/create-stage";
+import {
+  CreateStage,
+  type CreateStageMode,
+} from "@/features/create/components/create-stage";
 import { JobProgress } from "@/features/create/components/job-progress";
 import {
   ChatPanelCollapseButton,
@@ -35,10 +45,7 @@ import {
   type ClarifyAnswerValue,
   type QuotaFields,
 } from "@/lib/api/jobs";
-import {
-  fetchLlmModels,
-  type LlmModelOption,
-} from "@/lib/api/llm";
+import { fetchLlmModels, type LlmModelOption } from "@/lib/api/llm";
 import { cn } from "@/lib/utils";
 
 const MAX_INSPIRATION = 4;
@@ -46,54 +53,101 @@ const MAX_INSPIRATION = 4;
 const VISION_STARTERS = [
   {
     label: "Kinetic logo",
+    hint: "A mark that loops with soft motion",
+    glyph: "logo",
     vision:
       "A kinetic logo mark that loops — soft spring motion, brand-ready, exportable as a short loop.",
   },
   {
     label: "Social frame",
+    hint: "Animated border, title and photo slot",
+    glyph: "frame",
     vision:
       "A social media frame with animated border and title type — customisable colours and photo slot.",
   },
   {
     label: "Type poster",
+    hint: "Bold headline with staggered motion",
+    glyph: "type",
     vision:
       "A kinetic typography poster — bold headline, staggered word motion, warm gradient backdrop.",
   },
   {
     label: "3D object",
+    hint: "An object, a light, tweakable material",
+    glyph: "cube",
     vision:
       "A simple 3D object on a soft gradient stage — orbiting light, tweakable material and colour.",
   },
 ] as const;
 
 /*
- * Create-only chrome on top of the shared playground styles (landing
- * HowItWorks §3.6 / §3.12–3.14): outline quick-reply pills, a 12px composer
- * card that inks its edge on focus, and a pill "Plan" toggle whose checked
- * state is ink. The composer's send is the one accent on screen.
+ * Create-only chrome on top of the shared playground styles: quiet starter
+ * rows that fill the composer, and a composer whose tools (attach, model,
+ * Plan) stay edgeless until hovered. Plan inks once checked. The send is the
+ * one accent on screen, and only once there is something to send.
  */
 
-/** Starter prompts: outline pills that fill the composer. */
-const starterPill = cn(
-  "hit inline-flex h-8 cursor-pointer items-center rounded-full border border-border bg-surface px-3 pointer-coarse:h-11",
-  "text-[12.5px] text-fg transition-colors duration-fast ease-standard hover:border-fg",
+/** Starter prompt: a quiet row (glyph tile, name, one-line hint). */
+const starterRow = cn(
+  "group flex w-full cursor-pointer items-center gap-3 rounded-[10px] border border-transparent px-2 py-2 text-left",
+  "transition-[background-color,border-color] duration-fast ease-standard",
+  "hover:border-border hover:bg-bg",
 );
 
-/** Composer card: 12px, hairline; the edge turns ink while typing. */
-const composerCard = cn(
-  "flex flex-col rounded-[12px] border border-border bg-surface",
-  "transition-colors duration-fast ease-standard focus-within:border-fg",
+const starterGlyph = cn(
+  "grid size-9 shrink-0 place-items-center rounded-[8px] border border-border bg-bg text-muted",
+  "transition-colors duration-fast ease-standard group-hover:text-fg",
 );
 
-/** "Plan" checkbox as a pill toggle: strong hairline off, ink on. */
+/** "Plan" checkbox as a quiet composer tool; ink once checked. */
 const planToggle = cn(
-  "hit inline-flex h-8 cursor-pointer items-center rounded-full border px-3 pointer-coarse:h-11",
-  "text-[12.5px] font-medium transition-colors duration-fast ease-standard",
-  "border-border-strong bg-bg text-fg hover:border-fg",
-  "has-[:checked]:border-fg has-[:checked]:bg-fg has-[:checked]:text-bg",
-  "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45",
+  pg.composerTool,
+  "has-[:checked]:bg-fg! has-[:checked]:text-bg!",
   "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-(--focus) has-[:focus-visible]:outline-solid",
 );
+
+/** 16px line glyphs for the starters, drawn on the house icon grid. */
+function StarterGlyph({
+  kind,
+}: {
+  kind: (typeof VISION_STARTERS)[number]["glyph"];
+}) {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {kind === "logo" ? (
+        <>
+          <circle cx="8" cy="8" r="5.5" />
+          <circle cx="8" cy="2.5" r="1.25" fill="currentColor" stroke="none" />
+          <circle cx="8" cy="8" r="2" />
+        </>
+      ) : kind === "frame" ? (
+        <>
+          <rect x="2.5" y="2" width="11" height="12" rx="1.5" />
+          <rect x="4.5" y="4" width="7" height="5" rx="0.5" />
+          <path d="M4.5 11.5h4" />
+        </>
+      ) : kind === "type" ? (
+        <path d="M3 13l3.2-9h.6L10 13M4.2 10h4.6M11 8.5h3M12.5 7v6" />
+      ) : (
+        <>
+          <path d="M8 2l5.2 3v6L8 14l-5.2-3V5z" />
+          <path d="M2.8 5L8 8l5.2-3M8 8v6" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 /** Salvage link under a failed build. */
 const salvageLink = "link-draw text-[12.5px] font-medium text-accent-text";
@@ -244,9 +298,7 @@ export function CreatePlayground({
     }
   }
 
-  async function onClarifySubmit(
-    answers: Record<string, ClarifyAnswerValue>,
-  ) {
+  async function onClarifySubmit(answers: Record<string, ClarifyAnswerValue>) {
     if (!jobId) return;
     setClarifyPending(true);
     setSubmitError(null);
@@ -275,8 +327,7 @@ export function CreatePlayground({
   const generating =
     Boolean(jobId) && !isSuccess && !isFailed && !isAwaitingClarify;
   const overQuota =
-    quotaBlocked ||
-    (quota != null && quota.createsUsed >= quota.createsLimit);
+    quotaBlocked || (quota != null && quota.createsUsed >= quota.createsLimit);
   const canSend =
     Boolean(visionText.trim()) &&
     !pending &&
@@ -284,10 +335,13 @@ export function CreatePlayground({
     !isAwaitingClarify &&
     !overQuota;
 
-  const greetingName =
-    userName?.trim() ||
+  const rawGreetingName =
+    userName?.trim().split(/\s+/)[0] ||
     (userEmail ? userEmail.split("@")[0] : null) ||
     null;
+  const greetingName = rawGreetingName
+    ? rawGreetingName.charAt(0).toUpperCase() + rawGreetingName.slice(1)
+    : null;
 
   const historyUserMessages =
     historyMessages?.filter((m) => m.role === "user") ?? [];
@@ -352,29 +406,42 @@ export function CreatePlayground({
           <ChatThread className="h-full min-h-0">
             <ChatThreadItem>
               <div className={pg.greeting}>
-                <p className={pg.greetingTitle}>
-                  {greetingName
-                    ? `Hi ${greetingName}, what do you want to build?`
-                    : "What do you want to build?"}
-                </p>
+                {greetingName ? (
+                  <p className="t-label m-0 text-muted">Hi {greetingName}</p>
+                ) : null}
+                <p className={pg.greetingTitle}>What do you want to build?</p>
                 <p className={pg.greetingSub}>
-                  Describe a living design tool — motion, brand mark, social
-                  frame.
+                  Describe a design tool in a sentence. You get a live canvas,
+                  controls and export.
                 </p>
                 {showStarters ? (
                   <>
-                    <p className="t-label m-0 mt-3 text-muted">
-                      Or try one of these
+                    <p className="t-label m-0 mt-5 mb-1 text-muted">
+                      Start from
                     </p>
-                    <ul className="m-0 mt-1 flex list-none flex-wrap gap-1.5 p-0">
+                    <ul className="-mx-2 m-0 flex list-none flex-col gap-0.5 p-0">
                       {VISION_STARTERS.map((s) => (
                         <li key={s.label}>
                           <button
                             type="button"
-                            className={starterPill}
+                            className={starterRow}
                             onClick={() => setVisionText(s.vision)}
                           >
-                            {s.label}
+                            <span className={starterGlyph}>
+                              <StarterGlyph kind={s.glyph} />
+                            </span>
+                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                              <span className="text-[13.5px] font-medium leading-tight tracking-[-0.01em] text-fg">
+                                {s.label}
+                              </span>
+                              <span className="truncate text-[12.5px] leading-tight text-muted">
+                                {s.hint}
+                              </span>
+                            </span>
+                            <ArrowUpRight
+                              size={14}
+                              className="shrink-0 text-muted opacity-0 transition-opacity duration-fast ease-standard group-hover:opacity-100 group-focus-visible:opacity-100"
+                            />
                           </button>
                         </li>
                       ))}
@@ -454,7 +521,11 @@ export function CreatePlayground({
 
             {submitError ? (
               <ChatThreadItem id="submit-error" scrollAnchor>
-                <AiMessage role="assistant" variant="destructive" header="Error">
+                <AiMessage
+                  role="assistant"
+                  variant="destructive"
+                  header="Error"
+                >
                   {submitError}
                 </AiMessage>
               </ChatThreadItem>
@@ -462,7 +533,11 @@ export function CreatePlayground({
 
             {jobQuery.isError ? (
               <ChatThreadItem id="poll-error" scrollAnchor>
-                <AiMessage role="assistant" variant="destructive" header="Error">
+                <AiMessage
+                  role="assistant"
+                  variant="destructive"
+                  header="Error"
+                >
                   {jobQuery.error instanceof Error
                     ? jobQuery.error.message
                     : "Failed to poll job status"}
@@ -472,15 +547,17 @@ export function CreatePlayground({
 
             {isSuccess && resultQuery.isLoading ? (
               <ChatThreadItem id="opening-studio" scrollAnchor>
-                <ChatStatusMarker pending>
-                  Opening Studio…
-                </ChatStatusMarker>
+                <ChatStatusMarker pending>Opening Studio…</ChatStatusMarker>
               </ChatThreadItem>
             ) : null}
 
             {isSuccess && resultQuery.isError ? (
               <ChatThreadItem id="result-error" scrollAnchor>
-                <AiMessage role="assistant" variant="destructive" header="Error">
+                <AiMessage
+                  role="assistant"
+                  variant="destructive"
+                  header="Error"
+                >
                   Job succeeded but result could not be loaded.
                 </AiMessage>
               </ChatThreadItem>
@@ -502,13 +579,10 @@ export function CreatePlayground({
           </ChatThread>
         </div>
 
-        <form
-          className={pg.chatComposer}
-          onSubmit={(e) => void onSubmit(e)}
-        >
-          <div className={composerCard}>
+        <form className={pg.chatComposer} onSubmit={(e) => void onSubmit(e)}>
+          <div className={pg.composerCard}>
             <textarea
-              className={cn(pg.composerInput, "px-3 pt-2.5 pb-1")}
+              className={pg.composerInput}
               value={visionText}
               onChange={(e) => setVisionText(e.target.value)}
               rows={3}
@@ -562,7 +636,7 @@ export function CreatePlayground({
                 ))}
               </ul>
             ) : null}
-            <div className={cn(pg.composerFooter, "px-2 pb-2")}>
+            <div className={pg.composerFooter}>
               <div className={pg.composerMeta}>
                 <label className={pg.attachBtn} title="Add inspiration images">
                   <Plus size={14} />
@@ -599,26 +673,35 @@ export function CreatePlayground({
                     {inspirationFiles.length}/{MAX_INSPIRATION}
                   </span>
                 ) : null}
-                <select
-                  className={pg.selectCompact}
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  disabled={
-                    pending || generating || modelOptions.length === 0
-                  }
-                  title="Model"
-                  aria-label="Model"
-                >
-                  {modelOptions.length === 0 ? (
-                    <option value="">Models…</option>
-                  ) : (
-                    modelOptions.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))
-                  )}
-                </select>
+                <span className="relative inline-flex min-w-0">
+                  <select
+                    className={cn(
+                      pg.composerTool,
+                      "max-w-[10.5rem] appearance-none truncate pr-7",
+                    )}
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    disabled={
+                      pending || generating || modelOptions.length === 0
+                    }
+                    title="Model"
+                    aria-label="Model"
+                  >
+                    {modelOptions.length === 0 ? (
+                      <option value="">Models…</option>
+                    ) : (
+                      modelOptions.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-muted"
+                  />
+                </span>
                 <label
                   className={planToggle}
                   title="Plan with me: short questions first"

@@ -74,33 +74,38 @@ export const playgroundStyles = {
 
   chatScroll: "flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-2 pb-3",
 
-  /** Composer dock: hairline above, input card inside. */
-  chatComposer: [
-    "flex shrink-0 flex-col gap-2 bg-surface px-3 pt-3 pb-3",
-    dividerTop,
+  /** Composer dock: the input card floats at the foot of the panel. */
+  chatComposer: "flex shrink-0 flex-col gap-2 bg-surface px-3 pt-1 pb-3",
+
+  /** Composer card: 12px, hairline; the edge inks while typing. */
+  composerCard: [
+    "flex flex-col rounded-[12px] bg-bg",
+    surfaceEdge,
+    "transition-[border-color] duration-fast ease-standard",
+    "hover:border-border-strong focus-within:border-fg!",
   ].join(" "),
 
   composerInput: [
-    "w-full min-h-[4.25rem] max-h-48 resize-none rounded-none border-0 bg-transparent",
-    "px-1 py-1.5 text-[13.5px] leading-[1.5] text-fg",
+    "w-full min-h-[4.5rem] max-h-48 resize-none rounded-none border-0 bg-transparent",
+    "px-3 pt-3 pb-1 text-[13.5px] leading-[1.5] text-fg",
     "[field-sizing:content]",
     "placeholder:text-muted",
     "focus:outline-none focus-visible:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-45",
   ].join(" "),
 
-  composerFooter: "flex flex-wrap items-center justify-between gap-2",
+  composerFooter: "flex items-center justify-between gap-2 px-2 pb-2",
 
-  composerMeta: "flex min-w-0 flex-wrap items-center gap-1.5",
+  composerMeta: "flex min-w-0 items-center gap-1",
 
   composerActions: "flex shrink-0 items-center gap-1.5",
 
-  greeting: "flex flex-col gap-1.5 px-0.5 pt-4 pb-3",
+  greeting: "flex flex-col gap-2 px-0.5 pt-5 pb-4",
 
-  greetingTitle:
-    "m-0 text-[15px] font-medium leading-snug tracking-[-0.01em] text-fg text-balance",
+  greetingTitle: "t-h3 m-0 text-fg text-balance",
 
-  greetingSub: "m-0 max-w-[36ch] text-[13.5px] leading-[1.5] text-muted",
+  greetingSub:
+    "m-0 max-w-[36ch] text-[13.5px] leading-[1.55] text-muted text-pretty",
 
   /** Outline pill, 36px (landing `btn btn-outline btn-sm`). */
   btn: [
@@ -135,14 +140,29 @@ export const playgroundStyles = {
 
   btnIcon: "w-9 px-0!",
 
-  /** Send: 32px accent circle with an up arrow. */
+  /**
+   * Send: 32px circle with an up arrow. Neutral until there is something to
+   * send, then it turns accent — a dimmed blue reads as murky, not "off".
+   */
   btnSend: [
     "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center",
     "rounded-full border-0 bg-accent text-accent-fg",
-    "transition-[background-color,opacity,transform] duration-fast ease-standard",
+    "transition-[background-color,color,transform] duration-fast ease-standard",
     "not-disabled:hover:bg-accent-hover",
-    "not-disabled:active:scale-[0.985]",
+    "not-disabled:active:scale-[0.94]",
+    "disabled:cursor-not-allowed disabled:bg-band disabled:text-muted",
+  ].join(" "),
+
+  /** Quiet in-composer control (model picker, Plan): no edge until hover. */
+  composerTool: [
+    "hit inline-flex h-8 min-w-0 shrink cursor-pointer items-center gap-1.5 rounded-full",
+    "border border-transparent bg-transparent px-2.5",
+    "text-[12.5px] font-medium text-muted",
+    "transition-[background-color,border-color,color] duration-fast ease-standard",
+    "hover:bg-band hover:text-fg",
     "disabled:cursor-not-allowed disabled:opacity-45",
+    "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45",
+    "pointer-coarse:h-11",
   ].join(" "),
 
   /** Status pill: 20px, mono 10px, hairline (landing LIVE pill). */
@@ -169,13 +189,12 @@ export const playgroundStyles = {
     "disabled:cursor-not-allowed disabled:opacity-45",
   ].join(" "),
 
-  /** 32px outline icon button wrapping a hidden file input. */
+  /** 32px quiet icon button wrapping a hidden file input. */
   attachBtn: [
     "hit inline-grid size-8 shrink-0 cursor-pointer place-items-center",
-    "rounded-full bg-bg text-muted",
-    controlEdge,
-    "transition-[border-color,color] duration-fast ease-standard",
-    "not-has-[input:disabled]:hover:border-fg",
+    "rounded-full bg-transparent text-muted",
+    "transition-[background-color,color] duration-fast ease-standard",
+    "not-has-[input:disabled]:hover:bg-band",
     "not-has-[input:disabled]:hover:text-fg",
     "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-45",
     // Visually hidden, still focusable: the ring follows keyboard focus.

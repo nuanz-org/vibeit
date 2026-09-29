@@ -1,12 +1,13 @@
 "use client";
 
-import { Alert, Check, ImageIcon } from "@/components/icons";
+import { Alert, Check } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
  * Create empty stage — the derived empty-state recipe (design-language §3.21)
- * on the workspace dot grid: a dashed slot awaiting output, a t-label
- * eyebrow, one declarative line, one muted sentence. While building, the
+ * on the workspace dot grid: a miniature of the product (canvas + controls
+ * card whose sliders drive the shape), a t-label eyebrow, one declarative
+ * line, one muted sentence. While building, the
  * steps read as a mono flow (Plan → Code → Validate) under a live-dot
  * "Building" label. Each mode swap re-mounts and rises in with panel-in (240ms).
  * No springs, no glow, no accent fills — the composer's send is the one
@@ -52,18 +53,7 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
         key={mode + (phase ?? "")}
         className="flex max-w-[30rem] animate-panel-in flex-col items-center text-center motion-reduce:animate-none"
       >
-        <div
-          aria-hidden="true"
-          className="mb-7 grid h-[132px] w-[106px] place-items-center rounded-[2px] border border-dashed border-border-strong text-muted"
-        >
-          {mode === "opening" ? (
-            <Check size={16} />
-          ) : mode === "failed" ? (
-            <Alert size={16} />
-          ) : (
-            <ImageIcon size={16} />
-          )}
-        </div>
+        <ToolMiniature mode={mode} />
 
         <p className="t-label m-0 flex items-center gap-2 text-muted">
           {generating ? (
@@ -115,6 +105,86 @@ export function CreateStage({ mode, phase }: CreateStageProps) {
   );
 }
 
+/*
+ * Miniature tool: a 4:5 canvas with registration marks and a floating
+ * controls card. `.ctrl-demo` animates --k1 / --k2 (0–1); the slider knobs
+ * and the canvas shape both read them, so the controls visibly drive the
+ * canvas. Faster while building, still once the build ends.
+ */
+function ToolMiniature({ mode }: { mode: CreateStageMode }) {
+  const still = mode === "opening" || mode === "failed";
+  return (
+    <div
+      aria-hidden="true"
+      className="ctrl-demo relative mb-9 h-[184px] w-[256px]"
+      data-speed={mode === "generating" ? "fast" : undefined}
+      data-still={still ? "true" : undefined}
+    >
+      <div className="frame-marks absolute top-0 left-2 h-[184px] w-[148px] bg-surface shadow-frame">
+        <div className="absolute inset-0 grid place-items-center overflow-hidden text-muted">
+          {mode === "opening" ? (
+            <Check size={18} className="text-fg" />
+          ) : mode === "failed" ? (
+            <Alert size={18} className="text-danger" />
+          ) : (
+            <div className="relative grid size-24 place-items-center">
+              <span className="ctrl-demo-disc absolute rounded-full border-[1.5px] border-fg" />
+              <span className="ctrl-demo-bar absolute h-[1.5px] w-20 rounded-full bg-fg" />
+              <span className="absolute size-1.5 rounded-full bg-fg" />
+            </div>
+          )}
+        </div>
+        <span className="t-label absolute top-2.5 left-2.5 text-[9px] text-muted">
+          4:5
+        </span>
+        <span className="mark-b" />
+      </div>
+
+      <div className="absolute right-0 bottom-4 flex w-[118px] flex-col gap-3 rounded-[10px] border border-border bg-surface p-3 text-left shadow-panel">
+        <MiniSlider label="Size" varName="--k1" />
+        <MiniSlider label="Angle" varName="--k2" />
+        <div className="flex flex-col gap-1.5">
+          <span className="t-label text-[8.5px] leading-none text-muted">
+            Ink
+          </span>
+          <span className="flex gap-1">
+            <span className="size-2.5 rounded-full border border-border-strong bg-fg" />
+            <span className="size-2.5 rounded-full border border-border-strong bg-muted" />
+            <span className="size-2.5 rounded-full border border-border-strong bg-bg" />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniSlider({
+  label,
+  varName,
+}: {
+  label: string;
+  varName: "--k1" | "--k2";
+}) {
+  const pos = `calc(var(${varName}) * 100%)`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="t-label text-[8.5px] leading-none text-muted">
+        {label}
+      </span>
+      <span className="relative block h-[3px] rounded-full bg-border-strong">
+        <span
+          className="absolute inset-y-0 left-0 rounded-full bg-fg"
+          style={{ width: pos }}
+        />
+        <span
+          className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-fg bg-surface"
+          style={{ left: pos }}
+        />
+      </span>
+    </div>
+  );
+}
+
 function copyFor(mode: CreateStageMode): {
   eyebrow: string;
   title: string;
@@ -149,7 +219,7 @@ function copyFor(mode: CreateStageMode): {
       return {
         eyebrow: "New tool",
         title: "Your tool appears here.",
-        hint: "Describe a vision in chat. Controls, export and sharing come free.",
+        hint: "Describe it in chat. Controls, export and sharing come built in.",
       };
   }
 }

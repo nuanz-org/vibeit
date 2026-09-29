@@ -537,6 +537,62 @@ svg.lucide {
   }
 }
 
+/* Create empty stage: a miniature tool whose sliders drive the canvas. */
+@property --k1 {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.35;
+}
+
+@property --k2 {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.6;
+}
+
+@keyframes ctrl-k1 {
+  0%,
+  100% {
+    --k1: 0.3;
+  }
+  50% {
+    --k1: 0.82;
+  }
+}
+
+@keyframes ctrl-k2 {
+  0%,
+  100% {
+    --k2: 0.7;
+  }
+  50% {
+    --k2: 0.18;
+  }
+}
+
+.ctrl-demo {
+  animation:
+    ctrl-k1 6.4s var(--ease) infinite,
+    ctrl-k2 8.8s var(--ease) infinite;
+}
+
+.ctrl-demo[data-speed="fast"] {
+  animation-duration: 2.2s, 2.9s;
+}
+
+.ctrl-demo[data-still="true"] {
+  animation-play-state: paused;
+}
+
+.ctrl-demo-disc {
+  width: calc(28px + var(--k1) * 60px);
+  height: calc(28px + var(--k1) * 60px);
+}
+
+.ctrl-demo-bar {
+  transform: rotate(calc(var(--k2) * 180deg));
+}
+
 /* ------------------------------------------------------------------ */
 /* Studio controls                                                     */
 /* ------------------------------------------------------------------ */

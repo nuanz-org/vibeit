@@ -74,22 +74,22 @@ export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
 
   return (
     <div
-      className="flex shrink-0 flex-wrap items-center justify-center gap-2"
+      className="flex max-w-full shrink-0 flex-wrap items-center justify-center gap-1 rounded-[12px] border border-border bg-surface p-1 shadow-panel"
       role="group"
       aria-label="Canvas size"
     >
       <fieldset className="min-w-0" disabled={disabled}>
         <legend className="sr-only">Canvas size preset</legend>
         <div
-          className="relative grid rounded-[10px] border border-border bg-surface p-[3px]"
+          className="relative grid"
           style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
         >
           {presetIndex >= 0 ? (
             <span
               aria-hidden="true"
-              className="absolute inset-y-[3px] left-[3px] rounded-[7px] bg-fg transition-transform duration-[240ms] ease-standard"
+              className="absolute inset-y-0 left-0 rounded-[8px] bg-fg transition-transform duration-[240ms] ease-standard"
               style={{
-                width: `calc((100% - 6px) / ${n})`,
+                width: `calc(100% / ${n})`,
                 transform: `translateX(${presetIndex * 100}%)`,
               }}
             />
@@ -106,7 +106,7 @@ export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
                 key={p.id}
                 title={`${p.label} · ${p.width} × ${p.height}`}
                 className={cn(
-                  "relative z-10 flex h-9 min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-[7px] px-2.5 pointer-coarse:h-11",
+                  "relative z-10 flex h-8 min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-[8px] px-2.5 pointer-coarse:h-11",
                   "transition-colors duration-[180ms] ease-standard",
                   "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-(--focus) has-[:focus-visible]:outline-solid",
                   "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45",
@@ -133,7 +133,9 @@ export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
         </div>
       </fieldset>
 
-      <div className="inline-flex items-center gap-1 rounded-[10px] border border-border bg-surface p-[3px]">
+      <span aria-hidden="true" className="mx-1 h-5 w-px bg-border" />
+
+      <div className="inline-flex items-center">
         <input
           type="number"
           className={dimInput}
@@ -151,7 +153,10 @@ export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
             }
           }}
         />
-        <span className="t-mono text-[12px] text-muted" aria-hidden="true">
+        <span
+          className="t-mono px-0.5 text-[12px] text-muted"
+          aria-hidden="true"
+        >
           ×
         </span>
         <input
@@ -172,7 +177,9 @@ export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
           }}
         />
         {value.preset === "custom" ? (
-          <span className="t-label pr-2 pl-1 text-muted">Custom</span>
+          <span className="t-label pr-2 pl-1 text-[10px] text-muted">
+            Custom
+          </span>
         ) : null}
       </div>
     </div>
@@ -181,7 +188,7 @@ export function StageSizeBar({ value, onChange, disabled }: StageSizeBarProps) {
 
 /** Borderless mono field inside the size track; the border shows on hover / focus. */
 const dimInput = cn(
-  "h-9 w-[4.5rem] rounded-[7px] border border-transparent bg-transparent px-2 text-right pointer-coarse:h-11",
+  "h-8 w-[3.75rem] rounded-[8px] border border-transparent bg-transparent px-1.5 text-center pointer-coarse:h-11",
   "t-mono text-[12px] text-fg [appearance:textfield]",
   "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
   "transition-colors duration-[180ms] ease-standard",

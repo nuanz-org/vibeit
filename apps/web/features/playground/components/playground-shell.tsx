@@ -104,7 +104,8 @@ const shellClass = cn(
 const headerClass = cn(
   "z-20 flex h-12 items-center justify-between gap-4",
   "[grid-area:header]",
-  "border-b border-border bg-bg px-3 sm:px-4",
+  // Same fill as the side panels so the chrome reads as one frame around the workspace.
+  "border-b border-border bg-surface px-3 sm:px-4",
 );
 
 const sidePanelClass = cn(

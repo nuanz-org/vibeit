@@ -6,6 +6,7 @@ import type { AssetSlots, ParamSchema, ToolParams } from "@repo/contracts";
 
 import { ChevronDown, Close, Download } from "@/components/icons";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { cn } from "@/lib/utils";
 import {
   PlaygroundShell,
   playgroundStyles as pg,
@@ -504,20 +505,19 @@ export function StudioShell({
   const controls = (
     <>
       <div className={pg.panelHeader}>
-        <div className="flex min-w-0 flex-col gap-1">
-          <h2 className={pg.panelTitle}>Controls</h2>
-          <p className="m-0 truncate text-[12px] leading-none text-muted">
-            Tune your vision
-          </p>
-        </div>
+        <h2 className={pg.panelTitle}>Controls</h2>
         <button
           type="button"
-          className="btn btn-ghost btn-sm -mr-2"
+          className={cn(
+            pg.btn,
+            pg.btnGhost,
+            "hit -mr-2 h-8 gap-1.5 px-2.5 text-[12.5px]",
+          )}
           disabled={!runtime.mounted || runtime.busy}
           onClick={() => runtime.resetParams()}
           title="Restore default parameters"
         >
-          <ResetIcon size={14} />
+          <ResetIcon size={13} />
           Reset
         </button>
       </div>
@@ -541,7 +541,7 @@ export function StudioShell({
         </section>
 
         <section
-          className="flex flex-col gap-3 border-t border-border pt-4"
+          className="-mx-4 flex flex-col gap-3 border-t border-border px-4 pt-4"
           ref={assetsSectionRef}
           id="studio-assets"
         >
@@ -602,7 +602,7 @@ export function StudioShell({
           versionId={liveVersionId}
         />
 
-        <details className="group/adv border-t border-border pt-4">
+        <details className="group/adv -mx-4 border-t border-border px-4 pt-4">
           <summary className="hit flex min-h-6 cursor-pointer list-none items-center justify-between gap-3 text-muted transition-colors duration-[180ms] ease-standard hover:text-fg [&::-webkit-details-marker]:hidden">
             <span className="t-label">Advanced</span>
             <ChevronDown

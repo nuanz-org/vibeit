@@ -100,7 +100,7 @@ export function ParamControls({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       {!hideReset && onResetDefaults ? (
         <div className="-mb-2 flex justify-end">
           <button
@@ -120,7 +120,7 @@ export function ParamControls({
         return (
           <div
             key={section.id}
-            className="flex flex-col gap-1"
+            className="-mx-4 flex flex-col gap-1 border-t border-border px-4 pt-3 pb-3 first:border-t-0 first:pt-0"
             data-section={section.id}
             data-open={open ? "true" : "false"}
           >
@@ -132,18 +132,13 @@ export function ParamControls({
               aria-controls={`${section.id}-body`}
               id={`${section.id}-header`}
             >
-              <span className="flex min-w-0 items-baseline gap-2">
-                <span
-                  className={cn(
-                    groupLabelCls,
-                    "transition-colors duration-[180ms] ease-standard group-hover:text-fg",
-                  )}
-                >
-                  {section.label}
-                </span>
-                <span className="t-mono text-[10.5px] leading-none text-muted">
-                  {section.fields.length}
-                </span>
+              <span
+                className={cn(
+                  groupLabelCls,
+                  "min-w-0 truncate transition-colors duration-[180ms] ease-standard group-hover:text-fg",
+                )}
+              >
+                {section.label}
               </span>
               <ChevronDown
                 size={14}
@@ -467,7 +462,7 @@ function ChoiceField({
               key={opt.value}
               name={name}
               value={opt.value}
-              label={opt.label ?? opt.value}
+              label={opt.label ?? humanize(opt.value)}
               selected={current === opt.value}
               onSelect={() => onChange(opt.value)}
             />
@@ -621,7 +616,7 @@ function SelectField({
         >
           {field.options.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label ?? opt.value}
+              {opt.label ?? humanize(opt.value)}
             </option>
           ))}
         </select>
@@ -735,6 +730,12 @@ function AssetRefField({
       </button>
     </div>
   );
+}
+
+/** Raw enum values ("left-right", "ease_out") read as labels: "Left-right". */
+function humanize(value: string): string {
+  const s = value.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function normalizeHex(raw: string): string {
